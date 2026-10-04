@@ -897,9 +897,9 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
   // synthesizes a minimal regionData from the AI fields so the spine
   // engines can fire.
   const REGION_ENGINES = {
-    lumbarSI: { hasData: (d, r) => hasLumbarChecklistData(d.subjective?.regions?.[r.id]) || !!spineRegionData(d, r, "lumbarSI"), run: (d, r) => runLumbarDifferential(spineRegionData(d, r, "lumbarSI") || d.subjective?.regions?.[r.id], d.subjective || {}), itemIds: lumbarConditionItemIds, label: "Lumbar/SI" },
-    cervical: { hasData: (d, r) => hasCervicalChecklistData(d.subjective?.regions?.[r.id]) || !!spineRegionData(d, r, "cervical"), run: (d, r) => runCervicalDifferential(spineRegionData(d, r, "cervical") || d.subjective?.regions?.[r.id], d.subjective || {}), itemIds: cervicalConditionItemIds, label: "Cervical" },
-    thoracic: { hasData: (d, r) => hasThoracicChecklistData(d.subjective?.regions?.[r.id]) || !!spineRegionData(d, r, "thoracic"), run: (d, r) => runThoracicDifferential(spineRegionData(d, r, "thoracic") || d.subjective?.regions?.[r.id], d.subjective || {}), itemIds: thoracicConditionItemIds, label: "Thoracic" },
+    lumbarSI: { hasData: (d, r) => hasLumbarChecklistData(d.subjective?.regions?.[r.id]) || !!spineRegionData(d, r, "lumbarSI"), run: (d, r) => runLumbarDifferential(spineRegionData(d, r, "lumbarSI") || d.subjective?.regions?.[r.id], d.subjective || {}, d.demographics), itemIds: lumbarConditionItemIds, label: "Lumbar/SI" },
+    cervical: { hasData: (d, r) => hasCervicalChecklistData(d.subjective?.regions?.[r.id]) || !!spineRegionData(d, r, "cervical"), run: (d, r) => runCervicalDifferential(spineRegionData(d, r, "cervical") || d.subjective?.regions?.[r.id], d.subjective || {}, d.demographics), itemIds: cervicalConditionItemIds, label: "Cervical" },
+    thoracic: { hasData: (d, r) => hasThoracicChecklistData(d.subjective?.regions?.[r.id]) || !!spineRegionData(d, r, "thoracic"), run: (d, r) => runThoracicDifferential(spineRegionData(d, r, "thoracic") || d.subjective?.regions?.[r.id], d.subjective || {}, d.demographics), itemIds: thoracicConditionItemIds, label: "Thoracic" },
     shoulder: { hasData: (d) => hasShoulderChecklistData(d), run: (d) => runShoulderDifferential(d), itemIds: shoulderConditionItemIds, label: "Shoulder" },
     hip: { hasData: (d) => hasHipChecklistData(d), run: (d) => runHipDifferential(d), itemIds: hipConditionItemIds, label: "Hip" },
     knee: { hasData: (d) => hasKneeChecklistData(d), run: (d) => runKneeDifferential(d), itemIds: kneeConditionItemIds, label: "Knee" },

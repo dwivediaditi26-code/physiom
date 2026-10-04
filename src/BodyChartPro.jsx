@@ -3,6 +3,7 @@
 // Then it auto-displays as the background. Admin Mode lets you refine polygon positions.
 
 import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import { usePreviewFeaturesForCurrentUser } from "./featureFlags.js";
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
 const BODY_IMAGE_URL =
@@ -623,6 +624,11 @@ export default function BodyChartPro({ data = {}, set = () => {} }) {
   const [radiationDraw, setRadiationDraw] = useState(null);
   const [arrows, setArrows]             = useState(chartData.arrows || []);
   const [imgLoaded, setImgLoaded]       = useState(false);
+  const [imgFailed, setImgFailed]       = useState(false);
+  const [imgTry, setImgTry]             = useState(0);
+  // The region-position editor ("Admin") is a tool for the people building the app, not
+  // for a physio filling in an assessment: only admin accounts get its button.
+  const { enabled: isAdminAccount }     = usePreviewFeaturesForCurrentUser();
   const [drawMode, setDrawMode]         = useState(false);  // freehand radiation draw
   const [drawStart, setDrawStart]       = useState(null);   // {x,y} SVG coords
   const [drawPreview, setDrawPreview]   = useState(null);   // {x1,y1,x2,y2} live preview
@@ -865,13 +871,15 @@ export default function BodyChartPro({ data = {}, set = () => {} }) {
             fontWeight:700, fontSize:"0.7rem", cursor:"pointer" }}>
           {drawMode ? "⚡ Drawing… (tap to cancel)" : "⚡ Draw Radiation"}
         </button>
-        <button onClick={() => setAdminMode(p => !p)}
-          style={{ padding:"5px 11px", borderRadius:8, border:`1.5px solid ${adminMode?"#7c3aed":"#e5e7eb"}`,
-            background:adminMode?"rgba(124,58,237,0.12)":"transparent",
-            color:adminMode?"#7c3aed":"#6b7280",
-            fontWeight:700, fontSize:"0.7rem", cursor:"pointer" }}>
-          {adminMode ? "🔧 Admin ON" : "🔧 Admin"}
-        </button>
+        {isAdminAccount && (
+          <button onClick={() => setAdminMode(p => !p)}
+            style={{ padding:"5px 11px", borderRadius:8, border:`1.5px solid ${adminMode?"#7c3aed":"#e5e7eb"}`,
+              background:adminMode?"rgba(124,58,237,0.12)":"transparent",
+              color:adminMode?"#7c3aed":"#6b7280",
+              fontWeight:700, fontSize:"0.7rem", cursor:"pointer" }}>
+            {adminMode ? "🔧 Admin ON" : "🔧 Admin"}
+          </button>
+        )}
         {adminMode && (
           <>
             <button onClick={exportRegions}
@@ -905,32 +913,32 @@ export default function BodyChartPro({ data = {}, set = () => {} }) {
 
         {/* Body image */}
         <img
-          src={BODY_IMAGE_URL}
+          key={imgTry}
+          src={imgTry ? `${BODY_IMAGE_URL}?retry=${imgTry}` : BODY_IMAGE_URL}
           alt="Anatomical Body Chart"
           style={{ width:"100%", display:"block",
             opacity: imgLoaded ? 1 : 0, transition:"opacity 0.4s" }}
-          onLoad={() => setImgLoaded(true)}
-          onError={(e) => { e.target.style.opacity="0.4"; setImgLoaded(true); }}
+          onLoad={() => { setImgFailed(false); setImgLoaded(true); }}
+          onError={(e) => { e.target.style.opacity="0.4"; setImgFailed(true); setImgLoaded(true); }}
         />
 
         {!imgLoaded && (
           <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column",
             alignItems:"center", justifyContent:"center", padding:24,
-            background:"#111827", color:"#9ca3af" }}>
-            <div style={{ fontSize:"2.5rem", marginBottom:12 }}>🖼️</div>
-            <div style={{ fontWeight:800, fontSize:"0.9rem", color:"#f9fafb", marginBottom:8 }}>
-              Body Chart Image Not Uploaded
-            </div>
-            <div style={{ fontSize:"0.75rem", textAlign:"center", lineHeight:1.7, maxWidth:320, color:"#9ca3af" }}>
-              Upload the anatomical body chart image to Cloudinary with public ID:
-              <code style={{ display:"block", margin:"8px 0", padding:"6px 12px",
-                background:"rgba(255,255,255,0.08)", borderRadius:6,
-                color:"#a78bfa", fontSize:"0.82rem", fontWeight:700 }}>
-                body-chart-4view
-              </code>
-              Use the <strong style={{color:"#f9fafb"}}>Cloudinary Uploader</strong> tool
-              → filter by <strong style={{color:"#f43f5e"}}>⭐ Assets</strong> → drag the image
-            </div>
+            background:"#f3f4f6", color:"#6b7280" }}>
+            <div style={{ fontSize:"2.2rem", marginBottom:10 }}>🧍</div>
+            <div style={{ fontWeight:700, fontSize:"0.9rem", color:"#374151" }}>Loading body chart…</div>
+          </div>
+        )}
+        {imgFailed && (
+          <div style={{ position:"absolute", left:8, right:8, top:8, zIndex:5, padding:"8px 10px",
+            background:"#fffbeb", border:"1px solid #fde68a", borderRadius:10, color:"#92400e",
+            fontSize:"0.75rem", display:"flex", alignItems:"center", gap:8 }}>
+            <span style={{ flex:1 }}>The body picture couldn't load. Check your connection. You can still mark areas.</span>
+            <button type="button" onClick={() => { setImgFailed(false); setImgLoaded(false); setImgTry(t => t + 1); }}
+              style={{ border:"none", background:"#92400e", color:"#fff", borderRadius:8, padding:"5px 10px", fontWeight:700, fontSize:"0.72rem", cursor:"pointer" }}>
+              Try again
+            </button>
           </div>
         )}
 

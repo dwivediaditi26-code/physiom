@@ -19,7 +19,7 @@ import "./physiofeed.css";
 // both go through this, naming the destination as a bare key rather than
 // a path so callers outside this folder never need to know PhysioFeed's
 // actual route strings.
-const JUMPABLE_TABS = new Set(["evidence", "notifications", "messages", "people", "search"]);
+const JUMPABLE_TABS = new Set(["evidence", "notifications", "messages", "people", "search", "news"]);
 
 // This tab stays mounted once visited (AppFull.jsx keeps every tab alive
 // in the shared .pm-main container instead of unmounting it), so

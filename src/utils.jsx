@@ -327,7 +327,12 @@ const MOBILE_CSS = `
     background: #ffffff; border-top: 2px solid #E4E4E6;
     box-shadow: 0 -4px 20px rgba(124,58,237,0.10);
     max-height: 75vh;
-    padding-bottom: env(safe-area-inset-bottom);
+    /* Under the labels the iPhone keeps a strip for its swipe-up line (34px
+       on Face ID phones). All of it was left empty, which looked like dead
+       space under the bar; the line only needs the bottom ~13px, so keep
+       under half of it. Everything pinned above the bar follows its
+       measured height (--pm-bnav-h), so nothing else needs to move. */
+    padding-bottom: calc(env(safe-area-inset-bottom) * 0.45);
   }
   @media (max-width: 1023px) { .pm-bnav { display: flex; } }
   @media (max-width: 1023px) {
@@ -516,6 +521,12 @@ const MOBILE_CSS = `
      regardless of source order, so this wins at every breakpoint above. */
   .pm-grid-4[style*="repeat(4,"] { grid-template-columns: repeat(4,1fr) !important; }
 
+  /* The Home page's main tile row: 3 tiles normally, 4 when a preview feature (Posture
+     Analysis) is on for the account. The column count comes from --pm-tiles instead of an
+     inline repeat(N,...), because the phone rule above collapses any inline repeat(3,...)
+     to a single column (which stacked the 3 tiles into tall full-width cards). */
+  .pm-grid-tiles { grid-template-columns: repeat(var(--pm-tiles, 4), 1fr) !important; }
+
   /* Action bars (space-between) → wrap on tiny screens */
   @media (max-width: 380px) {
     [style*="space-between"] { flex-wrap: wrap !important; gap: 8px !important; }
@@ -564,7 +575,11 @@ const MOBILE_CSS = `
       min-height: 64px; flex-shrink: 0;
       contain: paint; isolation: isolate;
     }
-    .pm-mobile-hdr .pm-hamburger { min-height: 32px !important; min-width: 32px !important; padding: 5px 7px !important; }
+    /* PhysioFeed / Profile put four icons in the top bar. On a phone the written "PhysioMind"
+     beside the logo no longer fits and was cut to "PhysioMir"; the logo already carries the name.
+     (Only the text is hidden; its box stays so the icons keep their place at the right.) */
+  @media (max-width: 459px) { .pm-mobile-hdr[data-wide-icons] .pm-hdr-brand-text > div { display: none; } }
+  .pm-mobile-hdr .pm-hamburger { min-height: 32px !important; min-width: 32px !important; padding: 5px 7px !important; }
     /* Hide desktop header and both patient bars on mobile */
     .pm-header { display: none !important; }
     .pm-patient-bar { display: none !important; }

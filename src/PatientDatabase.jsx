@@ -5,7 +5,13 @@ import { createPortal } from "react-dom";
 import { Search as SearchIcon, ChevronRight, Bone, HeartPulse, Brain, Footprints, MoreVertical } from "lucide-react";
 import { supabase } from "./supabase.js";
 import { hasSessionKey, encryptJSON, decryptJSON, isEncryptedEnvelope } from "./localCrypto.js";
-import { MuscleImbalanceCard, ExercisePlanTab } from "./PostureEngine.jsx";
+import { SAMPLE_PATIENT_IDS, isSamplePatient, withoutSamples } from "./samplePatients.js";
+// Loaded on demand: PostureEngine is ~600 KB of source and only these two cards
+// (inside a posture session's results) need it from here.
+const LazyMuscleImbalanceCard = React.lazy(() => import("./PostureEngine.jsx").then((m) => ({ default: m.MuscleImbalanceCard })));
+const LazyExercisePlanTab = React.lazy(() => import("./PostureEngine.jsx").then((m) => ({ default: m.ExercisePlanTab })));
+const MuscleImbalanceCard = (props) => <React.Suspense fallback={null}><LazyMuscleImbalanceCard {...props}/></React.Suspense>;
+const ExercisePlanTab = (props) => <React.Suspense fallback={null}><LazyExercisePlanTab {...props}/></React.Suspense>;
 // These used to be flat constants shared by every user of a device. Now
 // they're per-user: two students sharing one browser/tablet each get their
 // own slot, so signing in as student B can never inherit student A's
@@ -20,7 +26,7 @@ const DB_KEY_LEGACY = "physio_patient_db_v1";
 const DRAFT_KEY_LEGACY = "physio_draft_v1";
 
 const SEED_PATIENT = {
-  id: "pt_priya_sharma_01",
+  id: SAMPLE_PATIENT_IDS[0],
   name: "Priya Sharma",
   createdAt: "2026-06-22T08:00:00.000Z",
   updatedAt: "2026-06-22T09:30:00.000Z",
@@ -250,7 +256,7 @@ const SEED_PATIENT = {
 };
 
 const SEED_PATIENT_2 = {
-  id: "pt_arjun_kapoor_01",
+  id: SAMPLE_PATIENT_IDS[1],
   name: "Arjun Kapoor",
   createdAt: "2026-06-20T09:00:00.000Z",
   updatedAt: "2026-06-20T11:00:00.000Z",
@@ -522,10 +528,26 @@ async function hydrateLocalCache(userId) {
 // get re-tagged to whichever account happens to be logged in by the time the
 // network request actually completes — it's always tagged with the user who
 // was active when the save was *initiated*.
+//
+// The two demo patients every new account starts with (SEED_PATIENT and
+// SEED_PATIENT_2) have the SAME fixed id in every account. The patients table
+// only lets one account own a given id, so once one account had uploaded them,
+// every other account's save -- which sends the whole list in ONE request --
+// was rejected as a whole ("new row violates row-level security policy") and
+// the real patients in it never reached the cloud (header: "Offline -- will
+// retry"). Demo patients are sample data, so they stay on the device.
+const DEMO_PATIENT_IDS = new Set(SAMPLE_PATIENT_IDS);
+
+// Resolves to true only when the patients really reached Supabase, and to
+// false when there was nothing to upload (not logged in, or only the demo
+// patients) -- so the header can say "Saved to cloud" only when it is true.
+// Rejects when the upload failed.
 async function syncPatientsToSupabase(patients, userId) {
   try {
-    if (!userId) return; // not logged in — don't sync
-    const rows = patients.map(p => ({
+    if (!userId) return false; // not logged in — don't sync
+    const toSync = patients.filter(p => !DEMO_PATIENT_IDS.has(p.id));
+    if (toSync.length === 0) return false; // only demo patients -- nothing to upload
+    const rows = toSync.map(p => ({
       id: p.id,
       user_id: userId,
       name: p.name || "Unknown",
@@ -538,6 +560,7 @@ async function syncPatientsToSupabase(patients, userId) {
     const { error } = await supabase.from("patients").upsert(rows, { onConflict: "id" });
     if (error) { console.warn("[Supabase sync]", error.message); throw error; }
     clearSyncDirty(userId);
+    return true;
   } catch (e) {
     console.warn("[Supabase sync error]", e);
     // A failed sync (almost always a dropped connection on campus wifi, not
@@ -628,9 +651,22 @@ function savePatientDBLocalOnly(patients, userId) {
   return persistPatientsLocal(patients, userId);
 }
 
+// The local copy is locked with a key made from the sign-in token (see
+// localCrypto.js), and that token is replaced about once an hour while the app
+// is open. The copy on disk stays locked with the OLD token's key, so any
+// reload after that could not open it and the patient list stayed empty until
+// the cloud read finished (2026-10-02, Aditi: patients "all gone" after
+// tapping Refresh in a long session). Call this right after the key changes:
+// it locks the list that is already open in memory again with the new key.
+async function relockLocalCache(userId) {
+  const list = userId ? _patientCache.get(userId) : null;
+  if (!Array.isArray(list) || !hasSessionKey()) return;
+  await persistPatientsLocal(list, userId);
+}
+
 function savePatientDB(patients, userId) {
   persistPatientsLocal(patients, userId); // fire-and-forget local (encrypted) cache write
-  return syncPatientsToSupabase(patients, userId); // unchanged return contract — callers await/.then/.catch THIS for cloud save status
+  return syncPatientsToSupabase(patients, userId); // resolves true = reached Supabase, false = nothing to upload, rejects = failed (callers await/.then/.catch THIS for cloud save status)
 }
 const TASK_KEY = 'physio_task_db_v1';
 function loadTaskDB() {
@@ -678,7 +714,7 @@ function relativeDay(dateStr) {
 // source of truth instead of a second inline copy.
 function getTodaysPatients(patients=[]) {
   const today = new Date().toDateString();
-  return patients.filter(p => new Date(p.updatedAt).toDateString() === today);
+  return withoutSamples(patients).filter(p => new Date(p.updatedAt).toDateString() === today);
 }
 
 
@@ -723,14 +759,18 @@ function PatientRowCompact({ patient, isActive, specialtyLabel, careSettingLabel
         {getInitials(patient.name)}
       </div>
       <div style={{flex:1,minWidth:0}}>
-        <div style={{fontWeight:800,fontSize:"0.88rem",color:"#111827",
-          whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-          {patient.name || "Unnamed patient"}
-          {patient.hasRedFlags && <span style={{marginLeft:6,fontSize:"0.72rem"}}>🚩</span>}
+        <div style={{display:"flex",alignItems:"center",gap:6,minWidth:0,fontWeight:800,fontSize:"0.88rem",color:"#111827"}}>
+          <span style={{minWidth:0,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+            {patient.name || "Unnamed patient"}
+          </span>
+          {patient.hasRedFlags && <span style={{flexShrink:0,fontSize:"0.72rem"}}>🚩</span>}
         </div>
-        <div style={{fontSize:"0.76rem",color:"#9CA3AF",marginTop:1,
-          whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-          {subtitle}
+        <div style={{display:"flex",alignItems:"center",gap:6,minWidth:0,fontSize:"0.76rem",color:"#9CA3AF",marginTop:1}}>
+          {isSamplePatient(patient) && (
+            <span style={{flexShrink:0,padding:"0 7px",borderRadius:999,background:"#F3F4F6",
+              color:"#6B7280",fontSize:"0.66rem",fontWeight:700,lineHeight:"16px"}}>Sample</span>
+          )}
+          <span style={{minWidth:0,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{subtitle}</span>
         </div>
       </div>
       <div style={{flexShrink:0,display:"flex",alignItems:"center",gap:4}}>
@@ -760,7 +800,7 @@ function PatientRowCompact({ patient, isActive, specialtyLabel, careSettingLabel
 }
 
 // ─── PATIENT DATABASE PANEL ────────────────────────────────────────────────────
-function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, onClose: onCloseProp, onImport, onNav, liveData={}, embedded=false }) {
+function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, onRemoveSamples, onClose: onCloseProp, onImport, onNav, liveData={}, embedded=false }) {
   // embedded=true (2026-08-17): renders as a normal full-width tab page
   // (mounted from the "clinical" ALL_TESTS entry in AppFull.jsx, same
   // pattern as Home/PhysioFeed/Learn/Profile) instead of the original
@@ -911,7 +951,7 @@ const innerBody = (
           {/* Header (2026-09-02, Aditi: "make the patient page in clinical
               same to same" as a reference design) -- title + subtitle only,
               no bell clutter (the red-flag count still surfaces via the
-              "Flags only" filter in Sort, filters & backup below). The ✕
+              "Flags only" filter in Sort, filter, import or export below). The ✕
               close button stays, but only for the non-embedded Switch/Load
               Patient popup -- that's a real modal with no other explicit
               close control besides the backdrop tap; the embedded Clinical
@@ -1030,6 +1070,21 @@ const innerBody = (
               )}
             </div>
 
+            {onRemoveSamples && patients.some(isSamplePatient) && (
+              <div data-testid="sample-patients-note" style={{display:"flex",alignItems:"center",gap:10,
+                padding:"10px 12px",marginBottom:10,background:"#F9FAFB",border:"1px solid #E5E7EB",
+                borderRadius:12}}>
+                <div style={{flex:1,fontSize:"0.76rem",lineHeight:1.4,color:"#6B7280"}}>
+                  Patients tagged <b>Sample</b> are for practice. They are not counted and stay on this phone.
+                </div>
+                <button type="button" onClick={onRemoveSamples} style={{flexShrink:0,padding:"7px 12px",
+                  background:"#fff",border:"1px solid #D1D5DB",borderRadius:8,color:"#374151",
+                  fontWeight:700,fontSize:"0.76rem",cursor:"pointer",whiteSpace:"nowrap"}}>
+                  Remove samples
+                </button>
+              </div>
+            )}
+
             {filtered.length === 0 ? (
               <div style={{textAlign:"center",padding:"30px 10px",color:"#9CA3AF",
                 background:"#fff",border:"1.5px solid #EEEDF5",borderRadius:16}}>
@@ -1091,7 +1146,7 @@ const innerBody = (
           <div style={{padding:"0 18px 20px"}}>
             <button onClick={()=>setShowTools(s=>!s)}
               style={{background:"none",border:"none",padding:0,cursor:"pointer",fontSize:"0.76rem",fontWeight:700,color:"#9CA3AF"}}>
-              {showTools ? "Hide options ↑" : "Sort, filters & backup ↓"}
+              {showTools ? "Hide options ↑" : "Sort, filter, import or export ↓"}
             </button>
             {showTools && (
               <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:8}}>
@@ -1448,12 +1503,86 @@ function PostureSessionsView({ d, C, onNav }) {
   );
 }
 
+// ── Reading the patients back from Supabase ──────────────────────────────────
+// Used on every app start. It used to be one `select *` for the whole list; a
+// record with big attachments, or a slow phone connection, could make that one
+// request fail -- and the failure was swallowed, so the person just saw an
+// empty list although everything was safe in the cloud. Now: a few records at a
+// time, each retried, and if a group still fails it is retried one record at a
+// time so a single heavy record can't hide all the others. Returns the rows it
+// got plus how many records it could not read (and why).
+const PATIENT_PAGE_SIZE = 8;
+const PATIENT_RETRY_DELAYS_MS = [400, 1200];
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function fetchPatientRange(userId, from, size, retryDelays) {
+  let lastError = null;
+  for (let attempt = 0; attempt <= retryDelays.length; attempt++) {
+    let query = supabase.from("patients").select("*")
+      .eq("user_id", userId)
+      .is("deleted_at", null) // hide soft-deleted rows -- see deletePatient() in AppFull.jsx
+      .order("updated_at", { ascending: false })
+      .order("id")
+      .range(from, from + size - 1);
+    // Newer supabase-js retries failed reads itself (1s, 2s, 4s) -- on top of
+    // ours that made an outage take 20+ seconds to be reported. Ours is enough.
+    if (typeof query.retry === "function") query = query.retry(false);
+    const { data, error } = await query;
+    if (!error) return { rows: data || [], error: null };
+    lastError = error;
+    if (attempt < retryDelays.length) await wait(retryDelays[attempt]);
+  }
+  return { rows: [], error: lastError };
+}
+
+async function fetchPatientsFromSupabase(userId, { pageSize = PATIENT_PAGE_SIZE, retryDelays = PATIENT_RETRY_DELAYS_MS, maxPages = 250 } = {}) {
+  const rows = [];
+  let skipped = 0;
+  let error = null;
+  for (let pageNo = 0; pageNo < maxPages; pageNo++) {
+    const from = pageNo * pageSize;
+    const page = await fetchPatientRange(userId, from, pageSize, retryDelays);
+    if (!page.error) {
+      rows.push(...page.rows);
+      if (page.rows.length < pageSize) break;
+      continue;
+    }
+    error = page.error;
+    if (pageSize === 1) { skipped += 1; break; }
+    // This group failed even after retries: read it one record at a time.
+    let readOne = false;
+    let reachedEnd = false;
+    let failedInARow = 0;
+    const skippedBefore = skipped;
+    for (let i = 0; i < pageSize; i++) {
+      const one = await fetchPatientRange(userId, from + i, 1, retryDelays.slice(0, 1));
+      if (one.error) {
+        skipped += 1; error = one.error; failedInARow += 1;
+        // Two in a row with none read yet means it is not one heavy record
+        // but the whole connection: stop quickly so the warning shows.
+        if (!readOne && failedInARow >= 2) break;
+        continue;
+      }
+      failedInARow = 0;
+      if (one.rows.length === 0) { reachedEnd = true; break; }
+      readOne = true;
+      rows.push(...one.rows);
+    }
+    // Nothing in the group could be read (offline, signed out, a real
+    // permission problem): carrying on would just repeat the same failure.
+    if (!readOne) skipped = skippedBefore; // not particular records: the connection itself
+    if (reachedEnd || !readOne) break;
+  }
+  return { rows, skipped, error };
+}
+
 // ── Exports for AppFull.jsx ──────────────────────────────────────────────────
 export {
   dbKey, draftKey,
   loadPatientDB, savePatientDB, savePatientDBLocalOnly,
-  hydrateLocalCache, clearPatientCache,
+  hydrateLocalCache, clearPatientCache, relockLocalCache,
   isSyncDirty, flushPendingSync,
+  fetchPatientsFromSupabase,
   loadTaskDB, saveTaskDB,
   genId,
   PatientDatabasePanel, TreatmentCaseloadPanel,

@@ -7,11 +7,10 @@ import { useAppData } from "../context/AppDataContext.jsx";
 
 const CATEGORIES = ["All", "MSK", "Neuro", "Sports", "Cardio"];
 const SORTS = [{ key: "oldest", label: "Oldest first" }, { key: "newest", label: "Newest first" }];
-const MODES = [{ key: "curated", label: "Curated" }, { key: "live", label: "Search Live" }];
+const MODES = [{ key: "live", label: "Search research" }, { key: "curated", label: "Curated" }];
 
 export default function EvidencePage() {
   const { evidence } = useAppData();
-  const [mode, setMode] = useState("curated");
   const [category, setCategory] = useState("All");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("oldest");
@@ -22,6 +21,8 @@ export default function EvidencePage() {
   // (2026-09-17, Aditi: "opening the article means... open the article
   // about the conclusion and result").
   const highlightId = useLocation().state?.articleId;
+  // Search is the main way in; a Home-screen article link still lands on Curated.
+  const [mode, setMode] = useState(highlightId ? "curated" : "live");
   const cardRefs = useRef({});
   useEffect(() => {
     if (!highlightId) return;
@@ -39,15 +40,24 @@ export default function EvidencePage() {
 
   return (
     <main className="flex-1 min-w-0">
-      <div className="mb-5">
-        <h1 className="pf-font-head text-xl font-extrabold text-[#2B2140] mb-1">Evidence</h1>
-        <p className="pf-font-body text-sm text-[#8A7FA3]">Research and systematic reviews, curated for practicing clinicians.</p>
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="pf-font-head text-3xl font-extrabold text-[#2B2140] mb-1">Evidence Library</h1>
+          <p className="pf-font-body text-base text-[#8A7FA3]">Research you can use in practice.</p>
+        </div>
+        <svg viewBox="0 0 96 80" className="w-24 h-20 shrink-0" aria-hidden="true">
+          <ellipse cx="48" cy="40" rx="44" ry="34" fill="#F1EEFB" />
+          <path d="M16 24 L46 30 L46 66 L16 60 Z" fill="#fff" stroke="#6D28D9" strokeWidth="3" strokeLinejoin="round" />
+          <path d="M80 24 L50 30 L50 66 L80 60 Z" fill="#fff" stroke="#6D28D9" strokeWidth="3" strokeLinejoin="round" />
+          <path d="M22 34 L40 38 M22 42 L40 46 M22 50 L40 54 M74 34 L56 38 M74 42 L56 46 M74 50 L56 54" stroke="#C4B5FD" strokeWidth="2.5" strokeLinecap="round" />
+          <path d="M80 14 L84 8 M86 20 L92 18" stroke="#7C3AED" strokeWidth="2.5" strokeLinecap="round" />
+        </svg>
       </div>
 
       <div className="flex items-center gap-1 mb-4 bg-white border-2 border-[#F1EEFB] rounded-2xl p-1.5 shadow-sm w-fit">
         {MODES.map((m) => (
           <button key={m.key} onClick={() => setMode(m.key)}
-            className={`pf-font-head px-4 py-1.5 rounded-xl text-sm font-bold transition-colors ${mode === m.key ? "bg-[#FFB020] text-[#3A2A00]" : "text-[#8A7FA3] hover:bg-[#F7F5FF]"}`}>
+            className={`pf-font-head px-4 py-1.5 rounded-xl text-sm font-bold transition-colors ${mode === m.key ? "bg-violet-600 text-white" : "text-[#8A7FA3] hover:bg-[#F7F5FF]"}`}>
             {m.label}
           </button>
         ))}

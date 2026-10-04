@@ -14,7 +14,7 @@
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, waitFor } from "@testing-library/react";
-import { PdfReportsModal } from "../AppModules.jsx";
+import PdfReportsModal from "../PdfReportsModal.jsx";
 
 async function generateAssessmentPdf(data) {
   let captured = "";
@@ -78,5 +78,144 @@ describe("Assessment Report PDF -- every objective/advanced category present wit
     expect(html).toContain("Outcome Measures");
     expect(html).toContain("ODI");
     expect(html).toContain("32");
+  });
+
+  it("never prints NeurologicalAssessment.jsx's/CardiopulmonaryAssessment.jsx's internal `meta` bookkeeping as a section", async () => {
+    // meta (setting/stepOrder/customStepsMeta/selectedRegions) is how those
+    // wizards remember which steps were picked and in what order -- not
+    // clinical content. specialtyPage used to iterate every top-level key
+    // of d.neuro/d.cardio with no allowlist, so it printed this as its own
+    // "Meta" section, with customStepsMeta literally rendering as
+    // "[object Object]" (2026-10-02, Aditi's screenshot: "why this section
+    // showing... remove these things").
+    const data = {
+      dem_name: "Meta Leak Test",
+      neuro: {
+        safety: { redFlags: "Not required" },
+        subjective: { chiefComplaint: "Walk independently and regain use of right hand" },
+        meta: {
+          setting: "inpatient",
+          stepOrder: ["demographics", "safety", "subjective", "chart"],
+          customStepsMeta: { "nx-stroke-neglect-inattention": { label: "Neglect / Inattention Screen" } },
+        },
+      },
+      cardio: {
+        observation: { generalAppearance: "Alert, no distress" },
+        meta: { setting: "outpatient", stepOrder: ["observation"], customStepsMeta: {} },
+      },
+    };
+    const html = await generateAssessmentPdf(data);
+
+    expect(html).toContain("Not required");
+    expect(html).toContain("Walk independently and regain use of right hand");
+    expect(html).toContain("Alert, no distress");
+
+    expect(html).not.toContain("[object Object]");
+    expect(html).not.toContain("Step Order");
+    expect(html).not.toContain("Custom Steps Meta");
+    expect(html).not.toMatch(/>\s*Meta\s*</);
+  });
+
+  it("drops the empty/hardcoded Chief complaint, Red & yellow flags, History and Goals cards for every patient, Ortho included", async () => {
+    // Those 4 cards are the generic Ortho-intake fallback's own fields
+    // (cc_/rf_/pmh_ etc), and Red & yellow flags asserted a false
+    // "No red flags identified" whenever nothing had actually been
+    // screened. Removed everywhere this fallback runs -- not just for
+    // Neuro/Cardio patients, where they also duplicated that module's own
+    // real Subjective/Safety sections (2026-10-02, Aditi: "remove this
+    // chief red flags goals history... totally remove", then "remove for
+    // ortho also").
+    const neuroData = {
+      dem_name: "No Ortho Patient",
+      cc_vas_now: "6",
+      neuro: { subjective: { chiefComplaint: "Walk independently and regain use of right hand" } },
+    };
+    const orthoLegacyData = {
+      dem_name: "Legacy Ortho Patient",
+      cc_main: "Low back pain",
+      cc_vas_now: "6",
+      rf_action: "No red flags — safe to proceed",
+    };
+    for (const data of [neuroData, orthoLegacyData]) {
+      const html = await generateAssessmentPdf(data);
+      expect(html).not.toContain("Chief complaint");
+      expect(html).not.toContain("Red & yellow flags");
+      expect(html).not.toContain("Past medical history & medications");
+      expect(html).not.toContain("Goals & lifestyle");
+      expect(html).not.toContain("No red flags identified");
+      // Pain scores isn't one of the hardcoded/duplicated ones -- still shown.
+      expect(html).toContain("Pain scores");
+    }
+    expect(await generateAssessmentPdf(neuroData)).toContain("Walk independently and regain use of right hand");
+  });
+
+  it("never invents care plan goals, manual therapy techniques, or exercises when none were entered", async () => {
+    // Treatment Plan page used to always print a hardcoded 3rd goal per
+    // tier, a fabricated 6-technique table, and (via gatherExercises'
+    // empty-fallback) a diagnosis-keyword-matched 4-exercise program --
+    // all printed as if the clinician had entered them (2026-10-02,
+    // Aditi: "se what are hard coded?" audit, then "remove this any thing
+    // heard corded remove t"). None of this is real without clinician
+    // input, so an empty case must show honest placeholders only.
+    const data = { dem_name: "No Plan Yet", cc_main: "Low back pain" };
+    const html = await generateAssessmentPdf(data);
+
+    expect(html).not.toContain("Reduce swelling/inflammation");
+    expect(html).not.toContain("Return to work/leisure activities");
+    expect(html).not.toContain("Prevent recurrence");
+    expect(html).toContain("No care plan goals recorded yet.");
+
+    expect(html).not.toContain("Soft Tissue Mobilisation");
+    expect(html).not.toContain("Joint Mobilisation (Grade III");
+    expect(html).not.toContain("Therapeutic Ultrasound");
+    expect(html).not.toContain("Dry Needling");
+    expect(html).toContain("No manual therapy techniques logged yet.");
+
+    expect(html).not.toContain("Pelvic Tilt");
+    expect(html).not.toContain("Chin Tuck");
+    expect(html).not.toContain("Quad Set");
+    expect(html).not.toContain("Diaphragmatic Breathing");
+    expect(html).toContain("Not yet prescribed");
+  });
+
+  it("never fills in a pain/PSFS target, frequency, duration or exercise dosage the clinician left blank", async () => {
+    const data = {
+      dem_name: "Blank Plan", cc_vas_now: "6", om_psfs1_now: "4",
+      tx_exercise_prescription: [{ id: "e1", name: "Bridge" }],
+    };
+    const html = await generateAssessmentPdf(data);
+    expect(html).toContain("Bridge");
+    expect(html).not.toContain("2–3x per week");
+    expect(html).not.toContain("6–8 wks");
+    expect(html).not.toMatch(/target\s*(&le;|&ge;)/);
+    expect(html).not.toContain("3 sets");
+    expect(html).not.toContain("10 reps");
+  });
+
+  it("prints only the diagnosis the clinician entered, never the diagnosis engine's suggestions", async () => {
+    let captured = "";
+    window.open = vi.fn(() => ({ document: { open(){}, write(h){ captured = h; }, close(){} }, print(){} }));
+    window.alert = vi.fn();
+    const dx = { dx: [{ diagnosis: "Engine Suggested Radiculopathy", icd10: "M54.16", confidence: 82 }] };
+    render(<PdfReportsModal data={{ dem_name: "Dx Test", soap_a_diagnosis: "My Entered Diagnosis" }} dx={dx} onClose={()=>{}} />);
+    await waitFor(() => { if (!captured) throw new Error("not yet"); }, { timeout: 5000 });
+    expect(captured).toContain("My Entered Diagnosis");
+    expect(captured).not.toContain("Engine Suggested Radiculopathy");
+    expect(captured).not.toContain("82%");
+  });
+
+  it("states the diagnosis once on the Treatment Plan page, not twice", async () => {
+    // "Working diagnosis" (top card) and "Clinical diagnosis" (bottom
+    // section) both printed on the same Treatment Plan page (2026-10-02,
+    // Aditi: "clinical diagnosis 2 bar aa raha hai"). Clinical diagnosis
+    // has the real detail (ICD-10, confidence, reasoning) -- dropped the
+    // terse duplicate instead.
+    const data = { dem_name: "Diagnosis Dedup Test", soap_a_diagnosis: "Lumbar radiculopathy (L5)", soap_icd10: "M54.16" };
+    const html = await generateAssessmentPdf(data);
+
+    expect(html).not.toContain("Working diagnosis");
+    const matches = html.match(/Clinical diagnosis/g) || [];
+    expect(matches.length).toBe(1);
+    expect(html).toContain("Lumbar radiculopathy (L5)");
   });
 });

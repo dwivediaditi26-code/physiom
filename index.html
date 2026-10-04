@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#7c3aed" />
-    <meta name="description" content="PhysioMind — Posture Screening & Education (not a medical device; not medical advice)" />
+    <meta name="description" content="PhysioMind — Physiotherapy Assessment & Education (not a medical device; not medical advice)" />
 
     <!-- PWA / App install -->
     <link rel="manifest" href="/manifest.webmanifest" />
@@ -152,7 +152,7 @@
       input[type="range"].pm-nrs-range::-moz-range-thumb { width: 26px; height: 26px; border-radius: 50%; background: #6C5CE7; border: 3px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.28); cursor: pointer; }
     </style>
 
-    <title>PhysioMind — Posture Screening & Education</title>
+    <title>PhysioMind — Physiotherapy Assessment & Education</title>
   </head>
   <body>
 
@@ -184,17 +184,6 @@
 
     <!-- Main app bundle — Vite injects this -->
     <script type="module" src="/src/main.jsx"></script>
-  <script type="module">
-    // PROD-only: the SW's cache-first fetch handling races Vite's own dev
-    // module/HMR requests (@vite/client, main.jsx, @react-refresh), which
-    // can fail them outright and leave `npm run dev` on a blank page.
-    if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(r => console.log('[SW] registered:', r.scope))
-          .catch(e => console.warn('[SW] registration failed:', e));
-      });
-    }
-  </script>
+    <!-- The service worker is registered from src/main.jsx (src/pwa/registerServiceWorker.js): production web build only, not inside the Android/iOS app. -->
   </body>
 </html>

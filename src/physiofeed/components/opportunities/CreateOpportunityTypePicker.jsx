@@ -19,7 +19,7 @@ const TYPES = [
 
 export default function CreateOpportunityTypePicker({ onClose, onPick }) {
   return createPortal(
-    <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-slate-900/40 px-0 sm:px-4 pb-[88px] sm:pb-4">
+    <div className="physiofeed-root fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-slate-900/40 px-0 sm:px-4 pb-[88px] sm:pb-4">
       <div className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl overflow-y-auto max-h-[calc(100vh-104px)] sm:max-h-[85vh]">
         <div className="flex items-center justify-between px-5 pt-5 pb-3">
           <h2 className="text-lg font-bold text-slate-900">What do you want to post?</h2>

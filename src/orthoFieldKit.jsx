@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { FieldLabel, SectionTitle } from "./assessmentTypography.jsx";
+import { uploadImage, uploadErrorMessage } from "./services/cloudinary.js";
 
 /* ============================================================
    BRAND / TOKENS — shared by every Ortho assessment module
@@ -39,26 +40,6 @@ export function Hint({ children }) {
 // location; same convention StudyImage.jsx itself already uses.
 export const CLOUDINARY_BASE = "https://res.cloudinary.com/dr15y1pwj/image/upload";
 
-// Rejects a picked file before it reaches Cloudinary if it isn't a real
-// photo -- guards against a rare mobile-browser failure mode where the file
-// picker hands back a valid-but-empty stub image (e.g. an iCloud photo
-// whose full-res version hadn't finished downloading yet) instead of the
-// actual photo. These slots are shared across every user of the app, so a
-// stub upload silently overwrites the real photo for everyone, not just
-// the uploader (2026-09-25, Aditi: a Neuro info-card photo showed solid
-// black after upload -- the stored file turned out to be a genuine, fully
-// opaque 1x1px image, not a broken render; same unguarded upload pattern
-// as SheetHero's own upload below).
-function isRealPhoto(file) {
-  return new Promise((resolve) => {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => { URL.revokeObjectURL(url); resolve(img.naturalWidth >= 40 && img.naturalHeight >= 40); };
-    img.onerror = () => { URL.revokeObjectURL(url); resolve(false); };
-    img.src = url;
-  });
-}
-
 // `name` is always a deterministic Cloudinary public_id (ROM_DATA/MMT_DATA/
 // SPECIAL_TESTS_DATA/neuroExamLibraryData assign one to every movement,
 // muscle, test and nerve-root level up front -- id known before any photo
@@ -85,33 +66,11 @@ function SheetHero({ name }) {
     if (!file) return;
     setUploading(true);
     try {
-      if (!(await isRealPhoto(file))) throw new Error("empty-image");
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("upload_preset", "ml_default");
-      fd.append("public_id", name);
-      const res = await fetch("https://api.cloudinary.com/v1_1/dr15y1pwj/image/upload", { method: "POST", body: fd });
-      if (!res.ok) throw new Error("Upload failed");
-      // The unsigned "ml_default" preset has Overwrite off in Cloudinary's
-      // dashboard -- uploading to a public_id that already holds a photo is
-      // silently ignored: Cloudinary still answers 200 OK, but
-      // `existing: true` means it just handed back the OLD asset's info and
-      // stored nothing new. Needs the Overwrite toggle turned on for
-      // ml_default in the Cloudinary console to actually fix -- and
-      // Cloudinary hard-blocks that toggle for unsigned presets entirely
-      // (confirmed in-console: "Cannot set overwrite to true in unsigned
-      // presets"), so a real fix needs signed uploads from a server-side
-      // endpoint, not a preset setting.
-      const json = await res.json();
-      if (json.existing) throw new Error("blocked-overwrite");
+      await uploadImage(file, name);
       setFailed(false);
       setVersion(Date.now());
     } catch (err) {
-      alert(err?.message === "empty-image"
-        ? "That photo didn't come through properly (it looked empty) — please try again."
-        : err?.message === "blocked-overwrite"
-        ? "This photo slot already has an image and couldn't be replaced right now — please let the app admin know."
-        : "Photo upload failed — check your connection and try again.");
+      alert(uploadErrorMessage(err));
     } finally {
       setUploading(false);
     }
@@ -398,71 +357,12 @@ export function LRGrid({ label, rows, columns = ["Right", "Left"], options, valu
   );
 }
 
-// Plain browser speech-to-text (Web Speech API), no AI parsing -- dictates
-// straight into whichever field passes `voice`. Same pattern as Neuro's/
-// Cardio's per-field mic (NeurologicalAssessment.jsx / CardiopulmonaryAssessment.jsx);
-// Ortho previously only had the heavier AI Intake panel (speak the whole
-// narrative, AI extracts structured fields) with no plain per-field mic on
-// e.g. Chief complaint itself (2026-09-09, Aditi: "speech to text ... in
-// all chief complaint ortho neuro cardio").
-function useVoiceInput(baseValue, onChange) {
-  const [recording, setRecording] = useState(false);
-  const recognitionRef = useRef(null);
-  const start = () => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { alert("Voice input requires the Chrome browser."); return; }
-    const base = baseValue || "";
-    const rec = new SR();
-    rec.continuous = true;
-    rec.interimResults = true;
-    rec.lang = "en-IN";
-    // Re-summing e.results[0..length] on every event double-counts on a
-    // long dictation: continuous mode periodically re-segments and can hand
-    // back already-finalized entries again alongside new ones. Starting the
-    // loop at e.resultIndex (the one index the API guarantees is where THIS
-    // event's new/changed results begin) and accumulating into a plain
-    // closure variable -- one per recording session, since `start` runs
-    // fresh each press -- means an already-committed index is never re-
-    // summed no matter how the engine re-emits it (2026-09-25, Aditi: voice
-    // dictation repeating itself, see OrthoAIIntakePanel.jsx's matching fix).
-    let finalTranscript = "";
-    rec.onresult = (e) => {
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) finalTranscript += e.results[i][0].transcript + " ";
-      }
-      if (finalTranscript) onChange((base + " " + finalTranscript).trim());
-    };
-    rec.onend = () => setRecording(false);
-    rec.onerror = () => setRecording(false);
-    recognitionRef.current = rec;
-    rec.start();
-    setRecording(true);
-  };
-  const stop = () => {
-    if (recognitionRef.current) { try { recognitionRef.current.stop(); } catch {} recognitionRef.current = null; }
-    setRecording(false);
-  };
-  return { recording, toggle: () => (recording ? stop() : start()) };
-}
-
-function VoiceMicButton({ recording, onClick }) {
-  return (
-    <button type="button" onClick={onClick} title={recording ? "Stop recording" : "Speak"}
-      style={{ flexShrink: 0, width: 34, height: 34, marginLeft: 6, borderRadius: 8, border: `1.5px solid ${recording ? "#dc2626" : "#d8ccE8"}`,
-        background: recording ? "#dc2626" : "#fff", color: recording ? "#fff" : "#111", fontSize: "0.9rem", cursor: "pointer", fontFamily: "inherit" }}>
-      {recording ? "⏹" : "🎤"}
-    </button>
-  );
-}
-
-export function TextField({ label, value, onChange, placeholder, hint, howTo, unit, voice }) {
-  const v = useVoiceInput(value, onChange);
+export function TextField({ label, value, onChange, placeholder, hint, howTo, unit }) {
   return (
     <FieldShell label={label} hint={hint} howTo={howTo}>
-      <div className="text-input-wrap" style={voice ? { display: "flex", alignItems: "center" } : undefined}>
+      <div className="text-input-wrap">
         <input className="text-input" value={value || ""} placeholder={placeholder || ""} onChange={(e) => onChange(e.target.value)} />
         {unit && <span className="combo-unit">{unit}</span>}
-        {voice && <VoiceMicButton recording={v.recording} onClick={v.toggle} />}
       </div>
     </FieldShell>
   );
@@ -752,13 +652,11 @@ export function VitalRow({ label, value, onChange, unit, howTo, richItem, slider
   );
 }
 
-export function TextArea({ label, value, onChange, placeholder, hint, howTo, voice }) {
-  const v = useVoiceInput(value, onChange);
+export function TextArea({ label, value, onChange, placeholder, hint, howTo }) {
   return (
     <FieldShell label={label} hint={hint} howTo={howTo}>
-      <div style={voice ? { display: "flex", alignItems: "flex-start" } : undefined}>
-        <textarea className="textarea" rows={2} value={value || ""} placeholder={placeholder || "Type here..."} onChange={(e) => onChange(e.target.value)} style={voice ? { flex: 1 } : undefined} />
-        {voice && <VoiceMicButton recording={v.recording} onClick={v.toggle} />}
+      <div>
+        <textarea className="textarea" rows={2} value={value || ""} placeholder={placeholder || "Type here..."} onChange={(e) => onChange(e.target.value)} />
       </div>
     </FieldShell>
   );
@@ -799,10 +697,14 @@ export function YesNo({ label, value, onChange, hint, howTo }) {
    built-in MMT scale (0–3 red, 4 amber, 5 green), or pass an explicit
    `tone` ("normal" | "mild" | "severe") when the caller has its own
    comparison logic (e.g. ROM value vs textbook norm). */
-export function Stepper({ value, onChange, min = 0, max = 99, step = 1, colorize, tone: toneProp, square, large }) {
+// `placeholder` is the faint hint shown while the box is empty (default "--"); `startAt` is
+// where the arrows begin counting from when the box is empty (ROM passes the movement's
+// normal value, so the box can stay empty -- nothing looks entered -- while typing, or
+// nudging from normal with the arrows, both still work).
+export function Stepper({ value, onChange, min = 0, max = 99, step = 1, colorize, tone: toneProp, square, large, placeholder = "--", startAt }) {
   const num = value === undefined || value === "" ? null : Number(value);
   function bump(delta) {
-    const base = num === null ? (min > 0 ? min : 0) : num;
+    const base = num === null ? (startAt != null ? Number(startAt) : min > 0 ? min : 0) : num;
     const next = Math.min(max, Math.max(min, base + delta));
     onChange(String(next));
   }
@@ -827,7 +729,7 @@ export function Stepper({ value, onChange, min = 0, max = 99, step = 1, colorize
           type="number"
           inputMode="decimal"
           value={value ?? ""}
-          placeholder="--"
+          placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)}
         />
         <div className="stepper-sq-arrows">
@@ -845,7 +747,7 @@ export function Stepper({ value, onChange, min = 0, max = 99, step = 1, colorize
         type="number"
         inputMode="decimal"
         value={value ?? ""}
-        placeholder="--"
+        placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
       />
       <div className="stepper-arrows">
@@ -944,7 +846,7 @@ export function StepNav({ steps, currentIndex, visited, onJump, onAddClick, requ
                 </span>
               )}
             </span>
-            <span className="step-circle-label">{s.label}</span>
+            <span className="step-circle-label">{stepBarLabel(s.label)}</span>
           </button>
         );
       })}
@@ -956,6 +858,25 @@ export function StepNav({ steps, currentIndex, visited, onJump, onAddClick, requ
       </button>
     </div>
   );
+}
+
+// Labels that do not fit the 56px step-bar circle ("Demograp...", "General Observatic...")
+// get a shorter wording there. The full name is still the tooltip and the screen heading.
+// "\u00AD" is a soft hyphen: the word may break there ("Neuro-" / "vascular") and
+// shows a hyphen only if it does.
+const STEP_BAR_SHORT_LABELS = {
+  "Demographics": "Patient",
+  "General Observation": "Observe",
+  "Observation": "Observe",
+  "Neurovascular": "Neuro\u00ADvascular",
+  "Precautions & Safety": "Safety",
+  "Neurological Screen": "Neuro Screen",
+  "Functional Mobility": "Mobility",
+  "Gait / Ambulation": "Gait",
+  "MMT / Muscle Activation": "MMT",
+};
+export function stepBarLabel(label) {
+  return STEP_BAR_SHORT_LABELS[label] || label;
 }
 
 export function useSectionData(data, setData, key) {

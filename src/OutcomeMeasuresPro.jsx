@@ -99,9 +99,6 @@ ${sc.fields.map((f,i)=>`<div class="question">
 <div class="score-box">
   <div style="font-weight:700;font-size:12px;margin-bottom:8px">Scoring</div>
   <div style="font-size:10px;color:#374151">Total Score: _______ ${sc.unit} &nbsp;&nbsp; Interpretation: _______________________</div>
-  <div style="margin-top:8px;font-size:10px">
-    ${Object.entries(sc.interpret?{a:0}:{}).length>0?`Interpretation guide printed on reverse.`:""}
-  </div>
 </div>
 <div class="disclaimer">This validated outcome measure is for clinical use only. PhysioMind · ${clinicName} · ${new Date().toLocaleDateString("en-IN")}</div>
 </body></html>`;

@@ -1,3 +1,4 @@
+import { MedicalRecordsSection } from "./MedicalRecords.jsx";
 import React, { useState, useMemo, useRef, useEffect, useContext, createContext, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
 import InfoCard from "./InfoCard.jsx";
@@ -9,9 +10,11 @@ import { NeuroCarePlanSection, formatNeuroCarePlanSection } from "./NeuroCarePla
 import { orthoStyles } from "./orthoStyles.js";
 import { humanizeKey } from "./medicalAbbreviations.js";
 import { TYPO, SPACING, AssessmentTitle, FieldLabel, SummaryRow } from "./assessmentTypography.jsx";
-import { Icon } from "./StepIcons.jsx";
+import { Icon, customStepIcon, stepIconName, sanitizeStepsMeta } from "./StepIcons.jsx";
 import { useWizardStepHistory } from "./useWizardStepHistory.js";
 import ShareAssessmentModal, { SHARE_EXCLUDED_STEP_IDS } from "./ShareAssessmentModal.jsx";
+import { trackEvent } from "./analytics/trackEvent.js";
+import { stepBarLabel } from "./orthoFieldKit.jsx";
 
 // Same rich Outcome Measures tool Ortho uses (full searchable/categorized
 // scale library, guided question-by-question fill, blank-PDF export, score
@@ -121,6 +124,7 @@ const STEP_META = [
   { id: "safety", icon: <Icon name="siren" />, label: "Safety / Medical Stability" },
   { id: "subjective", icon: <Icon name="speech" />, label: "Subjective Assessment" },
   { id: "chart", icon: <Icon name="folder" />, label: "Medical / Chart Review" },
+  { id: "medicalRecords", icon: <Icon name="folder" />, label: "Medical Records" },
   { id: "observation", icon: <Icon name="eye" />, label: "General Observation" },
   { id: "cognition", icon: <Icon name="brain" />, label: "Mental Status / Cognition" },
   { id: "cranial", icon: <Icon name="eye" />, label: "Cranial Nerve Screen" },
@@ -289,64 +293,12 @@ function DateWheelField({ label, value, onChange, hint, howTo }) {
   );
 }
 
-// Plain browser speech-to-text (Web Speech API), no AI parsing -- dictates
-// straight into whichever field passes `voice`. Same SpeechRecognition
-// lookup as the Chief complaint mic on the New Patient intake form
-// (AppModules.jsx); this one is a reusable per-field mic for TextField.
-function useVoiceInput(baseValue, onChange) {
-  const [recording, setRecording] = useState(false);
-  const recognitionRef = useRef(null);
-  const start = () => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { alert("Voice input requires the Chrome browser."); return; }
-    const base = baseValue || "";
-    const rec = new SR();
-    rec.continuous = true;
-    rec.interimResults = true;
-    rec.lang = "en-IN";
-    // See orthoFieldKit.jsx's matching useVoiceInput fix: e.resultIndex is
-    // where THIS event's new/changed results begin, so accumulating from
-    // there into a plain per-session closure variable avoids re-summing an
-    // already-committed index the engine re-emits on a long dictation
-    // (2026-09-25, Aditi: voice dictation repeating itself).
-    let finalTranscript = "";
-    rec.onresult = (e) => {
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) finalTranscript += e.results[i][0].transcript + " ";
-      }
-      if (finalTranscript) onChange((base + " " + finalTranscript).trim());
-    };
-    rec.onend = () => setRecording(false);
-    rec.onerror = () => setRecording(false);
-    recognitionRef.current = rec;
-    rec.start();
-    setRecording(true);
-  };
-  const stop = () => {
-    if (recognitionRef.current) { try { recognitionRef.current.stop(); } catch {} recognitionRef.current = null; }
-    setRecording(false);
-  };
-  return { recording, toggle: () => (recording ? stop() : start()) };
-}
-
-function VoiceMicButton({ recording, onClick }) {
-  return (
-    <button type="button" onClick={onClick} title={recording ? "Stop recording" : "Speak"}
-      style={{ flexShrink: 0, width: 34, height: 34, marginLeft: 6, borderRadius: 8, border: `1.5px solid ${recording ? "#dc2626" : "#d8ccE8"}`,
-        background: recording ? "#dc2626" : "#fff", color: recording ? "#fff" : "#111", fontSize: "0.9rem", cursor: "pointer", fontFamily: "inherit" }}>
-      {recording ? "⏹" : "🎤"}
-    </button>
-  );
-}
-
-function TextField({ label, value, onChange, placeholder, hint, howTo, info, unit, voice }) {
-  const v = useVoiceInput(value, onChange);
+function TextField({ label, value, onChange, placeholder, hint, howTo, info, unit }) {
   return (
     <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
-      <div className="text-input-wrap" style={voice ? { display: "flex", alignItems: "center" } : undefined}>
+      <div className="text-input-wrap">
         <input className="text-input" value={value || ""} placeholder={placeholder || ""} onChange={(e) => onChange(e.target.value)} />
         {unit && <span className="combo-unit">{unit}</span>}
-        {voice && <VoiceMicButton recording={v.recording} onClick={v.toggle} />}
       </div>
     </FieldShell>
   );
@@ -407,10 +359,9 @@ function SelectPopover({ options, multi, value, onChange, onClose }) {
   );
 }
 
-function SelectField({ label, type = "single", options, value, onChange, howTo, info, placeholder, hint, voice }) {
+function SelectField({ label, type = "single", options, value, onChange, howTo, info, placeholder, hint }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
-  const v = useVoiceInput(value, onChange);
   useEffect(() => {
     function onDoc(e) {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
@@ -420,7 +371,7 @@ function SelectField({ label, type = "single", options, value, onChange, howTo, 
   }, []);
   return (
     <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
-      <div className="select-wrap" ref={ref} style={voice ? { display: "flex", alignItems: "center", gap: 6 } : undefined}>
+      <div className="select-wrap" ref={ref}>
         <input
           className="select-input"
           value={value || ""}
@@ -431,7 +382,6 @@ function SelectField({ label, type = "single", options, value, onChange, howTo, 
         <button type="button" className="select-btn" onClick={() => setOpen((o) => !o)} aria-label="Choose from list">
           ▾
         </button>
-        {voice && <VoiceMicButton recording={v.recording} onClick={v.toggle} />}
         {open && (
           <SelectPopover options={options} multi={type === "multi"} value={value} onChange={onChange} onClose={() => setOpen(false)} />
         )}
@@ -615,7 +565,7 @@ function StepNav({ steps, currentIndex, visited, onJump, onAddClick }) {
             title={s.label}
           >
             <span className="step-circle-ring">{s.icon}</span>
-            <span className="step-circle-label">{s.label}</span>
+            <span className="step-circle-label">{stepBarLabel(s.label)}</span>
           </button>
         );
       })}
@@ -663,7 +613,7 @@ const MYOTOME_ROW_INFO = Object.fromEntries(MYOTOME_ROWS.map((r) => [r, neuroExa
 // points -- shared by the generic Sensory Examination step's own
 // Dermatomal Sensory Screen and the Spinal Cord Injury condition
 // library's full ASIA exam.
-const DERMATOME_ROWS = ["C5", "C6", "C7", "C8", "T1", "T4 (nipple)", "T10 (umbilicus)", "L3", "L4", "L5", "S1", "S4-5 (perianal)"];
+const DERMATOME_ROWS = ["C5", "C6", "C7", "C8", "T1", "T4 (nipple)", "T10 (umbilicus)", "L3", "L4", "L5", "S1", "S2", "S3", "S4-5 (perianal)"];
 const DERMATOME_ROW_INFO = Object.fromEntries(DERMATOME_ROWS.map((r) => [r, neuroExamLibraryData["derm" + r]]));
 
 /* ============================================================
@@ -1218,10 +1168,10 @@ function DemographicsSection({ data, setData }) {
       <SectionIntro icon={<Icon name="clipboard" />} title="Patient Information" />
       <div className="row-2">
         <div style={{ flex: 2 }}>
-          <TextField label="Patient name" value={d.name} onChange={(v) => set("name", v)} voice />
+          <TextField label="Patient name" value={d.name} onChange={(v) => set("name", v)} />
         </div>
         <div style={{ flex: 1 }}>
-          <TextField label="Age" value={d.age} onChange={(v) => set("age", v)} voice />
+          <TextField label="Age" value={d.age} onChange={(v) => set("age", v)} />
         </div>
       </div>
       <div className="row-2">
@@ -1229,10 +1179,10 @@ function DemographicsSection({ data, setData }) {
           <Segmented label="Gender" options={["Male", "Female", "Other"]} value={d.gender} onChange={(v) => set("gender", v)} />
         </div>
       </div>
-      <TextField label="Address" value={d.address} onChange={(v) => set("address", v)} placeholder="City / locality" voice />
+      <TextField label="Address" value={d.address} onChange={(v) => set("address", v)} placeholder="City / locality" />
       <Segmented label="Dominance" options={["Right", "Left"]} value={d.dominance} onChange={(v) => set("dominance", v)} />
-      <TextField label="Occupation" value={d.occupation} onChange={(v) => set("occupation", v)} placeholder="e.g. Farmer, office work" voice />
-      <TextField label="Referring doctor" value={d.referrer} onChange={(v) => set("referrer", v)} voice />
+      <TextField label="Occupation" value={d.occupation} onChange={(v) => set("occupation", v)} placeholder="e.g. Farmer, office work" />
+      <TextField label="Referring doctor" value={d.referrer} onChange={(v) => set("referrer", v)} />
       <SelectField
         label="Source of referral"
         type="single"
@@ -1240,7 +1190,7 @@ function DemographicsSection({ data, setData }) {
         value={d.referralSource}
         onChange={(v) => set("referralSource", v)}
       />
-      <TextField label="Diagnosis" value={d.diagnosis} onChange={(v) => set("diagnosis", v)} placeholder="Working / referral diagnosis" voice />
+      <TextField label="Diagnosis" value={d.diagnosis} onChange={(v) => set("diagnosis", v)} placeholder="Working / referral diagnosis" />
       <DateWheelField label="Date of onset / injury" value={d.onsetDate} onChange={(v) => set("onsetDate", v)} />
       <TextField label="Hospital / file number" value={d.hospNo} onChange={(v) => set("hospNo", v)} />
     </>
@@ -1310,7 +1260,6 @@ function SubjectiveSection({ data, setData }) {
         value={d.chiefComplaint}
         onChange={(v) => set("chiefComplaint", v)}
         howTo="Begin with an open question — 'what troubles you most?' — and let the patient (or family/caregiver if communication is impaired) lead before narrowing to focused follow-ups."
-        voice
       />
       <TextArea
         label="History of presenting condition"
@@ -1901,23 +1850,13 @@ function fmtVal(v) {
   return String(v);
 }
 
-// customStepsMeta rides inside the patient record (see the meta-persist
-// effect below), which a hard reload restores via a real JSON round-trip
-// (AppFull.jsx's DRAFT_KEY / Supabase) -- that silently strips a React
-// element's $$typeof symbol and function `type` down to a plain
-// {key, ref, props, _owner, _store} object. Still truthy, so a bare
-// `|| fallback` never catches it and StepNav crashes trying to render it
-// (2026-09-26). isValidElement is the actual check needed here.
-function customStepIcon(meta, fallback) {
-  return meta && React.isValidElement(meta.icon) ? meta.icon : fallback;
-}
 // Exported (2026-08-20, Aditi: "assessment should show like this image...
 // i command you put summary and review same to same not change at all in
 // assessment section") -- same reasoning as
 // CardiopulmonaryAssessment.jsx's matching export.
 export function buildNeuroAssessSteps(stepOrder, customStepsMeta = {}) {
   const order = stepOrder || DEFAULT_ASSESS_STEP_IDS;
-  return order.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepIcon(customStepsMeta[id], <Icon name="brain" />), label: customStepsMeta[id]?.label || "Assessment" });
+  return order.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepIcon(customStepsMeta[id], "brain"), label: customStepsMeta[id]?.label || "Assessment" });
 }
 // Same reasoning as CardiopulmonaryAssessment.jsx's matching export -- see
 // its comment.
@@ -2073,7 +2012,7 @@ const ENTRY_MODES = [
 const DOMAIN_STEP_IDS = ["cognition", "cranial", "sensory", "motor", "tone", "coordination", "balance", "gait", "functional", "outcomes"];
 const CAREPLAN_STEP_IDS = ["carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanPlan", "carePlanSessions"];
 const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "goals", carePlanTreatment: "treatment", carePlanPlan: "plan", carePlanSessions: "sessions", carePlanProgress: "progress" };
-const ALWAYS_STEP_IDS = ["demographics", "safety", "subjective", "chart", "observation", "interpretation", ...CAREPLAN_STEP_IDS, "precautions", "exercisePrescription", "summary"];
+const ALWAYS_STEP_IDS = ["demographics", "safety", "subjective", "chart", "medicalRecords", "observation", "interpretation", ...CAREPLAN_STEP_IDS, "precautions", "exercisePrescription", "summary"];
 const FULL_STEP_ORDER = ASSESS_STEPS.map((s) => s.id);
 
 function buildStepOrder(domainStepIds, customIds) {
@@ -2232,7 +2171,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
   const [data, setData] = useState(() => neuroSeed);
   const [visited, setVisited] = useState(new Set());
   const [stepOrder, setStepOrder] = useState(() => initialStepOrder);
-  const [customStepsMeta, setCustomStepsMeta] = useState(() => (hasExistingNeuro ? neuroSeed.meta?.customStepsMeta || {} : {}));
+  const [customStepsMeta, setCustomStepsMeta] = useState(() => (hasExistingNeuro ? sanitizeStepsMeta(neuroSeed.meta?.customStepsMeta) : {}));
   const [addStepOpen, setAddStepOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [activeCard, setActiveCard] = useState(null);
@@ -2278,7 +2217,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
     setCondition(existing ? s.meta?.condition || null : null);
     setVisited(new Set());
     setStepOrder(existing ? ensureAlwaysSteps(s.meta?.stepOrder || DEFAULT_ASSESS_STEP_IDS) : DEFAULT_ASSESS_STEP_IDS);
-    setCustomStepsMeta(existing ? s.meta?.customStepsMeta || {} : {});
+    setCustomStepsMeta(existing ? sanitizeStepsMeta(s.meta?.customStepsMeta) : {});
     setPhase(existing ? "assess" : "setting");
     setSelectedRegions([]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2353,7 +2292,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
   const [saveName, setSaveName] = useState("");
 
   const assessSteps = useMemo(
-    () => stepOrder.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepIcon(customStepsMeta[id], <Icon name="brain" />), label: customStepsMeta[id]?.label || "Assessment" }),
+    () => stepOrder.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepIcon(customStepsMeta[id], "brain"), label: customStepsMeta[id]?.label || "Assessment" }),
     [stepOrder, customStepsMeta]
   );
 
@@ -2447,7 +2386,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
   }
   function startAssessment(domainStepIds, customIds, customMeta = {}) {
     setStepOrder(buildStepOrder(domainStepIds, customIds));
-    setCustomStepsMeta(customMeta);
+    setCustomStepsMeta(sanitizeStepsMeta(customMeta));
     setVisited(new Set());
     setStep(1);
     setPhase("assess");
@@ -2457,7 +2396,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
     const customMeta = {};
     t.libraryItems.forEach(([cat, label]) => {
       const g = NEURO_LIBRARY.find((x) => x.cat === cat);
-      customMeta[neuroId(cat, label)] = { icon: g?.icon || <Icon name="brain" />, label };
+      customMeta[neuroId(cat, label)] = { iconName: stepIconName({ icon: g?.icon }, "brain"), label };
     });
     setCondition(t.id);
     startAssessment(t.domainSteps, customIds, customMeta);
@@ -2477,7 +2416,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
       g.items.forEach((label) => {
         const id = neuroId(cat, label);
         customIds.push(id);
-        customMeta[id] = { icon: g.icon, label };
+        customMeta[id] = { iconName: stepIconName({ icon: g.icon }, "brain"), label };
       });
     });
     startAssessment(domainSteps, customIds, customMeta);
@@ -2499,7 +2438,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
     const customMeta = {};
     customIds.forEach((id) => {
       const existing = customStepsMeta[id];
-      customMeta[id] = { icon: customStepIcon(existing, <Icon name="brain" />), label: existing?.label || "Assessment" };
+      customMeta[id] = { iconName: stepIconName(existing, "brain"), label: existing?.label || "Assessment" };
     });
     const newTemplate = { id: `t-${Date.now()}`, name: saveName.trim(), domainSteps, customIds, customMeta };
     setMyTemplates((prev) => {
@@ -2617,7 +2556,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
            icon (orthoStyles.js), this brought Neuro's own step nav in line
            with it instead of icon-only. */
         .step-circle {
-          flex: 0 0 auto; width: 48px; display: flex; flex-direction: column; align-items: center;
+          flex: 0 0 auto; width: 56px; display: flex; flex-direction: column; align-items: center;
           gap: 3px; background: none; border: none; padding: 0; cursor: pointer; color: ${BRAND.grayLight};
         }
         .step-circle-ring {
@@ -2625,7 +2564,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
           display: flex; align-items: center; justify-content: center; position: relative; transition: all .15s;
           font-size: 13px;
         }
-        .step-circle-label { font-size: 9.5px; font-weight: 600; line-height: 1.1; text-align: center; color: inherit; max-width: 48px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .step-circle-label { font-size: 9.5px; font-weight: 600; line-height: 1.1; text-align: center; color: inherit; max-width: 56px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .step-active .step-circle-ring { border-color: ${BRAND.purple}; background: ${BRAND.purple}; color: #fff; box-shadow: 0 4px 10px rgba(108,77,255,.35); }
         .step-active .step-circle-label { color: ${BRAND.purple}; font-weight: 800; }
         .step-seen .step-circle-ring { border-color: ${BRAND.purple}; color: ${BRAND.purpleDark}; }
@@ -2787,7 +2726,8 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
            grows to fit the whole assessment. "fixed" escapes that and
            pins to the real viewport; bottom:60px leaves clearance above
            physiom's own fixed bottom nav bar. */
-        .bottombar { position: fixed; left: calc(50% + var(--pm-side-w, 0px) / 2); transform: translateX(-50%); bottom: var(--pm-bnav-h, calc(60px + env(safe-area-inset-bottom))); width: 100%; max-width: var(--pm-col-w, 480px); z-index: 25; background: #fff; border-top: 1px solid ${BRAND.border}; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); display: flex; gap: 10px; }
+        .bottombar { position: fixed; left: calc(50% + var(--pm-side-w, 0px) / 2); transform: translateX(-50%); bottom: var(--pm-bnav-h, calc(60px + env(safe-area-inset-bottom))); width: 100%; max-width: var(--pm-col-w, 480px); z-index: 25; background: #fff; border-top: 1px solid ${BRAND.border}; padding: 12px 16px 12px; display: flex; gap: 10px; }
+        .bottombar::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 160px; background: #fff; pointer-events: none; }
         .ghost-btn { flex: 0 0 auto; border: 1.5px solid ${BRAND.border}; background: #fff; color: ${BRAND.ink}; padding: 13px 18px; border-radius: 14px; font-weight: 600; font-size: 14px; cursor: pointer; }
         .primary-btn {
         flex: 1; border: none; background: linear-gradient(90deg, ${BRAND.purple}, ${BRAND.purpleDark}); color: #fff;
@@ -2987,6 +2927,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
               {current.id === "safety" && <SafetySection data={data} setData={setData} setting={setting} />}
               {current.id === "subjective" && <SubjectiveSection data={data} setData={setData} />}
               {current.id === "chart" && <ChartSection data={data} setData={setData} />}
+              {current.id === "medicalRecords" && <MedicalRecordsSection data={data} setData={setData} patientData={patientData} onSave={onSave} />}
               {current.id === "observation" && <ObservationSection data={data} setData={setData} setting={setting} />}
               {current.id === "cognition" && <CognitionSection data={data} setData={setData} />}
               {current.id === "cranial" && <CranialNervesSection data={data} setData={setData} />}
@@ -3067,6 +3008,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
                   onClick={() => {
                     const missing = missingDemographicsFields(data.demographics);
                     if (missing.length) { setMissingDemFields(missing); return; }
+                    trackEvent("assessment_completed", { entityType: "assessment", entityId: "neuro" });
                     onNav?.("clinical");
                   }}
                 >

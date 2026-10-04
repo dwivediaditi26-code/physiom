@@ -10,7 +10,8 @@ name: Checks
 # The tests never touch the real Supabase project -- every test that needs
 # it uses the mock in src/__mocks__/supabase.js -- so no secrets are needed.
 # Building the app itself is already covered by Vercel and by the Android
-# build workflow, so it isn't repeated here.
+# build workflow; the separate first-load-size job below builds it once more only
+# to measure what a first visit downloads.
 
 on:
   push:
@@ -53,3 +54,20 @@ jobs:
 
       - name: Tests
         run: npm test
+
+  # A first visit used to download ~1,600 KB because heavy screens were tied into
+  # the first screen; it is ~250 KB now. This fails if it grows past 400 KB again.
+  first-load-size:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Build
+        run: npm run build
+      - name: First visit stays light
+        run: npm run check:size

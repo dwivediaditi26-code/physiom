@@ -77,7 +77,7 @@ export function orthoStyles() {
            progress row below it were eating a third of the viewport) --
            label text kept, just smaller and tighter, not removed. */
         .step-circle {
-          flex: 0 0 auto; width: 48px; display: flex; flex-direction: column; align-items: center;
+          flex: 0 0 auto; width: 56px; display: flex; flex-direction: column; align-items: center;
           gap: 3px; background: none; border: none; padding: 0; cursor: pointer; color: ${BRAND.grayLight};
         }
         .step-circle-ring {
@@ -85,7 +85,7 @@ export function orthoStyles() {
           display: flex; align-items: center; justify-content: center; position: relative; transition: all .15s;
         }
         .step-circle-icon { display: flex; align-items: center; justify-content: center; font-size: 12px; line-height: 1; }
-        .step-circle-label { font-size: 9.5px; font-weight: 600; line-height: 1.1; text-align: center; color: inherit; max-width: 48px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .step-circle-label { font-size: 9.5px; font-weight: 600; line-height: 1.1; text-align: center; color: inherit; max-width: 56px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .step-active .step-circle-ring { border-color: ${BRAND.purple}; background: ${BRAND.purple}; color: #fff; box-shadow: 0 4px 10px rgba(108,77,255,.35); }
         .step-active .step-circle-label { color: ${BRAND.purple}; font-weight: 800; }
         .step-seen .step-circle-ring { border-color: ${BRAND.purple}; color: ${BRAND.purple}; }
@@ -162,7 +162,7 @@ export function orthoStyles() {
            and we cannot see it or use it" -- also genuinely hard to tap at
            26px with a 1px border for contrast). White glyph on saturated
            purple reads at a glance instead of purple-on-near-white. */
-        .info-btn { border: none; background: linear-gradient(155deg, #A78BFA, ${BRAND.purple} 55%, ${BRAND.purpleDark}); color: #fff; font-size: 14px; font-weight: 800; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 0 ${BRAND.purpleDark}, 0 4px 7px rgba(109,40,217,0.35), inset 0 1px 1px rgba(255,255,255,0.55); transition: transform 0.08s ease, box-shadow 0.08s ease; }
+        .info-btn { border: none; background: linear-gradient(155deg, #A78BFA, ${BRAND.purple} 55%, ${BRAND.purpleDark}); color: #fff; font-size: 12px; font-weight: 800; letter-spacing: 0; text-transform: none; white-space: nowrap; width: auto; height: auto; min-height: 28px; padding: 4px 12px; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; flex-shrink: 0; box-shadow: 0 2px 0 ${BRAND.purpleDark}, 0 4px 7px rgba(109,40,217,0.35), inset 0 1px 1px rgba(255,255,255,0.55); transition: transform 0.08s ease, box-shadow 0.08s ease; }
         .info-btn:active { transform: translateY(2px); box-shadow: 0 0 0 ${BRAND.purpleDark}, 0 1px 2px rgba(109,40,217,0.35), inset 0 1px 1px rgba(255,255,255,0.3); }
         .info-btn-wrap-full { display: block; width: 100%; margin-top: 10px; }
         .info-btn-full { width: 100%; border: 1.5px solid ${BRAND.border}; background: #fff; color: ${BRAND.purple}; font-weight: 700; font-size: 12px; padding: 9px; border-radius: 10px; cursor: pointer; min-height: 36px; }
@@ -302,6 +302,7 @@ export function orthoStyles() {
               The box is widened slightly as well so a 3-digit value (a
               180° shoulder flexion norm, say) always has clear room. */
         .stepper-input { flex: 1; border: none; outline: none; text-align: center; font-size: 13px !important; font-weight: 700; padding: 6px 2px !important; min-height: 0 !important; width: 100%; min-width: 0; color: ${BRAND.ink}; -moz-appearance: textfield; appearance: none; }
+        .stepper-input::placeholder, .stepper-sq-input::placeholder { color: #B6B0C9; font-weight: 600; opacity: 1; }
         .stepper-input::-webkit-outer-spin-button, .stepper-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         .stepper-arrows { display: flex; flex-direction: column; border-left: 1px solid ${BRAND.border}; }
         .stepper-arrow { border: none; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; width: 18px; height: 15px; font-size: 7px; cursor: pointer; line-height: 1; display: flex; align-items: center; justify-content: center; }
@@ -1106,7 +1107,8 @@ export function orthoStyles() {
            "60px" guess here left a visible gap of the page's grey background
            between the two bars on devices where the guess ran short (looked
            like this bar was "floating" above the tab bar on real iPhones). */
-        .bottombar { position: fixed; left: calc(50% + var(--pm-side-w, 0px) / 2); transform: translateX(-50%); bottom: var(--pm-bnav-h, calc(60px + env(safe-area-inset-bottom))); width: 100%; max-width: var(--pm-col-w, 480px); z-index: 25; background: #fff; border-top: 1px solid ${BRAND.border}; padding: 8px 16px calc(8px + env(safe-area-inset-bottom)); display: flex; gap: 10px; }
+        .bottombar { position: fixed; left: calc(50% + var(--pm-side-w, 0px) / 2); transform: translateX(-50%); bottom: var(--pm-bnav-h, calc(60px + env(safe-area-inset-bottom))); width: 100%; max-width: var(--pm-col-w, 480px); z-index: 25; background: #fff; border-top: 1px solid ${BRAND.border}; padding: 8px 16px 8px; display: flex; gap: 10px; }
+        .bottombar::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 160px; background: #fff; pointer-events: none; }
         .ghost-btn { flex: 0 0 auto; border: 1.5px solid ${BRAND.border}; background: #fff; color: ${BRAND.ink}; padding: 13px 18px; border-radius: 14px; font-weight: 600; font-size: 14px; cursor: pointer; min-height: 46px; }
         .primary-btn {
           flex: 1; border: none; background: linear-gradient(90deg, ${BRAND.purple}, ${BRAND.purpleDark}); color: #fff;

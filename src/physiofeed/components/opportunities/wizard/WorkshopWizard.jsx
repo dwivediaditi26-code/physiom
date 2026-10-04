@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, ImagePlus, Folder } from "lucide-react";
 import Stepper from "./Stepper.jsx";
-import { Field, inputCls, textareaCls, PillSelect, CheckboxGroup, CriticalChangeConfirm, parseAmount, splitAudience } from "../FormFields.jsx";
+import { Field, inputCls, textareaCls, PillSelect, CheckboxGroup, CriticalChangeConfirm, parseAmount, splitAudience, normalizeLink, formatINR } from "../FormFields.jsx";
 import OpportunityCard from "../OpportunityCard.jsx";
 import WorkshopDetail from "../WorkshopDetail.jsx";
 import * as db from "../../../data/db.js";
@@ -13,7 +13,8 @@ const STEPS = ["Basic Info", "Date & Location", "Learning Details", "Instructor"
 const GRAD_KEYS = Object.keys(GRADIENTS);
 
 function todayIso() {
-  return new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 // Reverses the `${startTime} – ${endTime}` label buildFields() writes into
@@ -41,7 +42,9 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
   const [saving, setSaving] = useState(null); // null | "draft" | "publish"
   const [error, setError] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [profileReady, setProfileReady] = useState(false);
   const [pendingConfirm, setPendingConfirm] = useState(null); // { publish, changes } | null
+  const [touched, setTouched] = useState(false);
 
   const editingDraft = editingOpp && editingOpp.rawStatus === "draft";
   const singleSaveMode = editingOpp && !editingDraft;
@@ -66,7 +69,7 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
 
   // Step 3 -- Learning Details
   const [outcomes, setOutcomes] = useState(editingOpp?.syllabus?.length ? editingOpp.syllabus : [""]);
-  const [audience, setAudience] = useState(editingOpp?.audience ? splitAudience(editingOpp.audience) : ["BPT Students", "MPT Students", "Physiotherapists"]);
+  const [audience, setAudience] = useState(editingOpp?.audience ? splitAudience(editingOpp.audience) : []);
   const [experienceLevel, setExperienceLevel] = useState(editingOpp?.experienceLevel || EXPERIENCE_LEVELS[3]);
 
   // Step 4 -- Instructor. Defaults to the editable "someone else" fields
@@ -94,7 +97,9 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
 
   useEffect(() => {
     let cancelled = false;
-    db.getProfile().then((p) => { if (!cancelled) setProfile(p); });
+    // Publishing before this resolves would save the workshop under a generic
+    // organiser/instructor name, so the buttons wait for it.
+    db.getProfile().then((p) => { if (!cancelled) setProfile(p); }).catch(() => {}).finally(() => { if (!cancelled) setProfileReady(true); });
     return () => { cancelled = true; };
   }, []);
 
@@ -111,11 +116,19 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
   const needsInPerson = format !== "Online";
 
   const step0Valid = title.trim() && shortDescription.trim() && category && format;
-  const step1Valid = date && startTime && endTime
+  const timesOrdered = !startTime || !endTime || endTime > startTime;
+  const step1Valid = date && startTime && endTime && timesOrdered
     && (!needsOnline || platform)
     && (!needsInPerson || (venue.trim() && city.trim() && address.trim()));
-  const step4Valid = registrationMethod !== "external" || registrationUrl.trim();
-  const step4PriceValid = isFree || fee.trim();
+  const step4Valid = registrationMethod !== "external" || normalizeLink(registrationUrl);
+  const feeNum = Number(fee), earlyNum = Number(earlyBirdFee);
+  const priceProblems = [];
+  if (!isFree && !(feeNum > 0)) priceProblems.push("Fee amount (or switch to Free)");
+  if (!isFree && earlyBird && !(earlyNum > 0)) priceProblems.push("Early-bird price");
+  else if (!isFree && earlyBird && feeNum > 0 && earlyNum >= feeNum) priceProblems.push("Early-bird price must be lower than the fee");
+  if (!isFree && earlyBird && !earlyBirdDeadline) priceProblems.push("Early-bird last date");
+  if (hasLimit && !(Number(maxParticipants) > 0)) priceProblems.push("Number of seats (or choose No limit)");
+  const step4PriceValid = priceProblems.length === 0;
   const canPublish = step0Valid && step1Valid && step4Valid && step4PriceValid;
   const canSaveDraft = title.trim().length > 0;
 
@@ -129,12 +142,20 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
   if (!date) missing.push({ step: 1, label: "Date" });
   if (!startTime) missing.push({ step: 1, label: "Start time" });
   if (!endTime) missing.push({ step: 1, label: "End time" });
+  if (date && date < todayIso() && date !== (editingOpp?.date || "")) missing.push({ step: 1, label: "Date can't be in the past" });
+  if (!timesOrdered) missing.push({ step: 1, label: "End time must be after the start time" });
   if (needsOnline && !platform) missing.push({ step: 1, label: "Online platform" });
   if (needsInPerson && !venue.trim()) missing.push({ step: 1, label: "Venue" });
   if (needsInPerson && !city.trim()) missing.push({ step: 1, label: "City" });
   if (needsInPerson && !address.trim()) missing.push({ step: 1, label: "Full address" });
-  if (!isFree && !fee.trim()) missing.push({ step: 4, label: "Fee amount (or switch to Free)" });
-  if (registrationMethod === "external" && !registrationUrl.trim()) missing.push({ step: 4, label: "Registration link" });
+  priceProblems.forEach((label) => missing.push({ step: 4, label }));
+  if (registrationMethod === "external" && !normalizeLink(registrationUrl)) missing.push({ step: 4, label: registrationUrl.trim() ? "Registration link must be a web address (https://…)" : "Registration link" });
+
+  const stepMissing = missing.filter((m) => m.step === step);
+  const requestClose = () => {
+    if (touched && !window.confirm("Discard this workshop? What you've entered will be lost.")) return;
+    onClose();
+  };
 
   const orgDisplayName = orgName.trim() || profile?.name || "";
   const instructor = useMyProfile
@@ -159,7 +180,7 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
       location: needsInPerson ? (city.trim() || format) : "Online",
       locationType: format,
       date: date || undefined,
-      registrationUrl: registrationMethod === "external" ? registrationUrl.trim() : "",
+      registrationUrl: registrationMethod === "external" ? normalizeLink(registrationUrl) : "",
       maxParticipants: hasLimit && maxParticipants ? Number(maxParticipants) : undefined,
       org,
       orgInitials: initialsOf(org),
@@ -171,9 +192,9 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
       venue: needsInPerson ? venue.trim() || undefined : undefined,
       city: needsInPerson ? city.trim() || undefined : undefined,
       address: needsInPerson ? address.trim() || undefined : undefined,
-      fee: isFree ? "Free" : `₹${fee.trim()}`,
+      fee: isFree ? "Free" : `₹${formatINR(fee)}`,
       feeNote: !isFree && earlyBird ? "Early bird" : undefined,
-      earlyBirdFee: !isFree && earlyBird && earlyBirdFee.trim() ? `₹${earlyBirdFee.trim()}` : undefined,
+      earlyBirdFee: !isFree && earlyBird && earlyBirdFee.trim() ? `₹${formatINR(earlyBirdFee)}` : undefined,
       earlyBirdDeadline: !isFree && earlyBird ? earlyBirdDeadline || undefined : undefined,
       registrationMethod,
       instructor,
@@ -195,9 +216,10 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
     if (date !== (editingOpp.date || "")) changes.push("the date");
     if (needsInPerson && (venue.trim() !== (editingOpp.venue || "") || city.trim() !== (editingOpp.city || "") || address.trim() !== (editingOpp.address || ""))) changes.push("the venue");
     if (needsOnline && meetingLink.trim() !== (editingOpp.meetingLink || "")) changes.push("the meeting link");
-    if (registrationMethod === "external" && registrationUrl.trim() !== (editingOpp.registrationUrl || "")) changes.push("the registration link");
-    const currentFee = isFree ? "Free" : `₹${fee.trim()}`;
-    if (currentFee !== (editingOpp.fee || "Free")) changes.push("the fee");
+    if (registrationMethod === "external" && normalizeLink(registrationUrl) !== (editingOpp.registrationUrl || "")) changes.push("the registration link");
+    // Compare the digits, so an old "₹1500" and the new "₹1,500" are the same fee.
+    const currentFee = isFree ? "Free" : parseAmount(`₹${fee}`);
+    if (currentFee !== (editingOpp.fee === "Free" || !editingOpp.fee ? "Free" : parseAmount(editingOpp.fee))) changes.push("the fee");
     return changes;
   }
 
@@ -239,18 +261,27 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
   const previewOpp = {
     id: "preview", type: "workshop", org: orgDisplayName || "Your organisation",
     orgInitials: initialsOf(orgDisplayName || "PF"), orgGradient: profile?.gradient || "violet",
-    title: title.trim() || "Workshop title", description: shortDescription.trim() || "Short description goes here.",
-    date: dateLabel, time: timeLabel, mode: format, fee: isFree ? "Free" : (fee.trim() ? `₹${fee.trim()}` : "₹0"),
-    feeNote: !isFree && earlyBird ? "Early bird" : undefined, postedAgo: "Just now", tags: [category],
+    title: title.trim() || "Untitled workshop", description: shortDescription.trim() || "No description added yet.",
+    date: dateLabel, time: timeLabel, mode: format, fee: isFree ? "Free" : (fee.trim() ? `₹${formatINR(fee)}` : "₹0"),
+    earlyBirdFee: !isFree && earlyBird && earlyBirdFee.trim() ? `₹${formatINR(earlyBirdFee)}` : undefined,
+    earlyBirdDeadline: !isFree && earlyBird ? earlyBirdDeadline || undefined : undefined,
+    postedAgo: "Just now", tags: [category],
     instructor, syllabus: outcomes.map((o) => o.trim()).filter(Boolean),
+    // Everything the real detail page shows, so the preview is truthful.
+    audience: audience.join(", ") || undefined, experienceLevel,
+    platform: needsOnline ? platform : undefined,
+    maxParticipants: hasLimit && maxParticipants ? Number(maxParticipants) : undefined,
+    venue: needsInPerson ? venue.trim() || undefined : undefined,
+    city: needsInPerson ? city.trim() || undefined : undefined,
+    address: needsInPerson ? address.trim() || undefined : undefined,
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-slate-900/40 px-0 sm:px-4 pb-[88px] sm:pb-4">
-      <div className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl overflow-y-auto max-h-[calc(100vh-104px)] sm:max-h-[85vh]">
+    <div className="physiofeed-root fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-slate-900/40 px-0 sm:px-4 pb-[88px] sm:pb-4">
+      <div onChangeCapture={() => setTouched(true)} className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl overflow-y-auto max-h-[calc(100vh-104px)] sm:max-h-[85vh]">
         <div className="flex items-center justify-between px-5 pt-5 sticky top-0 bg-white z-10">
           <h2 className="text-lg font-bold text-slate-900">{editingOpp ? "Edit Workshop" : "Create Workshop"}</h2>
-          <button type="button" onClick={onClose} aria-label="Close" className="p-1.5 rounded-lg hover:bg-slate-50 text-slate-400"><X size={18} /></button>
+          <button type="button" onClick={requestClose} aria-label="Close" className="p-1.5 rounded-lg hover:bg-slate-50 text-slate-400"><X size={18} /></button>
         </div>
         <div className="sticky top-[52px] bg-white z-10 border-b border-slate-100">
           <Stepper step={step} steps={STEPS} />
@@ -260,7 +291,7 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
           {step === 0 && (
             <>
               <Field label="Workshop title *">
-                <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Clinical Taping Fundamentals" className={inputCls} />
+                <input value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Clinical Taping Fundamentals" className={inputCls} />
               </Field>
               <Field label="Short description *">
                 <textarea value={shortDescription} onChange={(e) => setShortDescription(e.target.value)} rows={3} placeholder="Tell students what this workshop is about..." className={textareaCls} />
@@ -392,7 +423,7 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
               {!isFree && (
                 <>
                   <Field label="Workshop fee *">
-                    <input value={fee} onChange={(e) => setFee(e.target.value)} placeholder="499" inputMode="numeric" className={inputCls} />
+                    <input value={fee} onChange={(e) => setFee(e.target.value.replace(/\D/g, ""))} placeholder="499" inputMode="numeric" className={inputCls} />
                   </Field>
                   <label className="flex items-center gap-2.5 text-sm text-slate-700 mb-3 cursor-pointer">
                     <input type="checkbox" checked={earlyBird} onChange={(e) => setEarlyBird(e.target.checked)} className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
@@ -401,7 +432,7 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
                   {earlyBird && (
                     <div className="grid grid-cols-2 gap-3">
                       <Field label="Early bird price">
-                        <input value={earlyBirdFee} onChange={(e) => setEarlyBirdFee(e.target.value)} placeholder="399" inputMode="numeric" className={inputCls} />
+                        <input value={earlyBirdFee} onChange={(e) => setEarlyBirdFee(e.target.value.replace(/\D/g, ""))} placeholder="399" inputMode="numeric" className={inputCls} />
                       </Field>
                       <Field label="Early bird ends">
                         <input type="date" min={todayIso()} max={date || undefined} value={earlyBirdDeadline} onChange={(e) => setEarlyBirdDeadline(e.target.value)} className={inputCls} />
@@ -463,16 +494,20 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
                   and fail. */}
               <div className="pointer-events-none">
                 <div className="mb-4"><OpportunityCard opp={previewOpp} onOpen={() => {}} /></div>
-                <WorkshopDetail opp={previewOpp} onBack={() => {}} registered={false} onRegistered={async () => {}} />
+                <WorkshopDetail preview opp={previewOpp} onBack={() => {}} registered={false} onRegistered={async () => {}} />
               </div>
               {!canPublish && (
                 <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2 mt-4">
-                  Still needed to publish: {missing.map((m) => m.label).join(", ")}. You can still save this as a draft and finish it later.
+                  Still needed to publish: {missing.map((m) => m.label).join(", ")}.{canSaveDraft ? " You can save a draft and finish it later." : " Add a title to save a draft."}
                 </p>
               )}
             </div>
           )}
 
+          {!profileReady && <p className="text-xs text-slate-400 mt-4">Loading your profile…</p>}
+          {step < STEPS.length - 1 && stepMissing.length > 0 && (
+            <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2 mt-4">Still needed on this step: {stepMissing.map((m) => m.label).join(", ")}.</p>
+          )}
           {error && <p className="text-xs text-rose-600 mt-4">{error}</p>}
 
           <div className="flex items-center gap-2.5 mt-6">
@@ -485,7 +520,8 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
               <button
                 type="button"
                 onClick={() => setStep((s) => s + 1)}
-                className="flex-1 text-sm font-bold text-white rounded-xl py-3 bg-gradient-to-r from-indigo-600 to-blue-600 shadow-md active:scale-[0.98] transition"
+                disabled={stepMissing.length > 0}
+                className="flex-1 text-sm font-bold text-white rounded-xl py-3 bg-gradient-to-r from-indigo-600 to-blue-600 shadow-md active:scale-[0.98] transition disabled:opacity-40"
               >
                 Next →
               </button>
@@ -493,7 +529,7 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
               <button
                 type="button"
                 onClick={() => submit(true)}
-                disabled={!!saving}
+                disabled={!!saving || !profileReady}
                 className="flex-1 text-sm font-bold text-white rounded-xl py-3 bg-gradient-to-r from-indigo-600 to-blue-600 shadow-md disabled:opacity-40"
               >
                 {saving ? "Saving…" : "Save Changes"}
@@ -503,7 +539,7 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
                 <button
                   type="button"
                   onClick={() => submit(false)}
-                  disabled={!!saving}
+                  disabled={!!saving || !profileReady}
                   className="flex-1 text-sm font-bold text-indigo-700 bg-indigo-50 rounded-xl py-3 disabled:opacity-40"
                 >
                   {saving === "draft" ? "Saving…" : "Save Draft"}
@@ -511,7 +547,7 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
                 <button
                   type="button"
                   onClick={() => submit(true)}
-                  disabled={!!saving}
+                  disabled={!!saving || !profileReady}
                   className="flex-1 text-sm font-bold text-white rounded-xl py-3 bg-gradient-to-r from-indigo-600 to-blue-600 shadow-md disabled:opacity-40"
                 >
                   {saving === "publish" ? "Publishing…" : "Publish Workshop"}

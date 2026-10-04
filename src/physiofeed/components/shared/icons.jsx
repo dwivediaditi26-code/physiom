@@ -7,7 +7,7 @@ import {
   Play, Image as ImageIcon, Video, FlaskConical, X, ChevronDown, ChevronLeft,
   ChevronRight, UserPlus, Check, Send, MapPin, Star, GraduationCap, Award,
   Trophy, Languages, ShieldCheck, Clock, Activity, Zap, MoreHorizontal, Link2,
-  SlidersHorizontal, Building2, ExternalLink, Menu,
+  SlidersHorizontal, Building2, ExternalLink, Menu, Newspaper,
 } from "lucide-react";
 
 export const ICONS = {
@@ -17,7 +17,7 @@ export const ICONS = {
   Play, ImageIcon, Video, FlaskConical, X, ChevronDown, ChevronLeft,
   ChevronRight, UserPlus, Check, Send, MapPin, Star, GraduationCap, Award,
   Trophy, Languages, ShieldCheck, Clock, Activity, Zap, MoreHorizontal, Link2,
-  SlidersHorizontal, Building2, ExternalLink, Menu,
+  SlidersHorizontal, Building2, ExternalLink, Menu, Newspaper,
 };
 
 export function Icon({ name, ...props }) {

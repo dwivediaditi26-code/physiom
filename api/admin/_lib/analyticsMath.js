@@ -179,6 +179,105 @@ export function computeProfileCompleteness(profile) {
   return Math.round((filled / PROFILE_COMPLETENESS_FIELDS.length) * 100);
 }
 
+// Per-page usage: how many visits, how many different students, and
+// roughly how long they stayed. No real "time on page" tracking exists, so
+// dwell time is estimated from the event stream, same honest approach as
+// buildUserDailyActivity: time between a student's consecutive events
+// belongs to the page they were on at the earlier event, each gap capped at
+// SESSION_GAP_MS so a tab left open overnight doesn't count as study time.
+// A "visit" is a run of module_opened events with the same page key (the
+// assessment wizard re-fires module_opened on every step change, which
+// would otherwise inflate visits ~10x), ended by a different page or a
+// logout.
+export function buildPageStats(events, { gapCapMs = SESSION_GAP_MS, tailMs = TAIL_MS } = {}) {
+  const byUser = new Map();
+  for (const e of events) {
+    if (!e.user_id || !e.created_at) continue;
+    if (!byUser.has(e.user_id)) byUser.set(e.user_id, []);
+    byUser.get(e.user_id).push({ name: e.event_name, key: e.entity_id, t: new Date(e.created_at).getTime() });
+  }
+
+  const pages = new Map();
+  const closeVisit = (visit, userId) => {
+    if (!visit) return;
+    if (!pages.has(visit.key)) pages.set(visit.key, { page: visit.key, visits: 0, users: new Set(), totalMs: 0 });
+    const p = pages.get(visit.key);
+    p.visits += 1;
+    p.users.add(userId);
+    p.totalMs += visit.ms;
+  };
+
+  for (const [userId, list] of byUser) {
+    list.sort((a, b) => a.t - b.t);
+    let cur = null;
+    let prevT = null;
+    for (const e of list) {
+      if (cur && prevT !== null) cur.ms += Math.min(e.t - prevT, gapCapMs);
+      prevT = e.t;
+      if (e.name === 'module_opened' && e.key) {
+        if (!cur || cur.key !== e.key) {
+          closeVisit(cur, userId);
+          cur = { key: e.key, ms: 0 };
+        }
+      } else if (e.name === 'user_logged_out') {
+        closeVisit(cur, userId);
+        cur = null;
+      }
+    }
+    if (cur) cur.ms += tailMs;
+    closeVisit(cur, userId);
+  }
+
+  return Array.from(pages.values())
+    .map((p) => ({
+      page: p.page,
+      visits: p.visits,
+      uniqueStudents: p.users.size,
+      totalMinutes: Math.round(p.totalMs / 60000),
+      avgMinutesPerVisit: p.visits ? Math.round((p.totalMs / p.visits / 60000) * 10) / 10 : 0,
+    }))
+    .sort((a, b) => b.totalMinutes - a.totalMinutes);
+}
+
+// "Do students finish a full assessment or not": explicit "start a new
+// assessment" taps vs explicit "Save Assessment" taps, per specialty. Both
+// are counted as events (a student who saves, edits more, and saves again
+// counts twice), and distinct students are counted separately so the
+// numbers can be read either way. savedPct is capped at 100 -- a student can
+// reach a save via an entry point that doesn't log a start (e.g. reopening
+// an existing patient), so saved can exceed started.
+export function buildAssessmentStats(events) {
+  const specialties = new Map();
+  const get = (id) => {
+    if (!specialties.has(id)) specialties.set(id, { specialty: id, started: 0, saved: 0, startedBy: new Set(), savedBy: new Set(), savedByPathway: {} });
+    return specialties.get(id);
+  };
+  for (const e of events) {
+    if (e.event_name !== 'assessment_started' && e.event_name !== 'assessment_completed') continue;
+    const s = get(e.entity_id || 'unknown');
+    if (e.event_name === 'assessment_started') {
+      s.started += 1;
+      if (e.user_id) s.startedBy.add(e.user_id);
+    } else {
+      s.saved += 1;
+      if (e.user_id) s.savedBy.add(e.user_id);
+      const pathway = e.properties?.pathway;
+      if (pathway) s.savedByPathway[pathway] = (s.savedByPathway[pathway] || 0) + 1;
+    }
+  }
+  return Array.from(specialties.values())
+    .map((s) => ({
+      specialty: s.specialty,
+      started: s.started,
+      saved: s.saved,
+      studentsStarted: s.startedBy.size,
+      studentsSaved: s.savedBy.size,
+      savedPct: s.started ? Math.min(100, Math.round((s.saved / s.started) * 100)) : null,
+      savedByPathway: s.savedByPathway,
+    }))
+    .sort((a, b) => b.started - a.started);
+}
+
 export function buildInsights(currentEvents, previousEvents) {
   const metrics = [
     { label: 'Workshop registrations', match: (n) => n === 'workshop_registered' },

@@ -74,7 +74,7 @@
     "cpa": {
       "muscles": [
         {
-          "name": "Peroneals (acute)",
+          "name": "Peroneals (Peroneus Longus / Brevis) — acute",
           "state": "Inhibited / reflex-guarded"
         },
         {
@@ -409,7 +409,7 @@
           "state": "Overactive, Achilles tendinopathy pattern"
         },
         {
-          "name": "Glute Max (hip)",
+          "name": "Gluteus Maximus (hip)",
           "state": "Inhibited — check"
         }
       ],
@@ -1478,7 +1478,7 @@
     "cpa": {
       "muscles": [
         {
-          "name": "Foot Intrinsics",
+          "name": "Foot Intrinsic Muscles",
           "state": "Inhibited, arch collapse"
         }
       ],

@@ -35,12 +35,7 @@
 // here, since this checklist's option wording doesn't carry those exact
 // signals -- real ROM/MMT/Special Test results cover those instead.
 import { runShoulderPhase05, shoulderTestNav } from "./shoulderPhase05.js";
-
-function joinMulti(v) {
-  if (!v) return "";
-  if (Array.isArray(v)) return v.join(", ");
-  return String(v);
-}
+import { specialTestValue, joinMulti } from "./reasoningHelpers.js";
 
 const ROM_IDS = ["rom_sflex", "rom_sabd", "rom_ser", "rom_sir"];
 const MMT_IDS = ["mmt_supra", "mmt_infra", "mmt_subscap"];
@@ -49,13 +44,6 @@ const SPECIAL_IDS = [
   "st_obrien", "st_speeds", "st_apprehension", "st_relocation",
   "st_cross_arm", "st_acromioclavicular",
 ];
-
-function specialTestValue(raw) {
-  if (raw == null) return "";
-  if (typeof raw === "string") return raw;
-  if (typeof raw === "object") return raw.right || raw.left || raw.bilateral || "";
-  return "";
-}
 
 /**
  * Flattens this tool's data.rom["Shoulder"]/data.mmt["Shoulder & Scapula"]/

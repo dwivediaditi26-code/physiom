@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { TextField, DateField, SelectField, Segmented, TextArea, YesNo, SectionIntro, StepNav, useSectionData, fmtVal, MissingDemographicsModal, missingDemographicsFields } from "./orthoFieldKit.jsx";
 import { Icon } from "./StepIcons.jsx";
+import { MedicalRecordsSection } from "./MedicalRecords.jsx";
 import { formatBodyChartSummary } from "./BodyChartPro.jsx";
 import { regionDisplayLabel, regionLabelList } from "./orthoRegionLibrary.js";
 import { RomSection, MmtSection, JointMobilitySection, SpecialTestsSection, formatRomSection, formatMmtSection, formatJointMobilitySection, formatSpecialTestsSection } from "./orthoRegionAssessments.jsx";
@@ -23,6 +24,7 @@ import { orthoStyles } from "./orthoStyles.js";
 import { OrthoCarePlanStep } from "./OrthoCarePlan.jsx";
 import { formatCarePlanSection } from "./NeuroCarePlan.jsx";
 import { useWizardStepHistory } from "./useWizardStepHistory.js";
+import { trackEvent } from "./analytics/trackEvent.js";
 
 function regionLabelOf(r) {
   return [r.side, regionDisplayLabel(r)].filter(Boolean).join(" ");
@@ -64,12 +66,13 @@ const FALLBACK_OPTIONAL = ["edema", "neurovascular", "rom", "mmt", "activityTole
 
 const CAREPLAN_STEP_IDS = ["carePlanPlan", "carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanSessions", "carePlanProgress"];
 const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "goals", carePlanTreatment: "treatment", carePlanPlan: "plan", carePlanSessions: "sessions", carePlanProgress: "progress" };
-const BASE_IDS = ["caseInfo", "medicalReview", "precautions", "vitals", "subjective", "pain", "observation", "functionalMobility", "gait", "impression", ...CAREPLAN_STEP_IDS, "review"];
+const BASE_IDS = ["caseInfo", "medicalReview", "medicalRecords", "precautions", "vitals", "subjective", "pain", "observation", "functionalMobility", "gait", "impression", ...CAREPLAN_STEP_IDS, "review"];
 const OPTIONAL_IDS = ["edema", "wound", "neurovascular", "neuroScreen", "rom", "mmt", "jointMobility", "balance", "activityTolerance", "outcomeMeasure", "specialTests"];
 
 const ORDERED_ALL = [
   "caseInfo",
   "medicalReview",
+  "medicalRecords",
   "precautions",
   "vitals",
   "subjective",
@@ -96,6 +99,7 @@ const ORDERED_ALL = [
 const STEP_META = {
   caseInfo: { icon: <Icon name="clipboard" />, label: "Patient / Case Info" },
   medicalReview: { icon: <Icon name="folder" />, label: "Medical / Chart Review" },
+  medicalRecords: { icon: <Icon name="folder" />, label: "Medical Records" },
   precautions: { icon: <Icon name="flag" />, label: "Precautions & Safety" },
   vitals: { icon: <Icon name="heart" />, label: "Vital Signs" },
   subjective: { icon: <Icon name="notes" />, label: "Subjective" },
@@ -411,6 +415,7 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
   function handleSaveClick() {
     const missing = missingDemographicsFields(caseInfo);
     if (missing.length) { setMissingDemFields(missing); return; }
+    trackEvent("assessment_completed", { entityType: "assessment", entityId: "ortho", properties: { pathway: "ipd", regions: regionsLabel, condition: conditionLabel } });
     saveAssessment();
   }
 
@@ -459,6 +464,7 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
 
         <div className="content">
           {current.id === "caseInfo" && <CaseInfoSection data={data} setData={setData} />}
+          {current.id === "medicalRecords" && <MedicalRecordsSection data={data} setData={setData} patientData={patientData} onSave={onSave} />}
           {current.id === "medicalReview" && <MedicalReviewSection data={data} setData={setData} condition={condition} selectedRegions={selectedRegions} />}
           {current.id === "precautions" && <PrecautionsSection data={data} setData={setData} />}
           {current.id === "vitals" && <VitalsSection data={data} setData={setData} />}
@@ -508,8 +514,8 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
                 formatters={{ carePlanPlan: formatCarePlanSection, rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection, pain: formatPainSection, outcomeMeasure: formatOutcomeMeasureSection }}
               />
               {onSave && (
-                <button type="button" className="primary-btn" style={{ width: "100%", marginTop: 10 }} onClick={handleSaveClick}>
-                  {savedFlash ? "Saved ✓" : "💾 Save Assessment"}
+                <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 10 }} onClick={onExit}>
+                  Start new assessment
                 </button>
               )}
             </>
@@ -521,9 +527,18 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
             Back
           </button>
           {current.id === "review" ? (
-            <button className="primary-btn" onClick={onExit}>
-              Start new assessment
-            </button>
+            // Save is the main action here (it used to sit further down the
+            // page while the big button said "Start new assessment"). Without
+            // a save handler the bar falls back to starting a new assessment.
+            onSave ? (
+              <button className="primary-btn" onClick={handleSaveClick}>
+                {savedFlash ? "Saved ✓" : "💾 Save Assessment"}
+              </button>
+            ) : (
+              <button className="primary-btn" onClick={onExit}>
+                Start new assessment
+              </button>
+            )
           ) : (
             <button className="primary-btn" onClick={goNext}>
               {step === steps.length - 2 ? "Review & complete" : "Next"}

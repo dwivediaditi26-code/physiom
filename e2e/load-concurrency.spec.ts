@@ -1,18 +1,21 @@
 import { test, expect, Browser } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
-import { login, creds, openSoap } from './appMap';
+import {
+  login, creds, startOrtho, fillDemographics, fillChiefComplaint, saveAssessment,
+  expectPatientListed, uniqueSuffix,
+} from './appMap';
 
 // e2e/load-concurrency.spec.ts
 //
 // Concurrency/load check: simulates N students logged into their own
-// accounts, each creating a patient, recording a finding, and opening the
-// SOAP note AT THE SAME TIME. This is the scenario the regular E2E
+// accounts, each creating a patient, recording a finding, and saving an
+// assessment AT THE SAME TIME. This is the scenario the regular E2E
 // suite never exercises -- every other spec runs one browser context at a
 // time. What this is trying to catch: Supabase connection/throughput
 // limits, RLS contention, or UI race conditions that only show up under
-// real concurrent writes -- not correctness of any single flow (that's
-// what patient-journey.spec.ts already covers).
+// real concurrent writes -- not correctness of any single flow (the
+// patient-journey and guest specs already cover that).
 //
 // Deliberately NOT signing up N new accounts concurrently: Supabase's own
 // Auth (GoTrue) rate-limits sign-ups per IP, and every context in this test
@@ -51,12 +54,13 @@ async function oneStudentFlow(browser: Browser, index: number): Promise<RunResul
   const started = Date.now();
   const context = await browser.newContext();
   const page = await context.newPage();
-  const patientName = `Load Test Patient ${Date.now()}-${index}-${Math.floor(Math.random() * 10000)}`;
+  const unique = `${Date.now()}-${index}-${uniqueSuffix()}`;
+  const patientName = `Load Test Patient ${unique}`;
 
   // Track the actual Supabase auth network response so a login failure
   // reports WHY (e.g. a 429 from Supabase's own sign-in rate limit) instead
-  // of just "the button never appeared". That distinction matters: a 429 is
-  // a real backend limit worth acting on (raise it / spread logins / Pro
+  // of just "the home screen never appeared". That distinction matters: a 429
+  // is a real backend limit worth acting on (raise it / spread logins / Pro
   // tier); a timeout with no error response at all is more likely this CI
   // runner running out of CPU/RAM trying to render N real browsers at once
   // -- a test-harness ceiling, not something real students on their own
@@ -84,30 +88,16 @@ async function oneStudentFlow(browser: Browser, index: number): Promise<RunResul
   try {
     await login(page);
 
-    const sidebar = page.locator('.pm-sidebar');
-    await expect(sidebar.getByText('New Patient', { exact: false })).toBeVisible({ timeout: 15_000 });
-    await sidebar.getByText('New Patient', { exact: false }).click();
+    // Create a patient and record real findings -- exercises an actual
+    // Supabase write, not just navigation.
+    await startOrtho(page, { name: patientName, region: 'Knee', side: 'Right' });
+    await fillDemographics(page, { name: patientName, age: 30 + (index % 40), sex: 'Female' });
+    await fillChiefComplaint(page, `Load test ${unique} knee pain`);
+    await saveAssessment(page);
 
-    const intake = page.getByTestId('intake-modal');
-    await intake.getByPlaceholder('e.g. Riya Sharma').fill(patientName);
-    await intake.getByRole('button', { name: 'Consent', exact: true }).click();
-    await intake.getByRole('checkbox', { name: 'I consent to physiotherapy assessment and treatment' }).check();
-    await intake.getByRole('button', { name: 'Start Assessment →' }).click();
-    await expect(page.getByText(patientName, { exact: false }).first()).toBeVisible({ timeout: 15_000 });
-
-    // Record one real finding (MMT) -- exercises an actual Supabase write,
-    // not just navigation.
-    await sidebar.getByText('MMT', { exact: true }).click();
-    await expect(page.getByText('Sternocleidomastoid').first()).toBeVisible({ timeout: 15_000 });
-    await page.locator('select.pm-compact-select').first().selectOption('5');
-
-    // Open the SOAP note -- confirms the finding actually reads back
-    // (not just that the write request was fired) under concurrent load.
-    await openSoap(page);
-    const soapBody = await page.locator('body').innerText();
-    if (soapBody.length < 50 || /Something went wrong/i.test(soapBody)) {
-      throw new Error(`SOAP note looked empty or crashed (len=${soapBody.length})`);
-    }
+    // The patient must read back in the list (not just that the write
+    // request was fired) under concurrent load.
+    await expectPatientListed(page, patientName, 30_000);
 
     return { index, ok: true, ms: Date.now() - started };
   } catch (e: any) {
@@ -134,7 +124,7 @@ test.describe('Load / concurrency @load', () => {
   // time for one data point.)
   test.describe.configure({ retries: 0 });
 
-  test(`${N} students creating a patient + recording a finding + opening the SOAP note at the same time`, async ({ browser }) => {
+  test(`${N} students creating a patient + recording a finding + saving an assessment at the same time`, async ({ browser }) => {
     test.setTimeout(Math.max(120_000, N * 4000));
     const { email } = creds();
     expect(email, 'Put E2E_EMAIL/E2E_PASSWORD (or e2e/login.local.json) in place -- load test reuses the existing E2E test account').not.toBe('');

@@ -8,10 +8,33 @@
 // "I'm an admin" flag (see AdminAnalyticsPage.jsx's client gate, which is
 // UX-only, same as AdminReportsPage.jsx's).
 import { createClient } from '@supabase/supabase-js';
-import { resolveRange, distinctUsersSince, buildInsights, buildUserDailyActivity, buildCumulativeSeries, computeProfileCompleteness } from './_lib/analyticsMath.js';
+import { resolveRange, distinctUsersSince, buildInsights, buildUserDailyActivity, buildCumulativeSeries, computeProfileCompleteness, buildPageStats, buildAssessmentStats } from './_lib/analyticsMath.js';
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://gkhcysvayjrkrufcnqvz.supabase.co';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+// PostgREST returns at most 1000 rows per request, so a single query silently
+// drops everything past the 1000th event -- fine for a handful of users, wrong
+// at hundreds. Newest events first; first page alone when it isn't full (the
+// common small case), otherwise the rest in parallel, up to MAX_EVENT_PAGES.
+// `truncated` tells the dashboard it is looking at the newest N events, not
+// all of them (the long-term fix is SQL-side rollups, not bigger fetches).
+const EVENT_PAGE_SIZE = 1000;
+const MAX_EVENT_PAGES = 10;
+async function fetchEvents(admin, columns, from, to) {
+  const page = (i) => admin.from('analytics_events').select(columns)
+    .gte('created_at', from).lt('created_at', to)
+    .order('created_at', { ascending: false }).order('id', { ascending: false })
+    .range(i * EVENT_PAGE_SIZE, (i + 1) * EVENT_PAGE_SIZE - 1);
+  const first = await page(0);
+  if (first.error) return { data: null, error: first.error, truncated: false };
+  if ((first.data || []).length < EVENT_PAGE_SIZE) return { data: first.data || [], error: null, truncated: false };
+  const rest = await Promise.all(Array.from({ length: MAX_EVENT_PAGES - 1 }, (_, i) => page(i + 1)));
+  const failed = rest.find((r) => r.error);
+  if (failed) return { data: null, error: failed.error, truncated: false };
+  const data = [...first.data, ...rest.flatMap((r) => r.data || [])];
+  return { data, error: null, truncated: data.length >= MAX_EVENT_PAGES * EVENT_PAGE_SIZE };
+}
 
 let adminClient = null;
 function getAdminClient() {
@@ -56,7 +79,7 @@ export default async function handler(req, res) {
     { count: totalPosts },
     { count: totalOpportunities },
     { count: totalApplications },
-    { data: currentEvents, error: eventsErr },
+    { data: currentEvents, error: eventsErr, truncated: eventsTruncated },
     { data: previousEvents, error: prevErr },
     { data: patientRows, error: patientRowsErr },
     { data: profileRows, error: profileRowsErr },
@@ -77,8 +100,8 @@ export default async function handler(req, res) {
     admin.from('posts').select('id', { count: 'exact', head: true }),
     admin.from('opportunities').select('id', { count: 'exact', head: true }).is('deleted_at', null),
     admin.from('applications').select('id', { count: 'exact', head: true }),
-    admin.from('analytics_events').select('event_name, user_id, entity_type, entity_id, properties, created_at').gte('created_at', since).lt('created_at', until).order('created_at', { ascending: false }).limit(1000),
-    admin.from('analytics_events').select('event_name, user_id, created_at').gte('created_at', prevSince).lt('created_at', prevUntil).limit(1000),
+    fetchEvents(admin, 'event_name, user_id, entity_type, entity_id, properties, created_at', since, until),
+    fetchEvents(admin, 'event_name, user_id, created_at', prevSince, prevUntil),
     // For the per-user "how many patients / how much time in the app" section
     // below -- patients is RLS-scoped to "your own rows" so, same reasoning
     // as totalPatients above, this has to go through the service role.
@@ -220,6 +243,9 @@ export default async function handler(req, res) {
     // fabricated explanation (see buildInsights' MIN_SAMPLE floor).
     insights: buildInsights(events, prevEvents),
     recentEvents: events.slice(0, 500),
+    eventsTruncated: !!eventsTruncated,
+    pageStats: buildPageStats(events),
+    assessmentStats: buildAssessmentStats(events),
     userActivity,
     growth,
     errors,

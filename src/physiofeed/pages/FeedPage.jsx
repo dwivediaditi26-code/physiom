@@ -2,6 +2,7 @@ import { useState } from "react";
 import Composer from "../components/feed/Composer.jsx";
 import FeedPostCard from "../components/feed/FeedPostCard.jsx";
 import FeedRightRail from "../components/feed/FeedRightRail.jsx";
+import CareerNewsPreview from "../components/news/CareerNewsPreview.jsx";
 import { useAppData } from "../context/AppDataContext.jsx";
 
 // Trimmed to the reference mockup's four tabs (2026-09-28, Aditi's "Option
@@ -34,6 +35,7 @@ export default function FeedPage() {
           ))}
         </div>
         <div className="space-y-4">
+          <CareerNewsPreview />
           <Composer />
           {/* P7 (2026-09-22): a like/comment that fails to save used to do
               nothing visible at all -- db.js quietly wrote it to its demo

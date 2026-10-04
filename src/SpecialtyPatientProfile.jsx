@@ -1,3 +1,4 @@
+import { fileToDoc, docTypeOf, withDocType, DOC_TYPES, DOC_ACCEPT } from "./MedicalRecords.jsx";
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { NeuroCarePlanSection, CarePlanSection, doseLine } from "./NeuroCarePlan.jsx";
 import { CardioCarePlanSection } from "./CardioCarePlan.jsx";
@@ -11,7 +12,7 @@ import { orthoSummaryFormatters, buildOrthoAssessSteps } from "./OrthoOutpatient
 import { formatConditionObjectiveSection } from "./ConditionObjectiveAssessment.jsx";
 import { orthoIPDSummaryFormatters, buildOrthoIPDAssessSteps } from "./OrthoIPDAssessment.jsx";
 import { orthoPostOpSummaryFormatters, buildOrthoPostOpAssessSteps } from "./OrthoPostOpAssessment.jsx";
-import { sendHepWhatsApp, downloadHepPdf } from "./AppModules.jsx";
+import { sendHepWhatsApp, downloadHepPdf } from "./SessionDetailView.jsx";
 import { formatExercisePrescriptionSection } from "./orthoExercisePrescription.jsx";
 import { formatNeuroExercisePrescriptionSection } from "./neuroExercisePrescription.jsx";
 import { PostureSessionsView } from "./PatientDatabase.jsx";
@@ -126,35 +127,30 @@ function PainTrend({ sessions }) {
 function DocumentsPanel({ patient, onSaveField }) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
+  const [uploadType, setUploadType] = useState("");
   const uploadedDocs = patient?.data?.uploaded_docs || [];
   const setUploadedDocs = (docs) => {
     if (typeof onSaveField === "function" && patient?.id) onSaveField(patient.id, { uploaded_docs: docs });
   };
 
-  const handleFileUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { alert("File too large. Maximum size is 5MB."); return; }
-    setUploading(true);
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const newDoc = {
-        id: Date.now().toString(),
-        name: file.name,
-        date: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
-        size: file.size > 1024 * 1024 ? (file.size / (1024 * 1024)).toFixed(1) + " MB" : Math.round(file.size / 1024) + " KB",
-        type: file.type,
-        icon: file.type.includes("pdf") ? "📋" : file.type.includes("image") ? "🖼" : file.type.includes("video") ? "🎥" : "📄",
-        dataUrl: ev.target.result,
-        uploadedAt: new Date().toISOString(),
-      };
-      setUploadedDocs([newDoc, ...uploadedDocs]);
-      setUploading(false);
-    };
-    reader.onerror = () => { setUploading(false); alert("Failed to read file."); };
-    reader.readAsDataURL(file);
+  // Same store as the assessments' Medical Records step (data.uploaded_docs), so a
+  // file added here shows there too. Photos are downscaled to fit the 5 MB cap.
+  const handleFileUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
     e.target.value = "";
+    if (!files.length) return;
+    setUploading(true);
+    try {
+      const added = [];
+      for (const f of files) added.push(await fileToDoc(f, { docType: uploadType || null, source: "medical_records" }));
+      setUploadedDocs([...added, ...uploadedDocs]);
+    } catch (err) {
+      alert(err.message || "Upload failed.");
+    } finally {
+      setUploading(false);
+    }
   };
+  const handleSetType = (id, type) => setUploadedDocs(uploadedDocs.map((d) => (d.id === id ? withDocType(d, type) : d)));
 
   const handleDeleteDoc = (id) => setUploadedDocs(uploadedDocs.filter((d) => d.id !== id));
   const handleDownloadDoc = (doc) => { const a = document.createElement("a"); a.href = doc.dataUrl; a.download = doc.name; a.click(); };
@@ -168,7 +164,15 @@ function DocumentsPanel({ patient, onSaveField }) {
 
   return (
     <>
-      <input ref={fileInputRef} type="file" style={{ display: "none" }} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.mp4" onChange={handleFileUpload} />
+      <input ref={fileInputRef} type="file" multiple style={{ display: "none" }} accept={DOC_ACCEPT} onChange={handleFileUpload} />
+      <div style={{ marginBottom: 10 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: C.muted, marginBottom: 6 }}>What are you uploading? (applies to the next upload)</div>
+        <select aria-label="Type for the next upload" value={uploadType} onChange={(e) => setUploadType(e.target.value)}
+          style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid #cbd5e1", background: "#fff", fontSize: 13, fontFamily: "inherit", width: "100%" }}>
+          <option value="">Type: not set</option>
+          {DOC_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+        </select>
+      </div>
       <div onClick={() => fileInputRef.current?.click()} style={{ background: "#F5F3FF", border: `2px dashed ${C.primary}`, borderRadius: 16, padding: "28px 20px", textAlign: "center", marginBottom: 16, cursor: "pointer", opacity: uploading ? 0.6 : 1 }}>
         {uploading ? (
           <><div style={{ fontSize: 36, marginBottom: 8 }}>⏳</div><div style={{ fontSize: 14, fontWeight: 700, color: C.primary }}>Uploading…</div></>
@@ -187,10 +191,15 @@ function DocumentsPanel({ patient, onSaveField }) {
                 {doc.type?.includes("image") ? <img src={doc.dataUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span>{doc.icon}</span>}
               </div>
               <div style={{ flex: 1, minWidth: 0, cursor: "pointer" }} onClick={() => handlePreviewDoc(doc)}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.name}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.name}{docTypeOf(doc) && <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 800, color: "#7c3aed", background: "#ede9fe", borderRadius: 6, padding: "2px 6px" }}>{docTypeOf(doc).toUpperCase()}</span>}</div>
                 <div style={{ fontSize: 11, color: C.faint, marginTop: 2 }}>{doc.date} · {doc.size}</div>
               </div>
               <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
+                <select aria-label={`Type of ${doc.name}`} value={docTypeOf(doc)} onChange={(e) => handleSetType(doc.id, e.target.value)}
+                  style={{ height: 30, maxWidth: 110, borderRadius: 8, border: "1px solid #e2e8f0", background: "#fff", fontSize: 11 }}>
+                  <option value="">Type…</option>
+                  {DOC_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
                 <button onClick={() => handleDownloadDoc(doc)} title="Download" style={{ width: 30, height: 30, borderRadius: 8, background: C.primaryBg, border: "none", cursor: "pointer", fontSize: 13 }}>⬇</button>
                 <button onClick={() => handleDeleteDoc(doc.id)} title="Delete" style={{ width: 30, height: 30, borderRadius: 8, background: "#FEF2F2", border: "none", cursor: "pointer", fontSize: 13 }}>🗑</button>
               </div>
@@ -761,13 +770,15 @@ function ClinicalPlanPage({ patient, onSaveField, isNeuro, orthoPathway, orthoPa
   );
 }
 
-export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSaveField, onOpenPosture, initialTab }) {
+export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSaveField, onOpenPosture, initialTab, onGeneratePdf, showPosture = false }) {
   // initialTab (2026-09-02): lets a caller open straight onto a specific
   // tab (e.g. the Treatment caseload list's own "Profile" button used to
   // jump straight to Treatment via the now-removed legacy
   // PatientProfileModal's initialTab) instead of always landing on
   // Overview.
-  const [tab, setTab] = useState(initialTab || "overview");
+  const [tabState, setTab] = useState(initialTab || "overview");
+  // Posture is a preview feature (featureFlags.js): never land on its tab otherwise.
+  const tab = tabState === "posture" && !showPosture ? "overview" : tabState;
   // Switching tabs here is local state, not a navTo() call, so it never got
   // navTo()'s scroll-reset (AppFull.jsx) -- scrolling down on Overview then
   // opening Assessment/Care Plan left the new tab already scrolled to that
@@ -884,7 +895,7 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
     { k: "sessions", label: "Session & Progress" },
     { k: "home", label: "Home" },
     { k: "documents", label: "Docs" },
-    { k: "posture", label: "Posture" },
+    ...(showPosture ? [{ k: "posture", label: "Posture" }] : []),
   ];
 
   return (
@@ -1104,6 +1115,7 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 2 }}>
                 <span style={{ fontSize: 24 }}>🧠</span>
                 <span style={{ fontSize: 17, fontWeight: 900, color: "#7c3aed", flex: 1 }}>Neurological Assessment</span>
+                <GhostBtn onClick={() => onGeneratePdf?.()} style={{ padding: "6px 12px", fontSize: 12 }}>📄 PDF</GhostBtn>
                 <GhostBtn onClick={() => onNav?.("neuro_assessment")} style={{ padding: "6px 12px", fontSize: 12 }}>✏️ Edit</GhostBtn>
               </div>
               {neuroAssessmentSubtitle(d.neuro.meta) && <div style={{ fontSize: 12.5, color: C.muted, marginBottom: 12 }}>{neuroAssessmentSubtitle(d.neuro.meta)}</div>}
@@ -1116,6 +1128,7 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 2 }}>
                 <span style={{ fontSize: 24 }}>🫀</span>
                 <span style={{ fontSize: 17, fontWeight: 900, color: "#dc2626", flex: 1 }}>Cardiopulmonary Assessment</span>
+                <GhostBtn onClick={() => onGeneratePdf?.()} style={{ padding: "6px 12px", fontSize: 12 }}>📄 PDF</GhostBtn>
                 <GhostBtn onClick={() => onNav?.("cardio_assessment")} style={{ padding: "6px 12px", fontSize: 12 }}>✏️ Edit</GhostBtn>
               </div>
               {cardioAssessmentSubtitle(d.cardio.meta) && <div style={{ fontSize: 12.5, color: C.muted, marginBottom: 12 }}>{cardioAssessmentSubtitle(d.cardio.meta)}</div>}
@@ -1148,6 +1161,7 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
                     profile, so listOldPatientRecords() sees their real
                     saved assessment(s). */}
                 <GhostBtn onClick={() => onNav?.("ortho_new_assessment", { entryMode: "ai" })} style={{ padding: "6px 12px", fontSize: 12 }}>🔄 New Assessment</GhostBtn>
+                <GhostBtn onClick={() => onGeneratePdf?.()} style={{ padding: "6px 12px", fontSize: 12 }}>📄 PDF</GhostBtn>
                 <GhostBtn onClick={() => onNav?.("ortho_new_assessment", { resume: orthoResume })} style={{ padding: "6px 12px", fontSize: 12 }}>✏️ Edit</GhostBtn>
               </div>
               {[orthoParsed.regions, orthoParsed.condition].filter(Boolean).join(" · ") && (

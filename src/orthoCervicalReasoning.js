@@ -13,27 +13,7 @@
 // checklist fields ARE the structured answer, with no separate free-text
 // notes layer to re-read.
 import { runCervicalReasoningEngine, evaluateRedFlagOverride } from "./cervicalReasoningEngine.js";
-
-function arr(regionData, key) {
-  const x = regionData[key];
-  if (!x) return [];
-  return String(x).split(", ").filter(Boolean);
-}
-function str(regionData, key) {
-  return String(regionData[key] || "").trim();
-}
-function multicheckState(regionData, key, negativeOptions) {
-  const values = arr(regionData, key);
-  if (values.length === 0) return { state: "unknown", values: [] };
-  const positives = values.filter((v) => !negativeOptions.includes(v));
-  if (positives.length === 0) return { state: "absent", values: [] };
-  return { state: "present", values: positives };
-}
-function selectState(regionData, key) {
-  const v = str(regionData, key);
-  if (!v) return { state: "unknown", value: null };
-  return { state: "answered", value: v };
-}
+import { arr, str, multicheckState, selectState, demographicsForEngine } from "./reasoningHelpers.js";
 
 /**
  * Reads the Cervical region checklist (plus the shared Subjective chief
@@ -42,8 +22,9 @@ function selectState(regionData, key) {
  * so runCervicalReasoningEngine() can run completely unmodified.
  * @param {object} regionData - data.subjective.regions.cervical
  * @param {object} subjective - data.subjective (for chiefComplaint/onset/medicalHistory)
+ * @param {object} demographics - data.demographics (age, sex, occupation from the Demographics step)
  */
-export function extractCervicalVariables(regionData, subjective = {}) {
+export function extractCervicalVariables(regionData, subjective = {}, demographics = {}) {
   const rd = regionData || {};
 
   const chiefComplaint = {
@@ -188,12 +169,10 @@ export function extractCervicalVariables(regionData, subjective = {}) {
   };
 
   return {
-    // Hardcoded null, same as orthoLumbarReasoning.js's extractLumbarVariables
-    // -- this tool's Subjective step doesn't route age/sex/occupation into
-    // the region checklist data this adapter reads, so age-based conditions
-    // (parseInt(cv.demographics.age)) simply can't match one way or the
-    // other here, same accepted gap the lumbar port already has.
-    demographics: { age: null, sex: null, occupation: null },
+    // From the Demographics step (data.demographics), passed in by the
+    // caller -- the age-based conditions (parseInt(cv.demographics.age))
+    // need it. Left null when the step isn't filled in.
+    demographics: demographicsForEngine(demographics),
     chiefComplaint,
     location: { ...location, armHandPain, bilateralArmSigns },
     mechanism: { ...mechanism, whiplashMechanism, wadGradeNum },
@@ -226,8 +205,8 @@ export function hasCervicalChecklistData(regionData) {
   return !!regionData && Object.values(regionData).some((v) => String(v || "").trim());
 }
 
-export function runCervicalDifferential(regionData, subjective) {
-  const cv = extractCervicalVariables(regionData, subjective);
+export function runCervicalDifferential(regionData, subjective, demographics) {
+  const cv = extractCervicalVariables(regionData, subjective, demographics);
   return runCervicalReasoningEngine(cv);
 }
 

@@ -1,9 +1,10 @@
+import { MedicalRecordsSection } from "./MedicalRecords.jsx";
 import React, { useState, useMemo, useRef, useEffect, useContext, createContext } from "react";
 import { createPortal } from "react-dom";
 import InfoCard from "./InfoCard.jsx";
 import { cardiovascularData } from "./cardiovascularData.js";
 import { respiratoryData } from "./respiratoryData.js";
-import { Icon, IconPair } from "./StepIcons.jsx";
+import { Icon, IconPair, customStepIcon, sanitizeStepsMeta } from "./StepIcons.jsx";
 import { CardioCarePlanSection } from "./CardioCarePlan.jsx";
 import { formatCarePlanSection } from "./NeuroCarePlan.jsx";
 import { getTemplates as getCardioTemplates, saveTemplate as saveCardioTemplate, deleteTemplate as deleteCardioTemplate } from "./cardioTemplates.js";
@@ -11,6 +12,8 @@ import { useWizardStepHistory } from "./useWizardStepHistory.js";
 import ShareAssessmentModal, { SHARE_EXCLUDED_STEP_IDS } from "./ShareAssessmentModal.jsx";
 import { humanizeKey } from "./medicalAbbreviations.js";
 import { TYPO, SPACING, AssessmentTitle, FieldLabel, SummaryRow } from "./assessmentTypography.jsx";
+import { trackEvent } from "./analytics/trackEvent.js";
+import { stepBarLabel } from "./orthoFieldKit.jsx";
 
 // Opens the rich InfoCard overlay from anywhere in the field tree below
 // CardiopulmonaryAssessment without prop-drilling a setter through every
@@ -121,6 +124,7 @@ const STEP_META = [
   { id: "safety", icon: <Icon name="flag" />, label: "Safety Screening" },
   { id: "subjective", icon: <Icon name="notes" />, label: "Subjective Assessment" },
   { id: "chart", icon: <Icon name="folder" />, label: "Medical / Chart Review" },
+  { id: "medicalRecords", icon: <Icon name="folder" />, label: "Medical Records" },
   { id: "vitals", icon: <Icon name="heart" />, label: "Baseline Vitals" },
   { id: "cardio", icon: <Icon name="heart" />, label: "Cardiovascular Examination" },
   { id: "resp", icon: <Icon name="lungs" />, label: "Respiratory Examination" },
@@ -168,6 +172,12 @@ const DEFAULT_ASSESS_STEP_IDS = ASSESS_STEPS.filter((s) => !RETIRED_STEP_IDS.inc
 // NeurologicalAssessment.jsx's own ensureAlwaysSteps for the same reason.
 function ensureCarePlanSteps(order) {
   if (!Array.isArray(order) || !order.length) return order;
+  // Medical Records (2026-09) -- saved assessments predate it, so slot it in right after Chart Review.
+  if (!order.includes("medicalRecords")) {
+    const chartIdx = order.indexOf("chart");
+    order = [...order];
+    order.splice(chartIdx === -1 ? Math.min(order.length, 5) : chartIdx + 1, 0, "medicalRecords");
+  }
   const present = new Set(order);
   const missing = CAREPLAN_STEP_IDS.filter((id) => !present.has(id));
   if (!missing.length) return order;
@@ -249,64 +259,12 @@ function FieldShell({ label, hint, howTo, info, children }) {
   );
 }
 
-// Plain browser speech-to-text (Web Speech API), no AI parsing -- dictates
-// straight into whichever field passes `voice`. Same SpeechRecognition
-// lookup as the Chief complaint mic on the New Patient intake form
-// (AppModules.jsx); this one is a reusable per-field mic for TextField.
-function useVoiceInput(baseValue, onChange) {
-  const [recording, setRecording] = useState(false);
-  const recognitionRef = useRef(null);
-  const start = () => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { alert("Voice input requires the Chrome browser."); return; }
-    const base = baseValue || "";
-    const rec = new SR();
-    rec.continuous = true;
-    rec.interimResults = true;
-    rec.lang = "en-IN";
-    // See orthoFieldKit.jsx's matching useVoiceInput fix: e.resultIndex is
-    // where THIS event's new/changed results begin, so accumulating from
-    // there into a plain per-session closure variable avoids re-summing an
-    // already-committed index the engine re-emits on a long dictation
-    // (2026-09-25, Aditi: voice dictation repeating itself).
-    let finalTranscript = "";
-    rec.onresult = (e) => {
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) finalTranscript += e.results[i][0].transcript + " ";
-      }
-      if (finalTranscript) onChange((base + " " + finalTranscript).trim());
-    };
-    rec.onend = () => setRecording(false);
-    rec.onerror = () => setRecording(false);
-    recognitionRef.current = rec;
-    rec.start();
-    setRecording(true);
-  };
-  const stop = () => {
-    if (recognitionRef.current) { try { recognitionRef.current.stop(); } catch {} recognitionRef.current = null; }
-    setRecording(false);
-  };
-  return { recording, toggle: () => (recording ? stop() : start()) };
-}
-
-function VoiceMicButton({ recording, onClick }) {
-  return (
-    <button type="button" onClick={onClick} title={recording ? "Stop recording" : "Speak"}
-      style={{ flexShrink: 0, width: 34, height: 34, marginLeft: 6, borderRadius: 8, border: `1.5px solid ${recording ? "#dc2626" : "#d8ccE8"}`,
-        background: recording ? "#dc2626" : "#fff", color: recording ? "#fff" : "#111", fontSize: "0.9rem", cursor: "pointer", fontFamily: "inherit" }}>
-      {recording ? "⏹" : "🎤"}
-    </button>
-  );
-}
-
-function TextField({ label, value, onChange, placeholder, hint, howTo, info, unit, voice }) {
-  const v = useVoiceInput(value, onChange);
+function TextField({ label, value, onChange, placeholder, hint, howTo, info, unit }) {
   return (
     <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
-      <div className="text-input-wrap" style={voice ? { display: "flex", alignItems: "center" } : undefined}>
+      <div className="text-input-wrap">
         <input className="text-input" value={value || ""} placeholder={placeholder || ""} onChange={(e) => onChange(e.target.value)} />
         {unit && <span className="combo-unit">{unit}</span>}
-        {voice && <VoiceMicButton recording={v.recording} onClick={v.toggle} />}
       </div>
     </FieldShell>
   );
@@ -362,10 +320,9 @@ function SelectPopover({ options, multi, value, onChange, onClose }) {
   );
 }
 
-function SelectField({ label, type = "single", options, value, onChange, howTo, info, placeholder, hint, voice }) {
+function SelectField({ label, type = "single", options, value, onChange, howTo, info, placeholder, hint }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
-  const v = useVoiceInput(value, onChange);
   useEffect(() => {
     function onDoc(e) {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
@@ -375,7 +332,7 @@ function SelectField({ label, type = "single", options, value, onChange, howTo, 
   }, []);
   return (
     <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
-      <div className="select-wrap" ref={ref} style={voice ? { display: "flex", alignItems: "center", gap: 6 } : undefined}>
+      <div className="select-wrap" ref={ref}>
         <input
           className="select-input"
           value={value || ""}
@@ -386,7 +343,6 @@ function SelectField({ label, type = "single", options, value, onChange, howTo, 
         <button type="button" className="select-btn" onClick={() => setOpen((o) => !o)}>
           Select ⌄
         </button>
-        {voice && <VoiceMicButton recording={v.recording} onClick={v.toggle} />}
         {open && (
           <SelectPopover options={options} multi={type === "multi"} value={value} onChange={onChange} onClose={() => setOpen(false)} />
         )}
@@ -629,7 +585,7 @@ function StepNav({ steps, currentIndex, visited, onJump, onAddClick }) {
             title={s.label}
           >
             <span className="step-circle-ring">{s.icon}</span>
-            <span className="step-circle-label">{s.label}</span>
+            <span className="step-circle-label">{stepBarLabel(s.label)}</span>
           </button>
         );
       })}
@@ -1219,13 +1175,13 @@ function DemographicsSection({ data, setData }) {
   return (
     <>
       <SectionIntro icon={<Icon name="clipboard" />} title="Patient Information" sub="Demographic data — one field at a time, tap through or type." />
-      <TextField label="Name" value={d.name} onChange={(v) => set("name", v)} placeholder="Full name" voice />
-      <TextField label="Age" value={d.age} onChange={(v) => set("age", v)} placeholder="yrs" voice />
+      <TextField label="Name" value={d.name} onChange={(v) => set("name", v)} placeholder="Full name" />
+      <TextField label="Age" value={d.age} onChange={(v) => set("age", v)} placeholder="yrs" />
       <Segmented label="Gender" options={["Male", "Female", "Other"]} value={d.gender} onChange={(v) => set("gender", v)} />
-      <TextField label="Address" value={d.address} onChange={(v) => set("address", v)} placeholder="City / locality" voice />
+      <TextField label="Address" value={d.address} onChange={(v) => set("address", v)} placeholder="City / locality" />
       <Segmented label="Dominance" options={["Right", "Left"]} value={d.dominance} onChange={(v) => set("dominance", v)} />
-      <TextField label="Occupation" value={d.occupation} onChange={(v) => set("occupation", v)} placeholder="e.g. Farmer, office work" voice />
-      <TextField label="Referring doctor" value={d.referrer} onChange={(v) => set("referrer", v)} voice />
+      <TextField label="Occupation" value={d.occupation} onChange={(v) => set("occupation", v)} placeholder="e.g. Farmer, office work" />
+      <TextField label="Referring doctor" value={d.referrer} onChange={(v) => set("referrer", v)} />
       <SelectField
         label="Source of referral"
         type="single"
@@ -1233,7 +1189,7 @@ function DemographicsSection({ data, setData }) {
         value={d.referralSource}
         onChange={(v) => set("referralSource", v)}
       />
-      <TextField label="Diagnosis" value={d.diagnosis} onChange={(v) => set("diagnosis", v)} placeholder="Working / referral diagnosis" voice />
+      <TextField label="Diagnosis" value={d.diagnosis} onChange={(v) => set("diagnosis", v)} placeholder="Working / referral diagnosis" />
       <TextField label="Hospital / file number" value={d.hospNo} onChange={(v) => set("hospNo", v)} />
     </>
   );
@@ -1324,7 +1280,6 @@ function SubjectiveSection({ data, setData }) {
         value={d.chiefComplaint}
         onChange={(v) => set("chiefComplaint", v)}
         howTo="Begin with an open question — 'what troubles you most?' — and let the patient lead before narrowing to focused follow-ups."
-        voice
       />
       <TextArea
         label="History of presenting condition"
@@ -1961,20 +1916,9 @@ function fmtVal(v) {
 // that dumped raw internal fields like `meta` as if they were clinical
 // content. buildCardioAssessSteps mirrors the assessSteps useMemo below so
 // the profile view sees the same section list/labels/icons the wizard did.
-// customStepsMeta rides inside the patient record (see the meta-persist
-// effect below), which a hard reload restores via a real JSON round-trip
-// (AppFull.jsx's DRAFT_KEY / Supabase) -- that silently strips a React
-// element's $$typeof symbol and function `type` down to a plain
-// {key, ref, props, _owner, _store} object. Still truthy, so a bare
-// `|| fallback` never catches it and StepNav crashes trying to render it
-// (2026-09-26, same bug as NeurologicalAssessment.jsx). isValidElement is
-// the actual check needed here.
-function customStepIcon(meta, fallback) {
-  return meta && React.isValidElement(meta.icon) ? meta.icon : fallback;
-}
 export function buildCardioAssessSteps(stepOrder, customStepsMeta = {}) {
   const order = stepOrder || DEFAULT_ASSESS_STEP_IDS;
-  return order.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepIcon(customStepsMeta[id], <Icon name="stethoscope" />), label: customStepsMeta[id]?.label || "Assessment" });
+  return order.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepIcon(customStepsMeta[id], "stethoscope"), label: customStepsMeta[id]?.label || "Assessment" });
 }
 // The CSS classes SummarySection/SectionIntro/primary-btn depend on
 // normally come from the big <style> block inside the default-exported
@@ -2262,7 +2206,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
   const [data, setData] = useState(() => seed);
   const [visited, setVisited] = useState(new Set());
   const [stepOrder, setStepOrder] = useState(() => initialStepOrder);
-  const [customStepsMeta, setCustomStepsMeta] = useState(() => (hasExisting ? seed.meta?.customStepsMeta || {} : {}));
+  const [customStepsMeta, setCustomStepsMeta] = useState(() => (hasExisting ? sanitizeStepsMeta(seed.meta?.customStepsMeta) : {}));
   const [addStepOpen, setAddStepOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [activeCard, setActiveCard] = useState(null);
@@ -2303,7 +2247,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
     setSystem(existing ? s.meta?.system || "combined" : null);
     setVisited(new Set());
     setStepOrder(existing ? ensureCarePlanSteps(s.meta?.stepOrder) || DEFAULT_ASSESS_STEP_IDS : DEFAULT_ASSESS_STEP_IDS);
-    setCustomStepsMeta(existing ? s.meta?.customStepsMeta || {} : {});
+    setCustomStepsMeta(existing ? sanitizeStepsMeta(s.meta?.customStepsMeta) : {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activePatientId]);
 
@@ -2381,7 +2325,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
   }, [data.demographics]);
 
   const assessSteps = useMemo(
-    () => stepOrder.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepIcon(customStepsMeta[id], <Icon name="stethoscope" />), label: customStepsMeta[id]?.label || "Assessment" }),
+    () => stepOrder.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepIcon(customStepsMeta[id], "stethoscope"), label: customStepsMeta[id]?.label || "Assessment" }),
     [stepOrder, customStepsMeta]
   );
 
@@ -2554,7 +2498,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
            icon (orthoStyles.js), this brought Cardio's own step nav in line
            with it instead of icon-only. */
         .step-circle {
-          flex: 0 0 auto; width: 48px; display: flex; flex-direction: column; align-items: center;
+          flex: 0 0 auto; width: 56px; display: flex; flex-direction: column; align-items: center;
           gap: 3px; background: none; border: none; padding: 0; cursor: pointer; color: ${BRAND.grayLight};
         }
         .step-circle-ring {
@@ -2562,7 +2506,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
           display: flex; align-items: center; justify-content: center; position: relative; transition: all .15s;
           font-size: 13px;
         }
-        .step-circle-label { font-size: 9.5px; font-weight: 600; line-height: 1.1; text-align: center; color: inherit; max-width: 48px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .step-circle-label { font-size: 9.5px; font-weight: 600; line-height: 1.1; text-align: center; color: inherit; max-width: 56px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .step-active .step-circle-ring { border-color: ${BRAND.purple}; background: ${BRAND.purple}; color: #fff; box-shadow: 0 4px 10px rgba(108,77,255,.35); }
         .step-active .step-circle-label { color: ${BRAND.purple}; font-weight: 800; }
         .step-seen .step-circle-ring { border-color: ${BRAND.purple}; color: ${BRAND.purpleDark}; }
@@ -2743,7 +2687,8 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
            all of that and pins to the real viewport; bottom:60px (not 0)
            leaves clearance above physiom's own fixed bottom nav bar
            (.pm-bnav in src/utils.jsx, ~59px tall) so the two don't overlap. */
-        .bottombar { position: fixed; left: calc(50% + var(--pm-side-w, 0px) / 2); transform: translateX(-50%); bottom: var(--pm-bnav-h, calc(60px + env(safe-area-inset-bottom))); width: 100%; max-width: var(--pm-col-w, 480px); z-index: 25; background: #fff; border-top: 1px solid ${BRAND.border}; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); display: flex; gap: 10px; }
+        .bottombar { position: fixed; left: calc(50% + var(--pm-side-w, 0px) / 2); transform: translateX(-50%); bottom: var(--pm-bnav-h, calc(60px + env(safe-area-inset-bottom))); width: 100%; max-width: var(--pm-col-w, 480px); z-index: 25; background: #fff; border-top: 1px solid ${BRAND.border}; padding: 12px 16px 12px; display: flex; gap: 10px; }
+        .bottombar::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 160px; background: #fff; pointer-events: none; }
         .ghost-btn { flex: 0 0 auto; border: 1.5px solid ${BRAND.border}; background: #fff; color: ${BRAND.ink}; padding: 13px 18px; border-radius: 14px; font-weight: 600; font-size: 14px; cursor: pointer; }
         .primary-btn {
         flex: 1; border: none; background: linear-gradient(90deg, ${BRAND.purple}, ${BRAND.purpleDark}); color: #fff;
@@ -2882,6 +2827,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
           {current.id === "safety" && <SafetySection data={data} setData={setData} setting={setting} />}
           {current.id === "subjective" && <SubjectiveSection data={data} setData={setData} />}
           {current.id === "chart" && <ChartSection data={data} setData={setData} setting={setting} system={system} />}
+          {current.id === "medicalRecords" && <MedicalRecordsSection data={data} setData={setData} patientData={patientData} onSave={onSave} />}
           {current.id === "vitals" && <VitalsSection data={data} setData={setData} system={system} />}
           {current.id === "cardio" && <CardioSection data={data} setData={setData} system={system} />}
           {current.id === "resp" && <RespSection data={data} setData={setData} system={system} />}
@@ -2935,6 +2881,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
                 onClick={() => {
                   const missing = missingDemographicsFields(data.demographics);
                   if (missing.length) { setMissingDemFields(missing); return; }
+                  trackEvent("assessment_completed", { entityType: "assessment", entityId: "cardio" });
                   onNav?.("clinical");
                 }}
               >

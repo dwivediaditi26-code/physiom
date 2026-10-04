@@ -1,55 +1,129 @@
-// appMap.ts — a machine-readable map of how PhysioMind Pro works.
+// appMap.ts — the "robot knows your app" layer for the browser tests.
 //
-// This is the "the robot knows your app" layer. Every module, how to open it,
-// how to fill it, and how to read the SOAP note / PDF lives here. The command
-// specs (commands.spec.ts) and the case suite (ortho-cases.spec.ts) both build
-// on this, so when the app's UI changes you fix the selector ONCE here and
-// every command keeps working.
+// Every screen the tests touch is opened through a helper in this file, so
+// when the app's screens change you fix the selector ONCE here and every
+// test keeps working. Nothing else in e2e/ should hard-code a button label
+// for navigation.
 //
-// Add a new module? Add one entry to MODULES. Add a new plain-language command?
-// Add a tagged test in commands.spec.ts that calls these helpers.
+// THE MAP (today's app, 2026-09) -- where things are and how the robot gets there
+//
+//   Phone: bottom bar   HOME | CLINICAL | PHYSIOFEED | LEARN | PROFILE
+//                       (test ids bnav-tab-home, -__clinical, -physiofeed, -learn, -profile)
+//   Desktop: sidebar    Home | Patients | Clinical | Learn | PhysioFeed | Settings
+//
+//   Home ............... tiles: Clinical, Assessment, AI Assessment (+ Posture Analysis for preview/admin accounts only)
+//                        (test ids home-tile-*), then Evidence, Explore, Learn, Saved
+//   Clinical ........... sub-tabs  Today | Assess | Patients | Treatment (| Posture, preview accounts only)
+//     Assess ........... "＋ New Assessment" -> quick details (name, specialty)
+//       Ortho .......... pathway -> body region(s) -> how to start -> 20 steps
+//                        (Demographics ... Final Review) -> Save Assessment
+//       Neuro .......... setting -> template -> steps -> Summary & Review
+//       Cardio ......... Start Assessment -> setting -> system -> steps -> Summary & Review
+//     Patients ......... the patient list (filters: All / Outpatient / IPD / Post-op ...)
+//     Treatment ........ patients in active treatment
+//     Posture .......... (preview accounts only) leaves Clinical for the Posture Analysis screen
+//   Learn .............. topics: Practical Skills, Clinical Cases (+ "Soon" cards)
+//   PhysioFeed ......... phone: tabs Feed | Opportunity | Case Discussion | People | Evidence | Saved
+//                        desktop: left menu Physio Feed | Opportunity | Case Discussion | People |
+//                        Evidence | Messages | Saved
+//   Profile ............ Edit Profile, Professional Profile | Activity, Sign out
+//
+// Two ways into the app:
+//   enterGuestMode()  -- "Try the full app", no account, nothing reaches
+//                        Supabase. Needs no secrets, so it runs anywhere.
+//   signUp()/login()  -- a real account on the disposable TEST Supabase
+//                        project (see e2e/README.md). Never point these at
+//                        the live project: they save patients.
 
 import { Page, expect } from "@playwright/test";
 import * as fs from "fs";
 import * as path from "path";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Module registry — the objective-assessment modules, keyed by the app's own
-// internal nav key. `openBy` is the visible tile/label text the robot clicks.
+// What the Ortho assessment contains
 // ─────────────────────────────────────────────────────────────────────────────
-export interface ModuleDef {
-  key: string;          // app's internal nav key (rom, mmt, special, fascia, ...)
-  label: string;        // EXACT sidebar label text the robot clicks
-  navKey: string;       // app nav key
-  group: "assessment" | "advanced"; // collapsible sidebar group it lives in
-  tag: string;          // grep tag, e.g. "@special"
-  fillKind: "rom" | "mmt" | "special" | "generic" | "none"; // how the robot enters data
+
+// The step bar of a "General Assessment" (the core sections). "Advanced
+// Assessment" has more steps; use the counter ("Step n/m") for those.
+export const ORTHO_STEPS = [
+  "Demographics", "Subjective", "Red Flag Screen", "Pain", "General Observation",
+  "Palpation", "ROM", "MMT", "Joint Mobility", "Special Tests", "Neuro Screen",
+  "Limb Length", "Functional Assessment", "Outcome Measure", "Clinical Assessment",
+  "Problem List", "Care Plan Goals", "Care Plan Treatment", "Care Plan", "Medical Records", "Final Review",
+] as const;
+
+// Body regions on the region step, exactly as labelled there.
+export const REGIONS = [
+  "Cervical", "Thoracic", "Lumbar", "Sacrum / Coccyx",
+  "Shoulder", "Elbow", "Wrist", "Hand / Fingers",
+  "Hip", "Knee", "Ankle", "Foot / Toes", "Pelvis",
+] as const;
+export type Region = (typeof REGIONS)[number];
+export type Side = "Right" | "Left" | "Bilateral";
+export type Specialty = "Ortho" | "Neuro" | "Cardio";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Getting in
+// ─────────────────────────────────────────────────────────────────────────────
+export const noCrash = (page: Page) => expect(page.getByText("Something went wrong")).toHaveCount(0);
+
+// Start from a clean browser (once per page, so a reload later in a test does
+// not wipe the login) and skip the first-run tour.
+async function freshStart(page: Page) {
+  await page.addInitScript(() => {
+    try {
+      if (!sessionStorage.getItem("e2e_init")) { localStorage.clear(); sessionStorage.setItem("e2e_init", "1"); }
+      localStorage.setItem("pm_onboarded", "1");
+    } catch { /* storage blocked -- nothing to clear */ }
+  });
 }
 
-// Labels, navKeys and groups read straight from src/AppFull.jsx <SidebarGroup>/
-// <SidebarItem> definitions. The "Assessment" group is expanded by default;
-// "Advanced Assessment" is collapsed and must be expanded first.
-export const MODULES: ModuleDef[] = [
-  { key: "posture",     label: "Posture Analysis",                navKey: "posture",     group: "assessment", tag: "@posture",     fillKind: "generic" },
-  { key: "observation", label: "Observation",                     navKey: "observation", group: "assessment", tag: "@observation", fillKind: "generic" },
-  { key: "palpation",   label: "Palpation",                       navKey: "palpation",   group: "assessment", tag: "@palpation",   fillKind: "generic" },
-  { key: "rom",         label: "Range of Motion",                 navKey: "rom",         group: "assessment", tag: "@rom",         fillKind: "rom" },
-  { key: "mmt",         label: "MMT",                             navKey: "mmt",         group: "assessment", tag: "@mmt",         fillKind: "mmt" },
-  { key: "special",     label: "Special Tests (100+)",            navKey: "special",     group: "assessment", tag: "@special",     fillKind: "special" },
-  { key: "neuro",       label: "Neurological",                    navKey: "neuro",       group: "assessment", tag: "@neuro",       fillKind: "generic" },
-  { key: "outcome",     label: "Outcome Measures",                navKey: "outcome",     group: "assessment", tag: "@outcome",     fillKind: "generic" },
-  { key: "fma",         label: "Functional Assessment",           navKey: "fma",         group: "advanced",   tag: "@fma",         fillKind: "generic" },
-  { key: "gait",        label: "Gait Analysis",                   navKey: "gait",        group: "advanced",   tag: "@gait",        fillKind: "generic" },
-  { key: "cyriax",      label: "STTT — Selective Tissue Tension", navKey: "cyriax_full", group: "advanced",   tag: "@cyriax",      fillKind: "generic" },
-  { key: "kinetic",     label: "Kinetic Chain",                   navKey: "kinetic",     group: "advanced",   tag: "@kinetic",     fillKind: "generic" },
-  { key: "fascia",      label: "Fascia Integration",              navKey: "fascia",      group: "advanced",   tag: "@fascia",      fillKind: "generic" },
-];
+// The Home screen's tiles are the signal that we are "in the app".
+export async function expectHome(page: Page) {
+  await expect(page.getByTestId("home-tile-clinical")).toBeVisible({ timeout: 25_000 });
+  await noCrash(page);
+}
 
-export const moduleByKey = (k: string) => MODULES.find(m => m.key === k)!;
+// After a reload the app comes back on the screen you were on (not Home), so
+// "we're still signed in" means: the app frame is there and the sign-in form is not.
+// On a phone the sidebar exists in the page but is a closed drawer, so only
+// count a bar or sidebar that is actually showing.
+export async function expectStillSignedIn(page: Page) {
+  await expect(page.getByTestId("bnav-tab-home").or(page.locator(".pm-sidebar")).filter({ visible: true }).first()).toBeVisible({ timeout: 25_000 });
+  await expect(page.getByPlaceholder("you@clinic.com")).toHaveCount(0);
+  await noCrash(page);
+}
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Credentials + login
-// ─────────────────────────────────────────────────────────────────────────────
+// Did the patient really reach the database? The header's "Saved to cloud"
+// label is set by the on-device draft save, so it proves nothing about the
+// cloud; the reliable signal is the database's answer to the save request.
+// Call trackCloudSaves() on a page BEFORE saving, then expectCloudSaved().
+export function trackCloudSaves(page: Page) {
+  const t = { ok: 0, failed: [] as string[] };
+  page.on("response", async (res) => {
+    if (res.request().method() === "POST" && res.url().includes("/rest/v1/patients")) {
+      if (res.status() < 300) t.ok++;
+      else t.failed.push(`${res.status()} ${(await res.text().catch(() => "")).slice(0, 160)}`);
+    }
+  });
+  return t;
+}
+
+export async function expectCloudSaved(t: { ok: number; failed: string[] }, timeout = 45_000) {
+  try {
+    await expect.poll(() => t.ok, { timeout }).toBeGreaterThan(0);
+  } catch {
+    throw new Error(`No patient save was accepted by the database. Rejected saves: ${t.failed.join(" | ") || "none seen"}`);
+  }
+}
+
+export async function enterGuestMode(page: Page) {
+  await freshStart(page);
+  await page.goto("/");
+  await page.getByRole("button", { name: /Try the full app/ }).click();
+  await expectHome(page);
+}
+
 export function creds() {
   const p = path.join(__dirname, "login.local.json");
   if (fs.existsSync(p)) {
@@ -59,299 +133,276 @@ export function creds() {
   return { email: process.env.E2E_EMAIL || "", password: process.env.E2E_PASSWORD || "" };
 }
 
-export const noCrash = (page: Page) => expect(page.getByText("Something went wrong")).toHaveCount(0);
-
-export async function login(page: Page) {
-  const { email, password } = creds();
-  expect(email, "Put your TEST-project login in e2e/login.local.json").not.toBe("");
-  await page.addInitScript(() => { try { localStorage.clear(); } catch {} localStorage.setItem("pm_onboarded", "1"); });
-  await page.goto("/");
-  await page.getByRole("textbox", { name: "you@clinic.com" }).fill(email);
-  await page.getByRole("textbox", { name: "••••••••" }).fill(password);
-  await page.getByRole("button", { name: /Sign in/ }).click();
-  for (let i = 0; i < 5; i++) {
-    const next = page.getByRole("button", { name: /^Next/ }).first();
-    if (await next.isVisible({ timeout: i === 0 ? 4000 : 1200 }).catch(() => false)) await next.click().catch(() => {});
-    else break;
-  }
-  const skip = page.getByRole("button", { name: /Skip tour|Got it/i }).first();
-  if (await skip.isVisible({ timeout: 3000 }).catch(() => false)) await skip.click().catch(() => {});
-  await expect(page.getByRole("button", { name: /Start Assessment/i }).first()).toBeVisible({ timeout: 25000 });
-  await noCrash(page);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Navigation
-// ─────────────────────────────────────────────────────────────────────────────
-export async function startAssessment(page: Page) {
-  await page.getByRole("button", { name: /Start Assessment/i }).first().click();
-  // Button was renamed from "Review & Run Analysis" to "Suggest probable
-  // objective assessment" in SubjectiveObjective.jsx (line ~4833) -- test
-  // was still waiting on the old text and failing on real, current UI.
-  await expect(page.getByText(/Suggest probable objective assessment/i)).toBeVisible({ timeout: 20000 });
-}
-
-export async function selectRegion(page: Page, group: string, regionName: string) {
-  if (!(await page.getByText("Lower limb").first().isVisible().catch(() => false))) {
-    await page.getByRole("button", { name: /\+ Add body region|\+ Edit/ }).first().click({ timeout: 8000 }).catch(() => {});
-  }
-  await page.getByText(`${group}▼`).first().click({ timeout: 8000 }).catch(() => {});
-  await page.getByText(regionName, { exact: true }).first().click({ timeout: 8000 }).catch(() => {});
-  await page.getByRole("button", { name: "Right", exact: true }).first().click({ timeout: 8000 }).catch(() => {});
-  await page.getByRole("button", { name: "▲" }).first().click({ timeout: 5000 }).catch(() => {});
-}
-
-export async function runAnalysis(page: Page) {
-  // 1) open the review/summary modal (button renamed from "Review & Run
-  //    Analysis" to "Suggest probable objective assessment")
-  await page.getByRole("button", { name: /Suggest probable objective assessment/i }).first()
-    .click({ timeout: 8000 }).catch(() => {});
-  // 2) click the modal's "Run analysis" — scope by EXACT name so it doesn't also
-  //    match the outer button (which would trigger a strict-mode error the
-  //    old .catch() silently swallowed, so analysis never actually ran).
-  const run = page.getByRole("button", { name: "🧠 Run analysis" }).first();
-  if (await run.isVisible({ timeout: 8000 }).catch(() => false)) {
-    await run.click().catch(() => {});
-  }
-  // 3) wait for the interpretation to actually produce results before moving on
-  await page.getByText(/Interpretation|Probable|Impression|Clinical/i).first()
-    .waitFor({ state: "visible", timeout: 15000 }).catch(() => {});
-  await page.waitForTimeout(800);
-}
-
-// Dismiss the "What you've documented / Run analysis" modal (and any similar
-// overlay) if it's covering the screen, so sidebar clicks aren't intercepted.
-export async function dismissModal(page: Page) {
-  const cont = page.getByRole("button", { name: /Continue editing|Close|Got it|Cancel/i }).first();
-  if (await cont.isVisible({ timeout: 1500 }).catch(() => false)) {
-    await cont.click({ timeout: 2000 }).catch(() => {});
+// Safety net: the tests that sign in or sign up write to a real database, so
+// they must never run against the live one. The app falls back to the live
+// project whenever VITE_SUPABASE_URL was not set when it was built, so look
+// at the build the tests are about to use (and at the address, when testing
+// a deployed copy) and refuse if it points at the live project.
+const LIVE_PROJECT_REF = "gkhcysvayjrkrufcnqvz";
+export function assertNotLiveDatabase() {
+  const remote = process.env.E2E_BASE_URL;
+  if (remote) {
+    if (/physiom-sbs4/.test(remote)) {
+      throw new Error(`Refusing to sign in or sign up on the live site (${remote}). Use a copy built against the TEST Supabase project.`);
+    }
     return;
   }
-  await page.keyboard.press("Escape").catch(() => {});
-}
-
-// Open an objective module via the DESKTOP sidebar (.pm-sidebar). The app also
-// renders an off-screen mobile drawer (.pm-nav-drawer) FIRST in the DOM, so we
-// must scope to .pm-sidebar or a plain .first() clicks the hidden copy and
-// nothing navigates. Modules in the "Advanced Assessment" group are collapsed
-// by default, so expand that group header first.
-// On the mobile project (.pm-sidebar hidden) we fall back to the bottom-nav
-// drawer.
-export async function openModule(page: Page, m: ModuleDef): Promise<boolean> {
-  const sidebar = page.locator(".pm-sidebar");
-
-  if (await sidebar.isVisible({ timeout: 2000 }).catch(() => false)) {
-    const item = sidebar.getByText(m.label, { exact: true }).first();
-    // expand the Advanced group if this module lives there and isn't showing
-    if (m.group === "advanced" && !(await item.isVisible().catch(() => false))) {
-      const header = sidebar.getByText("Advanced Assessment", { exact: false }).first();
-      if (await header.isVisible().catch(() => false)) {
-        await header.click().catch(() => {});
-        await page.waitForTimeout(400);
-      }
+  const assets = path.join(__dirname, "..", "dist", "assets");
+  const files = fs.existsSync(assets) ? fs.readdirSync(assets).filter(f => f.endsWith(".js")) : [];
+  for (const f of files) {
+    if (fs.readFileSync(path.join(assets, f), "utf8").includes(LIVE_PROJECT_REF)) {
+      throw new Error(
+        "Refusing to sign in or sign up: this build talks to the LIVE Supabase project. " +
+        "Build with VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY set to the TEST project (see e2e/README.md)."
+      );
     }
-    if (await item.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await item.scrollIntoViewIfNeeded().catch(() => {});
-      await item.click({ timeout: 4000 }).catch(() => {});
-      await page.waitForTimeout(700);
-      return true;
-    }
-    return false;
   }
+}
 
-  // ── mobile fallback: open the nav drawer, then click inside it ──
-  // Two hamburger buttons share the exact accessible name "Open navigation"
-  // (AppFull.jsx's .pm-header desktop bar AND .pm-mobile-hdr mobile bar --
-  // only one is ever visible via CSS media query, the other stays in the
-  // DOM). getByRole(...).first() always picked the desktop one, which is
-  // display:none on a mobile viewport -- the click silently no-op'd, the
-  // drawer never opened, and every module lookup that depended on it just
-  // burned its own retries until the outer test hit its 90s timeout.
-  // Scope directly to the mobile header's hamburger instead.
-  const menu = page.locator(".pm-mobile-hdr .pm-hamburger").first();
-  if (await menu.isVisible({ timeout: 2000 }).catch(() => false)) await menu.click().catch(() => {});
-  const drawer = page.locator(".pm-nav-drawer");
-  if (m.group === "advanced") {
-    const header = drawer.getByText("Advanced Assessment", { exact: false }).first();
-    if (await header.isVisible().catch(() => false)) { await header.click().catch(() => {}); await page.waitForTimeout(400); }
-  }
-  const mItem = drawer.getByText(m.label, { exact: true }).first();
-  if (await mItem.isVisible({ timeout: 3000 }).catch(() => false)) {
-    await mItem.scrollIntoViewIfNeeded().catch(() => {});
-    await mItem.click({ timeout: 4000 }).catch(() => {});
-    await page.waitForTimeout(700);
-    return true;
-  }
-  return false;
+// An existing test-project account (E2E_EMAIL / E2E_PASSWORD, or
+// e2e/login.local.json).
+export async function login(page: Page, account = creds()) {
+  assertNotLiveDatabase();
+  expect(account.email,"Put your TEST-project login in e2e/login.local.json (or E2E_EMAIL / E2E_PASSWORD)").not.toBe("");
+  await freshStart(page);
+  await page.goto("/");
+  await page.getByPlaceholder("you@clinic.com").fill(account.email);
+  await page.getByPlaceholder("••••••••").fill(account.password);
+  await page.getByRole("button", { name: /Sign in/ }).click();
+  await expectHome(page);
+}
+
+// A brand-new account. The TEST project must have "Confirm email" OFF,
+// otherwise sign-up never returns a session (see e2e/README.md).
+export async function signUp(page: Page, account: { name: string; email: string; password: string }) {
+  assertNotLiveDatabase();
+  await freshStart(page);
+  await page.goto("/");
+  await page.getByRole("button", { name: "Create free account" }).click();
+  await page.getByPlaceholder("Dr. Aditi").fill(account.name);
+  await page.getByPlaceholder("you@clinic.com").fill(account.email);
+  await page.getByPlaceholder("Create a strong password").fill(account.password);
+  // The Terms / Privacy tick box must be ticked before the button works.
+  await page.getByRole("checkbox").check();
+  await page.getByRole("button", { name: "Create free account →" }).click();
+  await expectHome(page);
+}
+
+export function uniqueSuffix() {
+  return `${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// "Click every button in the current view, assert no crash after each."
-// This is the engine behind commands like "test all special-test buttons".
+// Moving around
 // ─────────────────────────────────────────────────────────────────────────────
-// Buttons that navigate away, open blocking modals, or mutate data — never
-// click these during a "click everything" crawl or they hijack the whole run
-// (e.g. New Patient opens an intake modal that blocks every later click).
-// "review & run" -> "suggest probable" matches the button's rename from
-// "Review & Run Analysis" to "Suggest probable objective assessment"
-// (SubjectiveObjective.jsx ~line 4833) -- the stale pattern here meant
-// clickEveryButton() would no longer skip it during a crawl and would
-// click straight into the analysis modal mid-test.
-const UNSAFE_BUTTON = /new patient|switch patient|\+ *new|load patient|profile|home|dashboard|demographics|subjective|posture analysis|observation|palpation|range of motion|\bmmt\b|special tests|neurolog|outcome|functional|gait|stt|kinetic|fascia|treatment|documentation|soap|review & run|suggest probable|run analysis|sign|log ?out|delete|remove|save & exit|export|pdf|consent|switch|patients?\b/i;
 
-export async function clickEveryButton(page: Page, opts: { max?: number; skip?: RegExp } = {}) {
-  const max = opts.max ?? 30;
-  const buttons = page.getByRole("button");
-  const n = Math.min(await buttons.count(), max);
-  let clicked = 0;
-  for (let i = 0; i < n; i++) {
-    const b = buttons.nth(i);
-    const txt = (await b.textContent().catch(() => "")) || "";
-    if (opts.skip && opts.skip.test(txt)) continue;
-    if (UNSAFE_BUTTON.test(txt)) continue;
-    if (!(await b.isVisible().catch(() => false))) continue;
-    // short per-click timeout so a blocked click fails fast instead of hanging
-    await b.click({ timeout: 1200 }).catch(() => {});
-    clicked++;
-    // if a click opened a modal/overlay, close it before the next one
-    await page.keyboard.press("Escape").catch(() => {});
-    await noCrash(page);
-  }
-  return clicked;
+// Leaving an assessment asks "Save this assessment?" first. Entries are kept
+// either way; the tests take "Leave without saving" when it shows up.
+export async function leaveIfAsked(page: Page) {
+  const leave = page.getByText("Leave without saving");
+  if (await leave.isVisible({ timeout: 1500 }).catch(() => false)) await leave.click();
 }
 
-// Toggle/select every option control in the current module (dropdowns + option
-// buttons). Used to exercise "do all the buttons/inputs in this module work".
-export async function exerciseModuleInputs(page: Page) {
-  // dropdowns: pick the last non-empty option (usually an abnormal/positive value)
-  const selects = page.locator("select");
-  const sc = await selects.count();
-  for (let i = 0; i < Math.min(sc, 30); i++) {
-    const s = selects.nth(i);
-    const opts = await s.locator("option").allTextContents().catch(() => []);
-    const pick = opts.filter(o => o && !/select|—|N\/A|choose/i.test(o)).pop();
-    if (pick) await s.selectOption({ label: pick }).catch(() => {});
-    await noCrash(page);
-  }
-  // number inputs: put a plausible value
-  const nums = page.locator('input[type="number"]');
-  const nc = await nums.count();
-  for (let i = 0; i < Math.min(nc, 30); i++) {
-    await nums.nth(i).fill("45").catch(() => {});
-  }
-  await noCrash(page);
-}
+export type MainTab = "home" | "clinical" | "physiofeed" | "learn" | "profile";
 
-// ── Best-effort Fascia entry ──────────────────────────────────────────────
-// FasciaNKT.jsx's Fascia Integration module (src/FasciaNKT.jsx) is NOT built
-// from <select>/<input> like every other objective module -- it's custom
-// click-chip cards (div onClick={()=>setOpenTest(...)} to expand, then
-// div onClick={()=>set(t.id, opt.val)} per finding option). exerciseModuleInputs()
-// only fills <select>/<input type="number">, so it silently touches zero
-// fascia fields, which is why @soap-fascia was failing: nothing was ever
-// recorded, so buildRealtimeSOAP's "Fascial Assessment:" block (ClinicalModules.jsx
-// ~line 3218, emitted whenever ANY fa_* field is truthy) never fires.
-//
-// Each test card carries a real app attribute, `data-fa-id={t.id}` (used by
-// the app itself for deep-link highlighting -- not test-only instrumentation),
-// which gives a stable hook. Default region ("screening") renders with tests
-// already visible, no region-tab click needed.
-export async function fillFascia(page: Page): Promise<boolean> {
-  const card = page.locator("[data-fa-id]").first();
-  if (!(await card.isVisible({ timeout: 4000 }).catch(() => false))) return false;
-
-  // First child div is the card header; clicking it toggles the card open
-  // (setOpenTest) and reveals the "Select Finding" option rows beneath it.
-  await card.locator(":scope > div").first().click({ timeout: 3000 }).catch(() => {});
-  await page.waitForTimeout(400);
-
-  // Option rows and the header all share `cursor:pointer` inline styling;
-  // the "How to Perform" / "Treatment Protocol" info boxes don't. The last
-  // cursor:pointer div under the card is reliably one of the finding options
-  // (same "pick the last/most-severe entry" convention as fillMmt/fillSpecial).
-  const clickable = card.locator("div[style*='cursor:pointer'], div[style*='cursor: pointer']");
-  const n = await clickable.count().catch(() => 0);
-  if (n > 1) {
-    await clickable.nth(n - 1).click({ timeout: 2000 }).catch(() => {});
-  }
-  await noCrash(page);
-  return true;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SOAP note
-// ─────────────────────────────────────────────────────────────────────────────
-export async function openSoap(page: Page) {
-  // Documentation → SOAP Notes. Same dual-render issue as the mobile
-  // hamburger in openModule() -- "Documentation"/"SOAP Notes" exist in BOTH
-  // the desktop .pm-sidebar and the mobile .pm-nav-drawer at once (CSS just
-  // hides one per viewport), so an unscoped .first() could click a hidden
-  // desktop element on mobile-chrome and silently no-op, leaving nothing to
-  // click next -- a plausible path to the page/context closing unexpectedly
-  // that CI hit here.
-  const sidebar = page.locator(".pm-sidebar");
-  const onDesktop = await sidebar.isVisible({ timeout: 2000 }).catch(() => false);
-  let root = page.locator("body");
-  if (onDesktop) {
-    root = sidebar;
+// The five main areas. Phone layout has a bottom bar, desktop layout has a
+// sidebar (which has no "Profile" -- the phone bar is the only way in).
+export async function openMainTab(page: Page, tab: MainTab) {
+  const bar = page.getByTestId(`bnav-tab-${tab === "clinical" ? "__clinical" : tab}`);
+  if (await bar.isVisible().catch(() => false)) {
+    await bar.click();
   } else {
-    const menu = page.locator(".pm-mobile-hdr .pm-hamburger").first();
-    if (await menu.isVisible({ timeout: 2000 }).catch(() => false)) await menu.click().catch(() => {});
-    root = page.locator(".pm-nav-drawer");
+    expect(tab, "the desktop sidebar has no Profile entry").not.toBe("profile");
+    const label = { home: "Home", clinical: "Clinical", physiofeed: "PhysioFeed", learn: "Learn" }[tab];
+    await page.locator(".pm-sidebar").getByText(label, { exact: label !== "Clinical" }).first().click();
   }
-  const doc = root.getByText("Documentation").first();
-  if (await doc.isVisible({ timeout: 3000 }).catch(() => false)) await doc.click().catch(() => {});
-  const soap = root.getByText("SOAP Notes").first();
-  if (await soap.isVisible({ timeout: 3000 }).catch(() => false)) await soap.click().catch(() => {});
-  const cont = page.getByRole("button", { name: /Continue SOAP/i }).first();
-  if (await cont.isVisible({ timeout: 2000 }).catch(() => false)) await cont.click().catch(() => {});
-  await page.waitForTimeout(800);
+  await leaveIfAsked(page);
 }
 
-// Grab the full visible SOAP note text so a command can assert what's in it.
-export async function soapText(page: Page): Promise<string> {
-  await openSoap(page);
-  const body = await page.locator("body").innerText().catch(() => "");
-  return body;
+export async function openClinical(page: Page) {
+  await openMainTab(page, "clinical");
+  // Shown on every Clinical sub-tab, e.g. "1 patient today".
+  await expect(page.getByText(/\d+ patients? today/)).toBeVisible({ timeout: 15_000 });
 }
 
-export async function assertInSoap(page: Page, needle: RegExp) {
-  const text = await soapText(page);
-  expect(text, `Expected SOAP note to contain ${needle}`).toMatch(needle);
+export type ClinicalTab = "Today" | "Assess" | "Patients" | "Treatment" | "Posture";
+
+// Clinical's sub-tabs. "Patients" carries a count in front ("3Patients").
+export async function openClinicalTab(page: Page, tab: ClinicalTab) {
+  const name = tab === "Patients" ? /^\s*\d*\s*Patients\s*$/ : tab;
+  await page.getByRole("button", { name, exact: tab !== "Patients" }).first().click();
+}
+
+// Clinical -> Patients: is this patient in the list?
+export async function expectPatientListed(page: Page, name: string, timeout = 15_000) {
+  await openClinical(page);
+  await openClinicalTab(page, "Patients");
+  await expect(page.getByText(name, { exact: false }).first()).toBeVisible({ timeout });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PDF / report
+// Starting an assessment
 // ─────────────────────────────────────────────────────────────────────────────
-// The app opens a print-formatted report in a NEW TAB (Print → Save as PDF).
-// This clicks Export PDF and returns the new tab's text so a command can assert
-// the report shows the expected content.
-export async function exportReportText(page: Page): Promise<string> {
-  const ctx = page.context();
-  const btn = page.getByRole("button", { name: /Export PDF|Generate|Report/i }).first();
-  if (!(await btn.isVisible({ timeout: 4000 }).catch(() => false))) return "";
-  const [popup] = await Promise.all([
-    ctx.waitForEvent("page").catch(() => null),
-    btn.click().catch(() => {}),
-  ]);
-  if (!popup) {
-    // same-tab render fallback
-    return await page.locator("body").innerText().catch(() => "");
-  }
-  await popup.waitForLoadState("domcontentloaded").catch(() => {});
-  const txt = await popup.locator("body").innerText().catch(() => "");
-  await popup.close().catch(() => {});
-  return txt;
+
+// Clinical -> Assess -> "＋ New Assessment" -> name (+ optional age and sex)
+// + specialty -> Next.
+export async function startNewAssessment(
+  page: Page,
+  specialty: Specialty,
+  patientName: string,
+  extra: { age?: number; sex?: "Male" | "Female" | "Other" } = {},
+) {
+  await openClinical(page);
+  await openClinicalTab(page, "Assess");
+  await page.getByText("＋ New Assessment").click();
+  const modal = page.getByTestId("specialty-picker-modal");
+  await modal.getByPlaceholder("e.g. Riya Sharma").fill(patientName);
+  if (extra.age !== undefined) await modal.getByPlaceholder("yrs").fill(String(extra.age));
+  if (extra.sex) await modal.getByRole("button", { name: extra.sex, exact: true }).click();
+  await modal.getByText(specialty, { exact: true }).click();
+  // A signed-in person confirms once, the first time they start a patient, that they will have
+  // each patient's permission; after that (and for guests) the box is not there.
+  const permission = modal.getByRole("checkbox", { name: /each patient's permission/i });
+  if (await permission.count()) await permission.check();
+  await modal.getByText("Next →").click();
 }
 
-export const REGIONS: Record<string, { group: string; name: string }> = {
-  cervical:  { group: "Spine",      name: "Cervical spine" },
-  thoracic:  { group: "Spine",      name: "Thoracic spine" },
-  lumbar:    { group: "Spine",      name: "Lumbar / SI" },
-  shoulder:  { group: "Upper limb", name: "Shoulder" },
-  elbow:     { group: "Upper limb", name: "Elbow" },
-  wrist:     { group: "Upper limb", name: "Wrist / Hand" },
-  hip:       { group: "Lower limb", name: "Hip / Groin" },
-  knee:      { group: "Lower limb", name: "Knee" },
-  ankle:     { group: "Lower limb", name: "Ankle / Foot" },
-};
+export interface OrthoStart {
+  name: string;
+  // Also typed into the quick form; the wizard should already have them.
+  age?: number;
+  sex?: "Male" | "Female" | "Other";
+  region?: Region;
+  side?: Side;
+  // "How do you want to start?" choice.
+  setup?: "General Assessment" | "Advanced Assessment";
+}
+
+// Pathway "Outpatient / Musculoskeletal" -> region (+ side for limbs) -> setup
+// -> lands on step 1 of the assessment.
+export async function startOrtho(page: Page, o: OrthoStart) {
+  const region = o.region ?? "Knee";
+  const setup = o.setup ?? "General Assessment";
+  await startNewAssessment(page, "Ortho", o.name, { age: o.age, sex: o.sex });
+  await page.getByText("Outpatient / Musculoskeletal").click();
+  await page.getByRole("button", { name: /^Continue/ }).click();
+
+  await page.getByRole("button", { name: region, exact: true }).click();
+  // Limb regions ask which side; the spine and pelvis do not.
+  const side = page.getByRole("button", { name: o.side ?? "Right", exact: true });
+  if (await side.isVisible({ timeout: 1500 }).catch(() => false)) await side.click();
+  await page.getByRole("button", { name: /^Continue/ }).click();
+
+  await page.getByText(setup, { exact: true }).click();
+  await page.getByRole("button", { name: /Start assessment/ }).click();
+  await expect(page.getByText(/Step 1\/\d+/)).toBeVisible({ timeout: 15_000 });
+  await noCrash(page);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Inside the Ortho assessment
+// ─────────────────────────────────────────────────────────────────────────────
+
+// The step bar's chips are buttons named exactly like the step.
+export async function goToStep(page: Page, step: (typeof ORTHO_STEPS)[number] | string) {
+  await page.getByRole("button", { name: step, exact: true }).first().click();
+  await noCrash(page);
+}
+
+export async function stepCounter(page: Page): Promise<{ n: number; total: number }> {
+  const text = (await page.locator("body").innerText()).match(/Step (\d+)\/(\d+)/);
+  expect(text, "no 'Step n/m' counter on screen").not.toBeNull();
+  return { n: Number(text![1]), total: Number(text![2]) };
+}
+
+// Click "Next" from wherever we are to the last step ("Review & complete"
+// on the second-to-last one). Checks the counter moves by one each time and
+// nothing crashes. Returns how many steps there were.
+export async function walkToEnd(page: Page): Promise<number> {
+  const { n: first, total } = await stepCounter(page);
+  for (let n = first; n < total - 1; n++) {
+    await expect(page.getByText(new RegExp(`Step ${n}/${total}`))).toBeVisible();
+    await noCrash(page);
+    await page.getByRole("button", { name: /^Next$/ }).click();
+  }
+  await expect(page.getByText(new RegExp(`Step ${total - 1}/${total}`))).toBeVisible();
+  await page.getByRole("button", { name: /Review & complete/ }).click();
+  await expect(page.getByText(new RegExp(`Step ${total}/${total}`))).toBeVisible();
+  await expect(page.getByRole("button", { name: /Save Assessment/ })).toBeVisible();
+  await noCrash(page);
+  return total;
+}
+
+// Demographics step. Saving needs the name and age. The quick form's name,
+// age and sex are already filled in here; typing them again just replaces them.
+export async function fillDemographics(page: Page, d: { name: string; age?: number; sex?: "Male" | "Female" | "Other" }) {
+  await goToStep(page, "Demographics");
+  await page.getByPlaceholder("Patient's full name").fill(d.name);
+  if (d.age !== undefined) await page.locator("select").first().selectOption(String(d.age));
+  if (d.sex) await page.getByRole("button", { name: d.sex, exact: true }).first().click();
+}
+
+// The Subjective step's "chief complaint" box.
+export async function fillChiefComplaint(page: Page, text: string) {
+  await goToStep(page, "Subjective");
+  await page.getByPlaceholder("In the patient's own words...").fill(text);
+}
+
+// Final Review -> "Save Assessment"; the button turns into "Saved ✓".
+export async function saveAssessment(page: Page) {
+  await goToStep(page, "Final Review");
+  await page.getByRole("button", { name: /Save Assessment/ }).click();
+  await expect(page.getByRole("button", { name: /Saved ✓/ })).toBeVisible({ timeout: 15_000 });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Neuro and Cardio assessments
+// ─────────────────────────────────────────────────────────────────────────────
+// Both are step-by-step wizards like Ortho, but with no "Step n/m" counter:
+// "Next" moves on, the last step's button says "Review & finish" and leads to
+// "Summary & Review" with a "Save Assessment" button.
+
+export type Setting = "Inpatient" | "ICU" | "Post-operative" | "Outpatient" | "Neuro Rehabilitation" | "Rehabilitation";
+
+// Setting -> "Use Template" -> a condition template -> lands on the first step.
+export async function startNeuro(page: Page, o: { name: string; setting?: Setting; template?: string }) {
+  await startNewAssessment(page, "Neuro", o.name);
+  await page.getByText(o.setting ?? "Outpatient", { exact: true }).click();
+  await page.getByRole("button", { name: /^Continue/ }).click();
+  await page.getByText("Use Template").click();
+  await page.getByText(o.template ?? "General Neurological", { exact: true }).click();
+  await expect(page.getByText("Patient Information").first()).toBeVisible({ timeout: 15_000 });
+  await noCrash(page);
+}
+
+// "Start Assessment" -> setting -> system -> first step.
+export async function startCardio(page: Page, o: { name: string; setting?: Setting; system?: "Cardiovascular" | "Respiratory" | "Combined" }) {
+  await startNewAssessment(page, "Cardio", o.name);
+  await page.getByText("Start Assessment", { exact: true }).click();
+  await page.getByText(o.setting ?? "Outpatient", { exact: true }).click();
+  await page.getByRole("button", { name: /Continue to system/ }).click();
+  await page.getByText(o.system ?? "Cardiovascular", { exact: true }).click();
+  await page.getByRole("button", { name: /^Next$/ }).click();
+  await expect(page.getByText("Patient Information").first()).toBeVisible({ timeout: 15_000 });
+  await noCrash(page);
+}
+
+// "Next" all the way to "Review & finish", then check the summary page is
+// there. Returns how many screens it walked through.
+export async function walkWizardToEnd(page: Page): Promise<number> {
+  let screens = 1;
+  for (let i = 0; i < 60; i++) {
+    await noCrash(page);
+    const finish = page.getByRole("button", { name: /Review & finish/ });
+    if (await finish.isVisible().catch(() => false)) {
+      await finish.click();
+      screens++;
+      break;
+    }
+    await page.getByRole("button", { name: /^Next$/ }).click();
+    screens++;
+  }
+  await expect(page.getByRole("button", { name: /Save Assessment/ })).toBeVisible({ timeout: 15_000 });
+  await noCrash(page);
+  return screens;
+}

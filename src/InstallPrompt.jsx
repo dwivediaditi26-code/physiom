@@ -45,7 +45,9 @@ function isStandalone() {
   if (typeof window === "undefined") return true;
   const mq = window.matchMedia?.("(display-mode: standalone)")?.matches;
   const iosStandalone = window.navigator?.standalone === true; // iOS Safari-specific flag
-  return Boolean(mq || iosStandalone);
+  // Inside the Android/iPhone app there is nothing to install.
+  const inNativeApp = window.Capacitor?.isNativePlatform?.() === true;
+  return Boolean(mq || iosStandalone || inNativeApp);
 }
 
 function isIOS() {
@@ -127,7 +129,13 @@ export default function InstallPrompt({ currentUser }) {
       role="dialog"
       aria-label="Add PhysioMind to your Home Screen"
       style={{
-        position: "fixed", left: 12, right: 12, bottom: 12, zIndex: 9998,
+        position: "fixed", left: 12, right: 12, zIndex: 9998,
+        // Sits ABOVE the bottom tab bar (its real height, safe area included,
+        // is --pm-bnav-h) instead of on top of it: at bottom:12 it covered
+        // Home/Clinical/PhysioFeed/Learn/Profile and blocked taps on them
+        // until dismissed. Before sign-in there is no tab bar, so it falls
+        // back to the iPhone's bottom safe area.
+        bottom: "calc(var(--pm-bnav-h, env(safe-area-inset-bottom, 0px)) + 12px)",
         maxWidth: 420, margin: "0 auto",
         background: "#ffffff", border: "1px solid #E0E0E2", borderRadius: 14,
         boxShadow: "0 8px 24px rgba(0,0,0,0.16)", padding: "14px 16px",

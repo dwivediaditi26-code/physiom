@@ -22,6 +22,46 @@ export const textareaCls = "w-full text-sm bg-white border border-slate-200 roun
 export function parseAmount(amount) {
   return amount ? amount.replace(/[^\d.]/g, "") : "";
 }
+// "20000" -> "20,000" (Indian digit grouping), so salary/stipend read the same
+// everywhere. Non-numeric input is returned untouched.
+export function formatINR(amount) {
+  const n = Number(String(amount).replace(/,/g, ""));
+  return Number.isFinite(n) && String(amount).trim() !== "" ? n.toLocaleString("en-IN") : String(amount);
+}
+// Workshop dates are stored as YYYY-MM-DD; show "20 November 2026" like the
+// preview does, and pass older free-text dates ("18 October 2026") through.
+export function formatEventDate(d) {
+  if (typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
+    return new Date(`${d}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+  }
+  return d;
+}
+// An application/registration link must be a real web address. Returns the
+// normalised https/http URL ("clinic.com/apply" gains https://), or "" when
+// it is not one -- so "not a link" or "javascript:..." can never be saved or
+// turned into a button other people tap.
+export function normalizeLink(raw) {
+  const v = String(raw || "").trim();
+  if (!v || /\s/.test(v)) return "";
+  const withScheme = /^[a-z][a-z0-9+.-]*:/i.test(v) ? v : `https://${v}`;
+  try {
+    const u = new URL(withScheme);
+    if (!["http:", "https:"].includes(u.protocol) || !u.hostname.includes(".")) return "";
+    return u.toString();
+  } catch {
+    return "";
+  }
+}
+// True while a workshop's early-bird price still applies: it has one, and
+// its last date (if any) has not passed. After that the regular fee is the
+// price, so neither the card nor the detail page may keep advertising it.
+export function earlyBirdActive(opp) {
+  if (!opp?.earlyBirdFee) return false;
+  if (!opp.earlyBirdDeadline) return true;
+  const d = new Date();
+  const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return opp.earlyBirdDeadline >= today;
+}
 export function splitAudience(str) {
   return str ? str.split(",").map((s) => s.trim()).filter(Boolean) : [];
 }
@@ -99,7 +139,7 @@ export function CriticalChangeConfirm({ count, noun, changes, onCancel, onConfir
     ? `${changes.slice(0, -1).join(", ")} and ${changes[changes.length - 1]}`
     : changes[0];
   return createPortal(
-    <div className="fixed inset-0 z-[210] flex items-center justify-center bg-slate-900/50 px-4">
+    <div className="physiofeed-root fixed inset-0 z-[210] flex items-center justify-center bg-slate-900/50 px-4">
       <div className="w-full max-w-sm bg-white rounded-2xl p-5 shadow-xl">
         <p className="text-sm font-bold text-slate-900 mb-1.5">
           {count} {noun}{count === 1 ? "" : "s"} {count === 1 ? "has" : "have"} already {noun === "applicant" ? "applied" : "registered"}

@@ -30,7 +30,7 @@ import { DemographicsSection } from "./orthoOutpatientSections.jsx";
    ============================================================ */
 
 const PATHWAYS = [
-  { id: "ipd", icon: "ti-building-hospital", label: "IPD", desc: "Inpatient ward assessment" },
+  { id: "ipd", icon: "ti-building-hospital", label: "Inpatient (IPD)", desc: "Patient admitted to hospital, ward assessment" },
   { id: "postop", icon: "ti-bed", label: "Post-operative Rehab", desc: "Structured post-surgical rehabilitation" },
   { id: "outpatient", icon: "ti-walk", label: "Outpatient / Musculoskeletal", desc: "OPD / clinic-based MSK assessment" },
 ];
@@ -62,7 +62,7 @@ const OPD_MODES = [
   { id: "templates", icon: "ti-folder", label: "My Templates", desc: "Reuse a section list you saved from a previous assessment" },
 ];
 
-export default function OrthoAssessment({ onExit, onNav, navContext, onSave, activePatientId, requireAuth, entryMode, patientData, resume, hideAiPathway, backRef, onGeneratePdf } = {}) {
+export default function OrthoAssessment({ onExit, onNav, navContext, onSave, activePatientId, requireAuth, isGuest, entryMode, patientData, resume, hideAiPathway, backRef, onGeneratePdf } = {}) {
   // See NeurologicalAssessment.jsx's matching effect / AppFull.jsx's
   // wizardBackRef comment: this component stays mounted (just hidden) while
   // a different tab is showing, same as Neuro/Cardio -- navContext is the
@@ -122,11 +122,14 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
   });
   const effectiveResume = resume || reloadResume;
   const [step, setStep] = useState(effectiveResume ? 3 : entryMode ? 1 : 0); // 0 pathway, 1 region, 2 condition, 3 assessment
-  const [pathway, setPathway] = useState(effectiveResume ? effectiveResume.pathway : entryMode ? "outpatient" : null);
+  // Outpatient is the usual case, so it starts chosen (and "General Assessment" below):
+  // most people just tap Continue. First-time walkthrough, 2026-10-03: too many choices
+  // before the first question.
+  const [pathway, setPathway] = useState(effectiveResume ? effectiveResume.pathway : "outpatient");
   const [selectedRegions, setSelectedRegions] = useState(effectiveResume ? effectiveResume.selectedRegions || [] : []);
-  const [condition, setCondition] = useState(effectiveResume ? effectiveResume.condition || "general" : entryMode ? "general" : null);
+  const [condition, setCondition] = useState(effectiveResume ? effectiveResume.condition || "general" : "general");
   const [customConditionLabel, setCustomConditionLabel] = useState(effectiveResume?.customConditionLabel || "");
-  const [opdMode, setOpdMode] = useState(entryMode ? "general" : null);
+  const [opdMode, setOpdMode] = useState("general");
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   // "✨ AI Assisted Assessment" as a 4th pathway-screen option, alongside
   // IPD/Post-op/Outpatient -- same shortcut the "New Assessment" picker's
@@ -143,7 +146,16 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
   // and Region collected here feed straight into the wizard's initial data
   // (see mount call below and AI_ENTRY_SKIP_IDS in OrthoOutpatientAssessment.jsx),
   // which is skipped past on mount instead of asking again.
-  const [aiSubStep, setAiSubStep] = useState(0); // 0 demographics, 1 region, 2 subjective
+  // AI entry opens on the speaking screen (2026-10-02, Aditi: the Home tile says
+  // "Say your assessment in your words" but opened Demographics first). The
+  // narrative fills in name/age/region where it can; Demographics and Region
+  // stay one tap away on the journey dots, and a missing name is still caught
+  // by the wizard's MissingDemographicsModal.
+  // Guests are the exception: the AI box needs an account, so landing on it
+  // would put the sign-in wall up the moment they arrive. They get the usual
+  // Demographics first and the AI Parse / Manual choice on the Subjective screen.
+  const aiFirst = !isGuest;
+  const [aiSubStep, setAiSubStep] = useState(entryMode === "ai" && aiFirst ? 2 : 0); // 0 demographics, 1 region, 2 subjective
   const [aiDemographicsData, setAiDemographicsData] = useState({});
   const [aiIntakeDone, setAiIntakeDone] = useState(false);
   const [pendingAiUpdates, setPendingAiUpdates] = useState(null);
@@ -151,7 +163,7 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
   // Which of the Subjective screen's two equal-weight cards (🎙 AI Parse /
   // ✍ Manual) is showing -- null is the chooser itself; "ai" reveals the
   // real intake panel inline.
-  const [subjectiveChoice, setSubjectiveChoice] = useState(null);
+  const [subjectiveChoice, setSubjectiveChoice] = useState(entryMode === "ai" && aiFirst ? "ai" : null);
 
   // One path for both AI-intake sources (a parsed narrative and an imported
   // old record): seed Subjective/Pain, and pre-tick whatever region(s) that
@@ -182,6 +194,12 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
     setPendingInitialStep(targetStepId);
     setStep(3);
   }
+  // A stage only shows its green tick once it has something in it. With AI
+  // entry opening on Subjective, Demographics and Region would otherwise be
+  // ticked as done although nothing was entered there.
+  const preWizardDone = new Set();
+  if (Object.values(aiDemographicsData.demographics || {}).some((v) => String(v ?? "").trim())) preWizardDone.add(0);
+  if (selectedRegions.length > 0) preWizardDone.add(1);
   function handleJourneyJump(i) {
     if (i <= 2) { setAiSubStep(i); return; }
     jumpToWizardStage(i === 3 ? "objectiveAI" : "functionalAssessment");
@@ -221,20 +239,31 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
 
   function restart() {
     setStep(entryMode ? 1 : 0);
-    setPathway(entryMode ? "outpatient" : null);
+    setPathway("outpatient");
     setSelectedRegions([]);
-    setCondition(entryMode ? "general" : null);
+    setCondition("general");
     setCustomConditionLabel("");
-    setOpdMode(entryMode ? "general" : null);
+    setOpdMode("general");
     setSelectedTemplate(null);
     setPickedAi(false);
-    setAiSubStep(0);
+    setAiSubStep(entryMode === "ai" && aiFirst ? 2 : 0);
     setAiDemographicsData({});
     setAiIntakeDone(false);
     setPendingAiUpdates(null);
     setAiSuggestedRegions([]);
-    setSubjectiveChoice(null);
+    setSubjectiveChoice(entryMode === "ai" && aiFirst ? "ai" : null);
     setPendingInitialStep(undefined);
+  }
+
+  // Outpatient keeps the General Assessment start; IPD and post-op ask their own
+  // clinical-context question, so nothing carried over from Outpatient may stay chosen.
+  function choosePathway(id) {
+    setPathway(id);
+    setPickedAi(false);
+    setSelectedTemplate(null);
+    setCustomConditionLabel("");
+    if (id === "outpatient") { setOpdMode("general"); setCondition("general"); }
+    else { setOpdMode(null); setCondition(null); }
   }
 
   function selectAiAssisted() {
@@ -242,12 +271,12 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
     setCondition("general");
     setOpdMode("general");
     setPickedAi(true);
-    setAiSubStep(0);
+    setAiSubStep(aiFirst ? 2 : 0);
     setAiDemographicsData({});
     setAiIntakeDone(false);
     setPendingAiUpdates(null);
     setAiSuggestedRegions([]);
-    setSubjectiveChoice(null);
+    setSubjectiveChoice(aiFirst ? "ai" : null);
     setPendingInitialStep(undefined);
     setStep(1);
   }
@@ -324,6 +353,20 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
       ? (opdMode === "condition" && !!condition) || opdMode === "general" || opdMode === "advanced" || (opdMode === "templates" && !!selectedTemplate)
       : !!condition);
   const canProceed = canProceedPathway && canProceedRegion && canProceedCondition;
+  // Says why Continue is faded instead of leaving it a silent dead button.
+  const continueHint = canProceed
+    ? null
+    : step === 0
+      ? "Choose a pathway above to continue."
+      : step === 1
+        ? "Pick at least one body region to continue."
+        : !isOutpatient
+          ? "Pick the clinical context to continue."
+          : opdMode === "condition"
+            ? "Pick a condition to continue."
+            : opdMode === "templates"
+              ? "Pick a template to continue."
+              : "Choose how you want to start to continue.";
 
   const meta = pathway ? PATHWAY_META[pathway] : null;
 
@@ -362,7 +405,8 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
             )}
             <div style={{ flex: 1 }}>
               <div className="topbar-title">🦴 Ortho Assessment</div>
-              {pathway && <div className="topbar-breadcrumb">{meta.label}{selectedRegions.length ? ` · ${regionLabelList(selectedRegions)}` : ""}</div>}
+              {/* Not on the pathway screen itself: Outpatient starts chosen there, and showing it up here too just repeats the card below. */}
+              {pathway && step > 0 && <div className="topbar-breadcrumb">{meta.label}{selectedRegions.length ? ` · ${regionLabelList(selectedRegions)}` : ""}</div>}
             </div>
             {((step === 0 && !effectiveEntryMode) || (step === 1 && effectiveEntryMode)) && onExit && (
               <button className="back-btn" onClick={onExit} aria-label="Close">
@@ -371,7 +415,7 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
             )}
           </div>
           {step === 1 && effectiveEntryMode === "ai" && (
-            <AiJourneyDots activeIndex={aiSubStep} onJump={handleJourneyJump} jumpableIndices={AI_PRE_WIZARD_JUMPABLE} />
+            <AiJourneyDots activeIndex={aiSubStep} onJump={handleJourneyJump} jumpableIndices={AI_PRE_WIZARD_JUMPABLE} doneIndices={preWizardDone} />
           )}
         </div>
 
@@ -379,7 +423,7 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
           {step === 0 && (
             <>
               <SectionIntro title="Which pathway is this assessment for?" sub="This determines the base template — precautions and structure differ between a ward patient, a post-surgical rehab case, and an OPD visit." />
-              <PickerList items={PATHWAYS} value={pathway} onSelect={setPathway} />
+              <PickerList items={PATHWAYS} value={pathway} onSelect={choosePathway} />
               {!hideAiPathway && (
                 <button type="button" className="picker-card picker-card-ai" onClick={selectAiAssisted} style={{ width: "100%", marginTop: 8 }}>
                   <PickerIcon icon="ti-sparkles" />
@@ -451,7 +495,7 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
 
           {step === 1 && effectiveEntryMode === "ai" && aiSubStep === 2 && (
             <>
-              <SectionIntro icon="✨" title="Subjective" sub="How would you like to enter it?" />
+              <SectionIntro icon="✨" title="Subjective" sub={subjectiveChoice === "ai" ? "Say it the way you would tell a colleague: the patient's name, age, the painful area and their story. You can edit everything before continuing." : "How would you like to enter it?"} />
               {subjectiveChoice !== "ai" && (
                 <>
                   <div className="ai-choice-grid">
@@ -530,7 +574,12 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
         </div>
 
         {!(step === 1 && effectiveEntryMode === "ai" && aiSubStep === 2) && (
-          <div className="bottombar">
+          <div className="bottombar" style={continueHint ? { flexWrap: "wrap" } : undefined}>
+            {continueHint && (
+              <div role="status" style={{ flexBasis: "100%", order: -1, textAlign: "center", fontSize: 12, color: "#6B7280", paddingBottom: 2 }}>
+                {continueHint}
+              </div>
+            )}
             {step > 0 && (
               <button className="ghost-btn" onClick={goBack}>
                 Back

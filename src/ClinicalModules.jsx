@@ -572,6 +572,16 @@ const SOAP_LIVE_CATCHALL_EXCLUDE = new Set([
   "tx_moi", "tx_moi_notes", "tx_pattern", "tx_radiation", "tx_rel", "tx_rel_notes", "tx_symp_notes",
 ]);
 
+// Prints only the dosage parts the clinician actually entered (no "undefined×undefined").
+function exerciseDoseText(ex) {
+  const sets = ex.customSets || ex.sets, reps = ex.customReps || ex.reps;
+  const hold = ex.customHold || ex.hold, freq = ex.customFreq || ex.freq;
+  return [
+    sets && reps ? `${sets}×${reps}` : sets ? `${sets} sets` : reps ? `${reps} reps` : "",
+    hold ? `hold ${hold}s` : "",
+    freq || "",
+  ].filter(Boolean).join(", ");
+}
 function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   const v = (k) => String(data[k] || "").trim();
   const a = (k) => {
@@ -1969,10 +1979,6 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   const P_parts = [];
   // P section header only added if there is actual plan content
 
-  if (dx?.dx?.length && dx.dx[0].treatment?.length) {
-    dx.dx[0].treatment.forEach(t => P_parts.push(`  • ${t}`));
-  }
-
   // Treatment techniques
   const txTechniques = Array.isArray(data.tx_techniques) ? data.tx_techniques : [];
   if (txTechniques.length) {
@@ -1993,7 +1999,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   const hepArr = Array.isArray(data.hep_programme) ? data.hep_programme : [];
   if (hepArr.length) {
     P_parts.push("\nHome Exercise Programme:");
-    hepArr.forEach((ex,i) => P_parts.push(`  ${i+1}. ${ex.name} — ${ex.customSets||ex.sets}×${ex.customReps||ex.reps}, hold ${ex.customHold||ex.hold}s, ${ex.customFreq||ex.freq}${ex.notes?` (${ex.notes})`:""}`));
+    hepArr.forEach((ex,i) => P_parts.push(`  ${i+1}. ${ex.name}${exerciseDoseText(ex)?` — ${exerciseDoseText(ex)}`:""}${ex.notes?` (${ex.notes})`:""}`));
   }
 
   // Exercise Prescription (clinical library picks, kept separate from HEP --
@@ -2001,22 +2007,12 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   const rxArr = Array.isArray(data.tx_exercise_prescription) ? data.tx_exercise_prescription : [];
   if (rxArr.length) {
     P_parts.push("\nExercise Prescription:");
-    rxArr.forEach((ex,i) => P_parts.push(`  ${i+1}. ${ex.name}${ex.phase?` (${ex.phase})`:""} — ${ex.customSets||ex.sets}×${ex.customReps||ex.reps}, hold ${ex.customHold||ex.hold}s, ${ex.customFreq||ex.freq}${ex.notes?` (${ex.notes})`:""}`));
+    rxArr.forEach((ex,i) => P_parts.push(`  ${i+1}. ${ex.name}${ex.phase?` (${ex.phase})`:""}${exerciseDoseText(ex)?` — ${exerciseDoseText(ex)}`:""}${ex.notes?` (${ex.notes})`:""}`));
   }
 
   // Session next plan
   if (latestSess?.nextPlan) P_parts.push(`\nNext Session: ${latestSess.nextPlan}`);
   if (latestSess?.goals) P_parts.push(`Session Goals: ${latestSess.goals}`);
-
-  // Posture correction
-  const selDef = Object.values(typeof POSTURE_DEFECTS !== "undefined" ? POSTURE_DEFECTS : {}).filter(d => data[`posture_defect_${d.id}`]);
-  if (selDef.length) {
-    P_parts.push("\nPostural Correction Exercises:");
-    selDef.slice(0,3).forEach(d => {
-      P_parts.push(`  ${d.label}:`);
-      d.exercises?.slice(0,3).forEach(e => P_parts.push(`    • ${e}`));
-    });
-  }
 
   const freq = v("tx_frequency") || v("tx_freq");
   const dur = v("tx_duration_plan");

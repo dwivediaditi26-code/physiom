@@ -15,6 +15,7 @@ import MyOpportunitiesPage from "../components/opportunities/MyOpportunitiesPage
 import ApplicantPipeline from "../components/opportunities/ApplicantPipeline.jsx";
 import ApplicantProfileSheet from "../components/opportunities/ApplicantProfileSheet.jsx";
 import ApplicantChatModal from "../components/opportunities/ApplicantChatModal.jsx";
+import { useAppData } from "../context/AppDataContext.jsx";
 
 // Explore -> Opportunities board (2026-09-21, Aditi's brief + mockups: jobs,
 // internships, workshops and research collaborations for physiotherapists).
@@ -32,6 +33,7 @@ import ApplicantChatModal from "../components/opportunities/ApplicantChatModal.j
 // ApplicantProfileSheet, now reading real applicants and writing real
 // status changes.
 export default function ExplorePage() {
+  const { profile } = useAppData();
   const [opportunities, setOpportunities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pipelineApplicants, setPipelineApplicants] = useState([]);
@@ -60,7 +62,16 @@ export default function ExplorePage() {
   // `type` picks the wizard directly, skipping the type picker entirely.
   const [editingOpp, setEditingOpp] = useState(null);
 
-  const openCreateFlow = () => setPickerOpen(true);
+  // Guests (the shared demo identity) can't write to the database, so say so
+  // before they fill in a whole form, not after Publish.
+  const openCreateFlow = () => {
+    if (profile?.isDemo) {
+      setActionError("Sign in or create a free account to post an opportunity.");
+      return;
+    }
+    setActionError(null);
+    setPickerOpen(true);
+  };
   const closeCreateFlow = () => { setPickerOpen(false); setModalType(null); setWorkshopOpen(false); setEditingOpp(null); };
   const pickCreateType = (type) => {
     setPickerOpen(false);
@@ -144,6 +155,21 @@ export default function ExplorePage() {
     })();
     return () => { cancelled = true; };
   }, []);
+
+  // Opening My Postings / My Opportunities re-reads the board quietly, so the
+  // applicant/registration counts and "Shortlisted" statuses are current
+  // instead of frozen at whatever they were when Explore first loaded.
+  useEffect(() => {
+    if (!myPostingsOpen && !myAppsOpen) return;
+    let cancelled = false;
+    (async () => {
+      const [opps, apps] = await Promise.all([db.getOpportunities(), db.getMyApplications()]);
+      if (cancelled) return;
+      setOpportunities(opps);
+      setMyApplications(apps);
+    })();
+    return () => { cancelled = true; };
+  }, [myPostingsOpen, myAppsOpen]);
 
   // Applicants are fetched per listing when its pipeline opens, rather
   // than all up front -- only the creator can read them, and most people
@@ -285,9 +311,13 @@ export default function ExplorePage() {
   const reopenListing = (oppId) => runListingAction(oppId, "reopen", db.reopenOpportunity, {
     rawStatus: "published", status: "active", lifecycleStatus: "published", closedAt: undefined,
   });
-  const cancelListing = (oppId) => runListingAction(oppId, "cancel", db.cancelOpportunity, {
-    rawStatus: "cancelled", status: "closed", lifecycleStatus: "cancelled", cancelledAt: new Date().toISOString(),
-  });
+  const cancelListing = (oppId) => {
+    const title = opportunities.find((o) => o.id === oppId)?.title || "this listing";
+    if (!window.confirm(`Cancel "${title}"? People who applied or registered will see it as cancelled.`)) return;
+    return runListingAction(oppId, "cancel", db.cancelOpportunity, {
+      rawStatus: "cancelled", status: "closed", lifecycleStatus: "cancelled", cancelledAt: new Date().toISOString(),
+    });
+  };
 
   const duplicateListing = async (oppId) => {
     setActionError(null);

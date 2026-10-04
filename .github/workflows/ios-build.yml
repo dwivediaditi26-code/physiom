@@ -1,0 +1,210 @@
+name: iOS build
+
+# Builds the Capacitor iPhone app from the same web build Vercel serves, on a
+# GitHub-hosted Mac (this repo is public, so macOS minutes are free).
+#
+#   - Simulator build: always runs. It compiles the whole iPhone project
+#     without any Apple account or signing, so it tells you on every push
+#     whether the iPhone app still builds (Xcode errors, broken plugins,
+#     Swift Package problems). It produces no installable file.
+#   - Signed build + TestFlight upload: only runs once the secrets below
+#     exist. It needs a paid Apple Developer account (US$99 / year), which
+#     only you can create. THIS PART HAS NEVER BEEN RUN -- nobody had an Apple
+#     account when it was written -- so expect to fix small things on the
+#     first real run.
+#
+# Secrets for the signed build (Settings -> Secrets and variables -> Actions
+# -> New repository secret). All optional until you have the Apple account:
+#   IOS_CERTIFICATE_BASE64          "Apple Distribution" certificate exported
+#                                   from Keychain Access as .p12, base64-encoded
+#                                   (macOS: `base64 -i cert.p12 | pbcopy`)
+#   IOS_CERTIFICATE_PASSWORD        the password you chose when exporting it
+#   IOS_PROVISIONING_PROFILE_BASE64 the "App Store" provisioning profile for
+#                                   com.physiomindpro.app (.mobileprovision),
+#                                   base64-encoded
+#   IOS_PROVISIONING_PROFILE_NAME   that profile's name, as shown on
+#                                   developer.apple.com
+#   IOS_TEAM_ID                     your 10-character Apple Team ID
+#   APPSTORE_API_KEY_ID             App Store Connect API key id
+#   APPSTORE_API_ISSUER_ID          App Store Connect issuer id
+#   APPSTORE_API_PRIVATE_KEY        the full text of the downloaded AuthKey_*.p8
+# Keep the certificate, its password and the .p8 somewhere safe OUTSIDE this
+# repo.
+#
+# The build number Apple wants to see go up with every upload is the GitHub
+# run number, like the Android version code. The version people see
+# (MARKETING_VERSION, currently 1.0) is changed by hand in Xcode or in
+# ios/App/App.xcodeproj/project.pbxproj.
+#
+# Nothing here touches Supabase test/prod secrets: src/supabase.js falls back
+# to the production project when VITE_SUPABASE_* are unset, which is exactly
+# what the Vercel production build does too.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'supabase/**'
+      - 'e2e/**'
+      - 'android/**'
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'supabase/**'
+      - 'e2e/**'
+      - 'android/**'
+  workflow_dispatch: {}
+
+# A newer push to the same branch cancels the older, now-pointless build.
+concurrency:
+  group: ios-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ios:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      # @capacitor/cli 8 needs Node >= 22; Node 24 ships the npm the
+      # package-lock.json was written with (same reasoning as android-build.yml).
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      # Capacitor 8 needs a recent Xcode; take the newest stable one on the runner.
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web app
+        env:
+          # Optional -- same as Vercel: crash reporting stays off if unset.
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+        run: npm run build
+
+      - name: Copy web build into the iOS project
+        run: npx cap sync ios
+
+      - name: Show Xcode and the project's schemes
+        run: |
+          xcodebuild -version
+          xcodebuild -list -project ios/App/App.xcodeproj
+
+      # No signing, no device: proves the project compiles.
+      - name: Build for the iPhone simulator (unsigned)
+        run: |
+          xcodebuild build \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            CODE_SIGNING_ALLOWED=NO
+
+      # Secrets can't be read in a step's `if:` directly, so check once here
+      # and expose a plain true/false for the signed steps below.
+      - name: Check for Apple signing secrets
+        id: signing
+        env:
+          IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+          APPSTORE_API_PRIVATE_KEY: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+        run: |
+          if [ -n "$IOS_CERTIFICATE_BASE64" ] && [ -n "$IOS_PROVISIONING_PROFILE_BASE64" ] && [ -n "$APPSTORE_API_PRIVATE_KEY" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Apple signing secrets not set -- skipped the signed build and TestFlight upload. The simulator build above still ran."
+          fi
+
+      - name: Install the Apple certificate and provisioning profile
+        if: steps.signing.outputs.enabled == 'true'
+        env:
+          IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          KEYCHAIN_PATH="$RUNNER_TEMP/build.keychain-db"
+          KEYCHAIN_PASSWORD="$(uuidgen)"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          echo "$IOS_CERTIFICATE_BASE64" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+          security import "$RUNNER_TEMP/certificate.p12" -P "$IOS_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"')
+          echo "$IOS_PROVISIONING_PROFILE_BASE64" | base64 --decode > "$RUNNER_TEMP/profile.mobileprovision"
+          PROFILE_UUID="$(security cms -D -i "$RUNNER_TEMP/profile.mobileprovision" | /usr/libexec/PlistBuddy -c 'Print :UUID' /dev/stdin)"
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          cp "$RUNNER_TEMP/profile.mobileprovision" "$HOME/Library/MobileDevice/Provisioning Profiles/$PROFILE_UUID.mobileprovision"
+
+      - name: Archive and export the signed app
+        if: steps.signing.outputs.enabled == 'true'
+        env:
+          IOS_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+          IOS_PROVISIONING_PROFILE_NAME: ${{ secrets.IOS_PROVISIONING_PROFILE_NAME }}
+        run: |
+          xcodebuild archive \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            DEVELOPMENT_TEAM="$IOS_TEAM_ID" \
+            PROVISIONING_PROFILE_SPECIFIER="$IOS_PROVISIONING_PROFILE_NAME" \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}"
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>teamID</key><string>$IOS_TEAM_ID</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>com.physiomindpro.app</key><string>$IOS_PROVISIONING_PROFILE_NAME</string>
+            </dict>
+          </dict>
+          </plist>
+          EOF
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist"
+
+      - name: Upload the IPA as a build artifact
+        if: steps.signing.outputs.enabled == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: physiomind-ios-ipa
+          path: ${{ runner.temp }}/export/*.ipa
+          if-no-files-found: error
+          retention-days: 30
+
+      # TestFlight is Apple's own test-install channel; builds show up in App
+      # Store Connect a few minutes after this finishes.
+      - name: Upload to TestFlight
+        if: steps.signing.outputs.enabled == 'true'
+        env:
+          APPSTORE_API_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
+          APPSTORE_API_ISSUER_ID: ${{ secrets.APPSTORE_API_ISSUER_ID }}
+          APPSTORE_API_PRIVATE_KEY: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+        run: |
+          mkdir -p "$HOME/.private_keys"
+          printf '%s' "$APPSTORE_API_PRIVATE_KEY" > "$HOME/.private_keys/AuthKey_${APPSTORE_API_KEY_ID}.p8"
+          xcrun altool --upload-app --type ios \
+            --file "$RUNNER_TEMP"/export/*.ipa \
+            --apiKey "$APPSTORE_API_KEY_ID" \
+            --apiIssuer "$APPSTORE_API_ISSUER_ID"

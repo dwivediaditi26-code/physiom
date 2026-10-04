@@ -134,6 +134,14 @@
    second sticky header above this one, so top:0 stays correct there. */
 .pf-header {
   top: 0;
+  /* Stacked under .pm-mobile-hdr (utils.jsx), which already has these --
+     two sticky elements pinned one under the other without their own
+     paint containment makes iOS Safari repaint this one every momentum-
+     scroll frame, visible as a jittery "vibrating" header (2026-10-01,
+     Aditi: "it is vibrating when scrolling"). Same fix as that header. */
+  contain: paint;
+  isolation: isolate;
+  transform: translateZ(0);
 }
 @media (max-width: 1023px) {
   .pf-header {

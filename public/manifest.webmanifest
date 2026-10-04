@@ -1,7 +1,7 @@
 {
   "name": "PhysioMind Pro",
   "short_name": "PhysioMind",
-  "description": "Physiotherapy assessment platform — posture screening, MMT, ROM, special tests, neuro exam, outcome measures & SOAP documentation.",
+  "description": "Physiotherapy assessment platform — MMT, ROM, special tests, neuro exam, outcome measures & SOAP documentation.",
   "start_url": "/",
   "scope": "/",
   "id": "/",

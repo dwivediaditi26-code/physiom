@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import Stepper from "./Stepper.jsx";
-import { Field, inputCls, textareaCls, Combobox, PillSelect, CheckboxGroup, CriticalChangeConfirm, parseAmount, splitAudience, highlightValue } from "../FormFields.jsx";
+import { Field, inputCls, textareaCls, Combobox, PillSelect, CheckboxGroup, CriticalChangeConfirm, parseAmount, splitAudience, highlightValue, formatINR, normalizeLink } from "../FormFields.jsx";
 import OpportunityCard from "../OpportunityCard.jsx";
 import OpportunityDetail from "../OpportunityDetail.jsx";
 import * as db from "../../../data/db.js";
@@ -48,12 +48,20 @@ function parseSalary(salary) {
 // only exist as display strings on a saved opportunity (detailHighlights,
 // or a formatted `salary`), so parseSalary()/highlightValue() reverse them
 // back into the raw values this form edits.
+// Local calendar date (not UTC), so "today" is right in India late in the evening.
+function todayIso() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 export default function ApplicationOpportunityForm({ type, onClose, onSubmit, editingOpp }) {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(null);
   const [error, setError] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [profileReady, setProfileReady] = useState(false);
   const [pendingConfirm, setPendingConfirm] = useState(null); // { publish, changes } | null
+  const [touched, setTouched] = useState(false);
 
   const editingDraft = editingOpp && editingOpp.rawStatus === "draft";
   const singleSaveMode = editingOpp && !editingDraft;
@@ -70,7 +78,7 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit, ed
   // Job
   const [parsedSalary] = useState(() => parseSalary(editingOpp?.salary));
   const [jobType, setJobType] = useState(editingOpp?.employment || JOB_TYPES[0]);
-  const [department, setDepartment] = useState(editingOpp?.specialty || SPECIALTIES[0]);
+  const [department, setDepartment] = useState(editingOpp?.specialty || "");
   const [experience, setExperience] = useState(highlightValue(editingOpp, "Experience"));
   const [salaryMode, setSalaryMode] = useState(parsedSalary.mode || SALARY_MODES[0]);
   const [salaryMin, setSalaryMin] = useState(parsedSalary.min);
@@ -82,17 +90,19 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit, ed
   const [startDate, setStartDate] = useState(editingOpp?.startDate || "");
   const [paid, setPaid] = useState(editingOpp ? editingOpp.stipend !== "Unpaid" : true);
   const [stipend, setStipend] = useState(editingOpp && editingOpp.stipend !== "Unpaid" ? parseAmount(editingOpp.stipend) : "");
-  const [audience, setAudience] = useState(editingOpp?.audience ? splitAudience(editingOpp.audience) : ["BPT", "MPT"]);
+  const [audience, setAudience] = useState(editingOpp?.audience ? splitAudience(editingOpp.audience) : []);
   const [learningOutcomes, setLearningOutcomes] = useState(editingOpp?.learningOutcomes?.length ? editingOpp.learningOutcomes : [""]);
 
   // Collaboration
   const [collabType, setCollabType] = useState(editingOpp?.tags?.[0] || COLLAB_TYPES[0]);
-  const [lookingFor, setLookingFor] = useState(editingOpp?.audience ? splitAudience(editingOpp.audience) : ["BPT students", "Physiotherapists"]);
+  const [lookingFor, setLookingFor] = useState(editingOpp?.audience ? splitAudience(editingOpp.audience) : []);
   const [collabLocationType, setCollabLocationType] = useState(editingOpp?.locationType || COLLAB_LOCATION_TYPES[0]);
 
   useEffect(() => {
     let cancelled = false;
-    db.getProfile().then((p) => { if (!cancelled) setProfile(p); });
+    // Publishing before this resolves would save the listing under the generic
+    // "PhysioFeed member / Organiser" name, so the buttons wait for it.
+    db.getProfile().then((p) => { if (!cancelled) setProfile(p); }).catch(() => {}).finally(() => { if (!cancelled) setProfileReady(true); });
     return () => { cancelled = true; };
   }, []);
 
@@ -102,9 +112,28 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit, ed
   const priceValid = type !== "job" || salaryMode === "Not disclosed"
     || (salaryMode === "Fixed" ? salaryFixed.trim() : (salaryMin.trim() && salaryMax.trim()));
   const stipendValid = type !== "internship" || !paid || stipend.trim();
-  const regValid = registrationMethod !== "external" || registrationUrl.trim();
+  const regValid = registrationMethod !== "external" || normalizeLink(registrationUrl);
   const canPublish = detailsValid && priceValid && stipendValid && regValid;
   const canSaveDraft = title.trim().length > 0;
+
+  // What Preview/Publish still needs, so the form can say so instead of
+  // letting an empty listing through to the last step.
+  const missing = [];
+  if (!title.trim()) missing.push(type === "collaboration" ? "Title" : `${TYPE_LABEL[type]} title`);
+  if (type !== "collaboration" && !org.trim()) missing.push("Organisation");
+  if (type !== "collaboration" && !description.trim()) missing.push("Description");
+  if (type === "job" && salaryMode === "Fixed" && !salaryFixed.trim()) missing.push("Salary amount");
+  if (type === "job" && salaryMode === "Range" && (!salaryMin.trim() || !salaryMax.trim())) missing.push("Salary min and max");
+  if (type === "internship" && paid && !stipend.trim()) missing.push("Stipend (or choose Unpaid)");
+  if (registrationMethod === "external" && !normalizeLink(registrationUrl)) missing.push(registrationUrl.trim() ? "Application link must be a web address (https://…)" : "Application link");
+  // A deadline that has already passed would publish an instantly-expired
+  // listing. An old listing being edited keeps the date it already had.
+  if (deadline && deadline < todayIso() && deadline !== (editingOpp?.deadline || "")) missing.push("Deadline can't be in the past");
+
+  const requestClose = () => {
+    if (touched && !window.confirm("Discard this listing? What you've entered will be lost.")) return;
+    onClose();
+  };
 
   const orgDisplay = org.trim() || profile?.name || "";
 
@@ -118,18 +147,18 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit, ed
       orgGradient: profile?.gradient || GRAD_KEYS[0],
       description: description.trim(),
       registrationMethod,
-      registrationUrl: registrationMethod === "external" ? registrationUrl.trim() : "",
+      registrationUrl: registrationMethod === "external" ? normalizeLink(registrationUrl) : "",
       mentor,
       requirements: requirements.map((r) => r.trim()).filter(Boolean),
     };
 
     if (type === "job") {
       const salary = salaryMode === "Not disclosed" ? "Not disclosed"
-        : salaryMode === "Fixed" ? `₹${salaryFixed.trim()}/mo`
-        : `₹${salaryMin.trim()} – ₹${salaryMax.trim()}/mo`;
+        : salaryMode === "Fixed" ? `₹${formatINR(salaryFixed.trim())}/mo`
+        : `₹${formatINR(salaryMin.trim())} – ₹${formatINR(salaryMax.trim())}/mo`;
       return {
         ...base,
-        specialty: department,
+        specialty: department.trim() || undefined,
         location: location.trim(),
         deadline: deadline || null,
         tags: [jobType, department].filter(Boolean),
@@ -149,7 +178,7 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit, ed
         location: location.trim(),
         deadline: deadline || null,
         tags: [paid ? "Paid" : "Unpaid"].filter(Boolean),
-        stipend: paid ? `₹${stipend.trim()}/mo` : "Unpaid",
+        stipend: paid ? `₹${formatINR(stipend.trim())}/mo` : "Unpaid",
         audience: audience.join(", "),
         learningOutcomes: learningOutcomes.map((o) => o.trim()).filter(Boolean),
         // fmtDate() below is display-only (locale-formatted); this raw copy
@@ -192,16 +221,16 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit, ed
     if (deadline !== (editingOpp.deadline || "")) changes.push("the deadline");
     if (type !== "collaboration" && location.trim() !== (editingOpp.location || "")) changes.push("the location");
     if (type === "collaboration" && collabLocationType !== (editingOpp.locationType || COLLAB_LOCATION_TYPES[0])) changes.push("the location");
-    if (registrationMethod === "external" && registrationUrl.trim() !== (editingOpp.registrationUrl || "")) changes.push("the application link");
+    if (registrationMethod === "external" && normalizeLink(registrationUrl) !== (editingOpp.registrationUrl || "")) changes.push("the application link");
     if (type === "job") {
       const currentSalary = salaryMode === "Not disclosed" ? "Not disclosed"
         : salaryMode === "Fixed" ? `₹${salaryFixed.trim()}/mo`
         : `₹${salaryMin.trim()} – ₹${salaryMax.trim()}/mo`;
-      if (currentSalary !== (editingOpp.salary || "Not disclosed")) changes.push("the salary");
+      if (currentSalary.replace(/,/g, "") !== (editingOpp.salary || "Not disclosed").replace(/,/g, "")) changes.push("the salary");
     }
     if (type === "internship") {
       const currentStipend = paid ? `₹${stipend.trim()}/mo` : "Unpaid";
-      if (currentStipend !== (editingOpp.stipend || "Unpaid")) changes.push("the stipend");
+      if (currentStipend.replace(/,/g, "") !== (editingOpp.stipend || "Unpaid").replace(/,/g, "")) changes.push("the stipend");
     }
     return changes;
   }
@@ -233,11 +262,11 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit, ed
   const previewOpp = { id: "preview", postedAgo: "Just now", ...buildFields() };
 
   return createPortal(
-    <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-slate-900/40 px-0 sm:px-4 pb-[88px] sm:pb-4">
-      <div className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl overflow-y-auto max-h-[calc(100vh-104px)] sm:max-h-[85vh]">
+    <div className="physiofeed-root fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-slate-900/40 px-0 sm:px-4 pb-[88px] sm:pb-4">
+      <div onChangeCapture={() => setTouched(true)} className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl overflow-y-auto max-h-[calc(100vh-104px)] sm:max-h-[85vh]">
         <div className="flex items-center justify-between px-5 pt-5 sticky top-0 bg-white z-10">
           <h2 className="text-lg font-bold text-slate-900">{editingOpp ? "Edit " : "Create "}{TYPE_LABEL[type]}</h2>
-          <button type="button" onClick={onClose} aria-label="Close" className="p-1.5 rounded-lg hover:bg-slate-50 text-slate-400"><X size={18} /></button>
+          <button type="button" onClick={requestClose} aria-label="Close" className="p-1.5 rounded-lg hover:bg-slate-50 text-slate-400"><X size={18} /></button>
         </div>
         <div className="sticky top-[52px] bg-white z-10 border-b border-slate-100">
           <Stepper step={step} steps={["Details", "Preview"]} />
@@ -247,7 +276,7 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit, ed
           {step === 0 && (
             <>
               <Field label={TITLE_LABEL[type]}>
-                <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={TITLE_PLACEHOLDER[type]} className={inputCls} />
+                <input value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} placeholder={TITLE_PLACEHOLDER[type]} className={inputCls} />
               </Field>
               <Field label={type === "collaboration" ? "Organisation / person" : "Organisation *"}>
                 <input value={org} onChange={(e) => setOrg(e.target.value)} placeholder={profile?.name || "e.g. Apex Movement Center"} className={inputCls} />
@@ -344,12 +373,12 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit, ed
 
               {type !== "collaboration" && (
                 <Field label="Application deadline">
-                  <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className={inputCls} />
+                  <input type="date" min={todayIso()} value={deadline} onChange={(e) => setDeadline(e.target.value)} className={inputCls} />
                 </Field>
               )}
               {type === "collaboration" && (
                 <Field label="Deadline (if applicable)">
-                  <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className={inputCls} />
+                  <input type="date" min={todayIso()} value={deadline} onChange={(e) => setDeadline(e.target.value)} className={inputCls} />
                 </Field>
               )}
 
@@ -380,16 +409,22 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit, ed
                   ("preview") isn't a real row -- see WorkshopWizard's same
                   guard for why a stray tap must not reach a live handler. */}
               <div className="pointer-events-none">
-                <OpportunityDetail opp={previewOpp} onBack={() => {}} onMessage={() => {}} applied={false} onApplied={async () => {}} saved={false} onToggleSave={() => {}} />
+                <OpportunityDetail preview opp={previewOpp} onBack={() => {}} onMessage={() => {}} applied={false} onApplied={async () => {}} saved={false} onToggleSave={() => {}} />
               </div>
               {!canPublish && (
                 <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2 mt-4">
-                  Some required fields are missing -- you can still save this as a draft and finish it later.
+                  Still needed to publish: {missing.join(", ")}.{canSaveDraft ? " You can save a draft and finish it later." : " Add a title to save a draft."}
                 </p>
               )}
             </div>
           )}
 
+          {!profileReady && <p className="text-xs text-slate-400 mt-4">Loading your profile…</p>}
+          {step === 0 && missing.length > 0 && (
+            <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2 mt-4">
+              Still needed: {missing.join(", ")}.{!singleSaveMode && (canSaveDraft ? " You can save a draft and finish it later." : " Add a title to save a draft.")}
+            </p>
+          )}
           {error && <p className="text-xs text-rose-600 mt-4">{error}</p>}
 
           <div className="flex items-center gap-2.5 mt-6">
@@ -397,23 +432,31 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit, ed
               <button type="button" onClick={() => setStep(0)} className="text-sm font-bold text-slate-600 border border-slate-200 rounded-xl px-4 py-3 hover:bg-slate-50">← Back</button>
             )}
             {step === 0 ? (
-              <button
-                type="button"
-                onClick={() => setStep(1)}
-                className="flex-1 text-sm font-bold text-white rounded-xl py-3 bg-gradient-to-r from-indigo-600 to-blue-600 shadow-md active:scale-[0.98] transition"
-              >
-                Preview →
-              </button>
+              <>
+                {!singleSaveMode && (
+                  <button type="button" onClick={() => submit(false)} disabled={!canSaveDraft || !!saving || !profileReady} className="text-sm font-bold text-indigo-700 bg-indigo-50 rounded-xl px-4 py-3 disabled:opacity-40">
+                    {saving === "draft" ? "Saving…" : "Save Draft"}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  disabled={missing.length > 0 || !profileReady}
+                  className="flex-1 text-sm font-bold text-white rounded-xl py-3 bg-gradient-to-r from-indigo-600 to-blue-600 shadow-md active:scale-[0.98] transition disabled:opacity-40"
+                >
+                  Preview →
+                </button>
+              </>
             ) : singleSaveMode ? (
-              <button type="button" onClick={() => submit(true)} disabled={!canPublish || !!saving} className="flex-1 text-sm font-bold text-white rounded-xl py-3 bg-gradient-to-r from-indigo-600 to-blue-600 shadow-md disabled:opacity-40">
+              <button type="button" onClick={() => submit(true)} disabled={!canPublish || !!saving || !profileReady} className="flex-1 text-sm font-bold text-white rounded-xl py-3 bg-gradient-to-r from-indigo-600 to-blue-600 shadow-md disabled:opacity-40">
                 {saving ? "Saving…" : "Save Changes"}
               </button>
             ) : (
               <>
-                <button type="button" onClick={() => submit(false)} disabled={!canSaveDraft || !!saving} className="flex-1 text-sm font-bold text-indigo-700 bg-indigo-50 rounded-xl py-3 disabled:opacity-40">
+                <button type="button" onClick={() => submit(false)} disabled={!canSaveDraft || !!saving || !profileReady} className="flex-1 text-sm font-bold text-indigo-700 bg-indigo-50 rounded-xl py-3 disabled:opacity-40">
                   {saving === "draft" ? "Saving…" : "Save Draft"}
                 </button>
-                <button type="button" onClick={() => submit(true)} disabled={!canPublish || !!saving} className="flex-1 text-sm font-bold text-white rounded-xl py-3 bg-gradient-to-r from-indigo-600 to-blue-600 shadow-md disabled:opacity-40">
+                <button type="button" onClick={() => submit(true)} disabled={!canPublish || !!saving || !profileReady} className="flex-1 text-sm font-bold text-white rounded-xl py-3 bg-gradient-to-r from-indigo-600 to-blue-600 shadow-md disabled:opacity-40">
                   {saving === "publish" ? "Publishing…" : "Publish"}
                 </button>
               </>

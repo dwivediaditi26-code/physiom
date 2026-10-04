@@ -58,7 +58,7 @@ export default function ApplyOpportunityModal({ opp, onClose, onApplied }) {
   // header painted underneath the app's own chrome) -- `.pm-mobile-hdr`
   // is z-101 and `.pm-bnav` is z-140, both above this modal's old z-60.
   return createPortal(
-    <div className="fixed inset-0 z-[210] flex items-end sm:items-center justify-center bg-slate-900/40 px-0 sm:px-4 pb-[88px] sm:pb-4">
+    <div className="physiofeed-root fixed inset-0 z-[210] flex items-end sm:items-center justify-center bg-slate-900/40 px-0 sm:px-4 pb-[88px] sm:pb-4">
       <div className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl overflow-y-auto max-h-[calc(100vh-104px)] sm:max-h-[85vh]">
         <div className="flex items-center justify-between px-5 pt-5 pb-3 sticky top-0 bg-white z-10">
           <h2 className="text-lg font-bold text-slate-900">Apply to role</h2>

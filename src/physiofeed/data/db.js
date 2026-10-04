@@ -38,9 +38,45 @@ let _expertise = EXPERTISE.map((e) => ({ ...e }));
 const clone = (v) => JSON.parse(JSON.stringify(v));
 
 // Shared by every posts/likes/comments/follows/saves function below.
+//
+// Reads the locally stored session instead of auth.getUser(): getUser() is a
+// network round trip to Supabase Auth on EVERY call (~3.5s each here, and
+// this helper runs 96 times across the app), which was the real cause of
+// slow screens. The session's user is all the client needs; Row Level
+// Security still checks the signed token on every query server-side.
+async function currentAuthUser() {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.user || null;
+}
 async function currentUserId() {
-  const { data: { user } } = await supabase.auth.getUser();
-  return user?.id || null;
+  return (await currentAuthUser())?.id || null;
+}
+
+// The canned demo lists (education, rotations, notifications, people, ...) are
+// for guest mode only. When a read fails for someone who IS signed in (table
+// missing, network blip) they get an honest empty list, not made-up entries
+// such as "Physiotherapist - Active Physio & Rehab Centre" on their own profile
+// (first-time walkthrough, 2026-10-02).
+async function demoOrEmpty(list) {
+  let signedIn = false;
+  try { signedIn = !!(await currentAuthUser()); } catch { /* treat as guest */ }
+  return signedIn ? [] : clone(list);
+}
+
+// A blank, real profile for a signed-in person whose profile could not be read,
+// used instead of the shared demo identity ("Dr. Aditi Sharma, PT").
+function blankProfileFor(user) {
+  const name = user?.user_metadata?.full_name || (user?.email ? user.email.split("@")[0] : "Physiotherapist");
+  return {
+    id: user.id, name, role: "Physiotherapist", verified: false, gradient: "violet",
+    initials: String(name || "P")[0].toUpperCase(), location: "", bio: "", quote: "",
+    followers: 0, following: 0, connections: 0, isAdmin: false, avatarUrl: null,
+    experience: "", languages: "", memberships: "", availableForConsults: false,
+    clinicalTitle: "", college: "", phone: "", openToWork: true, willingToRelocate: false,
+    skills: [], resumeUrl: null, resumeName: null, headline: "", areaOfPractice: [],
+    clinicalInterests: [], clinicalSkillsAssessment: [], clinicalSkillsTreatment: [],
+    patientPopulations: [], clinicalApproach: "", researchInterests: [], openToTypes: [],
+  };
 }
 
 // Matches the "2h" / "1d" / "1w" style already used throughout mockData.js
@@ -171,8 +207,15 @@ export async function getPosts() {
       };
     });
   } catch (e) {
-    console.error("getPosts(): falling back to demo posts --", e?.message || e);
-    return clone(_posts);
+    // The canned demo posts are for guest mode only. A signed-in clinician
+    // whose feed query failed (table missing, network blip) used to be shown
+    // them as if they were real colleagues' posts, with verified ticks and
+    // like counts (first-time walkthrough, 2026-10-02). They get an honest
+    // empty feed instead.
+    let signedIn = false;
+    try { signedIn = !!(await currentUserId()); } catch { /* treat as guest */ }
+    console.error(signedIn ? "getPosts(): feed unavailable --" : "getPosts(): falling back to demo posts --", e?.message || e);
+    return signedIn ? [] : clone(_posts);
   }
 }
 
@@ -542,7 +585,7 @@ async function getConnectionCount(userId) {
 
 export async function getProfile() {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await currentAuthUser();
     // `isDemo` (P9, 2026-09-22) marks the shared demo identity so the UI
     // can tell "guest looking at seeded content" from "real clinician with
     // a real network" -- AppShell's demo banner keys off it.
@@ -661,8 +704,13 @@ export async function getProfile() {
       openToTypes: row.open_to_types || [],
     });
   } catch (e) {
-    console.error("getProfile(): falling back to demo profile --", e?.message || e);
-    return { ...clone(CURRENT_USER), isDemo: true }; // `profiles` table not created yet, or any other failure
+    console.error("getProfile(): could not read the profile --", e?.message || e);
+    // A signed-in person gets a blank profile of their own; only a guest is
+    // shown the shared demo identity.
+    let user = null;
+    try { user = await currentAuthUser(); } catch { /* treat as guest */ }
+    if (user) return blankProfileFor(user);
+    return { ...clone(CURRENT_USER), isDemo: true };
   }
 }
 
@@ -818,7 +866,7 @@ export async function getEducation() {
     return data.map((r) => ({ id: r.id, title: r.title, subtitle: r.subtitle, iconName: r.icon_name, month: r.month || "", year: r.year || "" }));
   } catch (e) {
     console.error("getEducation(): falling back to demo list --", e?.message || e);
-    return clone(EDUCATION);
+    return demoOrEmpty(EDUCATION);
   }
 }
 
@@ -911,7 +959,7 @@ export async function getRotations() {
     return data.map((r) => ({ id: r.id, department: r.department, duration: r.duration }));
   } catch (e) {
     console.error("getRotations(): falling back to demo list --", e?.message || e);
-    return clone(ROTATIONS);
+    return demoOrEmpty(ROTATIONS);
   }
 }
 
@@ -981,7 +1029,7 @@ export async function getAchievements() {
     }));
   } catch (e) {
     console.error("getAchievements(): falling back to demo list --", e?.message || e);
-    return clone(ACHIEVEMENTS);
+    return demoOrEmpty(ACHIEVEMENTS);
   }
 }
 
@@ -1059,7 +1107,7 @@ export async function getPublications() {
     return data.map((r) => ({ id: r.id, title: r.title, journal: r.journal, year: r.year, authors: r.authors, doiUrl: r.doi_url }));
   } catch (e) {
     console.error("getPublications(): falling back to demo list --", e?.message || e);
-    return clone(PUBLICATIONS);
+    return demoOrEmpty(PUBLICATIONS);
   }
 }
 
@@ -1127,7 +1175,7 @@ export async function getContributions() {
     return data.map((r) => ({ id: r.id, type: r.type, title: r.title, year: r.year || "", location: r.location || "" }));
   } catch (e) {
     console.error("getContributions(): falling back to demo list --", e?.message || e);
-    return clone(CONTRIBUTIONS);
+    return demoOrEmpty(CONTRIBUTIONS);
   }
 }
 
@@ -1233,7 +1281,7 @@ export async function getPeople() {
     return uid ? clone(real) : clone([...real, ..._people]);
   } catch (e) {
     console.error("getPeople(): falling back to demo people --", e?.message || e);
-    return clone(_people);
+    return demoOrEmpty(_people);
   }
 }
 
@@ -1592,7 +1640,7 @@ export async function getCommunities() {
     }));
   } catch (e) {
     console.error("getCommunities(): falling back to demo communities --", e?.message || e);
-    return clone(_communities);
+    return demoOrEmpty(_communities);
   }
 }
 
@@ -1681,7 +1729,7 @@ export async function getNotifications() {
     }));
   } catch (e) {
     console.error("getNotifications(): falling back to demo notifications --", e?.message || e);
-    return clone(NOTIFICATIONS);
+    return demoOrEmpty(NOTIFICATIONS);
   }
 }
 
@@ -1856,6 +1904,36 @@ export async function searchEuropePMCForEvidence(query) {
   if (!res.ok || json.error) throw new Error(json.error || "Europe PMC search failed.");
   return json.results || [];
 }
+
+// Evidence Library search (filters, sort, paging, real total). `source` is
+// "pubmed" or "europepmc"; the two admin-facing helpers above stay as they
+// were and ignore the extra fields. Returns { results, total }.
+export async function searchEvidenceLive(source, { query, studyType, yearFrom, sort, page }) {
+  const path = source === "europepmc" ? "/api/europepmcSearch" : "/api/pubmedSearch";
+  const res = await fetch(apiUrl(path), {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeader()) },
+    body: JSON.stringify({ query, studyType, yearFrom, sort, page }),
+  });
+  const json = await readApiJson(res);
+  if (!res.ok || json.error) throw new Error(json.error || "Search failed.");
+  return { results: json.results || [], total: typeof json.total === "number" ? json.total : null };
+}
+
+// Admin "Add news" (AdminAddNewsPage.jsx): one server endpoint, two actions.
+// Admin status is re-checked server-side on every call.
+async function adminNewsCall(body) {
+  const res = await fetch(apiUrl("/api/admin/news"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeader()) },
+    body: JSON.stringify(body),
+  });
+  const json = await readApiJson(res);
+  if (!res.ok || json.error) throw new Error(json.error || "Request failed.");
+  return json;
+}
+export const draftNewsItem = (text, url) => adminNewsCall({ action: "draft", text, url });
+export const publishNewsItem = (item) => adminNewsCall({ action: "publish", ...item });
 
 export async function draftEvidenceFromEuropePMC(result) {
   const res = await fetch(apiUrl("/api/europepmcDraft"), {
@@ -2231,29 +2309,31 @@ function rowToOpportunity(row, uid, applicationCount = 0) {
 // MyPostingsPage/ApplicantPipeline show a real number instead of a seeded
 // one -- only for YOUR listings, because applications RLS only ever
 // returns rows on opportunities you created (or applied to yourself).
+// Opportunity timestamps (published/closed/cancelled/updated/deleted) are
+// written as the word "now", which Postgres evaluates with the DATABASE's
+// clock -- not the poster's phone/laptop clock, which can be minutes or
+// hours off and made new listings read "13 hours ago".
+const SERVER_NOW = "now";
+
 export async function getOpportunities() {
   try {
-    const uid = await currentUserId();
-    const { data, error } = await supabase
-      .from("opportunities")
-      .select("*")
-      .neq("status", "draft")
-      .order("created_at", { ascending: false });
-    if (error) throw error;
-    const rows = data || [];
-    let counts = {};
-    if (uid && rows.length) {
-      const { data: apps } = await supabase
-        .from("applications")
-        .select("opportunity_id")
-        .in("opportunity_id", rows.map((r) => r.id));
-      for (const a of apps || []) counts[a.opportunity_id] = (counts[a.opportunity_id] || 0) + 1;
-    }
+    // One round trip instead of three in a row: who I am, the board, and the
+    // application counts are independent (the counts query relies on RLS to
+    // return only applications this user may see, same as before).
+    const [uid, oppRes, appsRes] = await Promise.all([
+      currentUserId(),
+      supabase.from("opportunities").select("*").neq("status", "draft").order("created_at", { ascending: false }),
+      supabase.from("applications").select("opportunity_id"),
+    ]);
+    if (oppRes.error) throw oppRes.error;
+    const rows = oppRes.data || [];
+    const counts = {};
+    if (uid) for (const a of appsRes.data || []) counts[a.opportunity_id] = (counts[a.opportunity_id] || 0) + 1;
     return rows.map((r) => rowToOpportunity(r, uid, counts[r.id] || 0));
   } catch (e) {
     console.error("getOpportunities(): falling back to demo board --", e?.message || e);
     const { INITIAL_OPPORTUNITIES } = await import("./opportunitiesMock.js");
-    return clone(INITIAL_OPPORTUNITIES);
+    return demoOrEmpty(INITIAL_OPPORTUNITIES);
   }
 }
 
@@ -2303,7 +2383,7 @@ export async function createOpportunity(fields, { publish = true } = {}) {
     ...fieldsToRow(fields),
     creator_id: uid,
     status: publish ? "published" : "draft",
-    published_at: publish ? new Date().toISOString() : null,
+    published_at: publish ? SERVER_NOW : null,
   };
   const { data, error } = await supabase.from("opportunities").insert(row).select("*").single();
   if (error) throw error;
@@ -2324,8 +2404,8 @@ export async function createOpportunity(fields, { publish = true } = {}) {
 export async function updateOpportunity(oppId, fields, { publish } = {}) {
   const uid = await currentUserId();
   if (!uid) throw new Error("Sign in to edit your listing.");
-  const row = { ...fieldsToRow(fields), updated_at: new Date().toISOString() };
-  if (publish) { row.status = "published"; row.published_at = new Date().toISOString(); }
+  const row = { ...fieldsToRow(fields), updated_at: SERVER_NOW };
+  if (publish) { row.status = "published"; row.published_at = SERVER_NOW; }
   const { data, error } = await supabase
     .from("opportunities").update(row).eq("id", oppId).select("*").single();
   if (error) throw error;
@@ -2341,7 +2421,7 @@ export async function publishOpportunity(oppId) {
   if (!uid) throw new Error("Sign in to manage your listings.");
   const { error } = await supabase
     .from("opportunities")
-    .update({ status: "published", published_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .update({ status: "published", published_at: SERVER_NOW, updated_at: SERVER_NOW })
     .eq("id", oppId);
   if (error) throw error;
   invalidateSearchCorpus();
@@ -2354,7 +2434,7 @@ export async function closeOpportunity(oppId) {
   if (!uid) throw new Error("Sign in to manage your listings.");
   const { error } = await supabase
     .from("opportunities")
-    .update({ status: "closed", closed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .update({ status: "closed", closed_at: SERVER_NOW, updated_at: SERVER_NOW })
     .eq("id", oppId);
   if (error) throw error;
 }
@@ -2364,7 +2444,7 @@ export async function reopenOpportunity(oppId) {
   if (!uid) throw new Error("Sign in to manage your listings.");
   const { error } = await supabase
     .from("opportunities")
-    .update({ status: "published", closed_at: null, updated_at: new Date().toISOString() })
+    .update({ status: "published", closed_at: null, updated_at: SERVER_NOW })
     .eq("id", oppId);
   if (error) throw error;
 }
@@ -2378,7 +2458,7 @@ export async function cancelOpportunity(oppId) {
   if (!uid) throw new Error("Sign in to manage your listings.");
   const { error } = await supabase
     .from("opportunities")
-    .update({ status: "cancelled", cancelled_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .update({ status: "cancelled", cancelled_at: SERVER_NOW, updated_at: SERVER_NOW })
     .eq("id", oppId);
   if (error) throw error;
 }
@@ -2419,7 +2499,7 @@ export async function deleteOpportunity(oppId) {
   if (!uid) throw new Error("Sign in to manage your listings.");
   const { error } = await supabase
     .from("opportunities")
-    .update({ deleted_at: new Date().toISOString() })
+    .update({ deleted_at: SERVER_NOW })
     .eq("id", oppId);
   if (error) throw error;
 }
@@ -2796,4 +2876,127 @@ export async function searchEverything(query, { limit = 6 } = {}) {
     evidence: rankAndTrim(evidenceHits, limit),
     total,
   };
+}
+
+/* ---------------- career news (add_career_news.sql) ---------------- */
+//
+// Separate from `opportunities` above -- those are jobs/workshops a
+// community member posted themselves. This is outside news (WHO,
+// News-Medical, and later real job-board sources) a daily server-side job
+// writes into `career_news`; the app only ever reads it. Public table, no
+// auth required -- readable in guest mode same as `profiles`/`connections`.
+//
+// Fetches the whole active list once -- CareerNewsBoard filters by
+// category/search client-side rather than re-querying per tab (dataset is
+// small, and Aditi's brief was explicit: "filter existing news data; do
+// not create separate hardcoded content for each tab"). Throws on a real
+// failure (table missing, network) rather than swallowing it, so the UI
+// can show a real error state instead of silently looking empty -- see
+// CareerNewsBoard's error banner, which keeps the last good list visible.
+export async function getCareerNews({ limit = 50 } = {}) {
+  const { data, error } = await supabase
+    .from("career_news")
+    .select("id, category, title, summary, source_name, source_url, thumbnail_url, location, published_at, deadline_at, last_checked_at, status")
+    .eq("status", "active")
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .limit(limit);
+  if (error) throw new Error(error.message);
+  return (data || []).map((n) => ({ ...n, deadlineLabel: deadlineLabelOf(n.deadline_at), verification: verificationOf(n.source_name) }));
+}
+
+// The most recent successful daily fetch, across every source -- shown in
+// NewsPage's header ("Updated ..."). Separate from the list query so a
+// stale/never-run collection job still reports its real last-run time
+// even if that run found nothing new to write.
+export async function getCareerNewsLastUpdated() {
+  const { data, error } = await supabase
+    .from("career_news")
+    .select("last_checked_at")
+    .order("last_checked_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data?.last_checked_at || null;
+}
+
+function deadlineLabelOf(deadlineAt) {
+  if (!deadlineAt) return null;
+  const days = Math.ceil((new Date(deadlineAt).getTime() - Date.now()) / 86400000);
+  if (days < 0) return null;
+  if (days === 0) return "Closes today";
+  if (days <= 7) return "Closes this week";
+  return "Upcoming";
+}
+
+// Verified official/reputable by hand before being wired in. Not meant to
+// scale past a handful of names; a real source-trust table would replace
+// this if/when more sources are added.
+const TRUSTED_SOURCES = {
+  "World Health Organization": "Official source",
+  "News-Medical (Physiotherapy)": "Reputable publisher",
+  "World Physiotherapy": "Official source",
+  // Added 2026-09-30 for a manually-confirmed one-off (RRB CEN 05/2026) --
+  // the actual recruiting body (Ministry of Railways), not an aggregator.
+  "Railway Recruitment Board (RRB)": "Official source",
+  // Added 2026-10-02 for manually-confirmed one-offs, each checked against
+  // its own official site before being wired in (see career_news rows
+  // dated 2026-10-02).
+  "NHS Jobs": "Official source",
+  "Maharashtra Institute of Physiotherapy (MIT MIP)": "Official source",
+  "AIIMS New Delhi": "Official source",
+  "NCAHP / AHPR (Govt of India)": "Official source",
+};
+function verificationOf(sourceName) {
+  return TRUSTED_SOURCES[sourceName] || "Needs review";
+}
+
+// ---- saved news (saved_items, item_type "news") ----
+// Same generic saved_items table opportunities already use (see
+// toggleSaveOpportunity above) -- reused rather than building a second
+// bookmarking system for one more content type.
+export async function getSavedNewsIds() {
+  try {
+    const uid = await currentUserId();
+    if (!uid) return [];
+    const { data, error } = await supabase
+      .from("saved_items").select("item_id").eq("user_id", uid).eq("item_type", "news");
+    if (error) throw error;
+    return (data || []).map((r) => r.item_id);
+  } catch (e) {
+    console.error("getSavedNewsIds():", e?.message || e);
+    return [];
+  }
+}
+
+export async function getSavedNews() {
+  const uid = await currentUserId();
+  if (!uid) return [];
+  const { data: saves, error } = await supabase
+    .from("saved_items").select("item_id, created_at").eq("user_id", uid).eq("item_type", "news")
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  const ids = (saves || []).map((s) => s.item_id);
+  if (!ids.length) return [];
+  const { data: rows, error: newsErr } = await supabase.from("career_news").select("*").in("id", ids);
+  if (newsErr) throw new Error(newsErr.message);
+  const byId = Object.fromEntries((rows || []).map((r) => [String(r.id), r]));
+  return ids.map((id) => byId[id]).filter(Boolean)
+    .map((n) => ({ ...n, deadlineLabel: deadlineLabelOf(n.deadline_at), verification: verificationOf(n.source_name) }));
+}
+
+export async function toggleSaveNews(newsId) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to save news.");
+  const key = { user_id: uid, item_type: "news", item_id: String(newsId) };
+  const { data: existing, error: selErr } = await supabase
+    .from("saved_items").select("item_id").match(key).maybeSingle();
+  if (selErr) throw selErr;
+  if (existing) {
+    const { error } = await supabase.from("saved_items").delete().match(key);
+    if (error) throw error;
+    return false;
+  }
+  const { error } = await supabase.from("saved_items").insert(key);
+  if (error) throw error;
+  return true;
 }

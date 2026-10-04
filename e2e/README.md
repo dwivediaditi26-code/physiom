@@ -56,14 +56,46 @@ these exact names. Nothing else needs configuring.
 
 ## What the tests actually do
 
-`e2e/patient-journey.spec.ts` signs up a brand-new, uniquely-named test
-account on every run, creates a patient, records a real MMT finding,
-confirms it shows up in the SOAP note, and signs the note. Each run creates
-its own throwaway account and patient (timestamp + random suffix in the
-name/email) so parallel runs never collide -- there's no cleanup step
-because it's a disposable test project; if you want to periodically clear
-out old test accounts, that's a manual housekeeping task on the test
-project, not something the tests themselves need to worry about.
+The tests are split by whether they need an account.
+
+**No account, no secrets (Guest mode -- runs anywhere, also on every pull
+request):**
+
+| File | What it checks |
+|---|---|
+| `smoke-starter.spec.ts` | the app loads and renders |
+| `app-tour.spec.ts` | a tour of every main area: Home tiles, Clinical, Learn, PhysioFeed, Profile (phone) |
+| `guest-journey.spec.ts` | Home tiles, Clinical's five tabs, an Ortho assessment with findings typed in -> Final Review -> Save -> patient in the list |
+| `ortho-steps.spec.ts` | all 20 steps of the Ortho assessment open (by "Next" and from the step bar); Advanced Assessment too |
+| `regions.spec.ts` | every body region (13) opens its ROM, MMT and Special Tests steps |
+| `neuro-cardio.spec.ts` | Neuro (two templates) and Cardio walk to "Summary & Review" |
+| `ortho-cases.spec.ts` + `ortho-cases.fixtures.ts` | 10 synthetic patients through demographics -> complaint -> review -> save -> listed |
+
+All of these run on both a desktop-sized and a phone-sized browser (see
+`playwright.config.ts`). Guest Mode never touches the database, so they can't
+leave anything behind.
+
+**Real account on the TEST Supabase project (needs the two secrets above):**
+
+| File | What it checks |
+|---|---|
+| `patient-journey.spec.ts` | sign up, save an Ortho assessment, reload the page -- the patient is still there (it came back from Supabase) |
+| `cross-device.spec.ts` | a patient saved on "device A" appears on a second, separate browser ("device B") after signing in |
+| `load-concurrency.spec.ts` (`@load`, own workflow) | N students saving at the same time |
+
+Each run creates its own throwaway account and patient (timestamp + random
+suffix in the name/email) so parallel runs never collide -- there's no
+cleanup step because it's a disposable test project; if you want to
+periodically clear out old test accounts, that's a manual housekeeping task
+on the test project, not something the tests themselves need to worry about.
+
+`ai-accuracy.spec.ts` (`@ai-accuracy`) is separate: it scores the real AI
+intake against a threshold every night (`ai-accuracy.yml`).
+
+`appMap.ts` is the map of the app: a diagram of every area at the top, and every
+"how do I get to this screen" step below it (open Clinical, start an Ortho / Neuro /
+Cardio assessment, jump to a step...). When a screen changes, fix it there once and
+every test follows.
 
 ## Running locally
 
@@ -77,16 +109,23 @@ npm run build
 npx playwright test
 ```
 
-Or skip the env vars and it'll fall back to hitting the real production
-Supabase project via the hardcoded default in `src/supabase.js` -- **don't
-do this** for anything other than a one-off manual check where you're
-certain you won't submit real patient-shaped data.
+If you skip the env vars the app falls back to the real production Supabase
+project (the hardcoded default in `src/supabase.js`). The guest-mode specs
+never talk to a database, so they are fine that way. The specs that sign in
+or sign up (`patient-journey`, `cross-device`, `load-concurrency`) call
+`assertNotLiveDatabase()` in `appMap.ts` first and stop with an error if the
+build points at the live project, so a local run without the env vars cannot
+create accounts in production.
 
 ## Adding more coverage later
 
-The current spec covers one path end-to-end as the highest-value smoke
-test. Natural next additions, each as its own `test()` in this same file or
-a new spec: ROM, Special Tests, Neuro, Gait, Outcome Measures modules;
-logging out and back in to confirm persistence; a dedicated mobile-viewport
-spec once the bottom-nav selectors are mapped out (skipped for now in the
-existing spec rather than guessed at).
+Natural next additions, each as a new `test()` or spec built on `appMap.ts`:
+typing real values into ROM / MMT / Special Tests and checking them on
+Final Review (`guest-journey.spec.ts` does this for one MMT grade and one
+special test); the Care Plan and PDF report; Treatment / Exercise; Learn and
+PhysioFeed; a follow-up visit for an existing patient (the old
+"multi-visit" spec was removed with the old Quick Visit screens -- write a new
+one once you decide what a follow-up looks like today).
+
+Use `npx playwright codegen http://localhost:4173` to record a click path
+and copy the selectors into `appMap.ts`.

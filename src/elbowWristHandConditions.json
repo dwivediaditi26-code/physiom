@@ -601,7 +601,11 @@
     "cpa": {
       "muscles": [
         {
-          "name": "Wrist Flexors / Pronator Teres (medial flexor-pronator mass)",
+          "name": "Wrist Flexors (FCR / FCU) — medial flexor-pronator mass",
+          "state": "Protectively overactive supporting a lax UCL"
+        },
+        {
+          "name": "Pronator Teres / Quadratus — medial flexor-pronator mass",
           "state": "Protectively overactive supporting a lax UCL"
         }
       ],
@@ -1565,7 +1569,11 @@
     "cpa": {
       "muscles": [
         {
-          "name": "Wrist Extensors/Flexors",
+          "name": "Wrist Extensors (ECRB / ECRL)",
+          "state": "Facilitation supports remaining function"
+        },
+        {
+          "name": "Wrist Flexors (FCR / FCU)",
           "state": "Facilitation supports remaining function"
         }
       ],

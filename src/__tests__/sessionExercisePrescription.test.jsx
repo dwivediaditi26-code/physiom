@@ -14,7 +14,10 @@
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { QuickVisitForm } from "../AppModules.jsx";
+import { preloadSessionDetailView, QuickVisitForm } from "../AppModules.jsx";
+
+// The session editor loads on demand; have it ready before the tests open one.
+beforeAll(async () => { await preloadSessionDetailView(); });
 
 const PC = { accent:"#7c3aed", a2:"#9333ea", a3:"#059669", a4:"#b45309", s2:"#f5f0fb", s3:"#ede7f6", surface:"#fff", border:"#E0E0E2", text:"#0D0D0D", muted:"#6B6B6B" };
 

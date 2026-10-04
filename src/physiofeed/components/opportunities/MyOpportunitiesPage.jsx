@@ -51,7 +51,7 @@ export default function MyOpportunitiesPage({
       </div>
 
       {tab === "registered" && (
-        <ApplicationList items={registeredItems} onOpen={onOpen} empty="You haven't registered for any workshops yet." />
+        <ApplicationList registered items={registeredItems} onOpen={onOpen} empty="You haven't registered for any workshops yet." />
       )}
       {tab === "applications" && (
         <ApplicationList items={applicationItems} onOpen={onOpen} empty="You haven't applied to anything yet." />
@@ -91,7 +91,7 @@ export default function MyOpportunitiesPage({
   );
 }
 
-function ApplicationList({ items, onOpen, empty }) {
+function ApplicationList({ items, onOpen, empty, registered = false }) {
   if (items.length === 0) return empty ? <p className="pf-font-body text-sm text-[#A79CC4]">{empty}</p> : null;
   return (
     <div className="space-y-3 pb-6">
@@ -105,7 +105,7 @@ function ApplicationList({ items, onOpen, empty }) {
           <p className="pf-font-head text-sm font-bold text-[#2B2140] leading-snug">{a.opportunity?.title || "Opportunity"}</p>
           <p className="pf-font-body text-xs text-[#8A7FA3] mb-2">{a.opportunity?.org || ""}</p>
           <span className={`pf-font-head inline-block text-[10.5px] font-bold px-2 py-0.5 rounded-full ${STATUS_CHIP[a.status] || STATUS_CHIP.new}`}>
-            {STATUS_LABEL[a.status] || "Applied"}
+            {(registered || a.opportunity?.type === "workshop") && (a.status === "new" || !STATUS_LABEL[a.status]) ? "Registered" : (STATUS_LABEL[a.status] || "Applied")}
           </span>
           <span className="pf-font-body text-[11px] text-[#A79CC4] ml-2">{a.appliedAgo}</span>
         </button>

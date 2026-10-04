@@ -7,7 +7,10 @@ android {
         applicationId "com.physiomindpro.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
+        // Google Play rejects an upload unless versionCode is higher than the
+        // last one. CI passes -PappVersionCode=<GitHub run number> (see
+        // .github/workflows/android-build.yml); a local build defaults to 1.
+        versionCode (project.hasProperty("appVersionCode") ? project.property("appVersionCode").toInteger() : 1)
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {

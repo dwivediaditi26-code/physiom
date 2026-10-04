@@ -40,7 +40,10 @@ vi.mock("../supabase.js", () => ({
   supabase: {
     from: vi.fn((table) => makeChain(table)),
     rpc: vi.fn((name) => Promise.resolve(rpcData[name] ?? { data: null, error: null })),
-    auth: { getUser: vi.fn(() => Promise.resolve({ data: { user: currentUser }, error: null })) },
+    auth: {
+      getUser: vi.fn(() => Promise.resolve({ data: { user: currentUser }, error: null })),
+      getSession: vi.fn(() => Promise.resolve({ data: { session: currentUser ? { user: currentUser } : null }, error: null })),
+    },
     storage: {
       from: vi.fn((bucket) => ({
         upload: vi.fn((path) => Promise.resolve({ data: storageUploadError ? null : { path }, error: storageUploadError })),
@@ -66,6 +69,59 @@ describe("PhysioFeed db.js Supabase wiring", () => {
     expect(posts.length).toBeGreaterThan(0);
     expect(posts[0]).toHaveProperty("heading");
     expect(posts[0]).toHaveProperty("commentList");
+  });
+
+  it("getPosts() shows a signed-in clinician an empty feed, never the canned demo posts, when the feed query fails", async () => {
+    currentUser = { id: "u-me" };
+    setTable("posts", { data: null, error: { message: 'relation "posts" does not exist' } });
+    const posts = await db.getPosts();
+    expect(posts).toEqual([]);
+  });
+
+  it("getPosts() still shows the demo feed to a guest when the feed query fails", async () => {
+    setTable("posts", { data: null, error: { message: "network down" } });
+    const posts = await db.getPosts();
+    expect(posts.length).toBeGreaterThan(0);
+  });
+
+  // The profile lists (education, rotations, ...) and notifications/people/communities/
+  // opportunities are canned demo content for guest mode only (first-time walkthrough,
+  // 2026-10-02: a brand-new account showed "Physiotherapist - Active Physio & Rehab Centre").
+  it.each([
+    ["education_entries", "getEducation"],
+    ["rotations", "getRotations"],
+    ["achievements", "getAchievements"],
+    ["publications", "getPublications"],
+    ["contributions", "getContributions"],
+    ["notifications", "getNotifications"],
+  ])("%s: %s() gives a signed-in clinician an empty list, not demo entries, when the read fails", async (table, fn) => {
+    currentUser = { id: "u-me" };
+    setTable(table, { data: null, error: { message: `relation "${table}" does not exist` } });
+    expect(await db[fn]()).toEqual([]);
+  });
+
+  it("getRotations() still shows the demo list to a guest", async () => {
+    const rows = await db.getRotations();
+    expect(rows.length).toBeGreaterThan(0);
+  });
+
+  it("getProfile() gives a signed-in clinician a blank profile of their own, not the demo identity, when the profile cannot be read", async () => {
+    currentUser = { id: "u-me", email: "meera.rao@example.com", user_metadata: { full_name: "Meera Rao" } };
+    // The read itself blows up (not just an empty result), which is the path that
+    // used to hand back the shared demo identity.
+    setTable("profiles", { then: (_ok, reject) => reject(new Error("column does not exist")) });
+    const p = await db.getProfile();
+    expect(p.id).toBe("u-me");
+    expect(p.name).toBe("Meera Rao");
+    expect(p.isDemo).toBeUndefined();
+    expect(p.bio).toBe("");
+    expect(p.clinicalTitle).toBe("");
+    expect(JSON.stringify(p)).not.toMatch(/Aditi Sharma|Active Physio/);
+  });
+
+  it("getProfile() still shows the demo identity to a guest", async () => {
+    const p = await db.getProfile();
+    expect(p.isDemo).toBe(true);
   });
 
   it("getPosts() maps a real post + likes + comments + profiles into the exact shape FeedPostCard/PostMedia expect", async () => {

@@ -2,8 +2,8 @@
 // Regression coverage for the Clinical landing page redesign (2026-08-17,
 // re-scoped 2026-08-23): PatientDatabasePanel's embedded (Clinical tab)
 // view now shows ONLY the patient list -- header, search, a list of
-// compact rows, sort/flags/import/export tucked behind a "Sort, filters &
-// backup" toggle. The New Assessment CTA and the Ortho/Neuro/Cardio/Sports
+// compact rows, sort/flags/import/export tucked behind a "Sort, filter, import or
+// export" toggle. The New Assessment CTA and the Ortho/Neuro/Cardio/Sports
 // specialty cards live on their own "Assess" sub-tab so the Patients tab
 // stays a single-purpose list. (Since 2026-09-10 Clinical opens on "Today".)
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -75,7 +75,7 @@ describe("Clinical landing page redesign", () => {
     await renderLoggedIn();
     const panel = await openPatientsTab();
     expect(panel.queryByText("🚩 Flags only")).not.toBeInTheDocument();
-    fireEvent.click(panel.getByText(/Sort, filters & backup/));
+    fireEvent.click(panel.getByText(/Sort, filter, import or export/));
     expect(panel.getByText("🚩 Flags only")).toBeInTheDocument();
     expect(panel.getByText("📂 Import JSON")).toBeInTheDocument();
     expect(panel.getByText("💾 Export All")).toBeInTheDocument();

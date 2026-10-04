@@ -6,6 +6,7 @@ import ProfilePage from "./pages/ProfilePage.jsx";
 import OtherProfilePage from "./pages/OtherProfilePage.jsx";
 import EvidencePage from "./pages/EvidencePage.jsx";
 import ExplorePage from "./pages/ExplorePage.jsx";
+import NewsPage from "./pages/NewsPage.jsx";
 import CommunitiesPage from "./pages/CommunitiesPage.jsx";
 import CaseDiscussionsPage from "./pages/CaseDiscussionsPage.jsx";
 import PostDetailPage from "./pages/PostDetailPage.jsx";
@@ -16,6 +17,7 @@ import SavedPage from "./pages/SavedPage.jsx";
 import NotificationsPage from "./pages/NotificationsPage.jsx";
 import AdminReportsPage from "./pages/AdminReportsPage.jsx";
 import AdminAddEvidencePage from "./pages/AdminAddEvidencePage.jsx";
+import AdminAddNewsPage from "./pages/AdminAddNewsPage.jsx";
 import AdminAnalyticsPage from "./pages/AdminAnalyticsPage.jsx";
 
 // The original version of this file also had stub routes (/dashboard,
@@ -36,6 +38,7 @@ export default function PhysioFeedRoutes() {
         <Route path="/profile/:userId" element={<OtherProfilePage />} />
         <Route path="/evidence" element={<EvidencePage />} />
         <Route path="/explore" element={<ExplorePage />} />
+        <Route path="/news" element={<NewsPage />} />
         {/* Communities/Groups (2026-09-25): dropped from the nav (PRO_NAV) --
             see constants.js -- but the route stays reachable rather than
             deleting the feature outright; nothing else in the app links
@@ -50,6 +53,7 @@ export default function PhysioFeedRoutes() {
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/admin/reports" element={<AdminReportsPage />} />
         <Route path="/admin/evidence" element={<AdminAddEvidencePage />} />
+        <Route path="/admin/news" element={<AdminAddNewsPage />} />
         <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
         <Route path="*" element={<Navigate to="/feed" replace />} />
       </Routes>

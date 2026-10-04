@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { normalizeLink } from "./FormFields.jsx";
 import { ChevronLeft, MapPin, IndianRupee, Check, Bookmark } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
 import ApplyOpportunityModal from "./ApplyOpportunityModal.jsx";
@@ -9,7 +10,7 @@ import { trackEvent } from "../../../analytics/trackEvent.js";
 // `applied` and `saved` are owned by ExplorePage now (P4/P5) -- they come
 // from the real applications / saved_items tables, so they survive a
 // reload instead of resetting to false every time this screen mounts.
-export default function OpportunityDetail({ opp, onBack, onMessage, applied, onApplied, saved, onToggleSave }) {
+export default function OpportunityDetail({ opp, onBack, onMessage, applied, onApplied, saved, onToggleSave, preview = false }) {
   const [applyOpen, setApplyOpen] = useState(false);
   const c = TYPE_COLORS[opp.type] || TYPE_COLORS.job;
   const blocked = isRegistrationBlocked(opp);
@@ -93,7 +94,7 @@ export default function OpportunityDetail({ opp, onBack, onMessage, applied, onA
           {(opp.salary || opp.stipend) && (
             <div className="flex items-start justify-between gap-3 bg-slate-50 rounded-xl px-3.5 py-2.5">
               <span className="text-xs font-semibold text-slate-500 shrink-0">{opp.type === "job" ? "Salary" : "Stipend"}</span>
-              <span className="text-xs text-slate-800 flex items-center gap-1"><IndianRupee size={11} />{(opp.salary || opp.stipend).replace("₹", "")}</span>
+              <span className="text-xs text-slate-800 flex items-center gap-1">{!["Not disclosed", "Unpaid"].includes(opp.salary || opp.stipend) && <IndianRupee size={11} />}{(opp.salary || opp.stipend).replace(/₹/g, "")}</span>
             </div>
           )}
         </div>
@@ -141,7 +142,7 @@ export default function OpportunityDetail({ opp, onBack, onMessage, applied, onA
 
         {opp.mentor && (
           <div className="border border-slate-200 rounded-2xl p-3.5">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-2.5">{opp.type === "collaboration" ? "Lead researcher" : "Mentor"}</p>
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-2.5">{opp.type === "collaboration" ? "Lead researcher" : opp.type === "job" ? "Posted by" : "Mentor"}</p>
             <div className="flex items-center gap-3">
               <Avatar size={40} grad={opp.mentor.gradient} initials={opp.mentor.initials} />
               <div className="min-w-0">
@@ -156,8 +157,8 @@ export default function OpportunityDetail({ opp, onBack, onMessage, applied, onA
 
       <div
         ref={actionBarRef}
-        className="fixed inset-x-0 lg:sticky lg:inset-x-auto bg-white border-t border-slate-100 px-4 py-3 flex items-center gap-2.5 z-[130]"
-        style={{ bottom: barOffsets.bnav }}
+        className={`${preview ? "" : "fixed inset-x-0 lg:sticky lg:inset-x-auto z-[130]"} bg-white border-t border-slate-100 px-4 py-3 flex items-center gap-2.5`}
+        style={preview ? undefined : { bottom: barOffsets.bnav }}
       >
         {/* registrationMethod (2026-09-24, the Job/Internship/Collaboration
             forms): 'external' opens the poster's own link instead of the
@@ -168,13 +169,15 @@ export default function OpportunityDetail({ opp, onBack, onMessage, applied, onA
             `blocked` (Phase F) takes priority over all three -- closed/
             expired/cancelled means there's nothing to open, message or
             apply to any more. */}
-        {blocked ? (
+        {opp.postedByMe ? (
+          <div className="flex-1 text-center text-sm font-semibold text-slate-500 rounded-xl py-3 bg-slate-50">This is your listing</div>
+        ) : blocked ? (
           <div className="flex-1 text-center text-sm font-semibold text-slate-400 rounded-xl py-3 bg-slate-50">
             {opp.lifecycleStatus === "cancelled" ? "This opportunity was cancelled." : "No longer accepting applications."}
           </div>
         ) : opp.registrationMethod === "external" ? (
           <a
-            href={opp.registrationUrl}
+            href={normalizeLink(opp.registrationUrl) || undefined}
             target="_blank"
             rel="noopener noreferrer"
             className="pf-font-head flex-1 flex items-center justify-center gap-1.5 text-sm font-bold rounded-xl py-3 shadow-sm text-white active:scale-[0.98] transition"

@@ -21,15 +21,16 @@ vi.mock("../supabase.js", () => import("../__mocks__/supabase.js"));
 const { default: OrthoAssessment } = await import("../OrthoAssessment.jsx");
 
 function jumpToSubjective() {
-  // Both the dot and its text label are separate buttons sharing the same
-  // accessible name ("Subjective") -- either jumps, so just click the first.
+  // AI entry now opens on the speaking screen already (2026-10-02), so this
+  // only matters after something else moved away from it. Both the dot and its
+  // text label are separate buttons sharing the same accessible name
+  // ("Subjective") -- either jumps, so just click the first.
   fireEvent.click(screen.getAllByRole("button", { name: "Subjective" })[0]);
 }
 
 function openAiPanelAndParse(narrative) {
-  // OrthoAIIntakePanel is mounted with defaultOpen here, so no toggle to
-  // click first (unlike the standalone-toggle usage elsewhere).
-  fireEvent.click(screen.getByText("AI Parse"));
+  // OrthoAIIntakePanel is mounted with defaultOpen and AI entry lands on it
+  // directly, so there is nothing to click before typing.
   fireEvent.change(screen.getByPlaceholderText(/45 year old office worker/), { target: { value: narrative } });
   fireEvent.click(screen.getByRole("button", { name: /Parse with AI/ }));
 }
@@ -51,7 +52,6 @@ describe("OrthoAssessment — AI-assisted entry's region gate", () => {
     }));
 
     render(<OrthoAssessment entryMode="ai" onSave={() => {}} />);
-    jumpToSubjective();
     openAiPanelAndParse("I have some generalized body aches for a while now.");
 
     await screen.findByRole("button", { name: /Apply to Subjective/ });
@@ -70,7 +70,6 @@ describe("OrthoAssessment — AI-assisted entry's region gate", () => {
     }));
 
     render(<OrthoAssessment entryMode="ai" onSave={() => {}} />);
-    jumpToSubjective();
     openAiPanelAndParse("My right shoulder has been hurting for two weeks.");
 
     await screen.findByRole("button", { name: /Apply to Subjective/ });

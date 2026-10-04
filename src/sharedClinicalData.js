@@ -1154,37 +1154,8 @@ Object.assign(SCALES, {
 });
 
 // ─── ROM / MMT / neuro exam data (from the old PhysioNeuro.jsx, since removed) ───────────────────────────────────────────────────
-const ALL_TESTS = {
-  home:{ label:"Home", icon:"🏠", desc:"App Overview & Features", groups:{ "Welcome":"HOME_MODULE" }},
-  dashboard:{ label:"Dashboard", icon:"📊", desc:"Therapist Overview", groups:{ "Therapist Dashboard":"DASHBOARD_MODULE" }},
-  physiofeed:{ label:"PhysioFeed", icon:"📡", desc:"Community & Case Discussions", groups:{ "PhysioFeed":"PHYSIOFEED_MODULE" }},
-  learn:{ label:"Learn", icon:"📚", desc:"Clinical Learning Library", groups:{ "Learn":"LEARN_MODULE" }},
-  profile:{ label:"Profile", icon:"⚙️", desc:"Account & Settings", groups:{ "Profile":"PROFILE_MODULE" }},
-  clinical:{ label:"Clinical", icon:"🩺", desc:"Patients & Assessments", groups:{ "Clinical":"CLINICAL_MODULE" }},
-  demographics:{ label:"Demographics", icon:"👤", desc:"Patient Information", groups:{ "Demographic Data":"DEMOGRAPHICS_MODULE" }},
-  subjective:{ label:"Subjective", icon:"📝", desc:"History & Complaint", groups:{ "Full Subjective Assessment":"SUBJECTIVE_MODULE" }},
-  palpation:{ label:"Palpation", icon:"🖐️", desc:"Tissue Assessment", groups:{ "Palpation Findings":"PALPATION_MODULE" }},
-  posture:{ label:"Posture Analysis", icon:"🧍", desc:"AI Posture Screening", groups:{}},
-  observation:{ label:"Observation", icon:"👁️", desc:"Visual Inspection — Magee's", groups:{
-    "Clinical Observation":"OBSERVATION_MODULE",
-  }},
-  rom:{ label:"ROM", icon:"📐", desc:"Range of Motion", groups:{ "Full ROM Assessment":"ROM_MODULE" }},
-  mmt:{ label:"Muscle MMT", icon:"💪", groups:{ "Full MMT Assessment":"MMT_MODULE" }},
-  special:{ label:"Special Tests (100+)", icon:"🔬", groups:{ "All Special Tests":"SPECIAL_TESTS_MODULE" }},
-  neuro:{ label:"Neurological", icon:"⚡", groups:{ "Full Neurological Assessment":"NEURO_MODULE" }},
-  neurotemplates:{ label:"Neuro Templates", icon:"🧩", groups:{ "Neuro Templates":"NEURO_TEMPLATES_MODULE" }},
-  gait:{ label:"Gait Analysis", icon:"🚶", groups:{ "Full Gait Analysis":"GAIT_MODULE" }},
-  nkt:{ label:"CPA — Compensation Pattern Analysis", icon:"🧠", groups:{ "Compensation Pattern Tests":"NKT_REGION" }},
-  kinetic:{ label:"Kinetic Chain", icon:"⛓️", groups:{ "Joint-by-Joint Assessment":"KC_REGION" }},
-  fascia:{ label:"Fascia Integration", icon:"🕸️", groups:{ "Fascial Assessment":"FASCIA_REGION" }},
-  fma:{ label:"Functional Movement", icon:"🏃", groups:{ "Movement Analysis":"FMA_REGION" }},
-  cyriax_full:{ label:"STTT — Selective Tissue Tension Test", icon:"🦴", groups:{ "Complete STTT Assessment":"CYRIAX_MODULE" }},
-  outcome:{ label:"Outcome Measures", icon:"📈", groups:{ "Validated Outcome Measures":"OUTCOME_MODULE" }},
-  treatment:{ label:"Treatment", icon:"💊", desc:"Exercise & Treatment Techniques", groups:{ "Treatment":"TREATMENT_MODULE" }},
-  exercise:{ label:"Treatment Prescription", icon:"💊", desc:"Exercise & Treatment Plan", groups:{ "Exercise Prescription":"EXERCISE_MODULE" }},
-  tx_techniques:{ label:"Tx Techniques", icon:"🤲", groups:{ "Treatment Techniques":"TX_TECHNIQUES_MODULE" }},
-  tx_sessions:{ label:"Session Log", icon:"📋", desc:"Follow-Up Visit Notes", groups:{ "Treatment Session Log":"TX_SESSION_MODULE" }},
-};
+// ALL_TESTS moved to ./screenModules.js (small, needed on the first screen); re-exported below.
+import { ALL_TESTS } from "./screenModules.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ROM MODULE — Advanced Range of Motion Assessment

@@ -9,26 +9,33 @@ import { setGoBackHandler } from "./nativeApp.js";
 import { C, useTheme, MobileStyleInjector, ErrorBoundary, TabLoader } from "./utils.jsx";
 import OfflineBanner from "./OfflineBanner.jsx";
 import DeleteAccountButton from "./AccountDeletion.jsx";
+import ClinicDetailsCard from "./ClinicDetailsCard.jsx";
+import NotificationsSettingsCard from "./NotificationsSettingsCard.jsx";
+import PatientsLoadBanner from "./PatientsLoadBanner.jsx";
+import HowToUseCard from "./HowToUse.jsx";
+import { usePreviewFeatures } from "./featureFlags.js";
+import { doctorFirstName } from "./userName.js";
+import { reportClientError } from "./analytics/errorReporter.js";
 import AuthScreen from "./AuthScreen.jsx";
 import { PrivacyPolicy, TermsOfService } from "./LegalPages.jsx";
-import { ALL_TESTS } from "./sharedClinicalData.js";
-import HomeProtocolTab from "./HomeProtocolTab.jsx";
+import { ALL_TESTS } from "./screenModules.js";
 
-import { PostureAnalysisModule, PC } from "./PostureEngine.jsx";
+import { PC } from "./postureColors.js";
+import { PatientPermissionCheck, PatientPermissionModal, PatientPermissionReminder } from "./PatientPermission.jsx";
 import {
   draftKey,
   loadPatientDB, savePatientDB, savePatientDBLocalOnly,
-  hydrateLocalCache, clearPatientCache,
+  hydrateLocalCache, clearPatientCache, relockLocalCache, fetchPatientsFromSupabase,
   loadTaskDB, saveTaskDB,
   genId,
   PatientDatabasePanel, TreatmentCaseloadPanel,
   getTodaysPatients,
 } from "./PatientDatabase.jsx";
+import { isSamplePatient, withoutSamples } from "./samplePatients.js";
 import { setSessionKey, clearSessionKey } from "./localCrypto.js";
 import { HomeModule, TherapistDashboardModule } from "./DashboardModules.jsx";
 import { CLINICAL_PASTEL } from "./clinicalHomeTheme.js";
 import AssessmentReportView from "./AssessmentReportView.jsx";
-import SpecialtyPatientProfile from "./SpecialtyPatientProfile.jsx";
 import { PdfReportsModal, QuickVisitForm, OnboardingModal } from "./AppModules.jsx";
 import InstallPrompt from "./InstallPrompt.jsx";
 import PushOptInBanner from "./PushOptInBanner.jsx";
@@ -43,7 +50,7 @@ const LEAVE_GATE_TARGETS = new Set(["home", "physiofeed", "learn", "profile", "c
 // Clinical landing page itself, plus every assessment step/wizard reached
 // from it) counts as "inside Clinical" for the resume-on-return behavior
 // below (see lastClinicalNavRef).
-const OUTER_TAB_KEYS = new Set(["home", "physiofeed", "learn", "profile"]);
+const OUTER_TAB_KEYS = new Set(["home", "physiofeed", "learn", "profile", "settings"]);
 const OPAQUE_ASSESSMENT_KEYS = new Set(["ortho_new_assessment", "neuro_assessment", "cardio_assessment"]);
 const ASSESSMENT_ACTIVE_KEYS = OPAQUE_ASSESSMENT_KEYS;
 // Screens of the old step-by-step "Screening Workflow" (and its standalone
@@ -63,6 +70,14 @@ const LazyCardioAssessment = lazy(() => import("./CardiopulmonaryAssessment.jsx"
 const LazyNeuroAssessment = lazy(() => import("./NeurologicalAssessment.jsx"));
 // New Ortho Assessment module — standalone tool, same pattern as Cardio/Neuro.
 const LazyOrthoAssessmentNew = lazy(() => import("./OrthoAssessmentNew.jsx"));
+// The patient profile pulls in every assessment's summary code (Ortho, Neuro,
+// Cardio, ...) -- over a third of the app -- so it loads when a profile is first
+// opened instead of with the first screen.
+const LazySpecialtyPatientProfile = lazy(() => import("./SpecialtyPatientProfile.jsx"));
+// Home exercise programme editor: pulls in the whole exercise library, so it loads when first shown.
+const LazyHomeProtocolTab = lazy(() => import("./HomeProtocolTab.jsx"));
+// The posture screen (camera analysis, ~600 KB of source) loads when it is first opened.
+const LazyPostureAnalysisModule = lazy(() => import("./PostureEngine.jsx").then((m) => ({ default: m.PostureAnalysisModule })));
 const LazyExercise      = lazy(() => import("./lazy_exercise.jsx"));
 const LazyTreatment     = lazy(() => import("./lazy_treatment.jsx"));
 
@@ -120,7 +135,7 @@ function hasRealContent(v, depth = 0) {
     return true;
   }
   if (Array.isArray(v)) return v.some(x => hasRealContent(x, depth + 1));
-  if (typeof v === "object") return Object.entries(v).some(([k, x]) => k !== "__aiExtracted" && hasRealContent(x, depth + 1));
+  if (typeof v === "object") return Object.entries(v).some(([k, x]) => k !== "__aiExtracted" && k !== "consent_confirmed_at" && hasRealContent(x, depth + 1));
   return true;
 }
 
@@ -186,6 +201,10 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // needing `active` in its dependency array.
   const activeRef = useRef("home");
   useEffect(() => { activeRef.current = active; }, [active]);
+  // Also read by PwaBanners (holds the "new version" message while an assessment
+  // is open) and by errorReporter. navTo sets it on every real navigation; this
+  // covers the screen restored from a reload, where navTo never runs.
+  useEffect(() => { window.__pmScreen = active; }, [active]);
   // Mirrors `navContext` the same way activeRef mirrors `active` -- navTo
   // needs to read the CURRENT context's `wizardStep` (see OPAQUE_ASSESSMENT_KEYS
   // below) without putting navContext in its own dependency array.
@@ -304,7 +323,11 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       setShowOnboarding(false);
     }
   }, [currentUser?.user_metadata?.pm_onboarded]);
+  // lastSaved = the last time the draft was written on THIS device;
+  // lastCloudSaved = the last time a save really reached the cloud. The
+  // header only says "Saved to cloud" for the second one.
   const [lastSaved, setLastSaved] = useState(null);
+  const [lastCloudSaved, setLastCloudSaved] = useState(null);
   // 'idle' | 'saving' | 'saved' | 'error' — reflects whether the active
   // patient's data has actually reached Supabase (the real record), not just
   // whether it's cached in this browser's local storage.
@@ -371,42 +394,55 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   const [taskDB, setTaskDB] = useState(() => loadTaskDB());
 
   // ── Supabase: load patients on mount and merge with localStorage ──────────
-  useEffect(() => {
-    supabase.from("patients").select("*")
-      .eq("user_id", currentUser?.id || "")
-      .is("deleted_at", null) // hide soft-deleted rows -- see deletePatient() below
-      .order("updated_at", { ascending: false })
-      .then(({ data: rows, error }) => {
-        if (error || !rows || rows.length === 0) return;
-        const remote = rows.map(r => ({
-          id: r.id,
-          name: r.name,
-          data: r.data || {},
-          createdAt: r.created_at,
-          updatedAt: r.updated_at,
-          hasRedFlags: r.has_red_flags || false,
-          lastDx: r.last_dx || "",
-        }));
-        setPatients(prev => {
-          const localMap = new Map(prev.map(p => [p.id, p]));
-          const remoteMap = new Map(remote.map(p => [p.id, p]));
-          const allIds = new Set([...localMap.keys(), ...remoteMap.keys()]);
-          const merged = [];
-          for (const id of allIds) {
-            const loc = localMap.get(id);
-            const rem = remoteMap.get(id);
-            if (!loc) { merged.push(rem); continue; }
-            if (!rem) { merged.push(loc); continue; }
-            const lt = new Date(loc.updatedAt || 0).getTime();
-            const rt = new Date(rem.updatedAt || 0).getTime();
-            merged.push(rt >= lt ? rem : loc);
-          }
-          merged.sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
-          savePatientDBLocalOnly(merged, currentUser?.id); // encrypted local cache write, no re-upload
-          return merged;
-        });
+  // Read a few at a time with retries (fetchPatientsFromSupabase), merged into
+  // whatever the local cache already showed. A failure is no longer silent:
+  // PatientsLoadBanner (below) says so and offers "Try again" -- the old
+  // single `select *` returned an empty list with no explanation whenever it
+  // failed (2026-10-02, Aditi: patients "all gone" after a refresh although
+  // they were saved in Supabase).
+  // Posture Analysis is built but not launched: only preview (admin) accounts see it
+  // (featureFlags.js). Everyone else gets no tile, no Clinical tab, no profile tab,
+  // and a restored Posture screen sends them Home.
+  const { enabled: postureEnabled, ready: postureReady } = usePreviewFeatures(currentUser);
+  const [patientsLoad, setPatientsLoad] = useState({ state: currentUser?.id ? "loading" : "ok", skipped: 0 });
+  const loadPatientsFromCloud = useCallback(() => {
+    const uid = currentUser?.id;
+    if (!uid) { setPatientsLoad({ state: "ok", skipped: 0 }); return; }
+    setPatientsLoad((prev) => ({ state: "loading", skipped: prev.skipped }));
+    fetchPatientsFromSupabase(uid).then(({ rows, skipped, error }) => {
+      if (error) reportClientError(error, { phase: "patients_load", skipped, got: rows.length });
+      setPatientsLoad({ state: error ? "error" : "ok", skipped });
+      if (!rows || rows.length === 0) return;
+      const remote = rows.map(r => ({
+        id: r.id,
+        name: r.name,
+        data: r.data || {},
+        createdAt: r.created_at,
+        updatedAt: r.updated_at,
+        hasRedFlags: r.has_red_flags || false,
+        lastDx: r.last_dx || "",
+      }));
+      setPatients(prev => {
+        const localMap = new Map(prev.map(p => [p.id, p]));
+        const remoteMap = new Map(remote.map(p => [p.id, p]));
+        const allIds = new Set([...localMap.keys(), ...remoteMap.keys()]);
+        const merged = [];
+        for (const id of allIds) {
+          const loc = localMap.get(id);
+          const rem = remoteMap.get(id);
+          if (!loc) { merged.push(rem); continue; }
+          if (!rem) { merged.push(loc); continue; }
+          const lt = new Date(loc.updatedAt || 0).getTime();
+          const rt = new Date(rem.updatedAt || 0).getTime();
+          merged.push(rt >= lt ? rem : loc);
+        }
+        merged.sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
+        savePatientDBLocalOnly(merged, uid); // encrypted local cache write, no re-upload
+        return merged;
       });
-  }, []);
+    });
+  }, [currentUser?.id]);
+  useEffect(() => { loadPatientsFromCloud(); }, []);
 
   // ── Auto-save draft to localStorage (2s debounce) ─────────────────────
   // activePatientId is a real dep now (2026-09-24) -- see its own declaration
@@ -440,7 +476,12 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           ? { ...p, data, name: data["dem_name"] || p.name, updatedAt: new Date().toISOString() }
           : p);
         savePatientDB(updated, uid)
-          .then(() => { setCloudSaveStatus("saved"); setLastSaved(new Date()); })
+          .then((uploaded) => {
+            // uploaded === false: nothing was sent (e.g. only the demo
+            // patients) -- the record is only on this device.
+            if (uploaded) { setCloudSaveStatus("saved"); setLastCloudSaved(new Date()); }
+            else setCloudSaveStatus("local");
+          })
           .catch(() => setCloudSaveStatus("error")); // network/RLS failure — will retry on the next edit
         return updated;
       });
@@ -526,6 +567,29 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // demographic data to be fill not this page") -- Ortho Outpatient is the
   // only pathway that's actually live, so there's nothing else to choose.
   const [showSpecialtyPicker, setShowSpecialtyPicker] = useState(false);
+  // The patient-permission confirmation: asked ONCE per account (signed-in users only; see
+  // PatientPermission.jsx). Remembered here and, like the onboarding flag, in the account
+  // itself so it follows the person to another device.
+  const PERM_KEY = `pm_perm_ack_${currentUser?.id || "anon"}`;
+  const [permAckAt, setPermAckAt] = useState(() => {
+    try { return localStorage.getItem(PERM_KEY) || currentUser?.user_metadata?.pm_perm_ack || null; }
+    catch { return currentUser?.user_metadata?.pm_perm_ack || null; }
+  });
+  useEffect(() => {
+    const m = currentUser?.user_metadata?.pm_perm_ack;
+    if (m) { try { localStorage.setItem(PERM_KEY, m); } catch {} setPermAckAt(m); }
+  }, [currentUser?.user_metadata?.pm_perm_ack]);
+  const needsPermissionAck = !isGuest && !permAckAt;
+  function confirmPatientPermission() {
+    const at = new Date().toISOString();
+    setPermAckAt(at);
+    try { localStorage.setItem(PERM_KEY, at); } catch {}
+    // Best effort: the confirmation is already remembered on this device even if this fails.
+    if (currentUser?.id) { try { Promise.resolve(supabase.auth.updateUser({ data: { pm_perm_ack: at } })).catch(() => {}); } catch { /* ignore */ } }
+    return at;
+  }
+  const [quickConsent, setQuickConsent] = useState(false);
+  const [aiPermissionAsk, setAiPermissionAsk] = useState(null); // null | { mode }
   const [quickStart, setQuickStart] = useState({ name: "", age: "", sex: "", phone: "", specialty: "" });
   // Two-step picker (2026-09-10, Aditi: "change region to chief complaint
   // and then ask which specialty and then normal workflow") -- step 1
@@ -534,6 +598,12 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // specialty is even chosen), step 2 asks which specialty so the
   // assessment can actually route to the right tool instead of assuming
   // Ortho for everyone.
+  // One event per explicit "start a new assessment" tap (not per wizard step
+  // or per re-open of the screen -- module_opened already covers those), so
+  // "started vs saved" on the admin dashboard compares like with like.
+  function trackAssessmentStart(specialty, entryMode) {
+    trackEvent("assessment_started", { entityType: "assessment", entityId: specialty, properties: entryMode ? { entryMode } : {} });
+  }
   // Shared "start a new assessment for this specialty" logic -- used by
   // both the "+ New Assessment" specialty-picker modal below and the
   // Clinical tab's own "Assessment" sub-tab pills (2026-08-23), so picking
@@ -542,23 +612,26 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   function startSpecialty(st) {
     if (st.id === "cardio") {
       setData({}); setActivePatientId(null);
-      navTo("cardio_assessment");
+      trackAssessmentStart("cardio"); navTo("cardio_assessment");
     } else if (st.id === "neuro") {
       setData({}); setActivePatientId(null);
-      navTo("neuro_assessment");
+      trackAssessmentStart("neuro"); navTo("neuro_assessment");
     } else if (st.id === "ortho_new") {
       setData({}); setActivePatientId(null);
-      navTo("ortho_new_assessment");
+      trackAssessmentStart("ortho"); navTo("ortho_new_assessment");
     }
   }
   // "New Assessment" picker's two honest entry points -- both go into the
   // same real Outpatient wizard (the only pathway that picker offers),
   // differing only in whether the AI intake box auto-opens on Subjective.
   // See OrthoAssessment.jsx's entryMode handling for the skip-ahead logic.
-  function startOrthoEntry(mode) {
-    setData({});
+  function startOrthoEntry(mode, justConfirmedAt) {
+    // Signed-in users confirm once, the first time (guests save nothing).
+    if (needsPermissionAck && !justConfirmedAt) { setAiPermissionAsk({ mode }); return; }
+    const consentAt = justConfirmedAt || permAckAt;
+    setData(consentAt ? { consent_confirmed_at: consentAt } : {});
     setActivePatientId(null);
-    navTo("ortho_new_assessment", { entryMode: mode });
+    trackAssessmentStart("ortho", mode); navTo("ortho_new_assessment", { entryMode: mode });
   }
   // "+ New Assessment"'s minimal 5-question intake (name, age, sex, phone,
   // chief complaint) -- replaces the old AI-vs-Template picker. Step 1
@@ -579,21 +652,23 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       demographics: { name: name.trim(), age, sex },
       chiefComplaint: "",
       cc_main: "",
+      ...(isGuest ? {} : { consent_confirmed_at: permAckAt || confirmPatientPermission() }),
     };
     setActivePatientId(null);
     setData(seedData);
     setShowSpecialtyPicker(false);
     setQuickStart({ name: "", age: "", sex: "", phone: "", specialty: "" });
+    setQuickConsent(false);
     if (st.id === "cardio") {
-      navTo("cardio_assessment");
+      trackAssessmentStart("cardio"); navTo("cardio_assessment");
     } else if (st.id === "neuro") {
-      navTo("neuro_assessment");
+      trackAssessmentStart("neuro"); navTo("neuro_assessment");
     } else if (st.id === "ortho_new") {
       // Plain navigate, no entryMode/resume shortcut -- the actual normal
       // Ortho flow (pathway: Outpatient/IPD/Post-op, then region, then
       // condition, then the wizard itself), just pre-filled with the
       // quick-intake answers instead of starting blank.
-      navTo("ortho_new_assessment");
+      trackAssessmentStart("ortho"); navTo("ortho_new_assessment");
     }
   }
 
@@ -765,6 +840,22 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     setTimeout(() => setJsonMsg(null), 2000);
   };
 
+  // One tap clears both practice patients (Priya, Arjun). They never reach the
+  // cloud, so nothing needs deleting remotely beyond the usual soft-delete call.
+  const removeSamplePatients = () => {
+    if (!window.confirm("Remove the sample patients? Your own patients are not touched.")) return;
+    const samples = patients.filter(isSamplePatient);
+    if (!samples.length) return;
+    const ids = new Set(samples.map(p => p.id));
+    const updated = patients.filter(p => !ids.has(p.id));
+    setPatients(updated);
+    savePatientDB(updated, currentUser?.id);
+    softDeleteRemote([...ids]);
+    if (activePatientId && ids.has(activePatientId)) { setData({}); setActivePatientId(null); }
+    setJsonMsg({ type:"success", text:"Sample patients removed" });
+    setTimeout(() => setJsonMsg(null), 2000);
+  };
+
   const importPatientFromJSON = (parsed) => {
     if (!parsed.data) return;
     const newP = { id: genId(), name: parsed.patientName || parsed.data?.dem_name || "Imported Patient", data: parsed.data, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), hasRedFlags: false, lastDx: parsed.lastDx || "" };
@@ -782,6 +873,8 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
 
   // ── Drafts vs saved patients ────────────────────────────────────────────
   const visiblePatients = useMemo(() => patients.filter(p => !isDraftPatient(p)), [patients]);
+  // Practice patients are shown in lists but not counted as the doctor's own.
+  const realPatientCount = useMemo(() => withoutSamples(visiblePatients).length, [visiblePatients]);
   const draftPatients = useMemo(
     () => patients.filter(isDraftPatient).sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0)),
     [patients]
@@ -1226,7 +1319,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       {/* Patient controls */}
       <div style={{padding:"4px 8px 12px",borderBottom:`1px solid ${PC.border}`,marginBottom:8}}>
         <button onClick={()=>setShowPatientDb(true)} style={{width:"100%",padding:"9px 10px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:"#9333ea",fontWeight:600,fontSize:"0.8rem",cursor:"pointer",marginBottom:5,display:"flex",alignItems:"center",gap:6,justifyContent:"center"}}>
-          👥 {visiblePatients.length} Patient{visiblePatients.length!==1?"s":""}
+          👥 {realPatientCount} Patient{realPatientCount!==1?"s":""}
         </button>
         <button onClick={createNewPatient} style={{width:"100%",padding:"8px 10px",background:"rgba(5,150,105,0.06)",border:`1px solid ${PC.a3}25`,borderRadius:8,color:PC.a3,fontWeight:600,fontSize:"0.78rem",cursor:"pointer",display:"flex",alignItems:"center",gap:6,justifyContent:"center"}}>
           ＋ New Patient
@@ -1288,31 +1381,17 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
 
       <div style={{height:1,background:PC.border,margin:"6px 12px"}}/>
 
-      {/* Settings no longer navigates anywhere (2026-09-29, Aditi: "the
-          setting is taking us to the profile of our self. It should not be
-          like that") -- it used to share Profile's navKey, so tapping it
-          silently opened your own profile instead of a settings screen.
-          Sign out / Delete account below ARE its content -- see next
-          comment -- so this is now just that section's header. */}
-      <SidebarTopItem icon="⚙️" label="Settings" onClick={()=>{}}/>
-
-      {/* Sign out / Delete account -- moved here from the Clinical "Today"
-          tab's own header (2026-09-10, Aditi screenshot: "put this red
-          circle in side bar below the settings ... remove from todays
-          clinical section"). Account-level actions belong in the settings
-          menu, not floating in the middle of a patient-facing dashboard. */}
-      <div style={{padding:"10px 14px 4px",display:"flex",flexDirection:"column",gap:8}}>
-        <button onClick={onSignOut}
-          style={{width:"100%",padding:"8px 10px",borderRadius:9,border:`1px solid ${PC.border}`,
-            background:"transparent",color:PC.muted,fontSize:"0.8rem",
-            fontWeight:700,cursor:"pointer"}}>
-          Sign out
-        </button>
-        <DeleteAccountButton patients={patients} buttonStyle={{
-          width:"100%",padding:"8px 10px",borderRadius:9,border:"1px solid #FCA5A5",
-          background:"transparent",color:"#DC2626",fontSize:"0.8rem",
-          fontWeight:700,cursor:"pointer"}}/>
-      </div>
+      {/* Settings opens a real screen (2026-09-30, Aditi: "it should be in
+          setting...not in profile" -- clinic details need somewhere real
+          to live). It used to be a no-op header (2026-09-29: "the setting
+          is taking us to the profile of our self. It should not be like
+          that" -- back when it silently shared Profile's navKey).
+          Sign out / Delete account moved from here into that screen
+          itself (same day, Aditi: "setting should have signout, delete
+          account and this") -- they used to be the sidebar item's only
+          content; now Settings has real content of its own, that's where
+          its own actions belong instead of split across both places. */}
+      <SidebarTopItem navKey="settings" icon="⚙️" label="Settings"/>
 
     </>
   );
@@ -1329,12 +1408,17 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // of continuing to paper over it -- the assessment's own topbar already
   // has back/close, so pm-mobile-hdr is redundant chrome while one of these
   // is open, not lost functionality.
+  useEffect(() => {
+    if (active === "posture" && postureReady && !postureEnabled) navTo("home");
+  }, [active, postureReady, postureEnabled]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const isFullScreenAssessment = active === "ortho_new_assessment" || active === "neuro_assessment" || active === "cardio_assessment";
 
   return(
     <div className="pm-shell" style={{background:PC.bg,color:PC.text,fontFamily:"'SF Pro Display','Helvetica Neue',system-ui,sans-serif",transition:"background 0.2s,color 0.15s"}}>
       <MobileStyleInjector/>
       <OfflineBanner/>
+      <PatientsLoadBanner state={patientsLoad.state} skipped={patientsLoad.skipped} hasPatients={patients.length>0} onRetry={loadPatientsFromCloud}/>
 
       {/* ── Onboarding Modal — fires once on first visit ─────────────────── */}
       {showOnboarding&&<OnboardingModal PC={PC} onDismiss={()=>{
@@ -1455,6 +1539,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           onSelect={selectPatient}
           onNew={createNewPatient}
           onDelete={deletePatient}
+          onRemoveSamples={removeSamplePatients}
           onClose={()=>setShowPatientDb(false)}
           onImport={importPatientFromJSON}
           onNav={(key)=>{ setShowPatientDb(false); navTo(key); }}
@@ -1529,16 +1614,18 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 </div>
               </div>
 
+              {needsPermissionAck && <PatientPermissionCheck checked={quickConsent} onChange={setQuickConsent} />}
+              {!isGuest && !needsPermissionAck && <PatientPermissionReminder />}
               <button type="button" onClick={()=>{ const st=STREAMS.find(x=>x.id===quickStart.specialty); if(st) startQuickAssessment(st); }}
-                disabled={!quickStart.name.trim() || !quickStart.specialty}
-                style={{width:"100%",padding:"14px",background:!quickStart.name.trim()||!quickStart.specialty?PC.border:"linear-gradient(135deg,#7c3aed,#9333ea)",
+                disabled={!quickStart.name.trim() || !quickStart.specialty || (needsPermissionAck && !quickConsent)}
+                style={{width:"100%",padding:"14px",background:!quickStart.name.trim()||!quickStart.specialty||(needsPermissionAck&&!quickConsent)?PC.border:"linear-gradient(135deg,#7c3aed,#9333ea)",
                   border:"none",borderRadius:14,color:"white",fontWeight:800,fontSize:"0.9rem",
-                  cursor:!quickStart.name.trim()||!quickStart.specialty?"not-allowed":"pointer",marginBottom:10,
-                  boxShadow:!quickStart.name.trim()||!quickStart.specialty?"none":"0 4px 14px rgba(124,58,237,0.3)"}}>
+                  cursor:!quickStart.name.trim()||!quickStart.specialty||(needsPermissionAck&&!quickConsent)?"not-allowed":"pointer",marginBottom:10,
+                  boxShadow:!quickStart.name.trim()||!quickStart.specialty||(needsPermissionAck&&!quickConsent)?"none":"0 4px 14px rgba(124,58,237,0.3)"}}>
                 Next →
               </button>
 
-              <button type="button" onClick={()=>{ setShowSpecialtyPicker(false); setQuickStart({ name:"", age:"", sex:"", phone:"", specialty:"" }); }}
+              <button type="button" onClick={()=>{ setShowSpecialtyPicker(false); setQuickStart({ name:"", age:"", sex:"", phone:"", specialty:"" }); setQuickConsent(false); }}
                 style={{width:"100%",padding:"10px",background:"transparent",border:`1px solid ${PC.border}`,borderRadius:10,color:PC.muted,fontSize:"0.82rem",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
                 Cancel
               </button>
@@ -1547,10 +1634,18 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
         </div>
       )}
 
+      {aiPermissionAsk && (
+        <PatientPermissionModal
+          onCancel={() => setAiPermissionAsk(null)}
+          onConfirm={() => { const m = aiPermissionAsk.mode; setAiPermissionAsk(null); startOrthoEntry(m, confirmPatientPermission()); }}
+        />
+      )}
+
       {/* ── PDF REPORTS MODAL ── */}
       {showPdfReports && (
         <PdfReportsModal
           data={data}
+          currentUser={currentUser}
           onClose={()=>setShowPdfReports(false)}
         />
       )}
@@ -1683,7 +1778,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
             <img src="/logo.svg" alt="PhysioMind" style={{height:48,width:"auto",flexShrink:0,display:"block"}} />
             <div style={{minWidth:0}}>
               <div style={{fontWeight:800,fontSize:"clamp(0.85rem,3vw,1.05rem)",letterSpacing:"-0.3px",background:`linear-gradient(90deg,${PC.accent},${PC.a2})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",whiteSpace:"nowrap",lineHeight:1.2}}>PhysioMind</div>
-              <div className="pm-logo-sub" style={{fontSize:"0.75rem",color:PC.muted,letterSpacing:"1px",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",textTransform:"uppercase",fontWeight:600,marginTop:1}}>Posture Screening & Education</div>
             </div>
             {/* Live patient chip */}
             {activePatient&&(
@@ -1705,7 +1799,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
             {/* Patient selector */}
             <button className="pm-patients-btn" onClick={()=>setShowPatientDb(true)} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontWeight:600,fontSize:"0.82rem",cursor:"pointer",whiteSpace:"nowrap"}}>
               <span style={{fontSize:"0.85rem"}}>👥</span>
-              <span>{visiblePatients.length} Patients</span>
+              <span>{realPatientCount} Patients</span>
             </button>
 
 
@@ -1721,7 +1815,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           stacked in the same scroll, the actual cause of the header
           jitter CSS containment alone couldn't fully fix. */}
       {!isFullScreenAssessment && (
-      <div className="pm-mobile-hdr" style={{
+      <div className="pm-mobile-hdr" data-wide-icons={active==="physiofeed"||active==="profile"?"1":undefined} style={{
         background: "#FFFFFF",
         borderBottom: `1px solid ${PC.isDark?PC.border:"#E0E0E2"}`,
         borderLeft: `3.5px solid ${PC.accent}`,
@@ -1746,7 +1840,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
         {/* Logo — plain, bigger */}
         <img src="/logo.svg" alt="PhysioMind" style={{height:40,width:"auto",flexShrink:0}} />
         {/* Text */}
-        <div style={{flex:1,minWidth:0,overflow:"hidden"}}>
+        <div className="pm-hdr-brand-text" style={{flex:1,minWidth:0,overflow:"hidden"}}>
           <div style={{fontWeight:800,fontSize:"0.92rem",color:PC.isDark?PC.a2:"#4c1d95",letterSpacing:"-0.3px",lineHeight:1.2,whiteSpace:"nowrap"}}>PhysioMind</div>
         </div>
         {/* Right side: swaps by tab instead of always showing "+ New" --
@@ -1758,7 +1852,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
             up there when we open the physio feed... if we open the
             clinical it should be the new patient button... and normally"
             -- "normally" being every other tab, which keeps "+ New"). */}
-        {active==="physiofeed"||active==="profile" ? (
+        {active==="settings" ? null : active==="physiofeed"||active==="profile" ? (
           <div style={{display:"flex",alignItems:"center",gap:2,flexShrink:0}}>
             <button onClick={()=>navTo("physiofeed",{pfTab:"search"})} aria-label="Search"
               style={{minHeight:32,minWidth:32,padding:6,background:"transparent",border:"none",borderRadius:8,color:"#172033",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -1844,12 +1938,13 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           {/* Row 2: saved time + buttons */}
           <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"nowrap"}}>
             <span style={{fontSize:"0.78rem",fontWeight:600,flex:1,whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:4,
-              color: cloudSaveStatus==="error" ? "#dc2626" : cloudSaveStatus==="saving" ? PC.muted : PC.green}}>
+              color: cloudSaveStatus==="error" ? "#dc2626" : (cloudSaveStatus==="saved" && lastCloudSaved) ? PC.green : PC.muted}}>
               {cloudSaveStatus === "saving" && <>⏳ Saving…</>}
-              {cloudSaveStatus === "error" && <>⚠ Offline — will retry on next edit</>}
-              {cloudSaveStatus !== "saving" && cloudSaveStatus !== "error" && (
+              {cloudSaveStatus === "error" && <>⚠ Not in the cloud yet — will retry</>}
+              {cloudSaveStatus === "saved" && lastCloudSaved && <>✓ Saved to cloud {lastCloudSaved.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}</>}
+              {cloudSaveStatus !== "saving" && cloudSaveStatus !== "error" && !(cloudSaveStatus === "saved" && lastCloudSaved) && (
                 lastSaved
-                  ? <>✓ Saved to cloud {lastSaved.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}</>
+                  ? <>● Saved on this device {lastSaved.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}</>
                   : <>● {new Date(activePatient.updatedAt).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}</>
               )}
             </span>
@@ -1932,12 +2027,12 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
 
           {/* Posture Analysis Module — injected at top of Posture tab */}
           {/* PostureAnalysisModule — deferred mount, hidden when not active */}
-          {mountedTabs.has("posture") && (
+          {postureEnabled && mountedTabs.has("posture") && (
             <div style={{marginBottom:22, display: active==="posture" ? "block" : "none"}}>
-              <PostureAnalysisModule activePatient={activePatient} set={set} navContext={active==="posture"?navContext:{}} patients={visiblePatients} onSelectPatient={selectPatient} onAddNewPatient={createNewPatient}/>
+              <Suspense fallback={<TabLoader/>}><LazyPostureAnalysisModule activePatient={activePatient} set={set} navContext={active==="posture"?navContext:{}} patients={visiblePatients} onSelectPatient={selectPatient} onAddNewPatient={createNewPatient}/></Suspense>
             </div>
           )}
-          {active==="posture" && !mountedTabs.has("posture") && (
+          {active==="posture" && (postureEnabled ? !mountedTabs.has("posture") : !postureReady) && (
             <div style={{marginBottom:22}}>
               <TabLoader/>
             </div>
@@ -2025,7 +2120,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               removed 2026-09-25.) Same deferred-mount fix as above. */}
           {mountedTabs.has("ortho_new_assessment") && (
             <div className="pm-bleed" style={{display: active==="ortho_new_assessment" ? "block" : "none"}}>
-              <Suspense fallback={<TabFallback/>}><LazyOrthoAssessmentNew patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="ortho_new_assessment"?navContext:undefined} requireAuth={requireAuth} entryMode={active==="ortho_new_assessment"?navContext.entryMode:undefined} resume={active==="ortho_new_assessment"?navContext.resume:undefined} backRef={wizardBackRef} onGeneratePdf={()=>setShowPdfReports(true)}/></Suspense>
+              <Suspense fallback={<TabFallback/>}><LazyOrthoAssessmentNew patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="ortho_new_assessment"?navContext:undefined} requireAuth={requireAuth} isGuest={isGuest} entryMode={active==="ortho_new_assessment"?navContext.entryMode:undefined} resume={active==="ortho_new_assessment"?navContext.resume:undefined} backRef={wizardBackRef} onGeneratePdf={()=>setShowPdfReports(true)}/></Suspense>
             </div>
           )}
           {active==="ortho_new_assessment" && !mountedTabs.has("ortho_new_assessment") && (
@@ -2059,10 +2154,13 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               Same live-data merge as the report view above. */}
           {active==="specialty_profile" && (
             <div className="pm-bleed" style={{background:"#f8fafc",minHeight:"100dvh"}}>
-              <SpecialtyPatientProfile
+              <Suspense fallback={<TabFallback/>}>
+              <LazySpecialtyPatientProfile
+                showPosture={postureEnabled}
                 patient={activePatient ? {...activePatient, data:{...activePatient.data, ...(activePatient.id===activePatientId?data:{})}} : null}
                 initialTab={profileTab||undefined}
                 onNav={navTo}
+                onGeneratePdf={()=>setShowPdfReports(true)}
                 onBack={()=>{ setProfileTab(null); navTo("clinical"); }}
                 onSaveField={(id,newData)=>{
                   setPatients(prev=>{
@@ -2087,13 +2185,14 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 }}
                 onOpenPosture={(p)=>{ selectPatient(p); navTo("posture"); }}
               />
+              </Suspense>
             </div>
           )}
 
           {/* Groups */}
           {currentSection && Object.entries(currentSection.groups).map(([groupName,tests])=>(
             <div key={groupName} style={{marginBottom:28}}>
-              {tests!=="PHYSIOFEED_MODULE" && tests!=="PROFILE_MODULE" && tests!=="LEARN_MODULE" && (
+              {tests!=="PHYSIOFEED_MODULE" && tests!=="PROFILE_MODULE" && tests!=="LEARN_MODULE" && tests!=="SETTINGS_MODULE" && (
               <div className="pm-group-head" style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
                 <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.4px",color:PC.a2,whiteSpace:"nowrap"}}>{groupName}</div>
                 <div style={{flex:1,height:"1px",background:`linear-gradient(90deg,${PC.border},transparent)`}}/>
@@ -2101,7 +2200,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               )}
 
               {tests==="HOME_MODULE"?(
-                <HomeModule onNav={navTo} patients={visiblePatients} data={data} taskDB={taskDB} onNewPatient={createNewPatient} currentUser={currentUser} onStartAI={()=>startOrthoEntry("ai")}/>
+                <HomeModule onNav={navTo} patients={visiblePatients} data={data} taskDB={taskDB} onNewPatient={createNewPatient} currentUser={currentUser} onStartAI={()=>startOrthoEntry("ai")} showPosture={postureEnabled}/>
               ):tests==="PHYSIOFEED_MODULE"?(
                 // Actually rendered by the mountedTabs-gated block up near
                 // Posture (see its own comment) so it stays mounted across
@@ -2117,6 +2216,44 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 <Suspense fallback={<div style={{textAlign:"center",padding:"48px 20px",color:"#6B7280"}}>Loading profile…</div>}>
                   <LazyProfileTabEntry key={profileResetKey} onSignOut={onSignOut}/>
                 </Suspense>
+              ):tests==="SETTINGS_MODULE"?(
+                // Clinic details lived on Profile until now (2026-09-30,
+                // Aditi: "it should be in setting...not in profile") --
+                // Profile is your public-facing PhysioFeed identity;
+                // clinic/report details are account configuration, which
+                // belongs behind the sidebar's actual Settings entry, not
+                // bundled into the profile screen.
+                //
+                // Sign out / Delete account moved in here too (same day,
+                // Aditi: "setting should have signout, delete account and
+                // this") -- they used to sit below the sidebar's Settings
+                // header as its only content; now Settings is a real
+                // screen, that's where its own actions belong instead of
+                // splitting them across sidebar + screen.
+                <div style={{maxWidth:520,margin:"0 auto"}}>
+                  <div style={{fontSize:"1.1rem",fontWeight:800,color:"#0f172a",marginBottom:4}}>Settings</div>
+                  <div style={{fontSize:"0.82rem",color:"#64748b",marginBottom:8}}>How to use the app, clinic details, notifications, account and sign-out.</div>
+                  <HowToUseCard defaultOpen={!!navContext?.howTo}/>
+                  {postureEnabled && (
+                    <div style={{margin:"0 0 16px",padding:"12px 14px",borderRadius:14,background:"#FFF7ED",border:"1px solid #FED7AA",fontSize:12.5,lineHeight:1.5,color:"#9A3412"}}>
+                      <strong>🧪 Preview features are on for your account.</strong> Posture Analysis is visible to you only; other users don't see it yet.
+                    </div>
+                  )}
+                  <ClinicDetailsCard key={currentUser?.id||"anon"} currentUser={currentUser} isGuest={isGuest}/>
+                  <NotificationsSettingsCard key={"notif-"+(currentUser?.id||"anon")} currentUser={currentUser} isGuest={isGuest}/>
+                  <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:16}}>
+                    <button onClick={onSignOut}
+                      style={{width:"100%",padding:"11px 14px",borderRadius:12,border:"1px solid #e2e8f0",
+                        background:"#fff",color:"#475569",fontSize:14,
+                        fontWeight:700,cursor:"pointer"}}>
+                      Sign out
+                    </button>
+                    <DeleteAccountButton patients={patients} buttonStyle={{
+                      width:"100%",padding:"11px 14px",borderRadius:12,border:"1px solid #FCA5A5",
+                      background:"#fff",color:"#DC2626",fontSize:14,
+                      fontWeight:700,cursor:"pointer"}}/>
+                  </div>
+                </div>
               ):tests==="CLINICAL_MODULE"?(
                 // Same negative-margin full-bleed trick PhysioFeed uses just
                 // above -- Clinical's own header/search/CTA want the full
@@ -2134,13 +2271,13 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                   {(() => {
                     const todayCount = getTodaysPatients(patients).length;
                     const treatmentDue = patients.filter(p=>Array.isArray(p.data?.tx_sessions)&&p.data.tx_sessions.length>0).length;
-                    const firstName = currentUser?.name || currentUser?.email?.split("@")[0] || null;
+                    const firstName = doctorFirstName(currentUser);
                     const SUBTABS = [
                       ["today","Today",Stethoscope,null,""],
                       ["assessment","Assess",ClipboardListIcon,null,""],
-                      ["patients","Patients",UsersIcon,visiblePatients.length,""],
+                      ["patients","Patients",UsersIcon,realPatientCount,""],
                       ["treatment","Treatment",PillIcon,treatmentDue,"due"],
-                      ["posture","Posture",PersonStanding,null,""],
+                      ...(postureEnabled ? [["posture","Posture",PersonStanding,null,""]] : []),
                     ];
                     return (
                       <div style={{background:"#fff",padding:"14px 14px 0"}}>
@@ -2183,7 +2320,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                           </div>
                           <div style={{background:"#fff"}}>
                             {clinicalSubTab==="today" ? (
-                              <TherapistDashboardModule patients={visiblePatients} data={data} onNav={navTo} onProfile={(p)=>openPatientProfile(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("ortho_new_assessment"); }} onStartAI={()=>startOrthoEntry("ai")} currentUser={currentUser} onSignOut={onSignOut}/>
+                              <TherapistDashboardModule patients={visiblePatients} data={data} onNav={navTo} onProfile={(p)=>openPatientProfile(p)} onQuickStart={(p)=>{ selectPatient(p); trackAssessmentStart("ortho"); navTo("ortho_new_assessment"); }} onStartAI={()=>startOrthoEntry("ai")} currentUser={currentUser} onSignOut={onSignOut}/>
                             ) : clinicalSubTab==="treatment" ? (
                               <TreatmentCaseloadPanel patients={visiblePatients}
                                 onContinue={(p)=>openPatientProfile(p, "sessions")}
@@ -2264,6 +2401,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                                   onSelect={selectPatient}
                                   onNew={createNewPatient}
                                   onDelete={deletePatient}
+                                  onRemoveSamples={removeSamplePatients}
                                   onImport={importPatientFromJSON}
                                   onNav={navTo}
                                   liveData={data}
@@ -2288,7 +2426,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                           <button onClick={()=>setTxTab("hep")} style={{flex:1,padding:"9px 6px",borderRadius:10,border:`2px solid ${txTab==="hep"?PC.accent:PC.border}`,background:txTab==="hep"?`${PC.accent}15`:PC.s2,color:txTab==="hep"?PC.accent:PC.text,fontWeight:700,fontSize:"0.75rem",cursor:"pointer"}}>🏠 Home Protocol</button>
                         </div>
                         {txTab==="hep"
-                          ? <HomeProtocolTab data={data} set={set} PC={PC}/>
+                          ? <Suspense fallback={<TabLoader/>}><LazyHomeProtocolTab data={data} set={set} PC={PC}/></Suspense>
                           : <Suspense fallback={<TabFallback/>}><LazyTreatment data={data} set={set}/></Suspense>
                         }
                       </div>
@@ -2305,7 +2443,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                         ))}
                       </div>
                       {txTab==="tx"       && <Suspense fallback={<TabFallback/>}><LazyTreatment data={data} set={set}/></Suspense>}
-                      {txTab==="hep"      && <HomeProtocolTab data={data} set={set} PC={PC}/>}
+                      {txTab==="hep"      && <Suspense fallback={<TabLoader/>}><LazyHomeProtocolTab data={data} set={set} PC={PC}/></Suspense>}
                     </div>
                   );
                 })()}</>
@@ -2504,7 +2642,9 @@ export default function App() {
       // Same user as last time this ran (e.g. a token refresh) -- keep the
       // in-memory key current, but no need to re-show the loading gate or
       // redo the (already-done) cache hydration.
-      setSessionKey(session.access_token);
+      // The token changed, so the key did too: lock the open list with it
+      // again, or the copy on disk could no longer be opened after a reload.
+      setSessionKey(session.access_token).then(() => relockLocalCache(uid));
       return;
     }
     hydratedUserIdRef.current = uid;

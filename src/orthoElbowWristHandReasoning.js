@@ -6,6 +6,7 @@ import { runReasoningFromData } from "./reasoningEngine/index";
 import elbowEvidence from "./reasoningEngine/regions/elbow.evidence.json";
 import wristEvidence from "./reasoningEngine/regions/wrist.evidence.json";
 import handEvidence from "./reasoningEngine/regions/hand.evidence.json";
+import { specialTestValue, joinMulti, tierOf } from "./reasoningHelpers.js";
 
 const ELBOW_ROM_IDS = ["rom_eflex", "rom_eext", "rom_esup", "rom_epro"];
 const WRIST_ROM_IDS = ["rom_wflex", "rom_wext", "rom_wrad", "rom_wuln"];
@@ -31,19 +32,6 @@ elbowEvidence.diagnoses.forEach((m) => { SUPPORTING_TOTAL_BY_NAME[m.name] = m.su
 wristEvidence.diagnoses.forEach((m) => { SUPPORTING_TOTAL_BY_NAME[m.name] = m.supportingFindings.length; });
 handEvidence.diagnoses.forEach((m) => { SUPPORTING_TOTAL_BY_NAME[m.name] = m.supportingFindings.length; });
 
-function specialTestValue(raw) {
-  if (raw == null) return "";
-  if (typeof raw === "string") return raw;
-  if (typeof raw === "object") return raw.right || raw.left || raw.bilateral || "";
-  return "";
-}
-
-function joinMulti(v) {
-  if (!v) return "";
-  if (Array.isArray(v)) return v.join(", ");
-  return String(v);
-}
-
 function buildFlatElbowWristHandData(data) {
   const flat = {};
   const subjective = data.subjective || {};
@@ -51,7 +39,7 @@ function buildFlatElbowWristHandData(data) {
 
   flat.cc_main = subjective.chiefComplaint || "";
   flat.cc_onset = subjective.onset || "";
-  flat.dem_age = subjective.age || "";
+  flat.dem_age = (data.demographics || {}).age || "";
 
   flat.ew_loc = joinMulti(regionData.location);
   flat.ew_moi = joinMulti(regionData.mechanism);
@@ -110,14 +98,6 @@ function buildFlatElbowWristHandData(data) {
 export function hasElbowWristHandChecklistData(data) {
   const flat = buildFlatElbowWristHandData(data);
   return Object.values(flat).some((v) => String(v || "").trim());
-}
-
-function tierOf(d) {
-  if (d.excluded) return "Unlikely";
-  if (!d.supportingFindings || d.supportingFindings.length === 0) return "Insufficient data";
-  if (d.band === "Low") return "Weak match";
-  if (d.band === "Moderate") return "Possible match";
-  return "Strong match";
 }
 
 export function runElbowWristHandDifferential(data) {

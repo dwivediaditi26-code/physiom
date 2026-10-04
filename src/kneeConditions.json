@@ -520,11 +520,11 @@
     "cpa": {
       "muscles": [
         {
-          "name": "TFL / ITB",
+          "name": "Tensor Fasciae Latae (TFL) / ITB",
           "state": "Protectively overactive"
         },
         {
-          "name": "Biceps Femoris (lateral chain)",
+          "name": "Hamstrings (biceps femoris — lateral chain)",
           "state": "Protectively overactive"
         }
       ],
@@ -641,7 +641,7 @@
           "state": "Inhibited, VL dominant"
         },
         {
-          "name": "Glute Medius (hip)",
+          "name": "Gluteus Medius (hip)",
           "state": "Check — proximal weakness drives dynamic valgus"
         }
       ],
@@ -891,7 +891,7 @@
           "state": "Commonly inhibited, VL dominant"
         },
         {
-          "name": "Glute Medius (hip)",
+          "name": "Gluteus Medius (hip)",
           "state": "Often also inhibited, contributing to dynamic malalignment"
         }
       ],
@@ -1014,7 +1014,7 @@
           "state": "Overactive, IT band syndrome"
         },
         {
-          "name": "Glute Medius",
+          "name": "Gluteus Medius",
           "state": "Inhibited (paired compensation)"
         }
       ],

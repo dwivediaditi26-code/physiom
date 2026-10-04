@@ -123,16 +123,16 @@ const chip = (bg, color) => ({ fontSize: 10.5, fontWeight: 700, padding: "2px 8p
 // floating ~70px above the wizard's Back/Next bar, centred on the window
 // rather than on the wizard column).
 const FLOATING_CTA = { position: "fixed", left: "calc(50% + var(--pm-side-w, 0px) / 2)", transform: "translateX(-50%)", bottom: "calc(var(--pm-bnav-h, calc(59px + env(safe-area-inset-bottom))) + 15px)", width: "min(calc(var(--pm-col-w, 480px) - 20px), calc(100vw - var(--pm-side-w, 0px) - 28px))", zIndex: 40, marginTop: 0, boxShadow: "0 8px 26px rgba(109,40,217,0.42)" };
-// .bottombar (orthoStyles.js) itself grows with the safe area TWICE over --
-// once in its own `bottom: calc(60px + env(safe-area-inset-bottom))` offset,
-// again in its `padding-bottom: calc(12px + env(safe-area-inset-bottom))` --
-// so its real top edge is `131px + 2 * env(safe-area-inset-bottom)`, not the
-// single safe-area term this used before. On a real notched iPhone (2026-
-// 09-16, Aditi: screenshot showing "Continue to Goals" sitting on top of the
-// wizard's own Back/Next bar) that missing second term was ~34px short,
-// enough to visibly overlap; a desktop/no-notch preview has safe-area 0 so
-// the bug never showed there.
-const FLOATING_CTA_WIZARD = { ...FLOATING_CTA, bottom: "calc(var(--pm-bnav-h, calc(59px + env(safe-area-inset-bottom))) + 84px + env(safe-area-inset-bottom))" };
+// Sits just above the wizard's own Back/Next bar (.bottombar): the bottom nav's
+// real height (--pm-bnav-h, safe area included) plus the bar's own height --
+// 61px in Ortho (8px padding), ~71px in Neuro/Cardio (12px padding) -- so 78px
+// clears the taller one with a few px to spare. This used to add
+// env(safe-area-inset-bottom) a second time and a fixed 84px, which since the
+// bar stopped double-counting the safe area (d6fc823) left a ~57px gap on a
+// notched iPhone where the cards' text showed through between the button and
+// the Back/Next bar (2026-10-02, Aditi's screenshots: Problem List, Goals,
+// Treatment).
+const FLOATING_CTA_WIZARD = { ...FLOATING_CTA, bottom: "calc(var(--pm-bnav-h, calc(59px + env(safe-area-inset-bottom))) + 78px)" };
 const ctaStyle = (floating, base) => ({ ...base, ...(floating ? FLOATING_CTA : FLOATING_CTA_WIZARD) });
 // Extra bottom padding so the last card isn't hidden behind the fixed bar.
 const FLOATING_PAD = { paddingBottom: 84 };
@@ -587,7 +587,14 @@ function AddTreatmentPanel({ allGoals, existing, onAdd, requireAuth, search, set
               <div className="ct-group">
                 {savedProtocolsLoading && <div className="summary-empty">Loading…</div>}
                 {!savedProtocolsLoading && savedProtocols.length === 0 && (
-                  <div className="summary-empty">No saved protocols yet — build one from the Treatment list below (or the Exercise Prescription step) and save it there.</div>
+                  <div className="summary-empty" style={{ textAlign: "left" }}>
+                    <div style={{ fontWeight: 700, marginBottom: 6 }}>No clinic protocols yet. To create one:</div>
+                    <ol style={{ margin: 0, paddingLeft: 18, lineHeight: 1.6 }}>
+                      <li>Add exercises from the exercise list (browse by category or search).</li>
+                      <li>Scroll to the patient's list of added exercises.</li>
+                      <li>Tap <b>💾 Save as Clinic Protocol</b> and name it — it will appear here.</li>
+                    </ol>
+                  </div>
                 )}
                 {savedProtocols.map((p) => (
                   <div key={p.id} style={{ marginBottom: 14 }}>

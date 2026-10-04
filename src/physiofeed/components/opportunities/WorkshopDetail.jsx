@@ -3,6 +3,7 @@ import { ChevronLeft, Calendar, Clock, Video, Check, X, Maximize2 } from "lucide
 import Avatar from "../shared/Avatar.jsx";
 import * as db from "../../data/db.js";
 import LifecycleBanner, { isRegistrationBlocked } from "./StatusBanner.jsx";
+import { formatEventDate, normalizeLink, earlyBirdActive } from "./FormFields.jsx";
 import { trackEvent } from "../../../analytics/trackEvent.js";
 
 // `registered` is owned by ExplorePage (2026-09-23), read from the real
@@ -16,7 +17,7 @@ import { trackEvent } from "../../../analytics/trackEvent.js";
 // field), an external registration/payment link, or "message the
 // organiser" via onMessage -- reusing OpportunityDetail's existing chat
 // entry point rather than building a second one.
-export default function WorkshopDetail({ opp, onBack, registered, onRegistered, onMessage }) {
+export default function WorkshopDetail({ opp, onBack, registered, onRegistered, onMessage, preview = false }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [zoom, setZoom] = useState(false);
@@ -78,7 +79,7 @@ export default function WorkshopDetail({ opp, onBack, registered, onRegistered, 
         <div className="flex gap-2 mb-4">
           <div className="flex-1 bg-slate-50 rounded-xl px-3 py-2.5">
             <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 flex items-center gap-1"><Calendar size={11} /> Date</p>
-            <p className="text-sm font-semibold text-slate-900 mt-0.5">{opp.date}</p>
+            <p className="text-sm font-semibold text-slate-900 mt-0.5">{formatEventDate(opp.date)}</p>
           </div>
           <div className="flex-1 bg-slate-50 rounded-xl px-3 py-2.5">
             <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 flex items-center gap-1"><Clock size={11} /> Time</p>
@@ -114,6 +115,30 @@ export default function WorkshopDetail({ opp, onBack, registered, onRegistered, 
           </div>
         )}
 
+        {(opp.platform || opp.maxParticipants || opp.venue || opp.city || opp.address) && (
+          <div className="flex gap-2 flex-wrap mb-2">
+            {opp.platform && opp.mode !== "In-person" && (
+              <div className="flex-1 min-w-[140px] bg-slate-50 rounded-xl px-3 py-2.5">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Platform</p>
+                <p className="text-sm font-semibold text-slate-900 mt-0.5">{opp.platform}</p>
+              </div>
+            )}
+            {opp.maxParticipants && (
+              <div className="flex-1 min-w-[140px] bg-slate-50 rounded-xl px-3 py-2.5">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Seats</p>
+                <p className="text-sm font-semibold text-slate-900 mt-0.5">Limited to {opp.maxParticipants}</p>
+              </div>
+            )}
+            {(opp.venue || opp.city || opp.address) && opp.mode !== "Online" && (
+              <div className="flex-1 min-w-[200px] bg-slate-50 rounded-xl px-3 py-2.5">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Venue</p>
+                <p className="text-sm font-semibold text-slate-900 mt-0.5">{[opp.venue, opp.city].filter(Boolean).join(", ")}</p>
+                {opp.address && <p className="text-xs text-slate-500 mt-0.5">{opp.address}</p>}
+              </div>
+            )}
+          </div>
+        )}
+
         {(opp.audience || opp.experienceLevel) && (
           <div className="flex gap-2 flex-wrap">
             {opp.audience && (
@@ -132,16 +157,16 @@ export default function WorkshopDetail({ opp, onBack, registered, onRegistered, 
         )}
       </div>
 
-      <div className="sticky bottom-0 bg-white border-t border-slate-100 px-4 py-3">
+      <div className={`${preview ? "" : "sticky bottom-0"} bg-white border-t border-slate-100 px-4 py-3`}>
         {error && <p className="text-xs text-rose-600 mb-2">{error}</p>}
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-[10px] text-slate-400 leading-none">{opp.earlyBirdFee ? "Early bird" : (opp.feeNote || "Fee")}</p>
+            <p className="text-[10px] text-slate-400 leading-none">{earlyBirdActive(opp) ? "Early bird" : "Fee"}</p>
             <p className="text-lg font-bold text-slate-900">
-              {opp.earlyBirdFee || opp.fee}
-              {opp.earlyBirdFee && <span className="text-xs font-semibold text-slate-400 line-through ml-1.5">{opp.fee}</span>}
+              {earlyBirdActive(opp) ? opp.earlyBirdFee : opp.fee}
+              {earlyBirdActive(opp) && <span className="text-xs font-semibold text-slate-400 line-through ml-1.5">{opp.fee}</span>}
             </p>
-            {opp.earlyBirdFee && opp.earlyBirdDeadline && (
+            {earlyBirdActive(opp) && opp.earlyBirdDeadline && (
               <p className="text-[10px] text-slate-400">
                 until {new Date(`${opp.earlyBirdDeadline}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
               </p>
@@ -152,13 +177,15 @@ export default function WorkshopDetail({ opp, onBack, registered, onRegistered, 
               expired/cancelled there's no link to open or organiser to
               contact any more. Someone who already registered before that
               happened still sees their green "Registered" state, not this. */}
-          {blocked && !registered ? (
+          {opp.postedByMe ? (
+            <span className="pf-font-head text-xs font-semibold text-slate-500 bg-slate-50 rounded-xl px-4 py-3">This is your workshop</span>
+          ) : blocked && !registered ? (
             <span className="pf-font-head text-xs font-semibold text-slate-400 bg-slate-50 rounded-xl px-4 py-3">
               {opp.lifecycleStatus === "cancelled" ? "This workshop was cancelled." : "Registration closed"}
             </span>
           ) : opp.registrationMethod === "external" ? (
             <a
-              href={opp.registrationUrl}
+              href={normalizeLink(opp.registrationUrl) || undefined}
               target="_blank"
               rel="noopener noreferrer"
               className="pf-font-head flex items-center justify-center gap-1.5 text-sm font-bold rounded-xl px-6 py-3 shadow-sm text-white bg-[#FF5FA2] active:scale-[0.98] transition"

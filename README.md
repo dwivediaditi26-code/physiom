@@ -3,7 +3,7 @@
 PhysioMind is a learning and clinical tool for physiotherapy students and clinicians:
 
 - clinical assessments for Ortho, Neuro and Cardio
-- patient records and posture screening
+- patient records and treatment sessions
 - study mode with quizzes (the Learn tab)
 - **PhysioFeed**: feed, profiles, opportunities, case discussions and messages
 

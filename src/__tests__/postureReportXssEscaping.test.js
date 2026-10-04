@@ -43,16 +43,19 @@ describe("PostureEngine.jsx report generator — patient/clinician free text is 
     // Scoped to the `d = { ... }` report-data construction, not the whole
     // file, so this can't accidentally pass by matching escHtml() calls
     // added somewhere unrelated.
-    const dBlockMatch = src.match(/const d = \{[\s\S]*?redFlags: \{ triggered: false, items: \[\] \},\s*\};/);
+    const dBlockMatch = src.match(/const d = \{[\s\S]*?plan: naText\(na\.P\),\s*\},\s*\};/);
     expect(dBlockMatch).not.toBeNull();
     const dBlock = dBlockMatch[0];
 
     expect(dBlock).toMatch(/name:\s*escHtml\(clinicianInfo\.name/);
     expect(dBlock).toMatch(/credentials:\s*escHtml\(clinicianInfo\.credentials/);
     expect(dBlock).toMatch(/clinic:\s*escHtml\(clinicianInfo\.clinic/);
-    // Occupation is the one patient-entered field still reaching the report,
-    // via the SOAP subjective line -- it is an injection sink like any other.
-    expect(dBlock).toMatch(/escHtml\(patientInfo\.occupation/);
+    // Subjective/Assessment/Plan now come from the normal assessment's SOAP
+    // (free text) and each is escaped through naText() before printing.
+    expect(dBlock).toMatch(/subjective:\s*naText\(na\.S\)/);
+    expect(dBlock).toMatch(/assessment:\s*naText\(na\.A\)/);
+    expect(dBlock).toMatch(/plan:\s*naText\(na\.P\)/);
+    expect(src).toMatch(/const naText = \(t\) => escHtml\(/);
   });
 
   test("patient identity no longer reaches the report data object at all", () => {
@@ -62,7 +65,7 @@ describe("PostureEngine.jsx report generator — patient/clinician free text is 
     // the report data in the first place -- nothing to escape, nothing to
     // print. If a future edit reintroduces them, this fails and whoever
     // does it has to make the escaping decision deliberately.
-    const dBlockMatch = src.match(/const d = \{[\s\S]*?redFlags: \{ triggered: false, items: \[\] \},\s*\};/);
+    const dBlockMatch = src.match(/const d = \{[\s\S]*?plan: naText\(na\.P\),\s*\},\s*\};/);
     const dBlock = dBlockMatch[0];
 
     expect(dBlock).not.toMatch(/patientInfo\.name/);
@@ -83,14 +86,16 @@ describe("PostureEngine.jsx report generator — patient/clinician free text is 
     // pass missed -- and that string reaches the report HTML raw through
     // ${s.text}. Removing d.patient is what exposed it. It's escaped now,
     // and this asserts it stays that way.
-    const dBlockMatch = src.match(/const d = \{[\s\S]*?redFlags: \{ triggered: false, items: \[\] \},\s*\};/);
+    const dBlockMatch = src.match(/const d = \{[\s\S]*?plan: naText\(na\.P\),\s*\},\s*\};/);
     expect(dBlockMatch).not.toBeNull();
     const dBlock = dBlockMatch[0];
 
     expect(dBlock).not.toMatch(/patientInfo\.name/);
-    // Every surviving patientInfo.occupation read goes through escHtml().
-    expect(dBlock).toMatch(/escHtml\(patientInfo\.occupation/);
+    // Identity is blanked before the assessment SOAP is built, and the
+    // resulting free text is escaped by naText().
+    expect(src).toMatch(/dem_name: "", dem_age: "", dem_sex: ""/);
     expect(dBlock).not.toMatch(/(?<!escHtml\()patientInfo\.occupation/);
+    expect(dBlock).toMatch(/naText\(na\.S\)/);
   });
 
   test("the raw, unescaped interpolation pattern this bug shipped as is gone", () => {
