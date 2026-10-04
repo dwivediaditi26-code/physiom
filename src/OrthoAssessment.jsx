@@ -30,7 +30,7 @@ import { DemographicsSection } from "./orthoOutpatientSections.jsx";
    ============================================================ */
 
 const PATHWAYS = [
-  { id: "ipd", icon: "ti-building-hospital", label: "IPD", desc: "Inpatient ward assessment" },
+  { id: "ipd", icon: "ti-building-hospital", label: "Inpatient (IPD)", desc: "Patient admitted to hospital, ward assessment" },
   { id: "postop", icon: "ti-bed", label: "Post-operative Rehab", desc: "Structured post-surgical rehabilitation" },
   { id: "outpatient", icon: "ti-walk", label: "Outpatient / Musculoskeletal", desc: "OPD / clinic-based MSK assessment" },
 ];
@@ -122,11 +122,14 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
   });
   const effectiveResume = resume || reloadResume;
   const [step, setStep] = useState(effectiveResume ? 3 : entryMode ? 1 : 0); // 0 pathway, 1 region, 2 condition, 3 assessment
-  const [pathway, setPathway] = useState(effectiveResume ? effectiveResume.pathway : entryMode ? "outpatient" : null);
+  // Outpatient is the usual case, so it starts chosen (and "General Assessment" below):
+  // most people just tap Continue. First-time walkthrough, 2026-10-03: too many choices
+  // before the first question.
+  const [pathway, setPathway] = useState(effectiveResume ? effectiveResume.pathway : "outpatient");
   const [selectedRegions, setSelectedRegions] = useState(effectiveResume ? effectiveResume.selectedRegions || [] : []);
-  const [condition, setCondition] = useState(effectiveResume ? effectiveResume.condition || "general" : entryMode ? "general" : null);
+  const [condition, setCondition] = useState(effectiveResume ? effectiveResume.condition || "general" : "general");
   const [customConditionLabel, setCustomConditionLabel] = useState(effectiveResume?.customConditionLabel || "");
-  const [opdMode, setOpdMode] = useState(entryMode ? "general" : null);
+  const [opdMode, setOpdMode] = useState("general");
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   // "✨ AI Assisted Assessment" as a 4th pathway-screen option, alongside
   // IPD/Post-op/Outpatient -- same shortcut the "New Assessment" picker's
@@ -236,11 +239,11 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
 
   function restart() {
     setStep(entryMode ? 1 : 0);
-    setPathway(entryMode ? "outpatient" : null);
+    setPathway("outpatient");
     setSelectedRegions([]);
-    setCondition(entryMode ? "general" : null);
+    setCondition("general");
     setCustomConditionLabel("");
-    setOpdMode(entryMode ? "general" : null);
+    setOpdMode("general");
     setSelectedTemplate(null);
     setPickedAi(false);
     setAiSubStep(entryMode === "ai" && aiFirst ? 2 : 0);
@@ -250,6 +253,17 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
     setAiSuggestedRegions([]);
     setSubjectiveChoice(entryMode === "ai" && aiFirst ? "ai" : null);
     setPendingInitialStep(undefined);
+  }
+
+  // Outpatient keeps the General Assessment start; IPD and post-op ask their own
+  // clinical-context question, so nothing carried over from Outpatient may stay chosen.
+  function choosePathway(id) {
+    setPathway(id);
+    setPickedAi(false);
+    setSelectedTemplate(null);
+    setCustomConditionLabel("");
+    if (id === "outpatient") { setOpdMode("general"); setCondition("general"); }
+    else { setOpdMode(null); setCondition(null); }
   }
 
   function selectAiAssisted() {
@@ -391,7 +405,8 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
             )}
             <div style={{ flex: 1 }}>
               <div className="topbar-title">🦴 Ortho Assessment</div>
-              {pathway && <div className="topbar-breadcrumb">{meta.label}{selectedRegions.length ? ` · ${regionLabelList(selectedRegions)}` : ""}</div>}
+              {/* Not on the pathway screen itself: Outpatient starts chosen there, and showing it up here too just repeats the card below. */}
+              {pathway && step > 0 && <div className="topbar-breadcrumb">{meta.label}{selectedRegions.length ? ` · ${regionLabelList(selectedRegions)}` : ""}</div>}
             </div>
             {((step === 0 && !effectiveEntryMode) || (step === 1 && effectiveEntryMode)) && onExit && (
               <button className="back-btn" onClick={onExit} aria-label="Close">
@@ -408,7 +423,7 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
           {step === 0 && (
             <>
               <SectionIntro title="Which pathway is this assessment for?" sub="This determines the base template — precautions and structure differ between a ward patient, a post-surgical rehab case, and an OPD visit." />
-              <PickerList items={PATHWAYS} value={pathway} onSelect={setPathway} />
+              <PickerList items={PATHWAYS} value={pathway} onSelect={choosePathway} />
               {!hideAiPathway && (
                 <button type="button" className="picker-card picker-card-ai" onClick={selectAiAssisted} style={{ width: "100%", marginTop: 8 }}>
                   <PickerIcon icon="ti-sparkles" />

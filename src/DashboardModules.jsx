@@ -306,7 +306,8 @@ function TherapistDashboardModule({ patients, data, onNav, onProfile, onQuickSta
 
       <div style={{padding:"16px 14px",display:"flex",flexDirection:"column",gap:16}}>
 
-        <ClinicDetailsBanner currentUser={currentUser} onNav={onNav}/>
+        {/* Held back until the first real patient exists: a brand-new account has enough to take in. */}
+        {withoutSamples(patients).length > 0 && <ClinicDetailsBanner currentUser={currentUser} onNav={onNav}/>}
 
         {/* ── TODAY STRIP -- compressed from a 2x2 grid (4 tall cards, real
             vertical scroll cost) into one row, one card. Same data, same

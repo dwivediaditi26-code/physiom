@@ -31,18 +31,19 @@ describe("Create free account explains why it is faded", () => {
 });
 
 describe("Continue on the Ortho start screens explains why it is faded", () => {
-  it("asks for a pathway first, and the note goes once one is chosen", () => {
+  it("starts with Outpatient already chosen, so Continue is ready with no note", () => {
     render(<OrthoAssessment onSave={() => {}} />);
-    expect(screen.getByRole("button", { name: "Continue" }).disabled).toBe(true);
-    expect(screen.getByText("Choose a pathway above to continue.")).toBeTruthy();
-    fireEvent.click(screen.getByText("Outpatient / Musculoskeletal"));
     expect(screen.getByRole("button", { name: "Continue" }).disabled).toBe(false);
     expect(screen.queryByText(/to continue\./)).toBeNull();
   });
 
+  it("uses plain words for IPD", () => {
+    render(<OrthoAssessment onSave={() => {}} />);
+    expect(screen.getByText("Inpatient (IPD)")).toBeTruthy();
+  });
+
   it("asks for a body region on the next screen", () => {
     render(<OrthoAssessment onSave={() => {}} />);
-    fireEvent.click(screen.getByText("Outpatient / Musculoskeletal"));
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     expect(screen.getByText("Pick at least one body region to continue.")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Continue" }).disabled).toBe(true);

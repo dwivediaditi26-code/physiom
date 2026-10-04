@@ -31,13 +31,15 @@ describe("Learn tab", () => {
     }, { timeout: 10_000 });
     fireEvent.click(screen.getByTestId("bnav-tab-learn"));
 
-    // Learn opens on a home grid of cards (2026-09-18 redesign). Only
-    // Practical Skills and Clinical Learning have content; the rest say Soon.
+    // Learn opens on a home grid of cards (2026-09-18 redesign). Only Practical Skills
+    // and Clinical Cases have content; the not-yet-built sections (Test, BPT, Exam Ready)
+    // are one "More coming soon" line, not three disabled cards (2026-10-03).
     await waitFor(() => {
       expect(screen.getByText("Practical Skills")).toBeTruthy();
     }, { timeout: 10_000 });
-    expect(screen.getByText("Clinical Learning")).toBeTruthy();
-    expect(screen.getByText("Exam Ready").closest("button").disabled).toBe(true);
+    expect(screen.getByText("Clinical Cases")).toBeTruthy();
+    expect(screen.getByTestId("learn-coming-soon").textContent).toMatch(/Test, BPT, Exam Ready/);
+    expect(screen.queryByText("Exam Ready", { selector: "span.cl-display" })).toBeNull();
 
     fireEvent.click(screen.getByText("Practical Skills"));
     expect(screen.getByRole("heading", { name: "Practical Skills" })).toBeTruthy();

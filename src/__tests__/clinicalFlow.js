@@ -57,10 +57,16 @@ export async function openSpecialtyStep(name = "Test Patient") {
 
 // Full path to a new Ortho patient: the Ortho assessment opens with the
 // name already filled, which creates the patient record straight away.
+// Signed-in users confirm the patient's permission before a new patient record starts.
+export function tickPatientPermission(modal) {
+  fireEvent.click(modal.getByRole("checkbox", { name: /permission to record their details/i }));
+}
+
 export async function createOrthoPatient(name = "Test Patient") {
   await openClinical();
   const modal = await openSpecialtyStep(name);
   fireEvent.click(modal.getByText("Ortho"));
+  tickPatientPermission(modal);
   fireEvent.click(modal.getByText("Next →"));
   await screen.findByText("Which pathway is this assessment for?", {}, SLOW);
 }

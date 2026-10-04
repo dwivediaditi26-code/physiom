@@ -10,7 +10,7 @@ import { screen, fireEvent, cleanup } from "@testing-library/react";
 vi.mock("../supabase.js", () => import("../__mocks__/supabase.js"));
 
 import { supabase } from "../supabase.js";
-import { renderLoggedIn, openClinical, openSubTab, openSpecialtyStep } from "./clinicalFlow.js";
+import { renderLoggedIn, openClinical, openSubTab, openSpecialtyStep, tickPatientPermission } from "./clinicalFlow.js";
 
 beforeEach(() => {
   localStorage.clear();
@@ -50,6 +50,7 @@ describe("Clinical tab — patient list + specialty picker", () => {
     await openClinical();
     const modal = await openSpecialtyStep();
     fireEvent.click(modal.getByText("Ortho"));
+    tickPatientPermission(modal);
     fireEvent.click(modal.getByText("Next →"));
     // No floating modal of any kind -- a real page in the normal tab flow.
     expect(screen.queryByTestId("intake-modal")).not.toBeInTheDocument();
@@ -59,12 +60,14 @@ describe("Clinical tab — patient list + specialty picker", () => {
     expect(await screen.findByText("Which pathway is this assessment for?", {}, { timeout: 25000 })).toBeInTheDocument();
   }, 30000);
 
-  it("Next stays disabled until a specialty is picked", async () => {
+  it("Next stays disabled until a specialty is picked and the patient's permission is ticked", async () => {
     await renderLoggedIn();
     await openClinical();
     const modal = await openSpecialtyStep();
     expect(modal.getByText("Next →").closest("button")).toBeDisabled();
     fireEvent.click(modal.getByText("Neuro"));
+    expect(modal.getByText("Next →").closest("button")).toBeDisabled();
+    tickPatientPermission(modal);
     expect(modal.getByText("Next →").closest("button")).not.toBeDisabled();
   });
 });

@@ -26,8 +26,8 @@ export const HOW_TO_TOPICS = [
     summary: "Ortho, Neuro or Cardio, step by step",
     steps: [
       "Tap **Clinical**, then **Assess**, then **＋ New Assessment**.",
-      "Type the patient's name. Age and sex are optional but help the app's suggestions. Pick **Ortho**, **Neuro** or **Cardio**, then tap **Next →**.",
-      "Ortho: choose the pathway (**Outpatient / Musculoskeletal** is the usual one) and tap **Continue**. Pick the body region, and the side for an arm or leg, then **Continue**. Choose **General Assessment** (the core steps) or **Advanced Assessment** (more steps), then tap **Start assessment**.",
+      "Type the patient's name. Age and sex are optional but help the app's suggestions. Pick **Ortho**, **Neuro** or **Cardio**, tick **I have this patient's permission to record their details here.**, then tap **Next →**.",
+      "Ortho: the pathway starts on **Outpatient / Musculoskeletal**, the usual one, so just tap **Continue** (pick Inpatient or Post-operative Rehab instead if that fits). Pick the body region, and the side for an arm or leg, then **Continue**. **General Assessment** (the core steps) is already chosen; pick **Advanced Assessment** for more steps. Then tap **Start assessment**.",
       "Neuro: choose the setting, tap **Continue**, then **Use Template** and pick one, for example General Neurological. Cardio: tap **Start Assessment**, choose the setting, then the system (cardiovascular, respiratory or combined).",
       "Move through the steps with **Next** and **Back**, or tap any step at the top to jump to it. Ortho shows a counter like Step 3/21 so you can see how far along you are.",
       "On the last step, **Final Review**, tap **Save Assessment**. It needs the patient's name and age.",
@@ -40,7 +40,7 @@ export const HOW_TO_TOPICS = [
     title: "Say it instead of typing",
     summary: "AI Assessment fills the form from your words",
     steps: [
-      "On Home, tap **AI Assessment**. For an Ortho assessment you can also pick **AI Assisted Assessment** on the pathway screen.",
+      "On Home, tap **AI Assessment** and confirm the patient has given permission. For an Ortho assessment you can also pick **AI Assisted Assessment** on the pathway screen.",
       "Describe the patient in your own words, for example: 42-year-old teacher, neck pain for 4 months, worse with laptop work. You can type it, or tap the microphone if your browser supports voice (Chrome works best).",
       "The app fills in the form from what you said. Read it through and fix anything that is wrong. You are still the one who checks it.",
     ],

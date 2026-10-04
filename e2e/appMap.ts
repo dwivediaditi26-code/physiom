@@ -260,6 +260,10 @@ export async function startNewAssessment(
   if (extra.age !== undefined) await modal.getByPlaceholder("yrs").fill(String(extra.age));
   if (extra.sex) await modal.getByRole("button", { name: extra.sex, exact: true }).click();
   await modal.getByText(specialty, { exact: true }).click();
+  // Signed-in users confirm the patient's permission first; guests are not asked
+  // (nothing they enter is saved), so the box only exists when signed in.
+  const permission = modal.getByRole("checkbox", { name: /permission to record their details/i });
+  if (await permission.count()) await permission.check();
   await modal.getByText("Next →").click();
 }
 

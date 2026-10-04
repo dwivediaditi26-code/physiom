@@ -951,7 +951,7 @@ const innerBody = (
           {/* Header (2026-09-02, Aditi: "make the patient page in clinical
               same to same" as a reference design) -- title + subtitle only,
               no bell clutter (the red-flag count still surfaces via the
-              "Flags only" filter in Sort, filters & backup below). The ✕
+              "Flags only" filter in Sort, filter, import or export below). The ✕
               close button stays, but only for the non-embedded Switch/Load
               Patient popup -- that's a real modal with no other explicit
               close control besides the backdrop tap; the embedded Clinical
@@ -1146,7 +1146,7 @@ const innerBody = (
           <div style={{padding:"0 18px 20px"}}>
             <button onClick={()=>setShowTools(s=>!s)}
               style={{background:"none",border:"none",padding:0,cursor:"pointer",fontSize:"0.76rem",fontWeight:700,color:"#9CA3AF"}}>
-              {showTools ? "Hide options ↑" : "Sort, filters & backup ↓"}
+              {showTools ? "Hide options ↑" : "Sort, filter, import or export ↓"}
             </button>
             {showTools && (
               <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:8}}>
