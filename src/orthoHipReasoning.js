@@ -29,7 +29,12 @@ function buildFlatHipData(data) {
   flat.cc_onset = subjective.onset || "";
   flat.dem_age = (data.demographics || {}).age || "";
 
-  flat.hp_loc = joinMulti(regionData.location);
+  // The checklist says "Anterior groin"; the engine searches for "groin — anterior", so groin pain
+  // (the main FAI / adductor / hip-OA location) was never recognised from this field.
+  flat.hp_loc = (() => {
+    const t = joinMulti(regionData.location);
+    return t.includes("Anterior groin") ? `${t}, groin — anterior` : t;
+  })();
   flat.hp_loc_pattern = regionData.locationPattern || "";
   flat.hp_moi = joinMulti(regionData.mechanism);
   flat.hp_agg_mov = joinMulti(regionData.aggravating);

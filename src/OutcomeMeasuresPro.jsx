@@ -58,7 +58,15 @@ function MiniTrend({history}){
 }
 
 // ─── BLANK PDF GENERATOR ───────────────────────────────────────────────────────
-function generateBlankPDF(scaleId, patientName="", clinicName="PhysioMind Clinic"){
+// Which way is "better" for a scale. Read from the scale's own interpretation (green at the lowest score
+// means a lower score is better), so Berg/NIHSS/FAAM and the rest all point the right way. This used to
+// assume only "%" scales were lower-is-better, so a rise in NIHSS or Hughes was shown as "Improved".
+export function lowerIsBetter(sc){
+  try{ return sc.interpret(0)?.color==="#16a34a" && sc.interpret(sc.maxScore)?.color!=="#16a34a"; }
+  catch{ return false; }
+}
+
+export function generateBlankPDF(scaleId, patientName="", clinicName="PhysioMind Clinic"){
   const sc=SCALES[scaleId];
   if(!sc) return;
   const html=`<!DOCTYPE html><html><head><meta charset="UTF-8">
@@ -83,7 +91,7 @@ h1{font-size:16px;font-weight:700;color:#0D0D0D;margin-bottom:2px}
 @media print{body{padding:10px}}
 </style></head><body>
 <div class="header">
-  <div><div class="clinic">${clinicName}</div><h1>${sc.full}</h1><div class="subtitle">${sc.label} · ${sc.category} · MCID = ${sc.mcid}${sc.unit}</div></div>
+  <div><div class="clinic">${clinicName}</div><h1>${sc.full}</h1><div class="subtitle">${sc.label} · ${sc.category}${sc.mcid!=null?` · MCID = ${sc.mcid}${sc.unit}`:""}</div></div>
   <div style="text-align:right;font-size:9px;color:#6b7280">Date: _______________<br/>Clinician: _______________</div>
 </div>
 <div class="field-row">
@@ -91,10 +99,12 @@ h1{font-size:16px;font-weight:700;color:#0D0D0D;margin-bottom:2px}
   <div class="field-box"><div class="field-label">Date of Birth</div>_______________</div>
   <div class="field-box"><div class="field-label">Assessment No.</div>___</div>
 </div>
-<p style="font-size:10px;margin-bottom:14px;color:#374151">Please tick ONE box in each section that most closely describes your condition TODAY.</p>
+<p style="font-size:10px;margin-bottom:14px;color:#374151">Tick ONE box in each section that best matches the answer or result on the day of assessment.</p>
 ${sc.fields.map((f,i)=>`<div class="question">
   <div class="q-label">${f.label}</div>
-  <div class="options">${f.options.map(o=>`<div class="option"><span class="checkbox"></span>${o}</div>`).join("")}</div>
+  ${f.options&&f.options.length
+    ? `<div class="options">${f.options.map(o=>`<div class="option"><span class="checkbox"></span>${o}</div>`).join("")}</div>`
+    : `<div style="font-size:10px;margin-top:4px">Result: ____________________ ${f.type==="timer"?"seconds":""}</div>`}
 </div>`).join("")}
 <div class="score-box">
   <div style="font-weight:700;font-size:12px;margin-bottom:8px">Scoring</div>
@@ -399,7 +409,7 @@ function LiveMode({scaleId, patientName, onComplete, onBack, patientMode, data})
               </div>
               <div>
                 <div style={{fontWeight:700,fontSize:"0.9rem",color:interp?.color||A}}>{interp?.label}</div>
-                <div style={{fontSize:"0.7rem",color:MU,marginTop:2}}>{sc.full} · MCID {sc.mcid}{sc.unit}</div>
+                <div style={{fontSize:"0.7rem",color:MU,marginTop:2}}>{sc.full}{sc.mcid!=null?` · MCID ${sc.mcid}${sc.unit}`:""}</div>
               </div>
             </div>
           )}
@@ -459,8 +469,8 @@ function ResultScreen({result, history, onClose, onRetake, patientName}){
   const interp=sc.interpret(result.score);
   const prev=history&&history.length>1?history[history.length-2]:null;
   const diff=prev?result.score-prev.score:null;
-  const improved=diff!==null&&(sc.unit==="%"?diff<0:diff>0);
-  const mcidMet=diff!==null&&Math.abs(diff)>=sc.mcid;
+  const improved=diff!==null&&(lowerIsBetter(sc)?diff<0:diff>0);
+  const mcidMet=diff!==null&&sc.mcid!=null&&Math.abs(diff)>=sc.mcid;
 
   return(
     <div style={{padding:20,maxWidth:500,margin:"0 auto",fontFamily:"system-ui,sans-serif"}}>
@@ -996,6 +1006,14 @@ export default function OutcomeMeasuresPro({ data, set, navContext={}, navTo }) 
     const history=[...getHistory(result.scaleId),{score:result.score,date:result.date}].slice(-10);
     if(set){
       set(`om_history_${result.scaleId}`,JSON.stringify(history));
+      // One readable line per scale for the assessment summary and the PDF report, which
+      // otherwise never show a recorded scale result (they only print each step's own fields).
+      const scDone=SCALES[result.scaleId];
+      if(scDone){
+        const interpDone=result.score!==null&&result.score!==undefined&&!Number.isNaN(result.score)?scDone.interpret(result.score):null;
+        const day=String(result.date||"").slice(0,10);
+        set(`om_summary_${result.scaleId}`,`${scDone.label}: ${result.score}${scDone.unit}${interpDone?` — ${interpDone.label}`:""} (${day})${history.length>1?` · ${history.length} assessments`:""}`);
+      }
       // Also write individual field answers
       Object.entries(result.answers||{}).forEach(([k,v])=>set(k,v));
     }
@@ -1076,7 +1094,7 @@ export default function OutcomeMeasuresPro({ data, set, navContext={}, navTo }) 
                         <div style={{flex:1}}>
                           <div style={{fontWeight:700,fontSize:"0.85rem",color:TX}}>{sc.full}</div>
                           <div style={{fontSize:"0.65rem",color:MU,marginTop:1}}>
-                            {sc.category} · MCID {sc.mcid}{sc.unit}
+                            {sc.category}{sc.mcid!=null?` · MCID ${sc.mcid}${sc.unit}`:""}
                             {last&&<span style={{marginLeft:8,color:interp?.color,fontWeight:600}}>
                               Last: {last.score}{sc.unit} — {interp?.label}
                             </span>}

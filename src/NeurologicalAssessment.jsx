@@ -1620,7 +1620,33 @@ export function SummarySection(props) {
   );
 }
 
-function SummarySectionBody({ setting, data, assessSteps, formatters, onShare, onGeneratePdf }) {
+// Scale results from the Outcome Measures tool are saved as flat "om_summary_<scale>" lines (or, for older
+// saves, only an "om_history_<scale>" list). The summary reads each step's own section, so without this a
+// recorded NIHSS, Berg or Barthel never appeared in the review, the share text or the profile.
+export function outcomeSummaryRows(data = {}) {
+  const rows = [];
+  const seen = new Set();
+  Object.entries(data).forEach(([k, v]) => {
+    if (!k.startsWith("om_summary_") || typeof v !== "string" || !v) return;
+    const id = k.slice("om_summary_".length);
+    seen.add(id);
+    const i = v.indexOf(": ");
+    rows.push({ label: i > 0 ? v.slice(0, i) : id.toUpperCase(), value: i > 0 ? v.slice(i + 2) : v });
+  });
+  Object.entries(data).forEach(([k, v]) => {
+    if (!k.startsWith("om_history_") || seen.has(k.slice("om_history_".length))) return;
+    try {
+      const h = JSON.parse(v || "[]");
+      const last = h[h.length - 1];
+      if (last && last.score !== null && last.score !== undefined) rows.push({ label: k.slice("om_history_".length).toUpperCase(), value: `${last.score} (${String(last.date || "").slice(0, 10)})` });
+    } catch { /* ignore a malformed history */ }
+  });
+  return rows;
+}
+
+function SummarySectionBody({ setting, data: rawData, assessSteps, formatters: formattersIn, onShare, onGeneratePdf }) {
+  const data = useMemo(() => ({ ...rawData, outcomes: { __rows: outcomeSummaryRows(rawData) } }), [rawData]);
+  const formatters = useMemo(() => ({ ...formattersIn, outcomes: (section) => section.__rows || [] }), [formattersIn]);
   const settingLabel = SETTINGS.find((s) => s.id === setting)?.label || "—";
   const [copied, setCopied] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);

@@ -619,27 +619,40 @@ export default function PdfReportsModal({ data, dx, onClose, currentUser }) {
       if (typeof val === "object") return Object.entries(val).filter(([,v]) => v).map(([k,v]) => `${k.replace("__", " ")}: ${v}`).join(" · ");
       return String(val);
     };
-    const specialtyPage = (pageNum, dataObj, title, subtitle, icon, color) => dataObj ? `<div class="page">
+    // Scale results recorded in the Outcome Measures tool are stored as flat "om_summary_<scale>" lines
+    // ("NIHSS: 14/42 — Moderate stroke (2026-10-04)"). They are strings, not sections, so the loop below
+    // skipped them and a recorded Berg or NIHSS never reached the PDF.
+    const outcomeRowsHtml = (dataObj) => Object.entries(dataObj || {})
+      .filter(([k, v]) => k.startsWith("om_summary_") && typeof v === "string" && v)
+      .map(([k, v]) => { const i = v.indexOf(": "); return row(escHtml(i > 0 ? v.slice(0, i) : k), escHtml(i > 0 ? v.slice(i + 2) : v)); })
+      .join("");
+    const specialtyPage = (pageNum, dataObj, title, subtitle, icon, color) => {
+      if (!dataObj) return "";
+      const sectionsHtml = Object.entries(dataObj).map(([sectionId, fields]) => {
+        // "meta" is NeurologicalAssessment.jsx's/CardiopulmonaryAssessment.jsx's
+        // own internal bookkeeping (setting/stepOrder/customStepsMeta/
+        // selectedRegions -- which steps were picked and in what order),
+        // not a clinical section. Printing it dumped raw internal state
+        // (including "[object Object]" for customStepsMeta) straight into
+        // the PDF (2026-10-02, Aditi: "why this section showing... remove
+        // these things").
+        if (sectionId === "meta") return "";
+        if (!fields || typeof fields !== "object" || Object.keys(fields).length === 0) return "";
+        const rows = Object.entries(fields).map(([k, val]) => row(specialtyLabel(k), escHtml(specialtyValueText(val)))).join("");
+        if (!rows) return "";
+        return sec(icon, specialtyLabel(sectionId), null, rows);
+      }).join("");
+      const omHtml = outcomeRowsHtml(dataObj);
+      const bodyHtml = sectionsHtml + (omHtml ? sec("📊", "Outcome measures", null, omHtml) : "");
+      return `<div class="page">
       ${pdfHeader(title, subtitle, color, true)}
       ${breadcrumbHtml}
       <div class="body">
-        ${Object.entries(dataObj).map(([sectionId, fields]) => {
-          // "meta" is NeurologicalAssessment.jsx's/CardiopulmonaryAssessment.jsx's
-          // own internal bookkeeping (setting/stepOrder/customStepsMeta/
-          // selectedRegions -- which steps were picked and in what order),
-          // not a clinical section. Printing it dumped raw internal state
-          // (including "[object Object]" for customStepsMeta) straight into
-          // the PDF (2026-10-02, Aditi: "why this section showing... remove
-          // these things").
-          if (sectionId === "meta") return "";
-          if (!fields || typeof fields !== "object" || Object.keys(fields).length === 0) return "";
-          const rows = Object.entries(fields).map(([k, val]) => row(specialtyLabel(k), escHtml(specialtyValueText(val)))).join("");
-          if (!rows) return "";
-          return sec(icon, specialtyLabel(sectionId), null, rows);
-        }).join("") || `<div style="padding:14px;text-align:center;color:#94a3b8;font-size:10px;">No findings recorded yet.</div>`}
+        ${bodyHtml || `<div style="padding:14px;text-align:center;color:#94a3b8;font-size:10px;">No findings recorded yet.</div>`}
       </div>
       ${pgFooter(pageNum, totalPages)}
-    </div>` : "";
+    </div>`;
+    };
     const page3 = specialtyPage(specialtyStart, d.cardio, "Cardiopulmonary Assessment", "Cardiovascular & Respiratory Findings", "🫀", "#dc2626");
     const page4 = specialtyPage(d.cardio ? specialtyStart + 1 : specialtyStart, d.neuro, "Neurological Assessment", "Full Neurological Examination Findings", "🧠", "#7c3aed");
     const closingHtml = `

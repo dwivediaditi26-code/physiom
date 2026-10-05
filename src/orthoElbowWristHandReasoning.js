@@ -40,6 +40,20 @@ handEvidence.diagnoses.forEach((m) => { SUPPORTING_TOTAL_BY_NAME[m.name] = m.sup
    (the original text is kept too). "Suspected fracture" and "Bilateral
    symptoms" are left as they are: the engine needs a named bone / the carpal
    tunnel screen, which these generic options do not say. */
+/* Location, mechanism, aggravating, neuro and radiation options also use wording the engine
+   never searches for ("Dorsal wrist" vs "wrist — dorsal", "Fall onto outstretched hand" vs
+   "foosh", the carpal-tunnel and cubital-tunnel tingling options vs "median nerve — ... waking
+   at night" / "ulnar nerve — worse with elbow flexion"). Same fix as the red flags below:
+   append the engine's phrase when the option is ticked, keep the original text. Options that
+   name no single structure ("Thumb", "Palm", "Suspected fracture") are left alone. */
+const EWH_PHRASES = {
+  location: [["Dorsal wrist", "wrist — dorsal"], ["Volar (palm-side) wrist", "wrist — volar"], ["Radial wrist / thumb side", "wrist — radial border"], ["Ulnar wrist", "wrist — ulnar border"]],
+  mechanism: [["Fall onto outstretched hand", "foosh — fall onto outstretched hand"], ["Racquet sport (lateral elbow)", "sport — racquet"], ["Golf / throwing (medial elbow)", "sport — golf swing, sport — throwing mechanism"], ["Vibration exposure", "tool use — vibration"], ["Repetitive thumb use (e.g. new parent lifting baby)", "new baby / childcare"]],
+  aggravating: [["Thumb movements", "thumb extension / abduction"], ["Repetitive typing / mouse use", "computer mouse use, keyboard / typing"]],
+  radiation: [["(median nerve pattern)", "median nerve distribution"], ["(ulnar nerve pattern)", "ulnar nerve distribution"]],
+  neuro: [["night-dominant (carpal tunnel pattern)", "median nerve — thumb / index / middle waking at night"], ["worse with elbow flexion (cubital tunnel pattern)", "ulnar nerve — worse with elbow flexion"]],
+};
+
 const EWH_RED_FLAG_PHRASES = [
   ["possible scaphoid fracture", "suspected scaphoid"],
   ["tendon rupture", "rupture extensor / flexor tendons"],
@@ -63,13 +77,13 @@ function buildFlatElbowWristHandData(data) {
   flat.cc_onset = subjective.onset || "";
   flat.dem_age = (data.demographics || {}).age || "";
 
-  flat.ew_loc = joinMulti(regionData.location);
-  flat.ew_moi = joinMulti(regionData.mechanism);
-  flat.ew_radiation = joinMulti(regionData.radiation);
-  flat.ew_agg_mov = joinMulti(regionData.aggravating);
-  flat.ew_agg_act = joinMulti(regionData.aggravating);
+  flat.ew_loc = withEnginePhrases(regionData.location, EWH_PHRASES.location);
+  flat.ew_moi = withEnginePhrases(regionData.mechanism, EWH_PHRASES.mechanism);
+  flat.ew_radiation = withEnginePhrases(regionData.radiation, EWH_PHRASES.radiation);
+  flat.ew_agg_mov = withEnginePhrases(regionData.aggravating, EWH_PHRASES.aggravating);
+  flat.ew_agg_act = withEnginePhrases(regionData.aggravating, EWH_PHRASES.aggravating);
   flat.ew_pattern = regionData.pattern || "";
-  flat.ew_neuro = joinMulti(regionData.neuro);
+  flat.ew_neuro = withEnginePhrases(regionData.neuro, EWH_PHRASES.neuro);
   flat.ew_rf = withEnginePhrases(regionData.redFlags, EWH_RED_FLAG_PHRASES);
   flat.ew_ucl = "";
   flat.ew_olecranon = "";
@@ -153,7 +167,9 @@ export function runElbowWristHandDifferential(data) {
       score: d.diagnosticMatchScore || 0,
       evidenceConfidence: d.evidenceConfidence,
     }))
-    .sort((a, b) => b.score - a.score)
+    // Subjective-only entries score 0 until exam findings exist; break the tie on matched findings so
+    // wrist/hand patterns are not cut by the top-8 in favour of elbow ones with nothing matched.
+    .sort((a, b) => b.score - a.score || b.supportingMatched.length - a.supportingMatched.length)
     .slice(0, 8);
 
   return { stopped, redFlag, conditions };
