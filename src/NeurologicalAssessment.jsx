@@ -1,3 +1,4 @@
+import { ClinicalInterpretationSection } from "./clinicalInterpretation.jsx";
 import { AddAssessmentModal } from "./assessmentFrame.jsx";
 import { rowsForStep } from "./orthoSummary.jsx";
 import { MedicalRecordsSection } from "./MedicalRecords.jsx";
@@ -1425,20 +1426,15 @@ function OutcomesSection({ data, setData }) {
 }
 
 /* ---------- Clinical Interpretation ---------- */
-const IMPAIRMENTS = ["Muscle weakness", "Abnormal tone", "Sensory loss", "Impaired coordination", "Impaired balance", "Cognitive impairment", "Communication impairment", "Impaired gait", "Reduced endurance", "Pain"];
-
 function InterpretationSection({ data, setData }) {
-  const [d, set] = useSectionData(data, setData, "interpretation");
   return (
-    <>
-      <SectionIntro icon={<Icon name="brain" />} title="Clinical Interpretation" sub="Summarise findings using an impairment → activity → participation framework (ICF)." />
-      <SelectField label="Key impairments (body structure/function)" type="multi" options={IMPAIRMENTS} value={d.impairments} onChange={(v) => set("impairments", v)} />
-      <TextArea label="Activity limitations" value={d.activityLimitations} onChange={(v) => set("activityLimitations", v)} placeholder="What the patient cannot currently do — e.g. walk >10m unaided, dress independently..." />
-      <TextArea label="Participation restrictions" value={d.participationRestrictions} onChange={(v) => set("participationRestrictions", v)} placeholder="Impact on work, home role, social activity..." />
-      <TextArea label="Clinical impression / hypothesis" value={d.impression} onChange={(v) => set("impression", v)} placeholder="Likely lesion site/level, correlation between findings and diagnosis, prognostic factors..." />
-      <TextArea label="Physiotherapy problem list" value={d.problemList} onChange={(v) => set("problemList", v)} />
-      <TextArea label="Short and long-term goals" value={d.goals} onChange={(v) => set("goals", v)} />
-    </>
+    <ClinicalInterpretationSection
+      data={data}
+      setData={setData}
+      kind="neuro"
+      intro={{ icon: <Icon name="brain" />, sub: "Summarise findings using an impairment → activity → participation framework (ICF)." }}
+      extras={[{ key: "goals", label: "Short and long-term goals" }]}
+    />
   );
 }
 

@@ -1,3 +1,4 @@
+import { ClinicalInterpretationSection } from "./clinicalInterpretation.jsx";
 import React, { useState, lazy, Suspense } from "react";
 import { SectionIntro, TextField, SelectField, Segmented, TextArea, NumberField, Stepper, Hint, useSectionData, fmtVal, FieldShell } from "./orthoFieldKit.jsx";
 import { RedFlagFields } from "./orthoRedFlagScreen.jsx";
@@ -367,20 +368,21 @@ export function FunctionalAssessmentSection({ data, setData }) {
 }
 
 export function ClinicalAssessmentSection({ data, setData }) {
-  const [d, set] = useSectionData(data, setData, "clinicalAssessment");
   return (
-    <>
-      <SectionIntro icon="🧠" title="Clinical Assessment" info="Clinician's own reasoning from the findings above — not an AI-generated diagnosis." />
-      <TextArea label="Investigations" value={d.investigations} onChange={(v) => set("investigations", v)} placeholder="Relevant labs, X-ray, MRI, USG, nerve conduction findings..." />
-      <TextArea label="Key findings" value={d.keyFindings} onChange={(v) => set("keyFindings", v)} />
-      <TextArea label="Impairments" value={d.impairments} onChange={(v) => set("impairments", v)} />
-      <TextArea label="Movement dysfunction" value={d.movementDysfunction} onChange={(v) => set("movementDysfunction", v)} />
-      <TextArea label="Contributing factors" value={d.contributingFactors} onChange={(v) => set("contributingFactors", v)} />
-      <TextArea label="Clinical impression" value={d.clinicalImpression} onChange={(v) => set("clinicalImpression", v)} />
-      <TextArea label="Differential diagnosis" value={d.differentialDiagnosis} onChange={(v) => set("differentialDiagnosis", v)} placeholder="Other conditions considered and ruled out/in..." />
-      <TextArea label="Final diagnosis" value={d.finalDiagnosis} onChange={(v) => set("finalDiagnosis", v)} />
-      <TextArea label="Problem list" value={d.problemList} onChange={(v) => set("problemList", v)} placeholder="Key problems in priority order..." />
-    </>
+    <ClinicalInterpretationSection
+      data={data}
+      setData={setData}
+      kind="ortho"
+      section="clinicalAssessment"
+      title="Clinical Assessment"
+      keys={{ physioDiagnosis: "finalDiagnosis", impression: "clinicalImpression" }}
+      intro={{ info: "Clinician's own reasoning from the findings above — not an AI-generated diagnosis." }}
+      extras={[
+        { key: "keyFindings", label: "Key findings" },
+        { key: "movementDysfunction", label: "Movement dysfunction" },
+        { key: "contributingFactors", label: "Contributing factors" },
+      ]}
+    />
   );
 }
 

@@ -1,3 +1,4 @@
+import { ClinicalInterpretationSection } from "./clinicalInterpretation.jsx";
 import { AddAssessmentModal } from "./assessmentFrame.jsx";
 import { rowsForStep } from "./orthoSummary.jsx";
 import { MedicalRecordsSection } from "./MedicalRecords.jsx";
@@ -1466,8 +1467,6 @@ function OutcomesSection({ data, setData, setting, system }) {
 
 /* ---------- Clinical Interpretation ---------- */
 function InterpretationSection({ data, setData }) {
-  const [d, set] = useSectionData(data, setData, "interpretation");
-
   const flags = useMemo(() => {
     const out = [];
     const safety = data.safety || {};
@@ -1486,25 +1485,25 @@ function InterpretationSection({ data, setData }) {
   }, [data]);
 
   return (
-    <>
-      <SectionIntro icon={<Icon name="brain" />} title="Clinical Interpretation" sub="Synthesize subjective + objective findings into a problem list." />
-      {flags.map((f, i) => (
-        <Alert tone={f.tone} key={i}>
-          {f.text}
-        </Alert>
-      ))}
-      {flags.length === 0 && <Alert tone="green">No automatic pattern flags triggered from entries so far.</Alert>}
-      <TextArea
-        label="Problem list"
-        value={d.problems}
-        onChange={(v) => set("problems", v)}
-        placeholder="List the patient's key problems in priority order..."
-        howTo="Correlate symptoms with signs (e.g. dyspnea + crackles + reduced expansion) before forming a working impression. The flags above are rule-based prompts, not a diagnosis — always correlate clinically."
-      />
-      <TextArea label="Short-term goals" value={d.shortGoals} onChange={(v) => set("shortGoals", v)} />
-      <TextArea label="Long-term goals" value={d.longGoals} onChange={(v) => set("longGoals", v)} />
-      <TextArea label="Clinical impression" value={d.impression} onChange={(v) => set("impression", v)} />
-    </>
+    <ClinicalInterpretationSection
+      data={data}
+      setData={setData}
+      kind="cardio"
+      keys={{ problemList: "problems" }}
+      intro={{ icon: <Icon name="brain" />, sub: "Synthesize subjective + objective findings into a problem list." }}
+      top={
+        <>
+          {flags.map((f, i) => (
+            <Alert tone={f.tone} key={i}>
+              {f.text}
+            </Alert>
+          ))}
+          {flags.length === 0 && <Alert tone="green">No automatic pattern flags triggered from entries so far.</Alert>}
+        </>
+      }
+      problemHowTo="Correlate symptoms with signs (e.g. dyspnea + crackles + reduced expansion) before forming a working impression. The flags above are rule-based prompts, not a diagnosis — always correlate clinically."
+      extras={[{ key: "shortGoals", label: "Short-term goals" }, { key: "longGoals", label: "Long-term goals" }]}
+    />
   );
 }
 
@@ -1653,7 +1652,7 @@ function SummarySectionBody({ setting, system, data, setData, assessSteps, forma
       }
       if (result.length) {
         lines.push(`— ${step.label} —`);
-        result.forEach(([k, v]) => lines.push(`${k}: ${v}`));
+        result.forEach(({ label, value }) => lines.push(`${label}: ${value}`));
         lines.push("");
       }
     });
@@ -1679,7 +1678,7 @@ function SummarySectionBody({ setting, system, data, setData, assessSteps, forma
       }
       if (result.length) {
         lines.push(`— ${step.label} —`);
-        result.forEach(([k, v]) => lines.push(`${k}: ${v}`));
+        result.forEach(({ label, value }) => lines.push(`${label}: ${value}`));
         lines.push("");
       }
     });
@@ -1715,8 +1714,8 @@ function SummarySectionBody({ setting, system, data, setData, assessSteps, forma
             <div className="summary-title">
               {step.icon} {step.label}
             </div>
-            {result.map(([k, v]) => (
-              <SummaryRow key={k} label={k} value={v} />
+            {result.map(({ label, value }) => (
+              <SummaryRow key={label} label={label} value={value} />
             ))}
           </div>
         );
