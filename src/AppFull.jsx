@@ -1,5 +1,6 @@
 // AppFull.jsx — Posture engine, camera, patient DB, dashboard, AppInner, App
 import { useState, useCallback, useRef, useEffect, useMemo, Suspense, lazy } from "react";
+import { carePlanOf, requestSessionLaunch, patientSessionView } from "./txSessions.js";
 import { track } from "@vercel/analytics";
 import { supabase } from "./supabase.js";
 import { trackEvent } from "./analytics/trackEvent.js";
@@ -74,6 +75,7 @@ const LazyOrthoAssessmentNew = lazy(() => import("./OrthoAssessmentNew.jsx"));
 // Cardio, ...) -- over a third of the app -- so it loads when a profile is first
 // opened instead of with the first screen.
 const LazySpecialtyPatientProfile = lazy(() => import("./SpecialtyPatientProfile.jsx"));
+const LazyTreatmentSessionScreen = lazy(() => import("./SpecialtyPatientProfile.jsx").then((m) => ({ default: m.TreatmentSessionScreen })));
 // Home exercise programme editor: pulls in the whole exercise library, so it loads when first shown.
 const LazyHomeProtocolTab = lazy(() => import("./HomeProtocolTab.jsx"));
 // The posture screen (camera analysis, ~600 KB of source) loads when it is first opened.
@@ -546,6 +548,10 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // both the bottom-nav label and other text), so this isn't a regression.
   // "Patients" and "Treatment" are still other lenses onto the same patients
   // array, not separate data.
+  // Set by the Treatment page so the Session Log opens straight into a session (start/resume, or one summary).
+  const [txLaunch, setTxLaunch] = useState(null);
+  // Patient whose care-plan session editor is open inside Clinical > Treatment.
+  const [txSessionPatientId, setTxSessionPatientId] = useState(null);
   const [clinicalSubTab, setClinicalSubTab] = useState("today"); // "today" | "patients" | "treatment" | "assessment"
   // Lets a navTo("clinical", {clinicalSubTab:"assessment"}) call (Home's
   // own "Assessment" tile, e.g.) land directly on the Assessment sub-tab
@@ -1275,6 +1281,30 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // used to fall back to for patients with no Cardio/Neuro/Ortho data has
   // been removed entirely (2026-09-02, Aditi: "remove old ortho patient
   // profile totally").
+  // Saves a patient-record edit made from the profile or the Treatment session screen into patients[],
+  // the active patient's in-memory data and its draft (see the long note where the profile mounts).
+  const saveProfileField = (id,newData)=>{
+                  setPatients(prev=>{
+                    const updated = prev.map(p=>p.id===id?{...p,data:{...p.data,...newData},name:newData.dem_name||p.name,updatedAt:new Date().toISOString()}:p);
+                    savePatientDB(updated, currentUser?.id);
+                    return updated;
+                  });
+                  // CRITICAL (2026-09-05): the profile edits patients[] directly,
+                  // but the active patient's in-memory `data` + its localStorage
+                  // draft are a SEPARATE source of truth. If we don't mirror the
+                  // edit into them, re-selecting the patient restores the STALE
+                  // draft and the 2s autosave writes it back over patients[] --
+                  // silently wiping Care Plan problems/goals/treatments/sessions
+                  // saved from the profile. Keep all three in sync here.
+                  if (id === activePatientId) {
+                    setData(prev => {
+                      const next = { ...prev, ...newData };
+                      try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ pid: id, data: next })); } catch {}
+                      return next;
+                    });
+                  }
+                };
+
   const openPatientProfile = useCallback((p, tab) => {
     if (!p) return;
     selectPatient(p);
@@ -2001,7 +2031,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           ...(isFullScreenAssessment ? {"--pm-mobile-hdr-h":"0px"} : {})
         }}>
 
-          {currentSection && active !== "home" && active !== "treatment" && active !== "exercise" && active !== "tx_techniques" && active !== "physiofeed" && active !== "profile" && active !== "learn" && active !== "clinical" && active !== "posture" && (
+          {currentSection && active !== "home" && active !== "treatment" && active !== "tx_sessions" && active !== "exercise" && active !== "tx_techniques" && active !== "physiofeed" && active !== "profile" && active !== "learn" && active !== "clinical" && active !== "posture" && (
           <div style={{marginBottom:24}}>
             <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:8}}>
               <div style={{width:38,height:38,background:PC.isDark?`linear-gradient(135deg,${PC.accent}15,${PC.a2}10)`:`linear-gradient(135deg,${PC.accent}10,${PC.a2}08)`,border:`1px solid ${PC.border}`,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.2rem",flexShrink:0}}>{currentSection.icon}</div>
@@ -2162,27 +2192,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 onNav={navTo}
                 onGeneratePdf={()=>setShowPdfReports(true)}
                 onBack={()=>{ setProfileTab(null); navTo("clinical"); }}
-                onSaveField={(id,newData)=>{
-                  setPatients(prev=>{
-                    const updated = prev.map(p=>p.id===id?{...p,data:{...p.data,...newData},name:newData.dem_name||p.name,updatedAt:new Date().toISOString()}:p);
-                    savePatientDB(updated, currentUser?.id);
-                    return updated;
-                  });
-                  // CRITICAL (2026-09-05): the profile edits patients[] directly,
-                  // but the active patient's in-memory `data` + its localStorage
-                  // draft are a SEPARATE source of truth. If we don't mirror the
-                  // edit into them, re-selecting the patient restores the STALE
-                  // draft and the 2s autosave writes it back over patients[] --
-                  // silently wiping Care Plan problems/goals/treatments/sessions
-                  // saved from the profile. Keep all three in sync here.
-                  if (id === activePatientId) {
-                    setData(prev => {
-                      const next = { ...prev, ...newData };
-                      try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ pid: id, data: next })); } catch {}
-                      return next;
-                    });
-                  }
-                }}
+                onSaveField={saveProfileField}
                 onOpenPosture={(p)=>{ selectPatient(p); navTo("posture"); }}
               />
               </Suspense>
@@ -2270,7 +2280,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                       content instead of reading as two disconnected blocks. */}
                   {(() => {
                     const todayCount = getTodaysPatients(patients).length;
-                    const treatmentDue = patients.filter(p=>Array.isArray(p.data?.tx_sessions)&&p.data.tx_sessions.length>0).length;
+                    const treatmentDue = patients.filter(p=>patientSessionView(p).all.length>0).length;
                     const firstName = doctorFirstName(currentUser);
                     const SUBTABS = [
                       ["today","Today",Stethoscope,null,""],
@@ -2321,9 +2331,21 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                           <div style={{background:"#fff"}}>
                             {clinicalSubTab==="today" ? (
                               <TherapistDashboardModule patients={visiblePatients} data={data} onNav={navTo} onProfile={(p)=>openPatientProfile(p)} onQuickStart={(p)=>{ selectPatient(p); trackAssessmentStart("ortho"); navTo("ortho_new_assessment"); }} onStartAI={()=>startOrthoEntry("ai")} currentUser={currentUser} onSignOut={onSignOut}/>
+                            ) : clinicalSubTab==="treatment" && txSessionPatientId && patients.find(x=>x.id===txSessionPatientId) ? (
+                              <Suspense fallback={<TabFallback/>}>
+                                <LazyTreatmentSessionScreen
+                                  patient={(()=>{ const ap = patients.find(x=>x.id===txSessionPatientId); return {...ap, data:{...ap.data, ...(ap.id===activePatientId?data:{})}}; })()}
+                                  onSaveField={saveProfileField}
+                                  onBack={()=>setTxSessionPatientId(null)}/>
+                              </Suspense>
                             ) : clinicalSubTab==="treatment" ? (
                               <TreatmentCaseloadPanel patients={visiblePatients}
-                                onContinue={(p)=>openPatientProfile(p, "sessions")}
+                                onStart={(p, sessionId)=>{
+                                  // Neuro / Ortho / Cardio patients keep sessions in their care plan (seeded from its
+                                  // treatment list, feeding goal Progress) -- open that Sessions tab, not a second log.
+                                  requestSessionLaunch(); setTxSessionPatientId(p.id);
+                                }}
+                                onViewPatients={()=>setClinicalSubTab("patients")}
                                 onProfile={(p)=>openPatientProfile(p, "treatment")}
                                 // 2026-09-02, Aditi: "in treatment we can remove the
                                 // old treatments... delete if we want to delete" --
@@ -2453,12 +2475,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 <Suspense fallback={<TabFallback/>}><LazyTreatment data={data} set={set}/></Suspense>
               ):tests==="TX_SESSION_MODULE"?(
                 <div>
-                  {/* ── Sessions Banner ── */}
-                  <div style={{background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:14,padding:"14px 16px",marginBottom:16}}>
-                    <div style={{fontWeight:800,fontSize:"0.88rem",color:"#0F6E56",marginBottom:4}}>⚡ Sessions</div>
-                    <div style={{fontSize:"0.8rem",color:PC.muted,marginBottom:12}}>For follow-ups — fill these 4 fields and sign. Takes 60 seconds.</div>
-                    <QuickVisitForm PC={PC} data={data} set={set} navTo={navTo}/>
-                  </div>
+                  <QuickVisitForm PC={PC} data={data} set={set} navTo={navTo} launch={txLaunch} activePatientId={activePatientId} onLaunchDone={()=>setTxLaunch(null)}/>
                 </div>
               ):null}
             </div>

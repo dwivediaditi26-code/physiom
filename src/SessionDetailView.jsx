@@ -6,6 +6,7 @@ import { useState } from "react";
 import { downloadPDFFromHTML, injectViewerControls } from "./sharedClinicalData.js";
 import { EXERCISE_DB, ALL_EXERCISES, PROGRAMME_TEMPLATES, TEMPLATE_TX } from "./sharedClinicalData.js";
 import { EditableItemList, SessionPill, legacyTreatmentToList } from "./AppModules.jsx";
+import { isDraftSession, completedSessions, nextSessionNo, longDate, shortDate } from "./txSessions.js";
 
 // ── HEP protocol helpers — versioned home programme with WhatsApp/PDF send ──
 function hepDose(e){ const st=e.customSets||e.sets, rp=e.customReps||e.reps, hd=e.customHold||e.hold, fq=e.customFreq||e.freq; return [st&&rp?`${st}×${rp}`:st?`${st} sets`:rp?`${rp} reps`:"", hd?`hold ${hd}s`:"", fq||""].filter(Boolean).join(" · "); }
@@ -46,17 +47,31 @@ ${prog.map((ex,i)=>`<div class="ex"><div class="ex-h"><span class="ex-t">${i+1}.
 // the active protocol). For a past, already-saved session, exercises are
 // that session's own frozen snapshot -- editing it corrects the historical
 // record without silently rewriting today's active protocol.
-export default function SessionDetailView({ PC, data, set, navTo, sessionsArr, activeId, onBack }) {
-  const isNew = activeId===null;
-  const activeSession = isNew ? null : (sessionsArr.find(s=>s.id===activeId)||null);
-  const lastSession = sessionsArr[0];
-  const sessionNo = isNew ? sessionsArr.length+1 : (activeSession?.sessionNo||sessionsArr.length);
+export default function SessionDetailView({ PC, data, set, navTo, sessionsArr, activeId, onBack, onStartNext, onOpen }) {
+  // A brand-new session that has been saved as a draft is found again by its new id.
+  const [createdId, setCreatedId] = useState(null);
+  const lookupId = activeId!==null ? activeId : createdId;
+  const found = lookupId===null ? null : (sessionsArr.find(s=>s.id===lookupId)||null);
+  // A draft is edited exactly like a brand-new session; only a completed one is "past".
+  const draft = found && isDraftSession(found) ? found : null;
+  const isNew = lookupId===null || !!draft;
+  const activeSession = isNew ? null : found;
+  const done = completedSessions(sessionsArr);
+  const lastSession = done[0];
+  const sessionNo = draft ? (draft.sessionNo||nextSessionNo(sessionsArr)) : isNew ? nextSessionNo(sessionsArr) : (activeSession?.sessionNo||done.length);
+  const [completed, setCompleted] = useState(null);   // entry just completed -> confirmation screen
+  const [mode, setMode] = useState(isNew ? "edit" : "summary"); // completed sessions open as a read-only summary
+  const [error, setError] = useState("");
+  const [tab, setTab] = useState("treatment");
+  const [draftSaved, setDraftSaved] = useState(false);
 
-  const [qv, setQv] = useState(()=> isNew
-    ? {pain_today:data.cc_vas_now||"",pain_after:"",response:"",next_plan:""}
+  const [qv, setQv] = useState(()=> draft
+    ? {pain_today:draft.vasStart??"",pain_after:draft.vasEnd??"",response:draft.quickNote||"",next_plan:draft.nextPlan||""}
+    : isNew
+    ? {pain_today:data.cc_vas_now||lastSession?.vasEnd||"0",pain_after:"",response:"",next_plan:""}
     : {pain_today:activeSession?.vasStart||"",pain_after:activeSession?.vasEnd||"",response:activeSession?.quickNote||activeSession?.response||"",next_plan:activeSession?.nextPlan||""});
   const [saved, setSaved] = useState(false);
-  const [pending, setPending] = useState([]);          // protocol change descriptions this visit (new session only)
+  const [pending, setPending] = useState(()=>Array.isArray(draft?.hepChanges)?draft.hepChanges:[]);          // protocol change descriptions this visit (new session only)
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerMode, setPickerMode] = useState("library");
   const [pickerSearch, setPickerSearch] = useState("");
@@ -66,10 +81,12 @@ export default function SessionDetailView({ PC, data, set, navTo, sessionsArr, a
   const [editDose, setEditDose] = useState({sets:"",reps:"",hold:""});
   const [removeId, setRemoveId] = useState(null);
 
-  const [treatmentList, setTreatmentList] = useState(()=> isNew
+  const [treatmentList, setTreatmentList] = useState(()=> draft
+    ? (Array.isArray(draft.treatment)?draft.treatment.map(t=>({...t})):[])
+    : isNew
     ? (Array.isArray(lastSession?.treatment) ? lastSession.treatment.map(t=>({...t})) : legacyTreatmentToList(lastSession?.treatmentGiven))
     : (Array.isArray(activeSession?.treatment) ? activeSession.treatment.map(t=>({...t})) : legacyTreatmentToList(activeSession?.treatmentGiven)));
-  const [modalities, setModalities] = useState(()=> isNew ? [] : (Array.isArray(activeSession?.modalities)?activeSession.modalities.map(m=>({...m})):[]));
+  const [modalities, setModalities] = useState(()=> draft ? (Array.isArray(draft.modalities)?draft.modalities.map(m=>({...m})):[]) : isNew ? [] : (Array.isArray(activeSession?.modalities)?activeSession.modalities.map(m=>({...m})):[]));
   const [pastExercises, setPastExercises] = useState(()=> isNew ? [] : (Array.isArray(activeSession?.exercises)?activeSession.exercises.map(e=>({...e})):[]));
   // Exercise Prescription -- a separate, standing treatment programme from
   // hep_programme (see ExercisePrescriptionModule, Treatment tab). This was
@@ -128,8 +145,44 @@ export default function SessionDetailView({ PC, data, set, navTo, sessionsArr, a
     return pool.filter(e=>!prog.find(p=>p.id===e.id)).slice(0,8);
   })();
 
-  const saveNew = () => {
-    set("cc_vas_now",qv.pain_today);
+  const buildEntry = (status) => {
+    const now = new Date().toISOString();
+    return {
+      ...(draft||{}),
+      id: draft?.id || (Date.now()).toString(36),
+      date: draft?.date || new Date().toLocaleDateString("en-GB"),
+      sessionNo, type:"Follow-up Treatment", status,
+      vasStart:qv.pain_today, vasEnd:(qv.pain_after!==""||status==="draft")?qv.pain_after:qv.pain_today,
+      treatmentGiven:treatmentList.map(t=>t.name).join(", "), response:qv.response, nextPlan:qv.next_plan, hepChanges:pending,
+      exercises:prog.map(e=>({id:e.id,name:e.name,detail:hepDose(e)})), modalities, treatment:treatmentList, quickNote:qv.response,
+      exercisePrescription:rxProgramme.map(e=>({id:e.id,name:e.name,detail:hepDose(e)})),
+      savedAt: draft?.savedAt || now, updatedAt: now,
+      ...(status==="completed" ? {completedAt:now} : {}),
+    };
+  };
+  // Replace this session's draft in place (or add it as the newest entry).
+  const putEntry = (entry) => set("tx_sessions", draft ? sessionsArr.map(x=>x.id===draft.id?entry:x) : [entry,...sessionsArr]);
+
+  const saveDraft = () => {
+    setError("");
+    const entry = buildEntry("draft");
+    putEntry(entry);
+    setCreatedId(entry.id);
+    setDraftSaved(true);
+    setTimeout(()=>setDraftSaved(false),1800);
+  };
+
+  const completeSession = () => {
+    if(treatmentList.length===0 && modalities.length===0 && !qv.response.trim()){
+      setError("Add at least one treatment or a session note before completing.");
+      return;
+    }
+    if(qv.pain_today===""||qv.pain_after===""||isNaN(parseFloat(qv.pain_today))||isNaN(parseFloat(qv.pain_after))){
+      setError("Set the pain rating before and after treatment.");
+      return;
+    }
+    setError("");
+    set("cc_vas_now",qv.pain_after);
     let hepNote="";
     if(pending.length){
       const version=(parseInt(data.hep_version)||1)+1;
@@ -139,20 +192,10 @@ export default function SessionDetailView({ PC, data, set, navTo, sessionsArr, a
       hepNote=`HEP v${version}: ${pending.join(" · ")}`;
     }
     set("soap_extra_p",[qv.next_plan,hepNote].filter(Boolean).join(" | "));
-    const exercisesSnapshot = prog.map(e=>({id:e.id,name:e.name,detail:hepDose(e)}));
-    const rxSnapshot = rxProgramme.map(e=>({id:e.id,name:e.name,detail:hepDose(e)}));
-    const entry = {
-      id:(Date.now()).toString(36),date:new Date().toLocaleDateString("en-GB"),sessionNo,type:"Follow-up Treatment",
-      vasStart:qv.pain_today,vasEnd:qv.pain_after||qv.pain_today,
-      treatmentGiven:treatmentList.map(t=>t.name).join(", "),response:qv.response,nextPlan:qv.next_plan,hepChanges:pending,
-      exercises:exercisesSnapshot, modalities, treatment:treatmentList, quickNote:qv.response,
-      exercisePrescription:rxSnapshot,
-      savedAt:new Date().toISOString()
-    };
-    set("tx_sessions",[entry,...sessionsArr]);
+    const entry = buildEntry("completed");
+    putEntry(entry);
     setPending([]);
-    setSaved(true);
-    setTimeout(()=>{setSaved(false); navTo("home");},900);
+    setCompleted(entry);
   };
 
   const updatePast = () => {
@@ -166,28 +209,84 @@ export default function SessionDetailView({ PC, data, set, navTo, sessionsArr, a
     };
     set("tx_sessions", sessionsArr.map(s=>s.id===activeId?updated:s));
     setSaved(true);
-    setTimeout(()=>{setSaved(false); onBack();},700);
+    setTimeout(()=>{setSaved(false); setMode("summary");},700);
   };
+
+  const patientName = data.dem_name||"";
+  const condition = data.cc_main||"";
+  if(completed){
+    return <SessionCompleted PC={PC} entry={completed} patientName={patientName}
+      onSummary={()=>onOpen?onOpen(completed.id):setCompleted(null)}
+      onNext={onStartNext} onBack={onBack}/>;
+  }
+  if(!isNew && mode==="summary" && activeSession){
+    return <SessionSummary PC={PC} entry={activeSession} patientName={patientName} condition={condition}
+      onEdit={()=>setMode("edit")} onHistory={onBack} onNext={onStartNext}/>;
+  }
+  const prevDate = lastSession ? longDate(lastSession.completedAt||lastSession.savedAt, lastSession.date) : "";
+  const detailRow = (k,v) => <div style={{display:"flex",justifyContent:"space-between",gap:10,padding:"5px 0",fontSize:"0.82rem"}}><span style={{color:PC.muted}}>{k}</span><span style={{fontWeight:700,color:PC.text}}>{v}</span></div>;
+
+  const initials = (patientName||"?").split(" ").map(w=>w[0]).filter(Boolean).slice(0,2).join("").toUpperCase();
+  const TABS = [["treatment","Treatment"],["exercises","Exercises"],["notes","Notes"],["progress","Progress"]];
+  const show = (t) => tab===t ? "block" : "none";
+  const age = data.dem_age || data.age || "";
+  const sex = data.dem_sex || data.sex || "";
+  const sub = [sex, age?`${age} years`:""].filter(Boolean).join(" · ");
+  const card = {background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:16,padding:"12px 14px",marginBottom:14,boxShadow:"0 4px 14px rgba(109,40,217,.07)"};
+  const orderBox = (o,t,children) => <div style={{order:o,display:show(t)}}>{children}</div>;
 
   return(
     <div>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-        <span onClick={onBack} style={{cursor:"pointer",fontSize:"0.95rem",color:PC.muted,lineHeight:1}} title="Back to sessions">←</span>
-        <div style={{...sectionLbl,marginBottom:0}}>{isNew?`Today — Session ${sessionNo}`:`Session ${sessionNo} · ${activeSession?.date||""}`}</div>
+      <div style={{borderRadius:20,overflow:"hidden",boxShadow:"0 14px 30px rgba(187,107,227,.30)",marginBottom:14}}>
+        <div style={{background:"linear-gradient(135deg,#8f63f0 0%,#bb6be3 52%,#e77fc0 100%)",padding:"14px 14px 0"}}>
+          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
+            <span onClick={onBack} style={{cursor:"pointer",fontSize:"1.2rem",color:"#fff",lineHeight:1,padding:"4px 6px"}} title="Back to sessions">←</span>
+            <div style={{width:54,height:54,borderRadius:16,background:"rgba(255,255,255,.9)",color:"#6D28D9",fontWeight:800,fontSize:"1.1rem",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{initials}</div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontWeight:800,fontSize:"1.05rem",color:"#fff",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{patientName||"Patient"}</div>
+              {sub&&<div style={{fontSize:"0.8rem",color:"rgba(255,255,255,.9)"}}>{sub}</div>}
+              {condition&&<div style={{fontSize:"0.8rem",color:"rgba(255,255,255,.9)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{condition}</div>}
+            </div>
+            <div style={{textAlign:"right",flexShrink:0}}>
+              <div style={{background:"rgba(255,255,255,.92)",color:"#6D28D9",fontWeight:800,fontSize:"0.78rem",padding:"5px 10px",borderRadius:10}}>Session {sessionNo}</div>
+              <div style={{fontSize:"0.72rem",color:"rgba(255,255,255,.92)",marginTop:4}}>{draft?"Draft · ":""}{isNew?shortDate(new Date().toISOString()):shortDate(activeSession?.completedAt||activeSession?.savedAt, activeSession?.date||"")}</div>
+            </div>
+          </div>
+          <div role="tablist" style={{display:"flex",background:"#fff",borderRadius:"16px 16px 0 0",padding:"0 6px"}}>
+            {TABS.map(([k,l])=>(
+              <button key={k} role="tab" aria-selected={tab===k} type="button" onClick={()=>setTab(k)}
+                style={{flex:1,padding:"12px 2px",background:"none",border:"none",borderBottom:`3px solid ${tab===k?"#6D28D9":"transparent"}`,color:tab===k?"#6D28D9":PC.muted,fontWeight:tab===k?800:600,fontSize:"0.85rem",cursor:"pointer",fontFamily:"inherit"}}>{l}</button>
+            ))}
+          </div>
+        </div>
       </div>
 
+      <div style={{display:show("treatment"),...card}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{...sectionLbl,marginBottom:2}}>Session Details</div>
+            {detailRow("Date", isNew ? longDate(new Date().toISOString()) : longDate(activeSession?.completedAt||activeSession?.savedAt, activeSession?.date||""))}
+            {detailRow("Session Number", sessionNo)}
+            {isNew && lastSession && detailRow("Previous Session", prevDate)}
+          </div>
+          {done.length>0&&<button type="button" onClick={onBack} style={{padding:"10px 12px",borderRadius:12,border:"none",background:"#EDE9FE",color:"#6D28D9",fontWeight:800,fontSize:"0.8rem",cursor:"pointer",whiteSpace:"nowrap"}}>View History ›</button>}
+        </div>
+      </div>
+
+      <div style={{display:"flex",flexDirection:"column"}}>
+      <div style={{order:5,display:tab==="treatment"||tab==="progress"?"block":"none"}}>
       {(()=>{
         const TEAL="#0F6E56", TEAL_BG=PC.isDark?"rgba(29,158,117,0.14)":"#E1F5EE", TEAL_BORDER="#5DCAA5";
         const start=parseFloat(qv.pain_today), end=parseFloat(qv.pain_after);
         const bothSet=!isNaN(start)&&!isNaN(end);
         const delta=bothSet?start-end:0;
         const endLower=bothSet&&end<start;
-        const endStyle={...inp,...(endLower?{border:`1.5px solid ${TEAL_BORDER}`,background:TEAL_BG,color:TEAL,fontWeight:700}:{})};
         return(
           <div style={{background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:12,padding:"12px 14px",marginBottom:14}}>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-              <div><label style={lbl}>Pain — start</label><input style={inp} type="number" min="0" max="10" placeholder="e.g. 5" value={qv.pain_today} onChange={e=>setQv(p=>({...p,pain_today:e.target.value}))}/></div>
-              <div><label style={lbl}>Pain — end</label><input style={endStyle} type="number" min="0" max="10" placeholder="e.g. 3" value={qv.pain_after} onChange={e=>setQv(p=>({...p,pain_after:e.target.value}))}/></div>
+            <div style={sectionLbl}>Pain Rating (NRS)</div>
+            <div style={{display:"flex",gap:14,flexWrap:"wrap"}}>
+              <PainStepper PC={PC} label="Before" value={qv.pain_today} onChange={v=>setQv(p=>({...p,pain_today:v}))}/>
+              <PainStepper PC={PC} label="After" value={qv.pain_after} onChange={v=>setQv(p=>({...p,pain_after:v}))} highlight={endLower?{border:TEAL_BORDER,bg:TEAL_BG,col:TEAL}:null}/>
             </div>
             {bothSet&&(
               <div style={{marginTop:10,display:"flex",alignItems:"center",gap:6,fontSize:"0.78rem",padding:"7px 10px",borderRadius:8,
@@ -200,16 +299,33 @@ export default function SessionDetailView({ PC, data, set, navTo, sessionsArr, a
           </div>
         );
       })()}
+      </div>
 
+      {orderBox(1,"treatment",
       <div style={{marginBottom:14}}>
-        <div style={sectionLbl}>Treatment {isNew&&lastSession&&treatmentList.length>0&&<span style={{fontWeight:500,textTransform:"none",color:PC.muted}}>(copied from S{lastSession.sessionNo||sessionNo-1})</span>}</div>
+        <div style={sectionLbl}>Treatment Performed {isNew&&lastSession&&treatmentList.length>0&&<span style={{fontWeight:500,textTransform:"none",color:PC.muted}}>(copied from S{lastSession.sessionNo||sessionNo-1})</span>}</div>
+        <div style={{border:`1px solid ${PC.border}`,borderRadius:14,overflow:"hidden",background:PC.surface,marginBottom:8}}>
+          {txOptions.filter(o=>o!=="Other").map(name=>{
+            const on = !!treatmentList.find(t=>t.name===name);
+            return (
+              <div key={name} role="checkbox" aria-checked={on} tabIndex={0}
+                onClick={()=>setTreatmentList(l=>on?l.filter(t=>t.name!==name):[...l,{id:Math.random().toString(36).slice(2,9),name,detail:""}])}
+                onKeyDown={e=>{if(e.key===" "||e.key==="Enter"){e.preventDefault();e.currentTarget.click();}}}
+                style={{display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderBottom:`1px solid ${PC.border}`,cursor:"pointer",minHeight:44}}>
+                <span style={{width:24,height:24,borderRadius:7,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",background:on?"#16A34A":"transparent",border:on?"none":`1.5px solid ${PC.border}`,color:"#fff",fontSize:"0.9rem",fontWeight:800}}>{on?"✓":""}</span>
+                <span style={{flex:1,fontSize:"0.9rem",color:PC.text}}>{name}</span>
+              </div>
+            );
+          })}
+        </div>
         <EditableItemList PC={PC} items={treatmentList}
           onAdd={(it)=>setTreatmentList(l=>[...l,{id:Math.random().toString(36).slice(2,9),...it}])}
           onEdit={(id,patch)=>setTreatmentList(l=>l.map(t=>t.id===id?{...t,...patch}:t))}
           onRemove={(id)=>setTreatmentList(l=>l.filter(t=>t.id!==id))}
-          addLabel="＋ Add treatment" quickOptions={txOptions}/>
-      </div>
+          addLabel="＋ Add treatment / add a note on one" quickOptions={[]}/>
+      </div>)}
 
+      {orderBox(2,"treatment",
       <div style={{marginBottom:14}}>
         <div style={sectionLbl}>Modalities</div>
         <EditableItemList PC={PC} items={modalities}
@@ -217,13 +333,17 @@ export default function SessionDetailView({ PC, data, set, navTo, sessionsArr, a
           onEdit={(id,patch)=>setModalities(l=>l.map(m=>m.id===id?{...m,...patch}:m))}
           onRemove={(id)=>setModalities(l=>l.filter(m=>m.id!==id))}
           addLabel="＋ Add modality" quickOptions={modalityOptions}/>
-      </div>
+      </div>)}
 
-      <div style={{marginBottom:10}}><label style={lbl}>Quick note</label><input style={inp} placeholder="e.g. Good improvement, less pain on movement" value={qv.response} onChange={e=>setQv(p=>({...p,response:e.target.value}))}/></div>
-      <div style={{marginBottom:14}}><label style={lbl}>Plan for next session</label><input style={inp} placeholder="e.g. Progress to single-leg squat" value={qv.next_plan} onChange={e=>setQv(p=>({...p,next_plan:e.target.value}))}/></div>
+      {orderBox(3,"treatment",
+      <div style={{marginBottom:10}}><label style={lbl}>Session Notes</label><textarea style={{...inp,minHeight:84,resize:"vertical"}} placeholder="Add treatment notes, patient response, changes, etc." value={qv.response} onChange={e=>setQv(p=>({...p,response:e.target.value}))}/></div>)}
+      {orderBox(4,"notes",
+      <div style={{marginBottom:14}}><label style={lbl}>Plan for next session</label><input style={inp} placeholder="e.g. Progress to single-leg squat" value={qv.next_plan} onChange={e=>setQv(p=>({...p,next_plan:e.target.value}))}/></div>)}
 
+      {orderBox(6,"exercises",
+<div>
       <div style={{marginBottom:14}}>
-        <div style={sectionLbl}>Exercises {isNew&&prog.length>0&&<span style={{fontWeight:600,textTransform:"none"}}>· v{parseInt(data.hep_version)||1} · {prog.length} exercise{prog.length!==1?"s":""}</span>}</div>
+        <div style={sectionLbl}>Exercises / Home Program {isNew&&prog.length>0&&<span style={{fontWeight:600,textTransform:"none"}}>· v{parseInt(data.hep_version)||1} · {prog.length} exercise{prog.length!==1?"s":""}</span>}</div>
 
         {isNew?(<>
           {prog.length===0&&(
@@ -371,16 +491,140 @@ export default function SessionDetailView({ PC, data, set, navTo, sessionsArr, a
         ))}
         <div onClick={()=>navTo("treatment")} style={{padding:"9px",border:`1.5px dashed ${PC.accent}50`,borderRadius:9,textAlign:"center",fontSize:"0.82rem",fontWeight:700,color:PC.accent,cursor:"pointer"}}>＋ Add / edit in Exercise Prescription →</div>
       </div>
+</div>)}
+      </div>
 
-      <button onClick={isNew?saveNew:updatePast} style={{width:"100%",padding:"13px",borderRadius:12,border:"none",background:"#0F6E56",color:"#fff",fontWeight:800,fontSize:"0.85rem",cursor:"pointer",marginBottom:8}}>
-        {saved?(isNew?"✅ Session saved":"✅ Session updated"):(isNew?"Save session":"Update session")}
-      </button>
-      {isNew&&(
-        <div style={{display:"flex",gap:8}}>
+      {tab==="progress"&&(
+        <div style={card}>
+          <div style={sectionLbl}>Previous sessions</div>
+          {done.length===0&&<div style={{fontSize:"0.82rem",color:PC.muted}}>No completed sessions yet.</div>}
+          {done.slice(0,8).map((x,i)=>{ const pl=painLine(x); return (
+            <div key={x.id||i} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",fontSize:"0.85rem",borderTop:i?`1px solid ${PC.border}`:"none"}}>
+              <span style={{color:PC.text}}>Session {x.sessionNo||done.length-i} · <span style={{color:PC.muted}}>{shortDate(x.completedAt||x.savedAt,x.date||"")}</span></span>
+              <strong>{pl?`${pl.a}→${pl.b}/10`:"–"}</strong>
+            </div>); })}
+        </div>
+      )}
+      {isNew&&tab==="exercises"&&(
+        <div style={{display:"flex",gap:8,marginBottom:10}}>
           <button onClick={()=>sendHepWhatsApp(data)} style={{flex:1,padding:"10px",borderRadius:9,border:`1px solid ${PC.a3}40`,background:`${PC.a3}10`,color:PC.a3,fontWeight:800,fontSize:"0.82rem",cursor:"pointer"}}>📲 Send protocol — WhatsApp</button>
           <button onClick={()=>downloadHepPdf(data)} style={{flex:1,padding:"10px",borderRadius:9,border:`1px solid ${PC.a2}40`,background:`${PC.a2}10`,color:PC.a2,fontWeight:800,fontSize:"0.82rem",cursor:"pointer"}}>📄 PDF handout</button>
         </div>
       )}
+      <div style={{position:"sticky",bottom:0,zIndex:5,background:PC.bg||"#fff",padding:"10px 0 calc(10px + env(safe-area-inset-bottom))",borderTop:`1px solid ${PC.border}`}}>
+        {error&&<div role="alert" style={{fontSize:"0.8rem",color:"#dc2626",fontWeight:700,marginBottom:8}}>{error}</div>}
+        {isNew?(
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={saveDraft} style={{flex:1,padding:"14px 8px",borderRadius:12,border:"none",background:"#EDE9FE",color:"#6D28D9",fontWeight:800,fontSize:"0.88rem",cursor:"pointer"}}>
+              {draftSaved?"✓ Draft saved":"Save Draft"}
+            </button>
+            <button onClick={completeSession} style={{flex:1.6,padding:"14px 8px",borderRadius:12,border:"none",background:"#6D28D9",color:"#fff",fontWeight:800,fontSize:"0.88rem",cursor:"pointer"}}>
+              ✓ Complete Session →
+            </button>
+          </div>
+        ):(
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={()=>setMode("summary")} style={{flex:1,padding:"14px 8px",borderRadius:12,border:"none",background:"#EDE9FE",color:"#6D28D9",fontWeight:800,fontSize:"0.88rem",cursor:"pointer"}}>Cancel</button>
+            <button onClick={updatePast} style={{flex:1.6,padding:"14px 8px",borderRadius:12,border:"none",background:"#6D28D9",color:"#fff",fontWeight:800,fontSize:"0.88rem",cursor:"pointer"}}>{saved?"✅ Session updated":"Update session"}</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Small pieces used by the session screens ────────────────────────────────
+const fmtDay = (e) => longDate(e.completedAt||e.savedAt, e.date||"");
+const painLine = (e) => {
+  const a=parseFloat(e.vasStart), b=parseFloat(e.vasEnd!==undefined&&e.vasEnd!==""?e.vasEnd:e.vasStart);
+  return isNaN(a) ? null : {a, b: isNaN(b)?a:b};
+};
+const entryTreatments = (e) => [
+  ...(Array.isArray(e.treatment)?e.treatment:legacyTreatmentToList(e.treatmentGiven)),
+  ...(Array.isArray(e.modalities)?e.modalities:[]),
+];
+
+function PainStepper({ PC, label, value, onChange, highlight }) {
+  const n = parseFloat(value);
+  const has = !isNaN(n);
+  const step = (d) => onChange(String(Math.max(0, Math.min(10, (has?n:0)+d))));
+  const btn = {width:44,height:44,borderRadius:12,border:`1px solid ${PC.border}`,background:PC.s2,color:PC.text,fontSize:"1.2rem",fontWeight:800,cursor:"pointer",fontFamily:"inherit"};
+  return (
+    <div style={{flex:"1 1 130px"}}>
+      <div style={{fontSize:"0.8rem",fontWeight:700,color:PC.muted,marginBottom:4}}>{label}</div>
+      <div style={{display:"flex",alignItems:"center",gap:6}}>
+        <button type="button" aria-label={`${label} pain minus`} onClick={()=>step(-1)} style={btn}>−</button>
+        <div aria-label={`${label} pain`} style={{minWidth:54,height:44,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:"1.15rem",
+          border:`1.5px solid ${highlight?highlight.border:PC.border}`,background:highlight?highlight.bg:PC.surface,color:highlight?highlight.col:PC.text}}>
+          {has?n:"–"}<span style={{fontSize:"0.72rem",color:PC.muted,marginLeft:2}}>/10</span>
+        </div>
+        <button type="button" aria-label={`${label} pain plus`} onClick={()=>step(1)} style={btn}>+</button>
+      </div>
+    </div>
+  );
+}
+
+function PrimaryBtn({ children, onClick, ghost }) {
+  return <button type="button" onClick={onClick} style={{width:"100%",padding:"14px",borderRadius:12,border:"none",background:ghost?"#EDE9FE":"#6D28D9",color:ghost?"#6D28D9":"#fff",fontWeight:800,fontSize:"0.9rem",cursor:"pointer",marginBottom:8}}>{children}</button>;
+}
+
+// Shown right after Complete Session.
+function SessionCompleted({ PC, entry, patientName, onSummary, onNext, onBack }) {
+  const pain = painLine(entry);
+  return (
+    <div style={{textAlign:"center",padding:"18px 4px"}}>
+      <div style={{width:64,height:64,borderRadius:"50%",background:"#DCFCE7",color:"#16A34A",fontSize:"2rem",fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px"}}>✓</div>
+      <div style={{fontSize:"1.2rem",fontWeight:800,color:"#16A34A"}}>Session Completed</div>
+      <div style={{marginTop:10,fontWeight:800,color:PC.text}}>{patientName}</div>
+      <div style={{color:PC.muted,fontSize:"0.85rem"}}>Session {entry.sessionNo}</div>
+      {pain&&<div style={{margin:"12px 0",fontSize:"0.9rem",color:PC.text}}>Pain <strong>{pain.a}/10 → {pain.b}/10</strong></div>}
+      <div style={{color:PC.muted,fontSize:"0.82rem",marginBottom:18}}>Treatment recorded successfully.</div>
+      <PrimaryBtn onClick={onSummary}>View Summary</PrimaryBtn>
+      {onNext&&<PrimaryBtn ghost onClick={onNext}>Start Next Session</PrimaryBtn>}
+      <div onClick={onBack} style={{cursor:"pointer",color:PC.muted,fontSize:"0.82rem",padding:8}}>Back to session history</div>
+    </div>
+  );
+}
+
+// Read-only view of one completed session.
+function SessionSummary({ PC, entry, patientName, condition, onEdit, onHistory, onNext }) {
+  const pain = painLine(entry);
+  const items = entryTreatments(entry);
+  const home = Array.isArray(entry.exercises)?entry.exercises:[];
+  const note = entry.quickNote||entry.response||"";
+  const card = {background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:14,padding:"12px 14px",marginBottom:12};
+  const h = {fontSize:"0.82rem",fontWeight:800,color:PC.text,textTransform:"uppercase",letterSpacing:"0.7px",marginBottom:6};
+  return (
+    <div>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+        <span onClick={onHistory} style={{cursor:"pointer",fontSize:"1.1rem",color:PC.muted,padding:"4px 6px"}} title="Back to history">←</span>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontWeight:800,color:PC.text}}>{patientName}</div>
+          {condition&&<div style={{fontSize:"0.78rem",color:PC.muted}}>{condition}</div>}
+        </div>
+        <span style={{fontSize:"0.75rem",fontWeight:800,padding:"4px 10px",borderRadius:99,background:"#DCFCE7",color:"#16A34A"}}>Completed</span>
+      </div>
+      <div style={card}>
+        <div style={{fontWeight:800,color:PC.text}}>Session {entry.sessionNo}</div>
+        <div style={{fontSize:"0.82rem",color:PC.muted}}>{fmtDay(entry)}</div>
+        {pain&&<div style={{marginTop:8,fontSize:"0.9rem"}}>Pain <strong>{pain.a}/10 → {pain.b}/10</strong></div>}
+      </div>
+      <div style={card}>
+        <div style={h}>Treatment Performed</div>
+        {items.length===0&&<div style={{fontSize:"0.8rem",color:PC.muted}}>None recorded.</div>}
+        {items.map((t,i)=><div key={t.id||i} style={{fontSize:"0.86rem",color:PC.text,padding:"3px 0"}}><span style={{color:"#16A34A",fontWeight:800}}>✓ </span>{t.name}{t.detail?<span style={{color:PC.muted}}> — {t.detail}</span>:null}</div>)}
+      </div>
+      {note&&<div style={card}><div style={h}>Patient Response</div><div style={{fontSize:"0.86rem",color:PC.text,whiteSpace:"pre-wrap"}}>{note}</div></div>}
+      {entry.nextPlan&&<div style={card}><div style={h}>Plan for Next Session</div><div style={{fontSize:"0.86rem",color:PC.text}}>{entry.nextPlan}</div></div>}
+      {home.length>0&&(
+        <div style={card}>
+          <div style={h}>Home Program</div>
+          {home.map((e,i)=><div key={e.id||i} style={{padding:"3px 0",fontSize:"0.86rem",color:PC.text}}>{e.name}{e.detail?<span style={{color:PC.muted}}> · {e.detail}</span>:null}</div>)}
+        </div>
+      )}
+      <PrimaryBtn ghost onClick={onHistory}>View History</PrimaryBtn>
+      {onNext&&<PrimaryBtn onClick={onNext}>Start Next Session</PrimaryBtn>}
+      <div onClick={onEdit} style={{cursor:"pointer",color:PC.muted,fontSize:"0.8rem",textAlign:"center",padding:8}}>Edit this session</div>
     </div>
   );
 }

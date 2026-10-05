@@ -1,5 +1,6 @@
 // ClinicalModules.jsx — Gait, Outcomes, SOAP, Exercise, Palpation, Treatment, SessionLog
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { completedSessions, nextSessionNo } from "./txSessions.js";
 import { C, getC } from "./utils.jsx";
 import { DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, CRANIAL_NERVES, COORDINATION_TESTS, VESTIBULAR_TESTS, PERCEPTUAL_TESTS } from "./sharedClinicalData.js";
 import neuroStream from "./streams/neuro.js";
@@ -1806,7 +1807,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   }
 
   // Session treatment log
-  const txSessArr = Array.isArray(data.tx_sessions) ? data.tx_sessions : [];
+  const txSessArr = completedSessions(data.tx_sessions);
   const latestSess = txSessArr[0];
   if (latestSess?.treatmentGiven) {
     O_parts.push(`Treatment Given (Session ${latestSess.sessionNo||""}${latestSess.date?` — ${latestSess.date}`:""}): ${latestSess.treatmentGiven}.`);
@@ -3077,7 +3078,7 @@ function ExercisePrescriptionModule({ data, set }) {
   // Sync every programme change back into shared patient data
   const syncProgramme = (next) => { if(set) set("tx_exercise_prescription", next); };
 
-  const _hepSession = () => (Array.isArray(data?.tx_sessions)?data.tx_sessions.length:0)+1;
+  const _hepSession = () => nextSessionNo(data?.tx_sessions);
   const _hepLog = (change) => { if(!set) return; const log=Array.isArray(data?.hep_log)?data.hep_log:[]; set("hep_log",[{session:_hepSession(),date:new Date().toLocaleDateString("en-GB"),changes:[change],version:parseInt(data?.hep_version)||1},...log]); };
   const addEx = (ex) => { if(programme.find(p=>p.id===ex.id)) return; syncProgramme([...programme,{...ex,customSets:ex.sets,customReps:ex.reps,customHold:ex.hold,customFreq:ex.freq,notes:"",addedSession:_hepSession(),addedDate:new Date().toISOString()}]); _hepLog(`＋ ${ex.name}`); };
 

@@ -1,4 +1,5 @@
 import { fileToDoc, docTypeOf, withDocType, DOC_TYPES, DOC_ACCEPT } from "./MedicalRecords.jsx";
+import { completedSessions, carePlanOf } from "./txSessions.js";
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { NeuroCarePlanSection, CarePlanSection, doseLine } from "./NeuroCarePlan.jsx";
 import { CardioCarePlanSection } from "./CardioCarePlan.jsx";
@@ -281,7 +282,7 @@ function carePlanCounts(cp) {
   const problems = Array.isArray(cp.problems) ? cp.problems : [];
   const goals = Array.isArray(cp.goals) ? cp.goals : [];
   const treatments = Array.isArray(cp.treatments) ? cp.treatments : [];
-  const sessions = Array.isArray(cp.sessions) ? cp.sessions : [];
+  const sessions = (Array.isArray(cp.sessions) ? cp.sessions : []).filter((x) => x?.status !== "draft");
   const pcts = goals
     .map((gl) => {
       const entries = sessions.map((s) => ({ value: parseFloat(s.measures?.[gl.id]) })).filter((e) => Number.isFinite(e.value));
@@ -660,7 +661,7 @@ function ClinicalPlanPage({ patient, onSaveField, isNeuro, orthoPathway, orthoPa
   const problems = Array.isArray(cp.problems) ? cp.problems : [];
   const goals = Array.isArray(cp.goals) ? cp.goals : [];
   const treatments = Array.isArray(cp.treatments) ? cp.treatments : [];
-  const sessions = Array.isArray(cp.sessions) ? cp.sessions : [];
+  const sessions = (Array.isArray(cp.sessions) ? cp.sessions : []).filter((x) => x?.status !== "draft");
   const counts = carePlanCounts(cp);
   const planNumber = history.length + 1;
   const planLabel = `Plan ${planNumber}${cp.planLabel ? ` — ${cp.planLabel}` : ""}`;
@@ -770,6 +771,36 @@ function ClinicalPlanPage({ patient, onSaveField, isNeuro, orthoPathway, orthoPa
   );
 }
 
+// The care plan's Sessions / Progress screens on their own -- used by Clinical > Treatment so that
+// "Start Session" opens the session editor right there instead of the whole patient profile.
+export function TreatmentSessionScreen({ patient, onSaveField, onBack }) {
+  const d = patient?.data || {};
+  const cp = carePlanOf(d);
+  const orthoPathway = d.ortho_ipd_assessment ? "ipd" : d.ortho_postop_assessment ? "postop" : d.ortho_outpatient_assessment ? "outpatient" : null;
+  const orthoParsed = (() => {
+    try {
+      const raw = orthoPathway === "ipd" ? d.ortho_ipd_assessment : orthoPathway === "postop" ? d.ortho_postop_assessment : orthoPathway === "outpatient" ? d.ortho_outpatient_assessment : null;
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  })();
+  const phases = ["sessions", "progress"];
+  const name = d.dem_name || patient?.name || "Patient";
+  return (
+    <div style={{ padding: "14px 16px 24px", background: "#fff" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+        <button type="button" onClick={onBack} aria-label="Back to Treatment" style={{ width: 40, height: 40, borderRadius: 12, border: "none", background: "#EDE9FE", color: "#6D28D9", fontSize: 18, fontWeight: 800, cursor: "pointer" }}>←</button>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontWeight: 800, fontSize: 16, color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</div>
+          {d.cc_main && <div style={{ fontSize: 12, color: "#6B7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.cc_main}</div>}
+        </div>
+      </div>
+      {cp?.kind === "neuro" && <NeuroCarePlanPanel key={"t-n-" + patient.id} patient={patient} onSaveField={onSaveField} initialPhase="sessions" restrictPhases={phases} />}
+      {cp?.kind === "ortho" && <OrthoCarePlanPanel key={"t-o-" + patient.id} patient={patient} onSaveField={onSaveField} orthoPathway={orthoPathway} orthoParsed={orthoParsed} initialPhase="sessions" restrictPhases={phases} />}
+      {cp?.kind === "cardio" && <CardioCarePlanPanel key={"t-c-" + patient.id} patient={patient} onSaveField={onSaveField} initialPhase="sessions" restrictPhases={phases} />}
+    </div>
+  );
+}
+
 export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSaveField, onOpenPosture, initialTab, onGeneratePdf, showPosture = false }) {
   // initialTab (2026-09-02): lets a caller open straight onto a specific
   // tab (e.g. the Treatment caseload list's own "Profile" button used to
@@ -864,8 +895,9 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
 
   // Same generic, specialty-agnostic fields the Ortho PatientProfileModal
   // reads -- not Ortho-namespaced, so real when present regardless of specialty.
-  const sessions = Array.isArray(d.tx_sessions) ? d.tx_sessions : [];
-  const sessionsDesc = sessions.slice().reverse(); // newest first, matches tx_sessions convention used elsewhere
+  const sessions = completedSessions(d.tx_sessions);
+  // Newest first by session number (drafts are not history yet).
+  const sessionsDesc = sessions.slice().sort((a, b) => (b.sessionNo || 0) - (a.sessionNo || 0));
   const plannedSessions = parseInt(d.tx_plan_sessions || d.plan_sessions || "0") || 0;
   const sessPct = plannedSessions > 0 ? Math.min(100, Math.round((sessions.length / plannedSessions) * 100)) : 0;
   const lastSession = sessionsDesc[0];

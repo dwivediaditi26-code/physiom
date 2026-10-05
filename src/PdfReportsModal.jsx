@@ -5,6 +5,7 @@
 // loads this file on demand.
 
 import { useEffect } from "react";
+import { completedSessions } from "./txSessions.js";
 import { injectViewerControls } from "./sharedClinicalData.js";
 // buildRealtimeSOAP is the single, verified-correct source for real
 // Subjective/Objective field names (ROM_DERIVED, dynamic mmt_*/st_* scans,
@@ -685,7 +686,7 @@ export default function PdfReportsModal({ data, dx, onClose, currentUser }) {
   const buildTreatmentPageHtml = (pageLabel, closingHtml = "", compactHeader = false) => {
     const exercises = gatherExercises();
     const techniques = gatherTechniques();
-    const sessions = Array.isArray(d.tx_sessions) ? [...d.tx_sessions] : [];
+    const sessions = completedSessions(d.tx_sessions);
     const groupedExercises = exercises.reduce((acc, ex) => { const p = ex.phase || "Phase 1"; if(!acc[p]) acc[p]=[]; acc[p].push(ex); return acc; }, {});
 
     const vasBaseline = sessions.length>0 ? (parseFloat(sessions[sessions.length-1].vasStart)||0) : (parseFloat(d.pa_vas_now||d.cc_vas_now)||0);

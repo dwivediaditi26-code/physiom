@@ -105,8 +105,11 @@ describe("Sessions — list view, structured modalities/treatment, past-session 
     expect(screen.getByText(/Session 2/)).toBeTruthy();
     expect(screen.getByText(/Session 1/)).toBeTruthy();
     fireEvent.click(screen.getByText(/Session 2/));
-    expect(screen.getByDisplayValue("7")).toBeTruthy();
-    expect(screen.getByDisplayValue("4")).toBeTruthy();
+    // a completed session opens as a read-only summary; Edit reveals the form
+    expect(screen.getByText(/7\/10 → 4\/10/)).toBeTruthy();
+    fireEvent.click(screen.getByText("Edit this session"));
+    expect(screen.getByLabelText("Before pain").textContent).toContain("7");
+    expect(screen.getByLabelText("After pain").textContent).toContain("4");
   });
 
   it("adding a modality on a new session includes it in the saved tx_sessions entry", () => {
@@ -114,7 +117,8 @@ describe("Sessions — list view, structured modalities/treatment, past-session 
     render(<QuickVisitForm PC={PC} data={{}} set={setMock} navTo={() => {}} />);
     fireEvent.click(screen.getByText("＋ New session"));
     fireEvent.click(screen.getByText(/＋ IFT/));
-    fireEvent.click(screen.getByText("Save session"));
+    fireEvent.click(screen.getByLabelText("After pain plus"));
+    fireEvent.click(screen.getByText(/Complete Session/));
     expect(setMock).toHaveBeenCalledWith("tx_sessions", expect.arrayContaining([
       expect.objectContaining({ modalities: expect.arrayContaining([expect.objectContaining({ name: "IFT" })]) }),
     ]));
@@ -127,6 +131,7 @@ describe("Sessions — list view, structured modalities/treatment, past-session 
     const setMock = vi.fn();
     render(<QuickVisitForm PC={PC} data={{ tx_sessions: sessions }} set={setMock} navTo={() => {}} />);
     fireEvent.click(screen.getByText(/Session 1/));
+    fireEvent.click(screen.getByText("Edit this session"));
     fireEvent.click(screen.getByTitle("Remove"));
     fireEvent.click(screen.getByText("Update session"));
     expect(setMock).toHaveBeenCalledWith("tx_sessions", [
