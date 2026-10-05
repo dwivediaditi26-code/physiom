@@ -22,7 +22,7 @@ const COOLDOWN_MS = 5000;
 // Maps what send-push answered to a stage + a sentence a physio can act on.
 export function describeSendPush({ status, json, text }) {
   if (status === 404) return { ok: false, stage: 'function_missing', message: "The notification service (send-push) is not deployed on the server. It needs to be deployed in Supabase." };
-  if (status === 401 || status === 403) return { ok: false, stage: 'function_rejected', message: "The notification service refused the server's key. The SUPABASE_SERVICE_ROLE_KEY on Vercel must be the project's service_role key (the long one starting with eyJ), the same project as the app." };
+  if (status === 401 || status === 403) return { ok: false, stage: 'function_rejected', message: "The notification service refused the server's key. Fix: in Supabase run \"supabase functions deploy send-push --no-verify-jwt\" (this version accepts the newer sb_secret_ key). Or put the older long service_role key (starting eyJ, under Legacy API keys) into SUPABASE_SERVICE_ROLE_KEY on Vercel and redeploy." };
   if (status >= 500) return { ok: false, stage: 'function_error', message: `The notification service crashed${text ? ` (${text.slice(0, 160)})` : ''}. Usually the push keys (VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY) are missing or do not match the app's key.` };
   if (status !== 200) return { ok: false, stage: 'function_error', message: `The notification service answered ${status}${text ? `: ${text.slice(0, 160)}` : ''}.` };
   const sent = Number(json?.sent) || 0;
@@ -63,7 +63,7 @@ export default async function handler(req, res) {
   try {
     const r = await fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_ROLE_KEY}` },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_ROLE_KEY}`, apikey: SERVICE_ROLE_KEY },
       body: JSON.stringify({ user_id: userId, title: 'PhysioMind test', body: 'Notifications are working on this phone.', url: '/' }),
       signal: AbortSignal.timeout(15000),
     });

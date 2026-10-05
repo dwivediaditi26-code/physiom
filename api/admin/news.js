@@ -163,7 +163,7 @@ async function publish(req, res, admin) {
     try {
       const push = await fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_ROLE_KEY}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_ROLE_KEY}`, apikey: SERVICE_ROLE_KEY },
         body: JSON.stringify({ broadcast: true, title: title.slice(0, 80), body: source_name, url: '/news' }),
         signal: AbortSignal.timeout(10000),
       });
