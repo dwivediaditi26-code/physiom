@@ -75,7 +75,7 @@ export default function SpecialTestDetail({ test, regionLabel, regionTests, onBa
         {tab === "Quiz" && <QuizTab key={test.id} quiz={quiz} onReview={() => setTab("Learn")}/>}
       </div>
 
-      {nextTest && <NextButton label={`Next test: ${nextTest.label}`} onClick={() => onNext(nextTest)} theme="sky"/>}
+      {nextTest && tab !== "Quiz" && <NextButton label={`Next test: ${nextTest.label}`} onClick={() => onNext(nextTest)} theme="sky"/>}
     </div>
   );
 }

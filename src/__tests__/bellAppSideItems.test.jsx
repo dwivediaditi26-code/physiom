@@ -62,7 +62,9 @@ describe("bell: connection requests", () => {
 });
 
 describe("bell: new in News", () => {
-  const news = (n) => ({ id: `n${n}`, title: `Item ${n}`, created_at: ago(n * 3_600_000) });
+  // fixed timestamps: the same item must keep the same created_at across calls
+  const base = Date.now();
+  const news = (n) => ({ id: `n${n}`, title: `Item ${n}`, created_at: new Date(base - n * 3_600_000).toISOString() });
 
   it("shows one entry for what was added in the last 3 days", async () => {
     setTable("notifications", { data: [], error: null });

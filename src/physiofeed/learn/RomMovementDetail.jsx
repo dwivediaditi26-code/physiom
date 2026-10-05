@@ -71,7 +71,7 @@ export default function RomMovementDetail({ movement: m, region, list, onBack, o
         {tab === "Quiz" && <QuizTab key={m.id} quiz={quiz} onReview={() => setTab("Learn")}/>}
       </div>
 
-      {next && <NextButton label={`Next movement: ${next.mv}`} onClick={() => onNext(next)} theme="violet"/>}
+      {next && tab !== "Quiz" && <NextButton label={`Next movement: ${next.mv}`} onClick={() => onNext(next)} theme="violet"/>}
     </div>
   );
 }

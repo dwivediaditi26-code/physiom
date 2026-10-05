@@ -83,7 +83,7 @@ export default function MmtMuscleDetail({ muscle: m, region, list, allMuscles, o
         {tab === "Quiz" && <QuizTab key={m.id} quiz={quiz} onReview={() => setTab("Learn")}/>}
       </div>
 
-      {next && <NextButton label={`Next muscle: ${next.muscle}`} onClick={() => onNext(next)} theme="orange"/>}
+      {next && tab !== "Quiz" && <NextButton label={`Next muscle: ${next.muscle}`} onClick={() => onNext(next)} theme="orange"/>}
     </div>
   );
 }
