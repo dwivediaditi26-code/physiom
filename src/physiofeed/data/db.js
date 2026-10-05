@@ -2684,10 +2684,24 @@ export async function getApplicantsForOpportunity(oppId) {
     const rows = data || [];
     if (!rows.length) return [];
     trackEvent("candidate_viewed", { entityType: "opportunity", entityId: oppId, properties: { applicantCount: rows.length } });
-    const { data: profiles } = await supabase.from("profiles").select("*").in("id", rows.map((r) => r.applicant_id));
+    const ids = [...new Set(rows.map((r) => r.applicant_id))];
+    const { data: profiles } = await supabase.from("profiles").select("*").in("id", ids);
     const byId = Object.fromEntries((profiles || []).map((p) => [p.id, p]));
+    // What the recruiter sees of each applicant: current role + experience, education and
+    // certifications, read the same public way a profile visit reads them (one query per table).
+    const groupBy = (list) => (list || []).reduce((m, r) => { (m[r.user_id] ||= []).push(r); return m; }, {});
+    const safe = async (q) => { try { const { data, error } = await q; return error ? [] : data || []; } catch { return []; } };
+    const [rot, edu, ach] = await Promise.all([
+      safe(supabase.from("rotations").select("id, user_id, department, duration").in("user_id", ids).order("created_at", { ascending: true })),
+      safe(supabase.from("education_entries").select("id, user_id, title, subtitle, month, year").in("user_id", ids).order("created_at", { ascending: true })),
+      safe(supabase.from("achievements").select("id, user_id, title, subtitle, issuer, month, year, credential_id").in("user_id", ids).order("created_at", { ascending: true })),
+    ]);
+    const rotBy = groupBy(rot), eduBy = groupBy(edu), achBy = groupBy(ach);
     return rows.map((a) => {
       const p = byId[a.applicant_id];
+      const mine = rotBy[a.applicant_id] || [];
+      const CUR = "@current|";
+      const split = (r) => { const [t, o] = String(r.department || "").replace(CUR, "").split(" — "); return { id: r.id, title: o ? t.trim() : "", organization: o ? o.trim() : String(r.department || "").replace(CUR, "").trim(), range: r.duration || "" }; };
       return {
         id: String(a.id),
         userId: a.applicant_id,
@@ -2703,6 +2717,18 @@ export async function getApplicantsForOpportunity(oppId) {
         coverNote: a.cover_note,
         note: a.cover_note || "",
         resumeUrl: a.resume_url || p?.resume_url || "",
+        resumeName: p?.resume_name || "",
+        // Profile snapshot for the recruiter (the applicant's profile as it stands now).
+        bio: p?.bio || "",
+        college: p?.college || "",
+        yearsExperience: p?.experience || "",
+        languages: p?.languages || "",
+        areaOfPractice: p?.area_of_practice || [],
+        clinicalInterests: p?.clinical_interests || [],
+        currentRole: (() => { const c = mine.find((r) => String(r.department || "").startsWith(CUR)); return c ? split(c) : null; })(),
+        experienceList: mine.filter((r) => !String(r.department || "").startsWith(CUR)).map(split),
+        educationList: (eduBy[a.applicant_id] || []).map((e) => ({ id: e.id, title: e.title, subtitle: e.subtitle, when: [String(e.month || "").slice(0, 3), e.year].filter(Boolean).join(" ") })),
+        certificationList: (achBy[a.applicant_id] || []).map((c) => ({ id: c.id, title: c.title, issuer: c.issuer || "", when: [c.month, c.year].filter(Boolean).join(" "), credentialId: c.credential_id || "" })),
         status: APP_STATUS_TO_UI[a.status] || "new",
         rawStatus: a.status,
         appliedAgo: agoLabel(a.created_at),

@@ -71,6 +71,7 @@ export default function ApplyOpportunityModal({ opp, onClose, onApplied }) {
           <p className="text-xs text-slate-500 mb-4">{opp.orgShort || opp.org}{opp.location ? ` · ${opp.location}` : ""}</p>
 
           <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400 mb-2">Your attached profile snapshot</p>
+          <p className="text-xs text-slate-500 mb-2">The poster will see your profile (current role, experience, education, certifications){profile?.resumeUrl ? " and your CV" : ""}. {profile?.resumeUrl ? "" : "Upload a CV in Profile → Clinical profile & CV to include one."}</p>
           <div className="flex items-center gap-3 bg-slate-50 rounded-xl px-3.5 py-3 mb-4">
             <Avatar size={40} grad={profile?.gradient} initials={profile?.initials} photoUrl={profile?.avatarUrl} />
             <div className="min-w-0">
