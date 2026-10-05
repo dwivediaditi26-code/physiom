@@ -6,7 +6,7 @@ import { describe, it, expect, beforeAll } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { preloadSessionDetailView, QuickVisitForm } from "../AppModules.jsx";
 import { TreatmentCaseloadPanel } from "../PatientDatabase.jsx";
-import { completedSessions, nextSessionNo, findDraftSession } from "../txSessions.js";
+import { completedSessions, nextSessionNo, findDraftSession, sessionsRemovedPatch } from "../txSessions.js";
 
 beforeAll(async () => { await preloadSessionDetailView(); });
 
@@ -170,5 +170,55 @@ describe("Treatment page", () => {
     expect(screen.queryByText(/active treatment yet/)).toBeNull();
     fireEvent.click(screen.getByText("View Patients"));
     expect(went).toBe(true);
+  });
+});
+
+describe("deleting sessions asks first", () => {
+  const sess = [
+    { id: "a", no: 1, date: "2026-10-01", status: "completed", painBefore: "6", painAfter: "4" },
+    { id: "b", no: 2, date: "2026-10-03", status: "completed", painBefore: "5", painAfter: "3" },
+    { id: "c", no: 3, date: "2026-10-05", status: "draft" },
+  ];
+  const patient = { id: "p", name: "Alka jain", data: { cc_main: "Plantar fasciitis", ortho_care_plan: { sessions: sess } } };
+
+  it("Delete all sessions: nothing is deleted until the sheet's Delete is pressed; Cancel keeps everything", () => {
+    const calls = [];
+    render(<TreatmentCaseloadPanel patients={[patient]} onStart={() => {}} onDeleteSessions={(p, id) => calls.push([p.name, id])} />);
+    fireEvent.click(screen.getByLabelText("More options"));
+    fireEvent.click(screen.getByText("Delete all sessions…"));
+    expect(screen.getByRole("dialog").textContent).toMatch(/Delete all sessions\?/);
+    expect(screen.getByRole("dialog").textContent).toMatch(/cannot be undone/);
+    expect(calls).toHaveLength(0);
+    fireEvent.click(screen.getByText("Cancel"));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(calls).toHaveLength(0);
+
+    fireEvent.click(screen.getByLabelText("More options"));
+    fireEvent.click(screen.getByText("Delete all sessions…"));
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    expect(calls).toEqual([["Alka jain", null]]);
+  });
+
+  it("a draft can be discarded, and one completed session can be deleted from the Completed tab", () => {
+    const calls = [];
+    render(<TreatmentCaseloadPanel patients={[patient]} onStart={() => {}} onDeleteSessions={(p, id) => calls.push(id)} />);
+    fireEvent.click(screen.getByLabelText("More options"));
+    fireEvent.click(screen.getByText("Discard draft"));
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    expect(calls).toEqual(["c"]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Completed" }));
+    fireEvent.click(screen.getByLabelText("Delete session 1 of Alka jain"));
+    expect(screen.getByRole("dialog").textContent).toMatch(/Delete Session 1\?/);
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    expect(calls).toEqual(["c", "a"]);
+  });
+
+  it("removing one session renumbers the rest so the next number never repeats", () => {
+    const patch = sessionsRemovedPatch(patient.data, "a");
+    const out = patch.ortho_care_plan.sessions;
+    expect(out.map((x) => [x.id, x.no])).toEqual([["b", 1], ["c", 2]]);   // draft follows the last completed
+    expect(sessionsRemovedPatch(patient.data, null).ortho_care_plan.sessions).toEqual([]);
+    expect(sessionsRemovedPatch({ neuro: { x: 1, neuroCarePlan: { sessions: sess } } }, "b").neuro.x).toBe(1);   // other neuro data kept
   });
 });

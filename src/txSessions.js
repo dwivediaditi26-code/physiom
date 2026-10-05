@@ -70,3 +70,22 @@ let _launchAt = 0;
 export const requestSessionLaunch = () => { _launchAt = Date.now(); };
 export const sessionLaunchPending = () => Date.now() - _launchAt < 3000;
 export const clearSessionLaunch = () => { _launchAt = 0; };
+
+// ── Deleting sessions ────────────────────────────────────────────────────────
+// Returns the patient-data patch (for saveProfileField) with one session -- or all of them --
+// removed from the patient's care plan. Remaining completed sessions are renumbered 1..n so the next
+// session number (completed + 1) never collides; a draft that is left becomes n + 1.
+export function sessionsRemovedPatch(data, sessionId /* null = all */) {
+  const d = data || {};
+  const cp = carePlanOf(d);
+  if (!cp) return null;
+  const all = Array.isArray(cp.plan.sessions) ? cp.plan.sessions : [];
+  const kept = sessionId == null ? [] : all.filter((s) => s.id !== sessionId);
+  const done = kept.filter((s) => !isDraftSession(s)).sort((a, b) => (a.no || 0) - (b.no || 0)).map((s, i) => ({ ...s, no: i + 1 }));
+  const drafts = kept.filter(isDraftSession).map((s) => ({ ...s, no: done.length + 1 }));
+  const sessions = [...done, ...drafts];
+  const plan = { ...cp.plan, sessions };
+  if (cp.kind === "neuro") return { neuro: { ...d.neuro, neuroCarePlan: plan } };
+  if (cp.kind === "cardio") return { cardio: { ...d.cardio, cardioCarePlan: plan } };
+  return { ortho_care_plan: plan };
+}

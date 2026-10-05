@@ -1,6 +1,6 @@
 // AppFull.jsx — Posture engine, camera, patient DB, dashboard, AppInner, App
 import { useState, useCallback, useRef, useEffect, useMemo, Suspense, lazy } from "react";
-import { carePlanOf, requestSessionLaunch, patientSessionView } from "./txSessions.js";
+import { carePlanOf, requestSessionLaunch, patientSessionView, sessionsRemovedPatch } from "./txSessions.js";
 import { track } from "@vercel/analytics";
 import { supabase } from "./supabase.js";
 import { trackEvent } from "./analytics/trackEvent.js";
@@ -2357,13 +2357,12 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                                 // isn't touched, they just drop off this caseload
                                 // list; deleting the whole patient is a separate,
                                 // already-existing action on the Patients tab.
-                                onDeleteTreatment={(p)=>{
-                                  setPatients(prev=>{
-                                    const updated = prev.map(x=>x.id===p.id?{...x,data:{...x.data,tx_sessions:[]},updatedAt:new Date().toISOString()}:x);
-                                    savePatientDB(updated, currentUser?.id);
-                                    return updated;
-                                  });
-                                  if (p.id===activePatientId) set("tx_sessions", []);
+                                onDeleteSessions={(p, sessionId)=>{
+                                  // Removes one session (or all) from the patient's care plan; the patient,
+                                  // assessment and the plan itself are untouched. Only runs after the confirm sheet.
+                                  const live = {...p.data, ...(p.id===activePatientId?data:{})};
+                                  const patch = sessionsRemovedPatch(live, sessionId);
+                                  if (patch) saveProfileField(p.id, patch);
                                 }}/>
                             ) : clinicalSubTab==="assessment" ? (
                               <div style={{padding:"22px 18px 24px"}}>

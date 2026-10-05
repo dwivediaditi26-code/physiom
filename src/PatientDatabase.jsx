@@ -1225,13 +1225,14 @@ const innerBody = (
 // Everything is read off patient.data.tx_sessions (newest first; entries with no
 // `status` are older completed sessions, drafts have status "draft"). The session
 // number is never typed -- it is completed sessions + 1 (see txSessions.js).
-function TreatmentCaseloadPanel({ patients=[], onStart, onProfile, onViewPatients, onDeleteTreatment }) {
+function TreatmentCaseloadPanel({ patients=[], onStart, onProfile, onViewPatients, onDeleteSessions }) {
   const C = { primary:"#6D28D9", text:"#111827", muted:"#6B7280", border:"#EDE9FE", soft:"#F5F3FF",
     green:"#16A34A", greenBg:"#DCFCE7", amber:"#B45309", amberBg:"#FEF3C7", red:"#EF4444" };
   const [tab, setTab] = useState("ongoing");
   const [q, setQ] = useState("");
   const [menuId, setMenuId] = useState(null);     // which card's ⋮ menu is open
-  const [confirmId, setConfirmId] = useState(null); // two-tap delete, as before
+  // What is waiting for a yes/no: {patient, sessionId|null, label, count}. Nothing is deleted before the confirm.
+  const [pendingDelete, setPendingDelete] = useState(null);
 
   const now = new Date();
   // Sessions come from the care plan for Neuro/Ortho/Cardio patients, else from tx_sessions.
@@ -1302,7 +1303,10 @@ function TreatmentCaseloadPanel({ patients=[], onStart, onProfile, onViewPatient
                 <div style={{fontWeight:800,color:C.text}}>{patient.name||"Unnamed Patient"}</div>
                 {condition && <div style={{fontSize:"0.78rem",color:C.muted}}>{condition}</div>}
               </div>
-              <span style={{alignSelf:"flex-start",fontSize:"0.72rem",fontWeight:800,padding:"3px 10px",borderRadius:99,background:C.greenBg,color:C.green,whiteSpace:"nowrap"}}>Session {v.noOf(s)||""}</span>
+              <div style={{display:"flex",alignItems:"center",gap:4,alignSelf:"flex-start"}}>
+                <span style={{fontSize:"0.72rem",fontWeight:800,padding:"3px 10px",borderRadius:99,background:C.greenBg,color:C.green,whiteSpace:"nowrap"}}>Session {v.noOf(s)||""}</span>
+                {onDeleteSessions && <button type="button" aria-label={`Delete session ${v.noOf(s)||""} of ${patient.name||"patient"}`} onClick={e=>{e.stopPropagation();setPendingDelete({patient,sessionId:s.id,count:1,label:`Session ${v.noOf(s)||""}`});}} style={{width:36,height:36,border:"none",background:"none",color:C.red,fontSize:"1rem",cursor:"pointer"}}>🗑</button>}
+              </div>
             </div>
             <div style={{fontSize:"0.78rem",color:C.muted,marginTop:4}}>{(v.dateOf(s)?longDate(v.dateOf(s).toISOString(), s.date||""):(s.date||""))}{!isNaN(a)&&!isNaN(b)?` · Pain ${a}→${b}/10`:""}</div>
           </div>
@@ -1319,16 +1323,19 @@ function TreatmentCaseloadPanel({ patients=[], onStart, onProfile, onViewPatient
             </div>
             <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
               {draft && <span style={{fontSize:"0.7rem",fontWeight:800,padding:"3px 9px",borderRadius:99,background:C.amberBg,color:C.amber}}>Draft</span>}
-              <button type="button" aria-label="More options" onClick={e=>{e.stopPropagation();setMenuId(menuId===patient.id?null:patient.id);setConfirmId(null);}}
+              <button type="button" aria-label="More options" onClick={e=>{e.stopPropagation();setMenuId(menuId===patient.id?null:patient.id);}}
                 style={{width:36,height:36,borderRadius:10,border:"none",background:"transparent",color:C.muted,fontSize:"1.2rem",cursor:"pointer"}}>⋮</button>
             </div>
           </div>
           {menuId===patient.id && (
             <div onClick={e=>e.stopPropagation()} style={{position:"absolute",right:12,top:50,zIndex:5,background:"#fff",border:`1px solid ${C.border}`,borderRadius:12,boxShadow:"0 8px 24px rgba(0,0,0,.12)",minWidth:190,overflow:"hidden"}}>
               <button type="button" onClick={()=>{setMenuId(null);onProfile&&onProfile(patient);}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 14px",border:"none",background:"#fff",fontSize:"0.85rem",cursor:"pointer",fontFamily:"inherit"}}>Open patient profile</button>
-              {onDeleteTreatment && v.source==="tx" && v.all.length>0 && (confirmId===patient.id
-                ? <button type="button" onClick={()=>{onDeleteTreatment(patient);setConfirmId(null);setMenuId(null);}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 14px",border:"none",background:"#FEF2F2",color:C.red,fontWeight:700,fontSize:"0.85rem",cursor:"pointer",fontFamily:"inherit"}}>Tap again to confirm</button>
-                : <button type="button" onClick={()=>setConfirmId(patient.id)} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 14px",border:"none",background:"#fff",color:C.red,fontSize:"0.85rem",cursor:"pointer",fontFamily:"inherit"}}>Remove all sessions</button>)}
+              {onDeleteSessions && draft && (
+                <button type="button" onClick={()=>{setMenuId(null);setPendingDelete({patient,sessionId:draft.id,count:1,label:"this draft"});}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 14px",border:"none",borderTop:`1px solid ${C.border}`,background:"#fff",color:C.red,fontSize:"0.85rem",cursor:"pointer",fontFamily:"inherit"}}>Discard draft</button>
+              )}
+              {onDeleteSessions && v.all.length>0 && (
+                <button type="button" onClick={()=>{setMenuId(null);setPendingDelete({patient,sessionId:null,count:v.all.length,label:"all sessions"});}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 14px",border:"none",borderTop:`1px solid ${C.border}`,background:"#fff",color:C.red,fontSize:"0.85rem",cursor:"pointer",fontFamily:"inherit"}}>Delete all sessions…</button>
+              )}
             </div>
           )}
           <button type="button" onClick={()=>onStart&&onStart(patient)}
@@ -1337,6 +1344,30 @@ function TreatmentCaseloadPanel({ patients=[], onStart, onProfile, onViewPatient
           </button>
         </div>
       ))}
+
+      {pendingDelete && (
+        <div role="dialog" aria-modal="true" aria-label="Confirm delete" onClick={()=>setPendingDelete(null)}
+          style={{position:"fixed",inset:0,zIndex:1000,background:"rgba(17,24,39,.45)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+          <div onClick={e=>e.stopPropagation()}
+            style={{width:"100%",maxWidth:480,background:"#fff",borderRadius:"20px 20px 0 0",padding:"20px 18px calc(18px + env(safe-area-inset-bottom))",boxShadow:"0 -10px 30px rgba(0,0,0,.2)"}}>
+            <div style={{fontWeight:800,fontSize:"1.05rem",color:C.text,marginBottom:6}}>
+              {pendingDelete.sessionId==null ? "Delete all sessions?" : `Delete ${pendingDelete.label}?`}
+            </div>
+            <div style={{fontSize:"0.88rem",color:C.muted,marginBottom:16,lineHeight:1.5}}>
+              {pendingDelete.sessionId==null
+                ? `This removes all ${pendingDelete.count} session${pendingDelete.count===1?"":"s"} for ${pendingDelete.patient.name||"this patient"}, including their pain scores and notes. The patient, assessment and care plan stay.`
+                : `This removes ${pendingDelete.label} for ${pendingDelete.patient.name||"this patient"}, including its pain scores and notes. The other sessions stay and are renumbered.`}
+              {" "}This cannot be undone.
+            </div>
+            <div style={{display:"flex",gap:10}}>
+              <button type="button" onClick={()=>setPendingDelete(null)}
+                style={{flex:1,padding:"13px",borderRadius:12,border:`1px solid ${C.border}`,background:"#fff",color:C.text,fontWeight:700,fontSize:"0.92rem",cursor:"pointer",fontFamily:"inherit"}}>Cancel</button>
+              <button type="button" onClick={()=>{ const d=pendingDelete; setPendingDelete(null); onDeleteSessions&&onDeleteSessions(d.patient,d.sessionId); }}
+                style={{flex:1,padding:"13px",borderRadius:12,border:"none",background:C.red,color:"#fff",fontWeight:800,fontSize:"0.92rem",cursor:"pointer",fontFamily:"inherit"}}>Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
