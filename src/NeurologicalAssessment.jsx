@@ -9,7 +9,8 @@ import InfoCard from "./InfoCard.jsx";
 import { neuroConditionLibraryData } from "./neuroConditionLibraryData.js";
 import { neuroExamLibraryData } from "./neuroExamLibraryData.js";
 import { neuroRegionInfoData, LIGHT_TOUCH_ROW_INFO, PINPRICK_ROW_INFO, TEMPERATURE_ROW_INFO, PROPRIOCEPTION_ROW_INFO, VIBRATION_ROW_INFO, MMT_ROW_INFO, MAS_ROW_INFO } from "./neuroRegionInfoData.js";
-import { NeuroExercisePrescriptionSection, formatNeuroExercisePrescriptionSection } from "./neuroExercisePrescription.jsx";
+import { formatNeuroExercisePrescriptionSection } from "./neuroExercisePrescription.jsx";
+import { ExercisePrescriptionSection } from "./orthoExercisePrescription.jsx";
 import { NeuroCarePlanSection, formatNeuroCarePlanSection } from "./NeuroCarePlan.jsx";
 import { orthoStyles } from "./orthoStyles.js";
 import { humanizeKey } from "./medicalAbbreviations.js";
@@ -2577,7 +2578,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
                       to just this step the same way SpecialtyPatientProfile.jsx
                       already does when it renders an Ortho summary. */}
                   <style>{orthoStyles()}</style>
-                  <FieldKitContext.Provider value={SHARED_KIT_LOOK}><NeuroExercisePrescriptionSection data={data} setData={setData} /></FieldKitContext.Provider>
+                  <FieldKitContext.Provider value={SHARED_KIT_LOOK}><ExercisePrescriptionSection data={data} setData={setData} sectionKey="neuroExercisePrescription" onlyRegion="neurological" /></FieldKitContext.Provider>
                 </>
               )}
               {current.id === "summary" && (
