@@ -1696,8 +1696,8 @@ export async function getNotifications() {
       .eq("user_id", uid)
       .order("created_at", { ascending: false });
     if (error) throw error;
-    return (data || []).map((n) => ({
-      id: String(n.id), iconName: n.icon_name, text: n.text, time: timeAgo(n.created_at), tone: n.tone, read: n.read,
+    const real = (data || []).map((n) => ({
+      id: String(n.id), iconName: n.icon_name, text: n.text, time: timeAgo(n.created_at), ts: Date.parse(n.created_at) || 0, tone: n.tone, read: n.read,
       link: n.kind === "message" || n.kind === "message_request" || n.kind === "message_request_accepted"
             ? (n.actor_id ? `/messages?with=${n.actor_id}` : null)
           : n.kind === "like" || n.kind === "comment" ? (n.post_id ? `/post/${n.post_id}` : n.actor_id ? `/profile/${n.actor_id}` : null)
@@ -1726,14 +1726,92 @@ export async function getNotifications() {
           : (n.kind === "opportunity_cancelled" || n.kind === "opportunity_closed" || n.kind === "opportunity_updated") && n.entity_id ? `/explore?opp=${n.entity_id}`
           : n.kind === "workshop_registered" ? "/explore?view=applications"
           : null,
+      _entityId: n.kind === "connection_request" ? String(n.entity_id ?? "") : null,
     }));
+    const extra = await appSideBellItems(uid, real);
+    return [...real, ...extra].sort((a, b) => b.ts - a.ts).map(({ _entityId, ...n }) => n);
   } catch (e) {
     console.error("getNotifications(): falling back to demo notifications --", e?.message || e);
     return demoOrEmpty(NOTIFICATIONS);
   }
 }
 
+// Bell items built on the app side (2026-10-05, Aditi: "notification of new
+// news addition is not showing ... someone wants to connect also not
+// showing"). Both used to depend on something outside the app working: a
+// database trigger for connection requests, and a phone push for News. If
+// either wasn't set up the bell stayed empty. These come straight from the
+// data the app can already read -- people waiting to connect with you
+// (connections table) and items added to News in the last 3 days
+// (career_news) -- so the bell is right whether or not the server side is.
+// What you've already opened is remembered on this device only.
+const BELL_SEEN_KEY = (uid) => `pm_bell_seen_v1:${uid}`;
+const NEWS_WINDOW_MS = 3 * 24 * 60 * 60 * 1000;
+function readBellSeen(uid) {
+  try {
+    const v = JSON.parse(localStorage.getItem(BELL_SEEN_KEY(uid)) || "{}");
+    return { ids: Array.isArray(v.ids) ? v.ids : [], newsAt: typeof v.newsAt === "number" ? v.newsAt : 0 };
+  } catch { return { ids: [], newsAt: 0 }; }
+}
+function writeBellSeen(uid, seen) {
+  try { localStorage.setItem(BELL_SEEN_KEY(uid), JSON.stringify({ ids: seen.ids.slice(-200), newsAt: seen.newsAt })); } catch { /* storage blocked -- the item just stays unread */ }
+}
+
+async function appSideBellItems(uid, realRows) {
+  const seen = readBellSeen(uid);
+  const out = [];
+  try {
+    // Someone waiting to connect with you. Skipped when the server trigger
+    // already wrote its own notification for the same request.
+    const requests = await getConnectionRequests();
+    const covered = new Set(realRows.map((n) => n._entityId).filter(Boolean));
+    for (const r of requests) {
+      if (covered.has(String(r.id))) continue;
+      const id = `conn:${r.id}`;
+      out.push({
+        id, iconName: "UserPlus", tone: "text-blue-500", link: "/people",
+        text: `${r.name} wants to connect with you`,
+        time: timeAgo(r.createdAt), ts: Date.parse(r.createdAt) || 0, read: seen.ids.includes(id),
+      });
+    }
+  } catch (e) { console.error("bell: connection requests --", e?.message || e); }
+  try {
+    const since = new Date(Date.now() - NEWS_WINDOW_MS).toISOString();
+    const { data, error } = await supabase
+      .from("career_news")
+      .select("id, title, created_at")
+      .eq("status", "active")
+      .gte("created_at", since)
+      .order("created_at", { ascending: false })
+      .limit(30);
+    if (error) throw error;
+    const items = (data || []).filter((r) => Date.parse(r.created_at));
+    if (items.length) {
+      const latest = items[0];
+      const latestTs = Date.parse(latest.created_at);
+      const unseen = items.filter((r) => Date.parse(r.created_at) > seen.newsAt).length;
+      out.push({
+        id: `news:${latestTs}`, iconName: "Newspaper", tone: "text-violet-600", link: "/news",
+        text: unseen > 1 ? `${unseen} new items in News — latest: ${latest.title}` : `New in News: ${latest.title}`,
+        time: timeAgo(latest.created_at), ts: latestTs, read: unseen === 0,
+      });
+    }
+  } catch (e) { console.error("bell: news --", e?.message || e); }
+  return out;
+}
+
 export async function markNotificationRead(id) {
+  // App-side items (see appSideBellItems) are remembered on this device.
+  if (typeof id === "string" && (id.startsWith("conn:") || id.startsWith("news:"))) {
+    const uid = await currentUserId();
+    if (uid) {
+      const seen = readBellSeen(uid);
+      if (id.startsWith("news:")) seen.newsAt = Math.max(seen.newsAt, Number(id.slice(5)) || 0);
+      else if (!seen.ids.includes(id)) seen.ids.push(id);
+      writeBellSeen(uid, seen);
+    }
+    return getNotifications();
+  }
   try {
     const uid = await currentUserId();
     if (!uid) throw new Error("not signed in");

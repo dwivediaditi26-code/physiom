@@ -7,13 +7,20 @@
 // Notification.requestPermission() on mount.
 import React, { useEffect, useState } from "react";
 import { track } from "@vercel/analytics";
-import { pushSupported, pushPermission, isSubscribedToPush, subscribeToPush } from "./pushNotifications.js";
+import { pushSupported, pushPermission, isSubscribedToPush, subscribeToPush, ensurePushSubscription } from "./pushNotifications.js";
 
 const DISMISSED_KEY = "physio_push_optin_dismissed_v1";
 
 export default function PushOptInBanner({ currentUser }) {
   const [visible, setVisible] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  // Already allowed on this device: make sure its registration still works
+  // (see ensurePushSubscription) -- no banner, no prompt.
+  useEffect(() => {
+    if (!currentUser?.id || !pushSupported() || pushPermission() !== "granted") return;
+    ensurePushSubscription(currentUser.id).catch(() => {});
+  }, [currentUser?.id]);
 
   useEffect(() => {
     if (!currentUser?.id || !pushSupported()) return;

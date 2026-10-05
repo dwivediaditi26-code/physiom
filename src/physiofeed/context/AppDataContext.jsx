@@ -118,6 +118,21 @@ export function AppDataProvider({ children }) {
     return () => { cancelled = true; unsubscribe(); };
   }, []);
 
+  // News additions and connection requests are read straight from the
+  // database (no realtime push for them), so re-check when the app comes back
+  // to the front and every 90 seconds while it is open.
+  useEffect(() => {
+    let cancelled = false;
+    const refresh = async () => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      const next = await db.getNotifications();
+      if (!cancelled) setNotifications(next);
+    };
+    const timer = setInterval(refresh, 90_000);
+    document.addEventListener("visibilitychange", refresh);
+    return () => { cancelled = true; clearInterval(timer); document.removeEventListener("visibilitychange", refresh); };
+  }, []);
+
   // P3: same shape as the bell's subscription above, for the envelope.
   // Every insert involving you re-counts -- cheap (a head-only count) and
   // correct whether the row is one you received (count up) or one you sent

@@ -33,16 +33,29 @@ export function pushPermission() {
   return Notification.permission; // "default" | "granted" | "denied"
 }
 
-// Must be called from a user gesture (button click) -- browsers ignore or
-// auto-reject a Notification.requestPermission() that isn't.
-export async function subscribeToPush(userId) {
-  if (!pushSupported() || !userId) return { ok: false, reason: "unsupported" };
+// True when this device's existing push registration was made with the
+// current public key. A registration made with an older key looks "on" (the
+// browser still has it) but the server can no longer send to it.
+function usesCurrentKey(subscription) {
+  const have = subscription?.options?.applicationServerKey;
+  if (!have) return true; // this browser doesn't say which key was used -- leave it alone
+  const a = new Uint8Array(have);
+  const b = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+  return a.length === b.length && a.every((v, i) => v === b[i]);
+}
 
-  const permission = await Notification.requestPermission();
-  if (permission !== "granted") return { ok: false, reason: permission };
-
+// Gets a working registration for this device: reuses the existing one only
+// if it uses the current key, otherwise drops it (and its saved row) and
+// registers again, then saves it for this user.
+async function registerDevice(userId) {
   const registration = await navigator.serviceWorker.ready;
   let subscription = await registration.pushManager.getSubscription();
+  if (subscription && !usesCurrentKey(subscription)) {
+    const oldEndpoint = subscription.endpoint;
+    await subscription.unsubscribe().catch(() => {});
+    try { await supabase.from("push_subscriptions").delete().eq("endpoint", oldEndpoint); } catch {}
+    subscription = null;
+  }
   if (!subscription) {
     subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
@@ -62,6 +75,30 @@ export async function subscribeToPush(userId) {
   );
   if (error) { console.warn("[push] failed to save subscription", error); return { ok: false, reason: "save_failed" }; }
   return { ok: true };
+}
+
+// Must be called from a user gesture (button click) -- browsers ignore or
+// auto-reject a Notification.requestPermission() that isn't.
+export async function subscribeToPush(userId) {
+  if (!pushSupported() || !userId) return { ok: false, reason: "unsupported" };
+
+  const permission = await Notification.requestPermission();
+  if (permission !== "granted") return { ok: false, reason: permission };
+
+  return registerDevice(userId);
+}
+
+// Runs on app start for a signed-in user who already allowed notifications.
+// Fixes a device whose registration predates the 2026-10-02 key change: it
+// shows as "on" but never receives anything. Does nothing if this device has
+// no registration (the person turned notifications off) -- it never turns
+// them back on by itself.
+export async function ensurePushSubscription(userId) {
+  if (!pushSupported() || !userId || pushPermission() !== "granted") return { ok: false, reason: "not_enabled" };
+  const registration = await navigator.serviceWorker.ready;
+  const subscription = await registration.pushManager.getSubscription();
+  if (!subscription) return { ok: false, reason: "not_enabled" };
+  return registerDevice(userId);
 }
 
 // Called on sign-out / "turn off reminders" -- removes both the browser's
