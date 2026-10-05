@@ -4,7 +4,8 @@ import { EXERCISE_DB } from "./sharedClinicalData.js";
 import { exerciseRichItem } from "./exerciseCardKit.jsx";
 import { TECHNIQUE_TYPES, BLANK_TECHNIQUE, techniqueEntryForm, techniqueLabel } from "./orthoOutpatientSections.jsx";
 import { EvidenceProtocolBrowser } from "./orthoEvidenceProtocols.jsx";
-import { listClinicProtocols, saveClinicProtocol } from "./clinicProtocols.js";
+import { listClinicProtocols, saveClinicProtocol, deleteClinicProtocol } from "./clinicProtocols.js";
+import ClinicProtocolBuilder from "./ClinicProtocolBuilder.jsx";
 import { isDraftSession, sessionLaunchPending, clearSessionLaunch } from "./txSessions.js";
 import {
   deriveNeuroProblems, buildGoalsForProblem, PROBLEM_CATEGORIES, categoryLabel,
@@ -41,6 +42,7 @@ export const NEURO_KNOWLEDGE = {
   PROBLEM_CATEGORIES, REFERENCES, ASSIST_LADDER, goalProgress,
   conditionLabel, settingLabel, conditionSettingPrecautions,
   exerciseCategories: EXERCISE_DB.neurological.categories,
+  clinicProtocols: true,
 };
 
 /* ============================================================
@@ -461,7 +463,7 @@ function SourceTab({ icon, label, sub, active, onClick }) {
 // button-per-goal to open it from) -- goal-linking is just an optional
 // checklist on the dose-confirm screen, same as the "general" treatment
 // flow already supported.
-function AddTreatmentPanel({ allGoals, existing, onAdd, requireAuth, search, setSearch, searchOpen, setSearchOpen, floatingCTA, onDoseEditingChange }) {
+function AddTreatmentPanel({ allGoals, existing, onAdd, onAddMany, requireAuth, search, setSearch, searchOpen, setSearchOpen, floatingCTA, onDoseEditingChange }) {
   const kb = useKB();
   const { ASSIST_LADDER, exerciseCategories, manualTechniques, evidenceProtocols, evidenceProtocolRegions, clinicProtocols, fullExerciseLibrary, defaultRegionKey } = kb;
   // Full region switcher (2026-09-11, Aditi: "exercise prescription have
@@ -503,6 +505,21 @@ function AddTreatmentPanel({ allGoals, existing, onAdd, requireAuth, search, set
     setBrowseMode("clinic");
     setSavedProtocolsLoading(true);
     listClinicProtocols().then((rows) => { setSavedProtocols(rows); setSavedProtocolsLoading(false); });
+  };
+
+  const [builder, setBuilder] = useState(null);        // null | {} (new) | a saved protocol (edit)
+  const [confirmDelId, setConfirmDelId] = useState(null);
+  const [protoMsg, setProtoMsg] = useState("");
+  const refreshProtocols = () => listClinicProtocols().then((rows) => setSavedProtocols(rows));
+  // Put a whole protocol onto the plan in one go (exercises, techniques and modalities).
+  const addWholeProtocol = (pr) => {
+    const exs = (pr.exercises || []).map((ex) => ({ id: uid(), exerciseId: ex.id ?? ex.exerciseId, name: ex.name, category: ex.category || "My Clinic Protocol", sets: ex.sets, reps: ex.reps, hold: ex.hold, freq: ex.freq, duration: ex.duration || "", assistance: ex.assistance || "", equipment: ex.equipment || "", goalIds: [] }));
+    const tchs = (pr.techniques || []).map((t) => ({ ...t, id: uid(), name: t.name || techniqueLabel(t), category: "Technique", response: "", goalIds: [] }));
+    const list = [...exs, ...tchs];
+    if (!list.length) return;
+    if (onAddMany) onAddMany(list); else list.forEach((t) => onAdd(t));
+    setProtoMsg(`Added ${list.length} item${list.length === 1 ? "" : "s"} from “${pr.name}”.`);
+    setTimeout(() => setProtoMsg(""), 3500);
   };
 
   const all = useMemo(() => Object.entries(activeCategories).flatMap(([c, list]) => list.map((e) => ({ ...e, _cat: c }))), [activeCategories]);
@@ -584,24 +601,37 @@ function AddTreatmentPanel({ allGoals, existing, onAdd, requireAuth, search, set
                 />
               </div>
             )}
-            {!search.trim() && browseMode === "clinic" && (
+            {!search.trim() && browseMode === "clinic" && builder && (
+              <ClinicProtocolBuilder initial={builder.id ? builder : null}
+                onCancel={() => setBuilder(null)}
+                onSaved={() => { setBuilder(null); refreshProtocols(); setProtoMsg("Protocol saved."); setTimeout(() => setProtoMsg(""), 3000); }} />
+            )}
+            {!search.trim() && browseMode === "clinic" && !builder && (
               <div className="ct-group">
+                <button type="button" className="primary-btn" style={{ width: "100%", minHeight: 40, marginBottom: 10 }} onClick={() => setBuilder({})}>＋ Create protocol</button>
+                {protoMsg && <div role="status" style={{ fontSize: 12.5, color: "#16A34A", fontWeight: 700, marginBottom: 8 }}>{protoMsg}</div>}
                 {savedProtocolsLoading && <div className="summary-empty">Loading…</div>}
                 {!savedProtocolsLoading && savedProtocols.length === 0 && (
                   <div className="summary-empty" style={{ textAlign: "left" }}>
-                    <div style={{ fontWeight: 700, marginBottom: 6 }}>No clinic protocols yet. To create one:</div>
-                    <ol style={{ margin: 0, paddingLeft: 18, lineHeight: 1.6 }}>
-                      <li>Add exercises from the exercise list (browse by category or search).</li>
-                      <li>Scroll to the patient's list of added exercises.</li>
-                      <li>Tap <b>💾 Save as Clinic Protocol</b> and name it — it will appear here.</li>
-                    </ol>
+                    <div style={{ fontWeight: 700, marginBottom: 6 }}>No clinic protocols yet.</div>
+                    Tap <b>＋ Create protocol</b>, name it (e.g. Knee Osteoarthritis) and add the exercises, techniques and modalities you always use for it. You can also save a patient's current plan as a protocol from the Treatment step.
                   </div>
                 )}
                 {savedProtocols.map((p) => (
                   <div key={p.id} style={{ marginBottom: 14 }}>
-                    <div style={{ fontWeight: 700, fontSize: 13, color: BRAND.ink, marginBottom: 6 }}>{p.name}</div>
+                    <div style={{ fontWeight: 800, fontSize: 14, color: BRAND.ink }}>{p.name}</div>
+                    <div style={{ fontSize: 11.5, color: BRAND.gray, marginBottom: 6 }}>
+                      {(p.exercises || []).length} exercises · {(p.techniques || []).filter((t) => !(t.modality || ["us", "electro", "taping"].includes(t.type))).length} techniques · {(p.techniques || []).filter((t) => t.modality || ["us", "electro", "taping"].includes(t.type)).length} modalities{p.region ? ` · ${p.region}` : ""}
+                    </div>
+                    <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+                      <button type="button" className="primary-btn" style={{ flex: 2, minHeight: 38, padding: "6px 10px", fontSize: 13 }} onClick={() => addWholeProtocol(p)}>＋ Add all</button>
+                      <button type="button" className="ghost-btn" style={{ flex: 1, minHeight: 38, padding: "6px 10px", fontSize: 13 }} onClick={() => setBuilder(p)}>Edit</button>
+                      {confirmDelId === p.id
+                        ? <button type="button" className="ghost-btn" style={{ flex: 1, minHeight: 38, padding: "6px 10px", fontSize: 13, color: "#dc2626", borderColor: "#dc2626" }} onClick={async () => { await deleteClinicProtocol(p.id); setConfirmDelId(null); refreshProtocols(); }}>Sure?</button>
+                        : <button type="button" className="ghost-btn" aria-label={`Delete ${p.name}`} style={{ minHeight: 38, padding: "6px 12px", fontSize: 13, color: "#dc2626" }} onClick={() => setConfirmDelId(p.id)}>🗑</button>}
+                    </div>
                     {(p.exercises || []).map((ex) => (
-                      <button key={ex.id} type="button" className="ct-item" onClick={() => { setBrowseMode(null); startDose({ ...ex, _cat: "My Clinic Protocol" }); }}>
+                      <button key={ex.id ?? ex.exerciseId} type="button" className="ct-item" onClick={() => { setBrowseMode(null); startDose({ ...ex, id: ex.id ?? ex.exerciseId, target: ex.target || "", _cat: ex.category || "My Clinic Protocol" }); }}>
                         <span style={{ flex: 1, textAlign: "left" }}>
                           <span style={{ fontWeight: 600 }}>{ex.name}</span>
                           <span style={{ display: "block", fontSize: 11, color: BRAND.gray }}>{ex.target}</span>
@@ -1020,6 +1050,11 @@ function TreatmentPhase({ problems, goals, treatments, setTreatments, onNext, fl
         floatingCTA={floatingCTA}
         onDoseEditingChange={setDoseEditing}
         search={search} setSearch={setSearch} searchOpen={searchOpen} setSearchOpen={setSearchOpen}
+        onAddMany={(list) => {
+          const have = new Set(treatments.map((x) => treatmentKey(x)));
+          const fresh = list.filter((t) => !have.has(treatmentKey(t)) && have.add(treatmentKey(t)));
+          if (fresh.length) setTreatments([...treatments, ...fresh]);
+        }}
         onAdd={(t) => {
           // If this exercise is already in the plan (added under another
           // goal), just link the existing record to the newly picked goals too.
@@ -1272,7 +1307,7 @@ function PlanItemRow({ it, t, open, onToggleOpen, onChange, onRemoveFromPlan }) 
   );
 }
 
-function SessionEditor({ draft, setDraft, treatments, goals, problems = [], sessions, onSave, onSaveDraft, onCancel, error, flash, onAddTreatment, onRemoveFromPlan }) {
+function SessionEditor({ draft, setDraft, treatments, goals, problems = [], sessions, onSave, onSaveDraft, onCancel, error, flash, onAddTreatment, onAddMany, onRemoveFromPlan }) {
   const [openId, setOpenId] = useState(null);
   const [adding, setAdding] = useState(false);
   const [viewPlan, setViewPlan] = useState(false);
@@ -1418,7 +1453,7 @@ function SessionEditor({ draft, setDraft, treatments, goals, problems = [], sess
           <div className="sess-compact" style={{ paddingBottom: 8 }}>
             <AddTreatmentPanel allGoals={goals} existing={new Set(treatments.map((t) => t.exerciseId))} floatingCTA
               search={search} setSearch={setSearch} searchOpen={searchOpen} setSearchOpen={setSearchOpen}
-              onAdd={(t) => { onAddTreatment(t); setAdding(false); }} />
+              onAdd={(t) => { onAddTreatment(t); setAdding(false); }} onAddMany={(l) => { onAddMany(l); setAdding(false); }} />
           </div>
         </div>
       )}
@@ -1673,6 +1708,23 @@ function SessionsPhase({ problems, treatments, goals, sessions, setSessions, set
     if (!dup) setTreatments([...treatments, t]);
     setDraft((d) => (d.items.some((i) => i.treatmentId === tid) ? d : { ...d, items: [...d.items, { treatmentId: tid, done: true, actual: doseLine(dup || t), note: "" }] }));
   };
+  // A whole protocol at once: one plan update, every new item ticked as done today.
+  const addManyToSession = (list) => {
+    const byKey = new Map(treatments.map((x) => [treatmentKey(x), x]));
+    const added = [];
+    const ids = list.map((t) => {
+      const k = treatmentKey(t);
+      if (byKey.has(k)) return byKey.get(k).id;
+      byKey.set(k, t); added.push(t); return t.id;
+    });
+    if (added.length) setTreatments([...treatments, ...added]);
+    setDraft((d) => {
+      const have = new Set(d.items.map((i) => i.treatmentId));
+      const all = [...treatments, ...added];
+      const items = ids.filter((id) => !have.has(id)).map((id) => ({ treatmentId: id, done: true, actual: doseLine(all.find((x) => x.id === id) || {}), note: "" }));
+      return items.length ? { ...d, items: [...d.items, ...items] } : d;
+    });
+  };
   const removeFromPlan = (tid) => {
     setTreatments(treatments.filter((x) => x.id !== tid));
     setDraft((d) => ({ ...d, items: d.items.filter((i) => i.treatmentId !== tid) }));
@@ -1739,7 +1791,7 @@ function SessionsPhase({ problems, treatments, goals, sessions, setSessions, set
       {!draft && <SectionIntro icon="🗓" title="Sessions" sub="Record what actually happened. Each session is seeded from the treatment plan — just adjust Planned vs Actual." />}
 
       {draft ? (
-        <SessionEditor draft={draft} setDraft={setDraft} treatments={treatments} goals={goals} problems={problems} sessions={sessions} onAddTreatment={addToSession} onRemoveFromPlan={removeFromPlan}
+        <SessionEditor draft={draft} setDraft={setDraft} treatments={treatments} goals={goals} problems={problems} sessions={sessions} onAddTreatment={addToSession} onAddMany={addManyToSession} onRemoveFromPlan={removeFromPlan}
           onSave={draft.status === "completed" ? () => { put({ ...draft, updatedAt: new Date().toISOString() }); setViewingId(draft.id); setDraft(null); } : tryComplete}
           onSaveDraft={saveDraft} error={error} flash={flash}
           onCancel={() => { setDraft(null); setError(""); }} />
