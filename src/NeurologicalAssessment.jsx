@@ -115,8 +115,8 @@ const STEP_META = [
   { id: "carePlanPlan", icon: <Icon name="clipboard" />, label: "Care Plan" },
   { id: "carePlanSessions", icon: <Icon name="calendar" />, label: "Sessions" },
   { id: "carePlanProgress", icon: <Icon name="trend" />, label: "Care Plan Progress" },
-  { id: "precautions", icon: <Icon name="warning" />, label: "Precautions" },
   { id: "exercisePrescription", icon: <Icon name="dumbbell" />, label: "Exercise Prescription" },
+  { id: "precautions", icon: <Icon name="warning" />, label: "Precautions" },
   { id: "summary", icon: <Icon name="check" />, label: "Summary & Review" },
 ];
 const ASSESS_STEPS = STEP_META.slice(1); // full canonical list, including retired ids (label/icon lookup + legacy stepOrder rendering)
@@ -126,9 +126,11 @@ const ASSESS_STEPS = STEP_META.slice(1); // full canonical list, including retir
 // paths even though buildStepOrder/ensureAlwaysSteps already correctly drop
 // it (2026-09-18, Aditi: "do in neuro and cardio the care plan do the same
 // the serial number").
-// Care Plan, Sessions and Care Plan Progress are not assessment steps any more
-// (they stay in the patient profile); the Summary still shows the care plan.
-const RETIRED_STEP_IDS = REMOVED_CAREPLAN_STEP_IDS;
+// Care Plan, Sessions, Care Plan Progress and Care Plan Treatment are not
+// assessment steps any more: the Exercise Prescription step is the treatment
+// page, and the full Care Plan stays in the patient profile. The Summary
+// still shows the care plan.
+const RETIRED_STEP_IDS = [...REMOVED_CAREPLAN_STEP_IDS, "carePlanTreatment"];
 const DEFAULT_ASSESS_STEP_IDS = ASSESS_STEPS.filter((s) => !RETIRED_STEP_IDS.includes(s.id)).map((s) => s.id);
 
 /* ============================================================
@@ -1752,9 +1754,9 @@ const ENTRY_MODES = [
 ];
 
 const DOMAIN_STEP_IDS = ["cognition", "cranial", "sensory", "motor", "tone", "coordination", "balance", "gait", "functional", "outcomes"];
-const CAREPLAN_STEP_IDS = ["carePlanProblems", "carePlanGoals", "carePlanTreatment"];
+const CAREPLAN_STEP_IDS = ["carePlanProblems", "carePlanGoals"];
 const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "goals", carePlanTreatment: "treatment", carePlanPlan: "plan", carePlanSessions: "sessions", carePlanProgress: "progress" };
-const ALWAYS_STEP_IDS = ["demographics", "safety", "subjective", "chart", "medicalRecords", "observation", "interpretation", ...CAREPLAN_STEP_IDS, "precautions", "exercisePrescription", "summary"];
+const ALWAYS_STEP_IDS = ["demographics", "safety", "subjective", "chart", "medicalRecords", "observation", "interpretation", ...CAREPLAN_STEP_IDS, "exercisePrescription", "precautions", "summary"];
 const FULL_STEP_ORDER = ASSESS_STEPS.map((s) => s.id);
 
 function buildStepOrder(domainStepIds, customIds) {
@@ -1772,7 +1774,23 @@ function buildStepOrder(domainStepIds, customIds) {
 // step, so reopening them wouldn't show it. This injects any ALWAYS_STEP_IDS
 // absent from a saved order at their canonical FULL_STEP_ORDER position,
 // preserving the therapist's own custom step ordering otherwise.
+// Precautions come right after Exercise Prescription (assessments saved before
+// that order change are moved too).
+function precautionsAfterExercise(order) {
+  if (!Array.isArray(order)) return order;
+  const ex = order.indexOf("exercisePrescription");
+  const pre = order.indexOf("precautions");
+  if (ex === -1 || pre === -1 || pre === ex + 1) return order;
+  const out = order.filter((id) => id !== "precautions");
+  out.splice(out.indexOf("exercisePrescription") + 1, 0, "precautions");
+  return out;
+}
+
 function ensureAlwaysSteps(savedOrder) {
+  return precautionsAfterExercise(addMissingAlwaysSteps(savedOrder));
+}
+
+function addMissingAlwaysSteps(savedOrder) {
   if (!Array.isArray(savedOrder) || !savedOrder.length) return savedOrder;
   const present = new Set(savedOrder);
   const missing = ALWAYS_STEP_IDS.filter((id) => !present.has(id));
