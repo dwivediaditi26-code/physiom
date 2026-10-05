@@ -54,14 +54,14 @@ describe("Sessions list/detail navigation", () => {
     const setMock = vi.fn();
     render(<QuickVisitForm PC={PC} data={{}} set={setMock} navTo={() => {}} />);
     expect(screen.getByText("＋ New session")).toBeTruthy();
-    expect(screen.queryByText(/Today — Session/)).toBeNull();
+    expect(screen.queryByText("Session Details")).toBeNull();
   });
 
   it("back button from a new session returns to the list", () => {
     const setMock = vi.fn();
     render(<QuickVisitForm PC={PC} data={{}} set={setMock} navTo={() => {}} />);
     fireEvent.click(screen.getByText("＋ New session"));
-    expect(screen.getByText(/Today — Session/)).toBeTruthy();
+    expect(screen.getByText("Session Details")).toBeTruthy();
     fireEvent.click(screen.getByTitle("Back to sessions"));
     expect(screen.getByText("＋ New session")).toBeTruthy();
   });
@@ -70,9 +70,10 @@ describe("Sessions list/detail navigation", () => {
     const setMock = vi.fn();
     render(<QuickVisitForm PC={PC} data={{ hep_programme: [{ id:"ex1", name:"Chin Tucks", sets:"3", reps:"10" }] }} set={setMock} navTo={() => {}} />);
     fireEvent.click(screen.getByText("＋ New session"));
-    fireEvent.click(screen.getByText(/＋ Joint mobilisation/));
+    fireEvent.click(screen.getByText("Joint mobilisation"));
     fireEvent.click(screen.getByText(/＋ Hot pack/));
-    fireEvent.click(screen.getByText("Save session"));
+    fireEvent.click(screen.getByLabelText("After pain plus"));
+    fireEvent.click(screen.getByText(/Complete Session/));
     const [, savedSessions] = setMock.mock.calls.find(c => c[0] === "tx_sessions");
     const entry = savedSessions[0];
     expect(entry.treatment).toEqual(expect.arrayContaining([expect.objectContaining({ name: "Joint mobilisation" })]));

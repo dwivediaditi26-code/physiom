@@ -1,4 +1,5 @@
 import React from "react";
+import { nextSessionNo } from "./txSessions.js";
 import { ExercisePrescriptionSection } from "./orthoExercisePrescription.jsx";
 
 // The Exercise tab (and Learn > Exercise Prescription) now opens the
@@ -13,7 +14,7 @@ export default function ExercisePrescriptionPage({ data, set }) {
   const programme = Array.isArray(data?.tx_exercise_prescription) ? data.tx_exercise_prescription : [];
   const view = { ...(data || {}), exercisePrescription: { programme } };
 
-  const sessionNo = () => (Array.isArray(data?.tx_sessions) ? data.tx_sessions.length : 0) + 1;
+  const sessionNo = () => nextSessionNo(data?.tx_sessions);
   const logChanges = (changes) => {
     if (!set || !changes.length) return;
     const log = Array.isArray(data?.hep_log) ? data.hep_log : [];

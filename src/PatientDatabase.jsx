@@ -1,6 +1,7 @@
 // PatientDatabase.jsx — Patient DB helpers, Profile modal, DB panel
 // Extracted from AppFull.jsx — pure extraction, no logic changes
 import React, { useState, useRef, useEffect } from "react";
+import { patientSessionView, longDate, shortDate } from "./txSessions.js";
 import { createPortal } from "react-dom";
 import { Search as SearchIcon, ChevronRight, Bone, HeartPulse, Brain, Footprints, MoreVertical } from "lucide-react";
 import { supabase } from "./supabase.js";
@@ -1219,101 +1220,123 @@ const innerBody = (
   );
 }
 
-// ─── TREATMENT CASELOAD (Clinical tab's "Treatment" sub-tab, 2026-08-22) ──────
-// Only patients with at least one logged tx_sessions entry -- "currently
-// undergoing treatment" is derived from that real data, not a separate
-// status field the app doesn't have. Session count and pain trend are read
-// straight off tx_sessions (vasStart/vasEnd) rather than inventing a planned
-// session target, since no such field exists anywhere in the data model.
-function TreatmentCaseloadPanel({ patients=[], onContinue, onProfile, onDeleteTreatment }) {
-  const C = { primary:"#6D28D9", text:"#111827", muted:"#6B7280", border:"#F1F5F9",
-    green:"#10B981", red:"#EF4444", orange:"#F59E0B" };
-  // Two-tap delete (2026-09-02) -- one stray tap on a caseload card can't
-  // wipe someone's session history; tapping "Remove" again within the same
-  // render confirms it. Tracks which patient id is mid-confirm.
-  const [confirmId, setConfirmId] = useState(null);
+// ─── TREATMENT WORKSPACE (Clinical tab's "Treatment" sub-tab) ─────────────────
+// No appointments: pick a patient, press Start Session, document it, complete it.
+// Everything is read off patient.data.tx_sessions (newest first; entries with no
+// `status` are older completed sessions, drafts have status "draft"). The session
+// number is never typed -- it is completed sessions + 1 (see txSessions.js).
+function TreatmentCaseloadPanel({ patients=[], onStart, onProfile, onViewPatients, onDeleteTreatment }) {
+  const C = { primary:"#6D28D9", text:"#111827", muted:"#6B7280", border:"#EDE9FE", soft:"#F5F3FF",
+    green:"#16A34A", greenBg:"#DCFCE7", amber:"#B45309", amberBg:"#FEF3C7", red:"#EF4444" };
+  const [tab, setTab] = useState("ongoing");
+  const [q, setQ] = useState("");
+  const [menuId, setMenuId] = useState(null);     // which card's ⋮ menu is open
+  const [confirmId, setConfirmId] = useState(null); // two-tap delete, as before
 
-  const caseload = patients
-    .map(p => {
-      const sessions = Array.isArray(p.data?.tx_sessions) ? p.data.tx_sessions : [];
-      if (sessions.length === 0) return null;
-      // tx_sessions is saved newest-first (see saveNew() above)
-      const newest = sessions[0], oldest = sessions[sessions.length-1];
-      const painStart = oldest?.vasStart ?? null;
-      const painNow = newest?.vasEnd ?? newest?.vasStart ?? null;
-      return {
-        patient: p,
-        sessionCount: sessions.length,
-        lastDate: newest?.date || null,
-        painStart, painNow,
-        condition: p.data?.cc_main || p.lastDx || "",
-      };
-    })
-    .filter(Boolean)
-    .sort((a,b) => b.sessionCount - a.sessionCount);
+  const now = new Date();
+  // Sessions come from the care plan for Neuro/Ortho/Cardio patients, else from tx_sessions.
+  const rows = patients.map(p => {
+    const v = patientSessionView(p);
+    return { patient:p, v, all:v.all, done:v.done, draft:v.draft, last:v.done[0],
+      condition: p.data?.cc_main || p.lastDx || "",
+      sessionNo: v.done.length };
+  });
+  const completedFlat = rows.flatMap(r => r.done.map(s => ({ ...r, s })))
+    .sort((a,b) => (a.v.dateOf(b.s)||0) - (b.v.dateOf(a.s)||0));
+  const monthCount = completedFlat.filter(x => { const d = x.v.dateOf(x.s); return d && d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear(); }).length;
 
-  if (caseload.length === 0) {
-    return (
-      <div style={{padding:"40px 20px",textAlign:"center",color:C.muted}}>
-        <div style={{fontSize:"2rem",marginBottom:8}}>💊</div>
-        <div style={{fontWeight:700,color:C.text,marginBottom:4}}>No one's in active treatment yet</div>
-        <div style={{fontSize:"0.82rem"}}>Patients show up here once their first treatment session is logged (Sessions screen).</div>
-      </div>
-    );
-  }
+  const needle = q.trim().toLowerCase();
+  const match = (name) => !needle || String(name||"").toLowerCase().includes(needle);
+  const list = tab === "completed"
+    ? completedFlat.filter(x => match(x.patient.name))
+    : rows.filter(r => (tab === "all" || r.all.length > 0) && match(r.patient.name))
+        .sort((a,b) => { const t = (r) => { const x = r.last||r.draft; const d = x ? r.v.dateOf(x) : null; return d ? d.getTime() : 0; }; return t(b) - t(a); });
+
+  const stat = (n, label, color) => (
+    <div style={{flex:1,background:"#fff",borderRadius:14,padding:"10px 8px",textAlign:"center",boxShadow:"0 4px 14px rgba(109,40,217,.10)",border:`1px solid ${C.border}`}}>
+      <div style={{fontSize:"1.3rem",fontWeight:800,color:color||C.text,lineHeight:1.1}}>{n}</div>
+      <div style={{fontSize:"0.7rem",color:C.muted,marginTop:2}}>{label}</div>
+    </div>
+  );
 
   return (
-    <div style={{padding:"14px 16px 24px"}}>
-      <div style={{fontSize:"0.7rem",fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:10}}>
-        Ongoing Treatment · {caseload.length}
+    <div style={{padding:"14px 16px 24px"}} onClick={()=>menuId&&setMenuId(null)}>
+      <div style={{fontWeight:900,fontSize:"1.15rem",color:C.text}}>Treatment</div>
+      <div style={{fontSize:"0.82rem",color:C.muted,marginBottom:12}}>Manage and record patient treatment sessions</div>
+
+      <div style={{display:"flex",gap:8,marginBottom:14}}>
+        {stat(patients.length, "Patients")}
+        {stat(monthCount, "Sessions This Month")}
+        {stat(completedFlat.length, "Completed", C.green)}
       </div>
-      {caseload.map(({patient,sessionCount,lastDate,painStart,painNow,condition}) => {
-        const improving = painStart!=null && painNow!=null && Number(painNow) < Number(painStart);
+
+      <div style={{display:"flex",borderBottom:`1px solid ${C.border}`,marginBottom:12}}>
+        {[["ongoing","Ongoing"],["all","All Patients"],["completed","Completed"]].map(([k,l]) => (
+          <button key={k} type="button" onClick={()=>setTab(k)}
+            style={{flex:1,padding:"10px 4px",background:"none",border:"none",borderBottom:`3px solid ${tab===k?C.primary:"transparent"}`,
+              color:tab===k?C.primary:C.muted,fontWeight:tab===k?800:600,fontSize:"0.85rem",cursor:"pointer",fontFamily:"inherit"}}>{l}</button>
+        ))}
+      </div>
+
+      <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search patient by name..." aria-label="Search patient by name"
+        style={{width:"100%",boxSizing:"border-box",padding:"11px 14px",borderRadius:12,border:`1px solid ${C.border}`,background:"#fff",fontSize:"0.9rem",fontFamily:"inherit",outline:"none",marginBottom:12}}/>
+
+      {patients.length === 0 ? (
+        <div style={{padding:"32px 12px",textAlign:"center",color:C.muted}}>
+          <div style={{fontWeight:800,color:C.text,marginBottom:4}}>No patients in treatment yet</div>
+          <div style={{fontSize:"0.82rem",marginBottom:14}}>Start by opening a patient and recording their first treatment session.</div>
+          {onViewPatients && <button type="button" onClick={onViewPatients} style={{padding:"11px 22px",borderRadius:12,border:"none",background:C.primary,color:"#fff",fontWeight:800,cursor:"pointer"}}>View Patients</button>}
+        </div>
+      ) : list.length === 0 ? (
+        <div style={{padding:"28px 12px",textAlign:"center",color:C.muted,fontSize:"0.85rem"}}>
+          {needle ? "No patient matches that name." : tab==="completed" ? "No completed sessions yet." : "No patients with sessions yet. Open All Patients to start one."}
+        </div>
+      ) : tab === "completed" ? list.map(({patient,s,condition,v}) => {
+        const [pa, pb] = v.painOf(s);
+        const a = parseFloat(pa), b = parseFloat(pb);
         return (
-          <div key={patient.id} style={{padding:"14px",borderRadius:12,border:`1px solid ${C.border}`,marginBottom:10,background:"#fff"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
-              <div>
-                <div style={{fontWeight:800,fontSize:"0.92rem",color:C.text}}>{patient.name||"Unnamed Patient"}</div>
-                {condition && <div style={{fontSize:"0.78rem",color:C.muted,marginTop:1}}>{condition}</div>}
+          <div key={patient.id+"-"+(s.id||v.noOf(s))} role="button" onClick={()=>onStart&&onStart(patient, s.id)}
+            style={{padding:"12px 14px",borderRadius:14,border:`1px solid ${C.border}`,marginBottom:10,background:"#fff",cursor:"pointer",boxShadow:"0 2px 8px rgba(109,40,217,.06)"}}>
+            <div style={{display:"flex",justifyContent:"space-between",gap:8}}>
+              <div style={{minWidth:0}}>
+                <div style={{fontWeight:800,color:C.text}}>{patient.name||"Unnamed Patient"}</div>
+                {condition && <div style={{fontSize:"0.78rem",color:C.muted}}>{condition}</div>}
               </div>
-              <div style={{textAlign:"right"}}>
-                <div style={{fontSize:"0.78rem",fontWeight:700,color:C.primary}}>Session {sessionCount}</div>
-                {lastDate && <div style={{fontSize:"0.68rem",color:C.muted}}>Last: {lastDate}</div>}
-              </div>
+              <span style={{alignSelf:"flex-start",fontSize:"0.72rem",fontWeight:800,padding:"3px 10px",borderRadius:99,background:C.greenBg,color:C.green,whiteSpace:"nowrap"}}>Session {v.noOf(s)||""}</span>
             </div>
-            {(painStart!=null || painNow!=null) && (
-              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10,fontSize:"0.78rem",color:C.muted}}>
-                Pain: <strong style={{color:C.text}}>{painStart ?? "—"}</strong> → <strong style={{color:improving?C.green:C.text}}>{painNow ?? "—"}</strong>/10
-                {improving && <span style={{color:C.green,fontWeight:700}}>↓ improving</span>}
-              </div>
-            )}
-            <div style={{display:"flex",gap:8}}>
-              <button onClick={()=>onContinue&&onContinue(patient)}
-                style={{flex:2,padding:"9px",borderRadius:9,border:"none",background:C.primary,color:"#fff",fontWeight:700,fontSize:"0.78rem",cursor:"pointer"}}>
-                Continue Treatment →
-              </button>
-              <button onClick={()=>onProfile&&onProfile(patient)}
-                style={{flex:1,padding:"9px",borderRadius:9,border:`1px solid ${C.border}`,background:"#fff",color:C.muted,fontWeight:700,fontSize:"0.78rem",cursor:"pointer"}}>
-                Profile
-              </button>
-              {onDeleteTreatment && (
-                confirmId === patient.id ? (
-                  <button onClick={()=>{ onDeleteTreatment(patient); setConfirmId(null); }}
-                    title="Tap again to confirm"
-                    style={{flex:1,padding:"9px",borderRadius:9,border:`1px solid ${C.red}`,background:"#FEF2F2",color:C.red,fontWeight:700,fontSize:"0.78rem",cursor:"pointer",whiteSpace:"nowrap"}}>
-                    Confirm?
-                  </button>
-                ) : (
-                  <button onClick={()=>setConfirmId(patient.id)} title="Remove this patient's logged treatment sessions"
-                    style={{padding:"9px 10px",borderRadius:9,border:`1px solid ${C.border}`,background:"#fff",color:C.muted,fontWeight:700,fontSize:"0.78rem",cursor:"pointer"}}>
-                    🗑
-                  </button>
-                )
-              )}
-            </div>
+            <div style={{fontSize:"0.78rem",color:C.muted,marginTop:4}}>{(v.dateOf(s)?longDate(v.dateOf(s).toISOString(), s.date||""):(s.date||""))}{!isNaN(a)&&!isNaN(b)?` · Pain ${a}→${b}/10`:""}</div>
           </div>
         );
-      })}
+      }) : list.map(({patient,draft,last,condition,sessionNo,v}) => (
+        <div key={patient.id} style={{position:"relative",padding:"14px",borderRadius:14,border:`1px solid ${C.border}`,marginBottom:10,background:"#fff",boxShadow:"0 2px 8px rgba(109,40,217,.06)"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
+            <div style={{minWidth:0}}>
+              <div style={{fontWeight:800,fontSize:"0.95rem",color:C.text}}>{patient.name||"Unnamed Patient"}</div>
+              {condition && <div style={{fontSize:"0.8rem",color:C.muted,marginTop:1}}>{condition}</div>}
+              <div style={{fontSize:"0.75rem",color:C.muted,marginTop:3}}>
+                {last ? <>Last Session: {v.dateOf(last)?shortDate(v.dateOf(last).toISOString(), last.date):(last.date||"")} · Session {sessionNo}</> : "No sessions yet"}
+              </div>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
+              {draft && <span style={{fontSize:"0.7rem",fontWeight:800,padding:"3px 9px",borderRadius:99,background:C.amberBg,color:C.amber}}>Draft</span>}
+              <button type="button" aria-label="More options" onClick={e=>{e.stopPropagation();setMenuId(menuId===patient.id?null:patient.id);setConfirmId(null);}}
+                style={{width:36,height:36,borderRadius:10,border:"none",background:"transparent",color:C.muted,fontSize:"1.2rem",cursor:"pointer"}}>⋮</button>
+            </div>
+          </div>
+          {menuId===patient.id && (
+            <div onClick={e=>e.stopPropagation()} style={{position:"absolute",right:12,top:50,zIndex:5,background:"#fff",border:`1px solid ${C.border}`,borderRadius:12,boxShadow:"0 8px 24px rgba(0,0,0,.12)",minWidth:190,overflow:"hidden"}}>
+              <button type="button" onClick={()=>{setMenuId(null);onProfile&&onProfile(patient);}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 14px",border:"none",background:"#fff",fontSize:"0.85rem",cursor:"pointer",fontFamily:"inherit"}}>Open patient profile</button>
+              {onDeleteTreatment && v.source==="tx" && v.all.length>0 && (confirmId===patient.id
+                ? <button type="button" onClick={()=>{onDeleteTreatment(patient);setConfirmId(null);setMenuId(null);}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 14px",border:"none",background:"#FEF2F2",color:C.red,fontWeight:700,fontSize:"0.85rem",cursor:"pointer",fontFamily:"inherit"}}>Tap again to confirm</button>
+                : <button type="button" onClick={()=>setConfirmId(patient.id)} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 14px",border:"none",background:"#fff",color:C.red,fontSize:"0.85rem",cursor:"pointer",fontFamily:"inherit"}}>Remove all sessions</button>)}
+            </div>
+          )}
+          <button type="button" onClick={()=>onStart&&onStart(patient)}
+            style={{width:"100%",marginTop:12,padding:"13px",borderRadius:12,border:"none",background:C.primary,color:"#fff",fontWeight:800,fontSize:"0.92rem",cursor:"pointer",fontFamily:"inherit"}}>
+            {draft ? "Resume Draft →" : "Start Session →"}
+          </button>
+        </div>
+      ))}
     </div>
   );
 }

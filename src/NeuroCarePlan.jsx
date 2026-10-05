@@ -5,6 +5,7 @@ import { exerciseRichItem } from "./exerciseCardKit.jsx";
 import { TECHNIQUE_TYPES, BLANK_TECHNIQUE, techniqueEntryForm, techniqueLabel } from "./orthoOutpatientSections.jsx";
 import { EvidenceProtocolBrowser } from "./orthoEvidenceProtocols.jsx";
 import { listClinicProtocols, saveClinicProtocol } from "./clinicProtocols.js";
+import { isDraftSession, sessionLaunchPending, clearSessionLaunch } from "./txSessions.js";
 import {
   deriveNeuroProblems, buildGoalsForProblem, PROBLEM_CATEGORIES, categoryLabel,
   REFERENCES, ASSIST_LADDER, problemById,
@@ -1178,72 +1179,264 @@ function newSessionDraft(treatments, no) {
     items: treatments.map((t) => ({ treatmentId: t.id, done: true, actual: doseLine(t), note: "" })),
     measures: {},
     note: "",
+    status: "draft",
+    painBefore: "",
+    painAfter: "",
   };
 }
 
-function SessionEditor({ draft, setDraft, treatments, goals, sessions, onSave, onCancel }) {
-  const setItem = (tid, patch) => setDraft({ ...draft, items: draft.items.map((it) => (it.treatmentId === tid ? { ...it, ...patch } : it)) });
-  const doneCount = draft.items.filter((it) => it.done).length;
+function PainStepper({ label, caption, value, onChange }) {
+  const n = parseFloat(value);
+  const has = Number.isFinite(n);
+  const step = (d) => onChange(String(Math.max(0, Math.min(10, (has ? n : 0) + d))));
+  const btn = { width: 38, height: 38, borderRadius: 11, border: `1px solid ${BRAND.border}`, background: "#f5f3ff", color: BRAND.ink, fontSize: 20, fontWeight: 800, cursor: "pointer" };
   return (
-    <div className="tech-card" style={{ borderColor: BRAND.purple }}>
-      <div className="row-2" style={{ gap: 10 }}>
-        <div>
-          <div className="vital-label-row"><span className="vital-label">Session #</span></div>
-          <div style={{ fontSize: 18, fontWeight: 900, color: BRAND.purpleDark }}>{draft.no}</div>
+    <div style={{ flex: "1 1 130px" }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: BRAND.gray, marginBottom: 4 }}>{caption || label}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <button type="button" aria-label={`${label} pain minus`} onClick={() => step(-1)} style={btn}>−</button>
+        <div aria-label={`${label} pain`} style={{ minWidth: 50, height: 38, borderRadius: 11, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 17, border: `1.5px solid ${BRAND.border}`, background: "#fff", color: BRAND.ink }}>
+          {has ? n : "–"}<span style={{ fontSize: 11, color: BRAND.gray, marginLeft: 2 }}>/10</span>
         </div>
-        <TextField label="Date" value={draft.date} onChange={(v) => setDraft({ ...draft, date: v })} placeholder="YYYY-MM-DD" />
+        <button type="button" aria-label={`${label} pain plus`} onClick={() => step(1)} style={btn}>+</button>
       </div>
+    </div>
+  );
+}
 
-      <div className="subheading" style={{ marginTop: 12 }}>Today's treatment (from plan) · {doneCount}/{draft.items.length} done</div>
-      {draft.items.length === 0 && <div className="summary-empty">No treatments in the plan yet — add some in the Treatment phase.</div>}
-      {draft.items.map((it) => {
-        const t = treatments.find((x) => x.id === it.treatmentId);
-        if (!t) return null;
+const longDay = (iso) => {
+  const m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return iso || "";
+  const names = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  return `${+m[3]} ${names[+m[2] - 1]} ${m[1]}`;
+};
+
+const QUICK_MODALITIES = ["Heat / Cold", "IFT", "TENS", "Ultrasound", "Taping", "Dry needling", "Soft tissue release", "Education / advice"];
+
+function Chips({ options, value, onChange, tone }) {
+  return (
+    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+      {options.map((o) => {
+        const on = value === o;
         return (
-          <div key={it.treatmentId} className="tech-card" style={{ marginTop: 8, borderColor: it.done ? BRAND.purple : BRAND.border }}>
-            <button type="button" className="ct-item" style={{ padding: 0 }} onClick={() => setItem(it.treatmentId, { done: !it.done })}>
-              <span className="ct-checkbox">{it.done ? "☑" : "☐"}</span>
-              <span style={{ textAlign: "left", flex: 1 }}>
-                <span style={{ fontWeight: 600, textDecoration: it.done ? "none" : "line-through", color: it.done ? BRAND.ink : BRAND.gray }}>{t.name}</span>
-                <span style={{ display: "block", fontSize: 11, color: BRAND.gray }}>Planned: {doseLine(t) || "—"}</span>
-              </span>
-            </button>
-            {it.done && (
-              <div style={{ marginTop: 6 }}>
-                <TextField label="Actual" value={it.actual} onChange={(v) => setItem(it.treatmentId, { actual: v })} placeholder="what you actually did" />
-                <TextField label="Note (optional)" value={it.note} onChange={(v) => setItem(it.treatmentId, { note: v })} placeholder="e.g. fatigued, reduced reps" />
-              </div>
-            )}
-          </div>
+          <button key={o} type="button" aria-pressed={on} onClick={() => onChange(on ? "" : o)}
+            style={{ padding: "6px 14px", minHeight: 36, borderRadius: 99, border: `1.5px solid ${on ? (tone || BRAND.purple) : BRAND.border}`, background: on ? "#EDE9FE" : "#fff", color: on ? BRAND.purpleDark : BRAND.ink, fontWeight: on ? 800 : 600, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>{o}</button>
         );
       })}
+    </div>
+  );
+}
 
+const sCard = { background: "#fff", border: `1px solid ${BRAND.border}`, borderRadius: 14, padding: "10px 12px", marginBottom: 8, boxShadow: "0 2px 8px rgba(109,40,217,.05)" };
+const sTitle = { fontSize: 12.5, fontWeight: 800, color: BRAND.ink, textTransform: "uppercase", letterSpacing: ".6px", marginBottom: 6 };
+const sLabel = { fontSize: 12, fontWeight: 700, color: BRAND.gray, margin: "8px 0 4px" };
+
+// One planned treatment / exercise in today's session: tick = done today, untick = skipped today.
+function PlanItemRow({ it, t, open, onToggleOpen, onChange, onRemoveFromPlan }) {
+  const [confirm, setConfirm] = useState(false);
+  return (
+    <div style={{ borderTop: `1px solid ${BRAND.border}` }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", minHeight: 44 }}>
+        <button type="button" role="checkbox" aria-checked={it.done} aria-label={`${t.name} done today`} onClick={() => onChange({ done: !it.done })}
+          style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, border: it.done ? "none" : `1.5px solid ${BRAND.border}`, background: it.done ? "#16A34A" : "#fff", color: "#fff", fontWeight: 800, fontSize: 16, cursor: "pointer" }}>{it.done ? "✓" : ""}</button>
+        <button type="button" onClick={onToggleOpen} style={{ flex: 1, minWidth: 0, textAlign: "left", background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit" }}>
+          <span style={{ display: "block", fontWeight: 700, fontSize: 14, color: it.done ? BRAND.ink : BRAND.gray, textDecoration: it.done ? "none" : "line-through" }}>{t.name}</span>
+          <span style={{ display: "block", fontSize: 12, color: BRAND.gray }}>{it.done ? (it.actual || "—") : "Skipped today"}{it.note ? ` · ${it.note}` : ""}</span>
+        </button>
+        <button type="button" aria-label={`Edit ${t.name}`} onClick={onToggleOpen} style={{ background: "none", border: "none", color: BRAND.purple, fontWeight: 800, fontSize: 13, padding: "8px 4px", cursor: "pointer" }}>{open ? "Done" : "Edit"}</button>
+      </div>
+      {open && (
+        <div style={{ padding: "0 0 12px 38px" }}>
+          <div style={{ fontSize: 11.5, color: BRAND.gray, marginBottom: 4 }}>Planned: {doseLine(t) || "—"}</div>
+          <TextField label="Actual (sets × reps, hold, load…)" value={it.actual} onChange={(v) => onChange({ actual: v, done: true })} placeholder="what you actually did" />
+          <TextField label="Note (optional)" value={it.note} onChange={(v) => onChange({ note: v })} placeholder="e.g. progressed to 3 sets, pain at end range" />
+          {confirm ? (
+            <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 6 }}>
+              <span style={{ fontSize: 12.5, color: "#dc2626", fontWeight: 700, flex: 1 }}>Remove from the whole plan?</span>
+              <button type="button" className="ghost-btn" onClick={() => setConfirm(false)}>No</button>
+              <button type="button" className="primary-btn" style={{ background: "#dc2626" }} onClick={onRemoveFromPlan}>Remove</button>
+            </div>
+          ) : (
+            <button type="button" onClick={() => setConfirm(true)} style={{ marginTop: 6, background: "none", border: "none", color: "#dc2626", fontWeight: 700, fontSize: 12.5, padding: "6px 0", cursor: "pointer" }}>Remove from plan</button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SessionEditor({ draft, setDraft, treatments, goals, problems = [], sessions, onSave, onSaveDraft, onCancel, error, flash, onAddTreatment, onRemoveFromPlan }) {
+  const [openId, setOpenId] = useState(null);
+  const [adding, setAdding] = useState(false);
+  const [search, setSearch] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [measuresOpen, setMeasuresOpen] = useState(false);
+  const addRef = useRef(null);
+  // The library opens below the buttons; bring it into view so it doesn't look like nothing happened.
+  useEffect(() => { if (adding && addRef.current?.scrollIntoView) addRef.current.scrollIntoView({ behavior: "smooth", block: "start" }); }, [adding]);
+  const ci = draft.checkIn || {};
+  const setCi = (patch) => setDraft({ ...draft, checkIn: { ...ci, ...patch } });
+  const setItem = (tid, patch) => setDraft({ ...draft, items: draft.items.map((it) => (it.treatmentId === tid ? { ...it, ...patch } : it)) });
+  const extras = Array.isArray(draft.extras) ? draft.extras : [];
+  const isExercise = (t) => !!t.exerciseId;
+  const rows = draft.items.map((it) => ({ it, t: treatments.find((x) => x.id === it.treatmentId) })).filter((r) => r.t);
+  const exRows = rows.filter((r) => isExercise(r.t));
+  const txRows = rows.filter((r) => !isExercise(r.t));
+  const prev = sessions.filter((x) => x.id !== draft.id && !isDraftSession(x)).sort((a, b) => (b.no || 0) - (a.no || 0))[0];
+  const doneCount = rows.filter((r) => r.it.done).length + extras.length;
+  const addExtra = (name) => { if (!extras.some((e) => e.name === name)) setDraft({ ...draft, extras: [...extras, { id: uid(), name }] }); };
+  const planRow = (r) => (
+    <PlanItemRow key={r.it.treatmentId} it={r.it} t={r.t} open={openId === r.it.treatmentId}
+      onToggleOpen={() => setOpenId(openId === r.it.treatmentId ? null : r.it.treatmentId)}
+      onChange={(patch) => setItem(r.it.treatmentId, patch)}
+      onRemoveFromPlan={() => onRemoveFromPlan(r.it.treatmentId)} />
+  );
+
+  return (
+    <div>
+      {/* Header: which session, when, and what this patient is being treated for */}
+      <style>{`
+        .sess-compact .primary-btn, .sess-compact .ghost-btn { min-height: 40px; padding: 8px 14px; font-size: 13.5px; border-radius: 12px; }
+        .sess-compact .tile-card, .sess-compact .source-tab { padding-top: 8px; padding-bottom: 8px; }
+      `}</style>
+      <div style={{ ...sCard, padding: "8px 12px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontSize: 18, fontWeight: 900, color: BRAND.purpleDark, lineHeight: 1.2 }}>Session {draft.no}
+              {draft.status === "draft" ? <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 99, background: "#FEF3C7", color: "#B45309", verticalAlign: "middle" }}>Draft</span> : null}
+            </div>
+            <div style={{ fontSize: 11.5, color: BRAND.gray }}>{prev ? `Previous: ${longDay(prev.date)}` : "First session"}</div>
+          </div>
+          <input type="date" aria-label="Session date" value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })}
+            style={{ border: `1.5px solid ${BRAND.border}`, borderRadius: 10, padding: "6px 6px", fontSize: 12.5, fontFamily: "inherit", color: BRAND.ink, background: "#fff", width: 132, flexShrink: 0, boxSizing: "border-box" }} />
+        </div>
+        {problems.length > 0 && (
+          <div style={{ marginTop: 6, fontSize: 12, color: BRAND.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <b>Problems:</b> {problems.slice(0, 2).map((p) => p.name).join(" · ")}{problems.length > 2 ? ` +${problems.length - 2}` : ""}{goals.length > 0 ? ` · ${goals.length} goal${goals.length > 1 ? "s" : ""}` : ""}
+          </div>
+        )}
+      </div>
+
+      {/* 1. Check-in: what the patient tells you before you touch them */}
+      <div style={sCard}>
+        <div style={sTitle}>Check-in</div>
+        <PainStepper label="Before" caption="Pain now (before treatment)" value={draft.painBefore} onChange={(v) => setDraft({ ...draft, painBefore: v })} />
+        <div style={sLabel}>Since last visit</div>
+        <Chips options={["Better", "Same", "Worse"]} value={ci.trend || ""} onChange={(v) => setCi({ trend: v })} tone={ci.trend === "Worse" ? "#dc2626" : undefined} />
+        <div style={sLabel}>Home exercises done?</div>
+        <Chips options={["Fully", "Partly", "Not done"]} value={ci.adherence || ""} onChange={(v) => setCi({ adherence: v })} />
+        <div style={{ marginTop: 8 }}>
+          <button type="button" aria-pressed={!!ci.redFlag} onClick={() => setCi({ redFlag: !ci.redFlag })}
+            style={{ padding: "6px 12px", minHeight: 36, borderRadius: 10, border: `1.5px solid ${ci.redFlag ? "#dc2626" : BRAND.border}`, background: ci.redFlag ? "#FEF2F2" : "#fff", color: ci.redFlag ? "#dc2626" : BRAND.ink, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
+            {ci.redFlag ? "⚠ New symptom / red flag reported" : "＋ New symptom or red flag?"}
+          </button>
+          {ci.redFlag && <div style={{ marginTop: 6 }}><TextField label="What was reported" value={ci.redFlagNote || ""} onChange={(v) => setCi({ redFlagNote: v })} placeholder="e.g. new numbness in left foot, night pain" /></div>}
+        </div>
+      </div>
+
+      {/* 2. Exercises */}
+      <div style={sCard}>
+        <div style={sTitle}>Exercises <span style={{ textTransform: "none", fontWeight: 600, color: BRAND.gray }}>· {exRows.filter((r) => r.it.done).length}/{exRows.length} done</span></div>
+        {exRows.length === 0 && <div className="summary-empty" style={{ marginBottom: 6 }}>No exercises in the plan yet — add one below.</div>}
+        {exRows.map(planRow)}
+        <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 6, minHeight: 40, padding: "8px 14px", fontSize: 13.5 }} onClick={() => setAdding(true)}>＋ Add exercise</button>
+      </div>
+
+      {/* 3. Treatment / modalities */}
+      <div style={sCard}>
+        <div style={sTitle}>Treatment & modalities</div>
+        {txRows.length === 0 && extras.length === 0 && <div className="summary-empty" style={{ marginBottom: 6 }}>Nothing yet — tick what you did today.</div>}
+        {txRows.map(planRow)}
+        {extras.map((e) => (
+          <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderTop: `1px solid ${BRAND.border}`, minHeight: 48 }}>
+            <span style={{ width: 28, height: 28, borderRadius: 8, background: "#16A34A", color: "#fff", fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>✓</span>
+            <span style={{ flex: 1, fontWeight: 700, fontSize: 14 }}>{e.name}</span>
+            <button type="button" aria-label={`Remove ${e.name}`} onClick={() => setDraft({ ...draft, extras: extras.filter((x) => x.id !== e.id) })} style={{ width: 40, height: 40, border: "none", background: "none", color: "#dc2626", fontSize: 18, cursor: "pointer" }}>✕</button>
+          </div>
+        ))}
+        <div style={sLabel}>Quick add (today only)</div>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {QUICK_MODALITIES.filter((m) => !extras.some((e) => e.name === m)).map((m) => (
+            <button key={m} type="button" onClick={() => addExtra(m)} style={{ padding: "5px 11px", minHeight: 34, borderRadius: 99, border: `1px dashed ${BRAND.purple}`, background: "#fff", color: BRAND.purpleDark, fontWeight: 600, fontSize: 12.5, cursor: "pointer", fontFamily: "inherit" }}>＋ {m}</button>
+          ))}
+        </div>
+        <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 8, minHeight: 40, padding: "8px 14px", fontSize: 13.5 }} onClick={() => setAdding(true)}>＋ Add technique / protocol from library</button>
+      </div>
+
+      {adding && (
+        <div ref={addRef} style={{ ...sCard, borderColor: BRAND.purple, scrollMarginTop: 70 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <div style={sTitle}>Add to plan & today's session</div>
+            <button type="button" onClick={() => setAdding(false)} style={{ border: "none", background: "#EDE9FE", color: BRAND.purpleDark, fontWeight: 800, borderRadius: 10, padding: "8px 12px", cursor: "pointer" }}>Close</button>
+          </div>
+          <div className="sess-compact" style={{ paddingBottom: 8 }}>
+          <AddTreatmentPanel allGoals={goals} existing={new Set(treatments.map((t) => t.exerciseId))} floatingCTA
+            search={search} setSearch={setSearch} searchOpen={searchOpen} setSearchOpen={setSearchOpen}
+            onAdd={(t) => { onAddTreatment(t); setAdding(false); }} />
+          </div>
+        </div>
+      )}
+
+      {/* 4. Measures that feed Progress */}
       {goals.length > 0 && (
-        <>
-          <div className="subheading" style={{ marginTop: 14 }}>Record a measure (optional) — feeds Progress</div>
-          {goals.map((g) => {
-            const prev = previousMeasureForGoal(sessions, g.id, draft.id, g.baseline);
+        <div style={sCard}>
+          <button type="button" onClick={() => setMeasuresOpen(!measuresOpen)} style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit" }}>
+            <span style={{ ...sTitle, marginBottom: 0 }}>Measures (feed Progress) <span style={{ textTransform: "none", fontWeight: 600, color: BRAND.gray }}>· {Object.values(draft.measures || {}).filter((v) => v !== "" && v != null).length}/{goals.length}</span></span>
+            <span style={{ color: BRAND.purple, fontWeight: 800 }}>{measuresOpen ? "▲" : "▼"}</span>
+          </button>
+          {measuresOpen && goals.map((g) => {
+            const pm = previousMeasureForGoal(sessions, g.id, draft.id, g.baseline);
             return (
-              <div key={g.id} style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>
+              <div key={g.id} style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
                 <span style={{ flex: 1, fontSize: 12.5 }}>
                   {g.measure} <span style={{ color: BRAND.gray, fontSize: 11 }}>({g.baseline} → {g.target})</span>
-                  {prev && <span style={{ display: "block", fontSize: 10.5, color: BRAND.purpleDark }}>Previous: {prev.value} <span style={{ color: BRAND.gray }}>({prev.source})</span></span>}
+                  {pm && <span style={{ display: "block", fontSize: 10.5, color: BRAND.purpleDark }}>Previous: {pm.value} <span style={{ color: BRAND.gray }}>({pm.source})</span></span>}
                 </span>
-                <div style={{ width: 90 }}>
+                <div style={{ width: 96 }}>
                   <TextField label="" value={draft.measures[g.id] ?? ""} onChange={(v) => setDraft({ ...draft, measures: { ...draft.measures, [g.id]: v } })} placeholder={g.unit || "value"} />
                 </div>
               </div>
             );
           })}
-        </>
+        </div>
       )}
 
-      <div style={{ marginTop: 12 }}>
-        <TextArea label="Session note" value={draft.note} onChange={(v) => setDraft({ ...draft, note: v })} placeholder="Overall note for this session" />
+      {/* 5. After treatment */}
+      <div style={sCard}>
+        <div style={sTitle}>After treatment</div>
+        <PainStepper label="After" caption="Pain after treatment" value={draft.painAfter} onChange={(v) => setDraft({ ...draft, painAfter: v })} />
+        <div style={sLabel}>How did they tolerate it?</div>
+        <Chips options={["Tolerated well", "Mild soreness", "Aggravated"]} value={draft.tolerance || ""} onChange={(v) => setDraft({ ...draft, tolerance: v })} tone={draft.tolerance === "Aggravated" ? "#dc2626" : undefined} />
+        <div style={{ marginTop: 8 }}>
+          <TextArea label="Session Notes" value={draft.note} onChange={(v) => setDraft({ ...draft, note: v })} placeholder="Add treatment notes, patient response, changes, etc." />
+        </div>
+        <TextField label="Plan for next session" value={draft.nextPlan || ""} onChange={(v) => setDraft({ ...draft, nextPlan: v })} placeholder="e.g. progress to single-leg bridge, re-test ROM" />
+        <div style={{ marginTop: 6 }}>
+          <button type="button" role="checkbox" aria-checked={!!draft.hepReviewed} onClick={() => setDraft({ ...draft, hepReviewed: !draft.hepReviewed })}
+            style={{ display: "flex", alignItems: "center", gap: 10, background: "none", border: "none", padding: "8px 0", cursor: "pointer", fontFamily: "inherit", fontSize: 13.5, color: BRAND.ink, fontWeight: 600 }}>
+            <span style={{ width: 26, height: 26, borderRadius: 8, border: draft.hepReviewed ? "none" : `1.5px solid ${BRAND.border}`, background: draft.hepReviewed ? "#16A34A" : "#fff", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800 }}>{draft.hepReviewed ? "✓" : ""}</span>
+            Home program reviewed / updated with patient
+          </button>
+        </div>
       </div>
-      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-        <button type="button" className="ghost-btn" style={{ flex: 1 }} onClick={onCancel}>Cancel</button>
-        <button type="button" className="primary-btn" style={{ flex: 2 }} onClick={onSave}>Review session →</button>
+
+      <div style={{ position: "sticky", bottom: 0, zIndex: 5, background: "#fff", padding: "10px 0 calc(10px + env(safe-area-inset-bottom))", borderTop: `1px solid ${BRAND.border}` }}>
+        {error && <div role="alert" style={{ fontSize: 12.5, color: "#dc2626", fontWeight: 700, marginBottom: 8 }}>{error}</div>}
+        <div style={{ fontSize: 11.5, color: BRAND.gray, marginBottom: 6 }}>{doneCount} item{doneCount === 1 ? "" : "s"} done today</div>
+        <div style={{ display: "flex", gap: 8 }}>
+          {draft.status === "completed" ? (
+            <>
+              <button type="button" className="ghost-btn" style={{ flex: 1 }} onClick={onCancel}>Cancel</button>
+              <button type="button" className="primary-btn" style={{ flex: 2 }} onClick={onSave}>Update session →</button>
+            </>
+          ) : (
+            <>
+              <button type="button" className="ghost-btn" style={{ flex: 1 }} onClick={onSaveDraft}>{flash ? "✓ Draft saved" : "Save Draft"}</button>
+              <button type="button" className="primary-btn" style={{ flex: 1.6 }} onClick={onSave}>✓ Complete Session →</button>
+            </>
+          )}
+        </div>
+        {draft.status !== "completed" && <div onClick={onCancel} style={{ textAlign: "center", fontSize: 12, color: BRAND.gray, padding: "8px 0 0", cursor: "pointer" }}>Close without saving</div>}
       </div>
     </div>
   );
@@ -1271,7 +1464,8 @@ function SessionReviewCard({ draft, problems, goals, treatments, sessions, onBac
   const doneItems = draft.items.filter((it) => it.done);
   return (
     <>
-      <SectionIntro icon="✅" title="Session Review" sub={`Session ${draft.no} · ${draft.date} — check it over before saving.`} />
+      <SectionIntro icon="✅" title="Session Review" sub={`Session ${draft.no} · ${draft.date} — check it over, then complete the session.`} />
+      {(draft.painBefore !== "" || draft.painAfter !== "") && <div className="tech-card" style={{ marginBottom: 10 }}><div className="subheading" style={{ marginTop: 0 }}>Pain</div><div style={{ fontSize: 14, fontWeight: 800 }}>{draft.painBefore || "–"}/10 → {draft.painAfter || "–"}/10</div></div>}
 
       {problems.length > 0 && (
         <div className="tech-card">
@@ -1311,6 +1505,21 @@ function SessionReviewCard({ draft, problems, goals, treatments, sessions, onBac
         })}
       </div>
 
+      {(draft.extras || []).length > 0 && (
+        <div className="tech-card" style={{ marginTop: 10 }}>
+          <div className="subheading" style={{ marginTop: 0 }}>Also done today</div>
+          {draft.extras.map((e) => <div key={e.id} style={{ fontSize: 12.5, padding: "3px 0" }}>✓ {e.name}</div>)}
+        </div>
+      )}
+      {(draft.checkIn?.trend || draft.checkIn?.adherence || draft.checkIn?.redFlag || draft.tolerance) && (
+        <div className="tech-card" style={{ marginTop: 10 }}>
+          <div className="subheading" style={{ marginTop: 0 }}>Check-in</div>
+          {draft.checkIn?.trend && <div style={{ fontSize: 12.5 }}>Since last visit: <b>{draft.checkIn.trend}</b></div>}
+          {draft.checkIn?.adherence && <div style={{ fontSize: 12.5 }}>Home exercises: <b>{draft.checkIn.adherence}</b></div>}
+          {draft.checkIn?.redFlag && <div style={{ fontSize: 12.5, color: "#dc2626" }}>⚠ {draft.checkIn.redFlagNote || "New symptom / red flag reported"}</div>}
+          {draft.tolerance && <div style={{ fontSize: 12.5 }}>Tolerance: <b>{draft.tolerance}</b></div>}
+        </div>
+      )}
       {draft.note && (
         <div className="tech-card" style={{ marginTop: 10 }}>
           <div className="subheading" style={{ marginTop: 0 }}>Session note</div>
@@ -1320,24 +1529,139 @@ function SessionReviewCard({ draft, problems, goals, treatments, sessions, onBac
 
       <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
         <button type="button" className="ghost-btn" style={{ flex: 1 }} onClick={onBack}>← Edit</button>
-        <button type="button" className="primary-btn" style={{ flex: 2 }} onClick={onConfirm}>💾 Save Session</button>
+        <button type="button" className="primary-btn" style={{ flex: 2 }} onClick={onConfirm}>✓ Complete Session</button>
       </div>
     </>
   );
 }
 
-function SessionsPhase({ problems, treatments, goals, sessions, setSessions }) {
-  const [draft, setDraft] = useState(null);
-  const [reviewing, setReviewing] = useState(false);
-  const ordered = [...sessions].sort((a, b) => (b.date || "").localeCompare(a.date || "") || b.no - a.no);
+// Read-only view of one completed session.
+function SessionSummaryCard({ s, treatments, goals, onHistory, onNext, onEdit }) {
+  const doneItems = (s.items || []).filter((it) => it.done);
+  const measured = goals.filter((g) => s.measures?.[g.id] !== "" && s.measures?.[g.id] != null);
+  const hasPain = s.painBefore !== "" && s.painBefore != null;
+  return (
+    <>
+      <div className="tech-card">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+          <div>
+            <div style={{ fontWeight: 900, fontSize: 16, color: BRAND.ink }}>Session {s.no}</div>
+            <div style={{ fontSize: 12, color: BRAND.gray }}>{longDay(s.date)}</div>
+          </div>
+          <span style={{ fontSize: 11, fontWeight: 800, padding: "4px 10px", borderRadius: 99, background: "#DCFCE7", color: "#16A34A" }}>Completed</span>
+        </div>
+        {hasPain && <div style={{ marginTop: 8, fontSize: 14 }}>Pain <b>{s.painBefore}/10 → {s.painAfter || "–"}/10</b></div>}
+      </div>
+      <div className="tech-card" style={{ marginTop: 10 }}>
+        <div className="subheading" style={{ marginTop: 0 }}>Treatment Performed</div>
+        {doneItems.length === 0 && <div className="summary-empty">None recorded.</div>}
+        {doneItems.map((it) => {
+          const t = treatments.find((x) => x.id === it.treatmentId);
+          return t ? <div key={it.treatmentId} style={{ fontSize: 13, padding: "3px 0" }}><span style={{ color: "#16A34A", fontWeight: 800 }}>✓ </span>{t.name}{it.actual ? <span style={{ color: BRAND.gray }}> — {it.actual}</span> : null}</div> : null;
+        })}
+      </div>
+      {(s.extras || []).length > 0 && (
+        <div className="tech-card" style={{ marginTop: 10 }}>
+          <div className="subheading" style={{ marginTop: 0 }}>Also done today</div>
+          {s.extras.map((e) => <div key={e.id} style={{ fontSize: 13, padding: "3px 0" }}><span style={{ color: "#16A34A", fontWeight: 800 }}>✓ </span>{e.name}</div>)}
+        </div>
+      )}
+      {(s.checkIn?.trend || s.checkIn?.adherence || s.checkIn?.redFlag || s.tolerance || s.hepReviewed) && (
+        <div className="tech-card" style={{ marginTop: 10 }}>
+          <div className="subheading" style={{ marginTop: 0 }}>Check-in & response</div>
+          {s.checkIn?.trend && <div style={{ fontSize: 13 }}>Since last visit: <b>{s.checkIn.trend}</b></div>}
+          {s.checkIn?.adherence && <div style={{ fontSize: 13 }}>Home exercises: <b>{s.checkIn.adherence}</b></div>}
+          {s.checkIn?.redFlag && <div style={{ fontSize: 13, color: "#dc2626" }}>⚠ {s.checkIn.redFlagNote || "New symptom / red flag reported"}</div>}
+          {s.tolerance && <div style={{ fontSize: 13 }}>Tolerance: <b>{s.tolerance}</b></div>}
+          {s.hepReviewed && <div style={{ fontSize: 13 }}>✓ Home program reviewed with patient</div>}
+        </div>
+      )}
+      {measured.length > 0 && (
+        <div className="tech-card" style={{ marginTop: 10 }}>
+          <div className="subheading" style={{ marginTop: 0 }}>Goal measures</div>
+          {measured.map((g) => <div key={g.id} style={{ fontSize: 13, padding: "3px 0" }}>{g.measure}: <b>{s.measures[g.id]}</b> {g.unit || ""}</div>)}
+        </div>
+      )}
+      {s.note && <div className="tech-card" style={{ marginTop: 10 }}><div className="subheading" style={{ marginTop: 0 }}>Patient Response</div><div style={{ fontSize: 13, whiteSpace: "pre-wrap" }}>{s.note}</div></div>}
+      {s.nextPlan && <div className="tech-card" style={{ marginTop: 10 }}><div className="subheading" style={{ marginTop: 0 }}>Plan for next session</div><div style={{ fontSize: 13 }}>{s.nextPlan}</div></div>}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
+        <button type="button" className="ghost-btn" onClick={onHistory}>View History</button>
+        <button type="button" className="primary-btn" onClick={onNext}>Start Next Session</button>
+        <div onClick={onEdit} style={{ textAlign: "center", fontSize: 12, color: BRAND.gray, padding: 6, cursor: "pointer" }}>Edit this session</div>
+      </div>
+    </>
+  );
+}
 
-  const startNew = () => setDraft(newSessionDraft(treatments, sessions.length + 1));
+function SessionsPhase({ problems, treatments, goals, sessions, setSessions, setTreatments }) {
+  const completed = sessions.filter((s) => !isDraftSession(s));
+  const existingDraft = sessions.find(isDraftSession) || null;
+  const nextNo = completed.length + 1;
+  // "Start Session" on the Treatment page opens this screen straight into the editor
+  // (resuming the draft if there is one); the session number is never typed.
+  const [draft, setDraft] = useState(() => (sessionLaunchPending() ? (existingDraft || newSessionDraft(treatments, nextNo)) : null));
+  useEffect(() => { clearSessionLaunch(); }, []);
+  const [reviewing, setReviewing] = useState(false);
+  const [finished, setFinished] = useState(null);   // just-completed session -> confirmation screen
+  const [viewingId, setViewingId] = useState(null); // completed session shown as a summary
+  const [error, setError] = useState("");
+  const [flash, setFlash] = useState(false);
+  const ordered = [...sessions].sort((a, b) => (b.no || 0) - (a.no || 0) || (b.date || "").localeCompare(a.date || ""));
+
+  // Adding an exercise / technique mid-session also puts it on the care plan (so the next session is
+  // seeded with it) and ticks it as done today. Removing one takes it off the plan and out of this session.
+  const addToSession = (t) => {
+    const dup = t.exerciseId ? treatments.find((x) => x.exerciseId === t.exerciseId) : null;
+    const tid = dup ? dup.id : t.id;
+    if (!dup) setTreatments([...treatments, t]);
+    setDraft((d) => (d.items.some((i) => i.treatmentId === tid) ? d : { ...d, items: [...d.items, { treatmentId: tid, done: true, actual: doseLine(dup || t), note: "" }] }));
+  };
+  const removeFromPlan = (tid) => {
+    setTreatments(treatments.filter((x) => x.id !== tid));
+    setDraft((d) => ({ ...d, items: d.items.filter((i) => i.treatmentId !== tid) }));
+  };
+  const startNew = () => { setViewingId(null); setFinished(null); setError(""); setDraft(existingDraft || newSessionDraft(treatments, nextNo)); };
+  const put = (entry) => {
+    const exists = sessions.some((s) => s.id === entry.id);
+    setSessions(exists ? sessions.map((s) => (s.id === entry.id ? entry : s)) : [...sessions, entry]);
+  };
+  const saveDraft = () => {
+    setError("");
+    put({ ...draft, status: "draft", updatedAt: new Date().toISOString() });
+    setFlash(true); setTimeout(() => setFlash(false), 1800);
+  };
+  const tryComplete = () => {
+    const anyDone = draft.items.some((it) => it.done) || (draft.extras || []).length > 0;
+    if (!anyDone && !String(draft.note || "").trim()) { setError("Mark at least one treatment done or add a session note before completing."); return; }
+    if (draft.checkIn?.redFlag && !String(draft.checkIn.redFlagNote || "").trim()) { setError("Describe the new symptom / red flag that was reported."); return; }
+    if (draft.painBefore === "" || draft.painAfter === "") { setError("Set the pain rating before and after treatment."); return; }
+    setError("");
+    setReviewing(true);
+  };
   const commit = () => {
-    const exists = sessions.some((s) => s.id === draft.id);
-    setSessions(exists ? sessions.map((s) => (s.id === draft.id ? draft : s)) : [...sessions, draft]);
+    const now = new Date().toISOString();
+    const entry = { ...draft, status: "completed", completedAt: draft.completedAt || now, updatedAt: now };
+    put(entry);
     setDraft(null);
     setReviewing(false);
+    setFinished(entry);
   };
+
+  if (finished) {
+    return (
+      <div style={{ textAlign: "center", padding: "18px 4px" }}>
+        <div style={{ width: 64, height: 64, borderRadius: "50%", background: "#DCFCE7", color: "#16A34A", fontSize: 32, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>✓</div>
+        <div style={{ fontSize: 20, fontWeight: 800, color: "#16A34A" }}>Session Completed</div>
+        <div style={{ marginTop: 8, color: BRAND.gray, fontSize: 14 }}>Session {finished.no}</div>
+        <div style={{ margin: "10px 0", fontSize: 14 }}>Pain <b>{finished.painBefore}/10 → {finished.painAfter}/10</b></div>
+        <div style={{ color: BRAND.gray, fontSize: 13, marginBottom: 18 }}>Treatment recorded successfully.</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <button type="button" className="primary-btn" onClick={() => { setViewingId(finished.id); setFinished(null); }}>View Summary</button>
+          <button type="button" className="ghost-btn" onClick={startNew}>Start Next Session</button>
+        </div>
+      </div>
+    );
+  }
 
   if (draft && reviewing) {
     return (
@@ -1348,24 +1672,36 @@ function SessionsPhase({ problems, treatments, goals, sessions, setSessions }) {
     );
   }
 
+  const viewing = viewingId ? sessions.find((s) => s.id === viewingId) : null;
+  if (!draft && viewing) {
+    return <SessionSummaryCard s={viewing} treatments={treatments} goals={goals} onHistory={() => setViewingId(null)} onNext={startNew} onEdit={() => { setViewingId(null); setDraft({ ...viewing }); }} />;
+  }
+
   return (
     <>
-      <SectionIntro icon="🗓" title="Sessions" sub="Record what actually happened. Each session is seeded from the treatment plan — just adjust Planned vs Actual." />
+      {!draft && <SectionIntro icon="🗓" title="Sessions" sub="Record what actually happened. Each session is seeded from the treatment plan — just adjust Planned vs Actual." />}
 
       {draft ? (
-        <SessionEditor draft={draft} setDraft={setDraft} treatments={treatments} goals={goals} sessions={sessions} onSave={() => setReviewing(true)} onCancel={() => setDraft(null)} />
+        <SessionEditor draft={draft} setDraft={setDraft} treatments={treatments} goals={goals} problems={problems} sessions={sessions} onAddTreatment={addToSession} onRemoveFromPlan={removeFromPlan}
+          onSave={draft.status === "completed" ? () => { put({ ...draft, updatedAt: new Date().toISOString() }); setViewingId(draft.id); setDraft(null); } : tryComplete}
+          onSaveDraft={saveDraft} error={error} flash={flash}
+          onCancel={() => { setDraft(null); setError(""); }} />
       ) : (
         <>
-          <button type="button" className="primary-btn" style={{ width: "100%", marginBottom: 14 }} onClick={startNew}>＋ New session</button>
+          <button type="button" className="primary-btn" style={{ width: "100%", marginBottom: 14 }} onClick={startNew}>{existingDraft ? "Resume draft" : "＋ New session"}</button>
           {ordered.length === 0 && <div className="summary-empty">No sessions recorded yet. Tap “New session” to record today's visit.</div>}
           {ordered.map((s) => {
+            const isDraft = isDraftSession(s);
             const done = s.items.filter((it) => it.done).length;
             const measured = Object.values(s.measures || {}).filter((v) => v !== "" && v != null).length;
             return (
-              <div key={s.id} className="summary-card" style={{ cursor: "pointer" }} onClick={() => setDraft(s)}>
-                <div className="summary-title">Session {s.no} · {s.date}</div>
+              <div key={s.id} className="summary-card" style={{ cursor: "pointer" }} onClick={() => (isDraft ? setDraft(s) : setViewingId(s.id))}>
+                <div className="summary-title" style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                  <span>Session {s.no} · {s.date}</span>
+                  <span style={{ fontSize: 11, fontWeight: 800, padding: "2px 9px", borderRadius: 99, background: isDraft ? "#FEF3C7" : "#DCFCE7", color: isDraft ? "#B45309" : "#16A34A" }}>{isDraft ? "Draft" : "Completed"}</span>
+                </div>
                 <div style={{ fontSize: 11.5, color: BRAND.gray, marginTop: 2 }}>
-                  {done}/{s.items.length} treatments done{measured ? ` · ${measured} measure${measured > 1 ? "s" : ""} recorded` : ""}
+                  {done}/{s.items.length} treatments done{measured ? ` · ${measured} measure${measured > 1 ? "s" : ""} recorded` : ""}{s.painBefore ? ` · Pain ${s.painBefore}→${s.painAfter || "–"}` : ""}
                 </div>
                 {s.note && <div style={{ fontSize: 11.5, color: BRAND.gray, marginTop: 4, fontStyle: "italic" }}>{s.note}</div>}
               </div>
@@ -1380,6 +1716,7 @@ function SessionsPhase({ problems, treatments, goals, sessions, setSessions }) {
 /* ─── 6. PROGRESS (derived from session data, no extra typing) ─ */
 function entriesForGoal(sessions, goalId) {
   return sessions
+    .filter((s) => !isDraftSession(s))
     .map((s) => ({ sessionNo: s.no, date: s.date, value: parseFloat(s.measures?.[goalId]) }))
     .filter((e) => Number.isFinite(e.value))
     .sort((a, b) => (a.date || "").localeCompare(b.date || ""));
@@ -1390,6 +1727,16 @@ function ProgressPhase({ goals, sessions }) {
   return (
     <>
       <SectionIntro icon="📈" title="Progress" sub="Derived automatically from your session data — no separate progress notes needed." />
+      {(() => {
+        const pts = sessions.filter((x) => !isDraftSession(x) && x.painBefore !== "" && x.painBefore != null).sort((a, b) => (a.no || 0) - (b.no || 0));
+        if (pts.length === 0) return null;
+        return (
+          <div className="summary-card" style={{ cursor: "default" }}>
+            <div className="summary-title">Pain (NRS) by session</div>
+            {pts.map((x) => <div key={x.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, padding: "4px 0", borderTop: `1px solid ${BRAND.border}` }}><span>Session {x.no}</span><b>{x.painBefore}/10 → {x.painAfter || "–"}/10</b></div>)}
+          </div>
+        );
+      })()}
       {goals.length === 0 && <div className="summary-empty">No goals yet. Progress is calculated from the goals you set and the measures you record in sessions.</div>}
       {goals.map((g) => {
         const entries = entriesForGoal(sessions, g.id);
@@ -1513,7 +1860,7 @@ export function CarePlanSection({ data, setData, knowledge, sectionKey, initialP
           new tile cards were showing the same Problems/Goals/Treatment
           counts on top of each other). Reappears once you're inside a
           phase, "Plan" included, so there's still a way back to the hub. */}
-      {!controlled && phase !== "plan" && <PhaseNav phase={phase} setPhase={setInternalPhase} counts={{ problems: problems.length, goals: goals.length, treatment: treatments.length, plan: 0, sessions: sessions.length, progress: 0 }} phases={restrictPhases} />}
+      {!controlled && phase !== "plan" && <PhaseNav phase={phase} setPhase={setInternalPhase} counts={{ problems: problems.length, goals: goals.length, treatment: treatments.length, plan: 0, sessions: sessions.filter((x) => !isDraftSession(x)).length, progress: 0 }} phases={restrictPhases} />}
       {/* Only shown when a Plan tile opened this phase in place (viewOverride)
           -- the wizard's own step never moved, so this is the only way back
           to the hub (2026-09-18, Aditi: "click on the problem in that page
@@ -1525,7 +1872,7 @@ export function CarePlanSection({ data, setData, knowledge, sectionKey, initialP
       {phase === "goals" && <GoalsPhase suggested={suggested} problems={problems} setProblems={(v) => set("problems", v)} goals={goals} setGoals={(v) => set("goals", v)} onNext={() => goNextPhase("treatment")} setting={setting} floatingCTA={floatingCTA} />}
       {phase === "treatment" && <TreatmentPhase problems={problems} goals={goals} treatments={treatments} setTreatments={(v) => set("treatments", v)} onNext={() => goNextPhase("plan")} floatingCTA={floatingCTA} requireAuth={requireAuth} />}
       {phase === "plan" && <PlanPhase problems={problems} goals={goals} treatments={treatments} onGoToPhase={goToPhase} />}
-      {phase === "sessions" && <SessionsPhase problems={problems} treatments={treatments} goals={goals} sessions={sessions} setSessions={(v) => set("sessions", v)} />}
+      {phase === "sessions" && <SessionsPhase problems={problems} treatments={treatments} goals={goals} sessions={sessions} setSessions={(v) => set("sessions", v)} setTreatments={(v) => set("treatments", v)} />}
       {phase === "progress" && <ProgressPhase goals={goals} sessions={sessions} />}
     </KBContext.Provider>
   );

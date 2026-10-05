@@ -1,6 +1,7 @@
 // AppModules.jsx — PDF reports, HEP helpers, QuickVisit, Intake, Onboarding
 // Extracted from AppFull.jsx — pure extraction, no logic changes
 import React, { useState, useRef, useEffect } from "react";
+import { isDraftSession, completedSessions } from "./txSessions.js";
 
 // Scroll-and-tap Day / Month / Year picker -- same "DD/MM/YYYY" string a
 // plain text/date input would hold, so it drops straight into dem_dob etc.
@@ -191,8 +192,8 @@ function SessionListView({ PC, sessions, onOpen, onNew }) {
   return (
     <div>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10,flexWrap:"wrap",gap:8}}>
-        <div style={lbl}>Sessions {sessions.length>0&&<span style={{fontWeight:600,textTransform:"none"}}>· {sessions.length} logged</span>}</div>
-        <button onClick={onNew} style={{padding:"7px 14px",borderRadius:9,border:"none",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,color:"#fff",fontWeight:800,fontSize:"0.78rem",cursor:"pointer"}}>＋ New session</button>
+        <div style={lbl}>Session History {completedSessions(sessions).length>0&&<span style={{fontWeight:600,textTransform:"none"}}>· {completedSessions(sessions).length} completed</span>}</div>
+        <button onClick={onNew} style={{padding:"7px 14px",borderRadius:9,border:"none",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,color:"#fff",fontWeight:800,fontSize:"0.78rem",cursor:"pointer"}}>{sessions.some(isDraftSession)?"Resume draft":"＋ New session"}</button>
       </div>
       {sessions.length===0&&(
         <div style={{padding:"16px 12px",background:PC.s2,borderRadius:9,fontSize:"0.8rem",color:PC.muted,textAlign:"center"}}>No sessions logged yet — tap "＋ New session" to record the first visit.</div>
@@ -205,7 +206,7 @@ function SessionListView({ PC, sessions, onOpen, onNew }) {
         return (
           <div key={s.id||i} onClick={()=>onOpen(s.id)} style={{padding:"10px 11px",background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:10,marginBottom:8,cursor:"pointer"}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:5,gap:8}}>
-              <span style={{fontSize:"0.82rem",fontWeight:800,color:PC.text}}>Session {s.sessionNo||sessions.length-i} <span style={{color:PC.muted,fontWeight:600}}>· {s.date}</span></span>
+              <span style={{fontSize:"0.82rem",fontWeight:800,color:PC.text}}>Session {s.sessionNo||sessions.length-i} <span style={{color:PC.muted,fontWeight:600}}>· {s.date}</span> {isDraftSession(s)?<span style={{fontSize:"0.7rem",fontWeight:800,padding:"2px 8px",borderRadius:99,background:"#FEF3C7",color:"#B45309"}}>Draft</span>:<span style={{fontSize:"0.7rem",fontWeight:800,padding:"2px 8px",borderRadius:99,background:"#DCFCE7",color:"#16A34A"}}>Completed</span>}</span>
               {hasPain&&(
                 <span style={{flexShrink:0,fontSize:"0.75rem",fontWeight:800,padding:"2px 9px",borderRadius:99,background:better?`${PC.a3}18`:worse?"rgba(220,38,38,0.12)":`${PC.a4}18`,color:better?PC.a3:worse?"#dc2626":PC.a4}}>
                   {vs}{!isNaN(ve)&&ve!==vs?`→${ve}`:""}
@@ -222,20 +223,35 @@ function SessionListView({ PC, sessions, onOpen, onNew }) {
 }
 
 // ── Top-level: switches between the session list and one session's detail ──
-function QuickVisitForm({ PC, data, set, navTo }) {
+function QuickVisitForm({ PC, data, set, navTo, launch, onLaunchDone, activePatientId }) {
   // Start loading the session editor now so it is ready when a session is tapped.
   useEffect(() => { preloadSessionDetailView().catch(() => {}); }, []);
   const sessionsArr = Array.isArray(data.tx_sessions)?data.tx_sessions:[];
+  // "Start Session" from the Treatment page lands straight in the editor: it
+  // resumes this patient's draft if there is one, otherwise starts the next session.
+  const draftId = (sessionsArr.find(isDraftSession)||{}).id || null;
+  // launch: {mode:"start"} opens the editor; {mode:"open", id} opens one session's summary.
+  // It is applied by an effect (not just at first render) so it still works when this screen
+  // was already mounted, and it waits until the chosen patient's data has actually loaded.
   const [view, setView] = useState("list");
   const [activeId, setActiveId] = useState(null);
+  useEffect(() => {
+    if (!launch) return;
+    if (launch.patientId && launch.patientId !== activePatientId) return; // patient still switching
+    setActiveId(launch.mode==="open" ? launch.id : draftId);
+    setView("detail");
+    if (onLaunchDone) onLaunchDone();
+  }, [launch, activePatientId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (view === "list") {
     return <SessionListView PC={PC} sessions={sessionsArr}
       onOpen={(id)=>{setActiveId(id); setView("detail");}}
-      onNew={()=>{setActiveId(null); setView("detail");}}/>;
+      onNew={()=>{setActiveId(draftId); setView("detail");}}/>;
   }
   return <SessionDetailView key={activeId||"new"} PC={PC} data={data} set={set} navTo={navTo}
-    sessionsArr={sessionsArr} activeId={activeId} onBack={()=>{setView("list"); setActiveId(null);}}/>;
+    sessionsArr={sessionsArr} activeId={activeId} onBack={()=>{setView("list"); setActiveId(null);}}
+    onOpen={(id)=>{setActiveId(id); setView("detail");}}
+    onStartNext={()=>{setActiveId(draftId); setView("detail");}}/>;
 }
 
 // The "+ New" button in the top header opens this. Two steps, in this order

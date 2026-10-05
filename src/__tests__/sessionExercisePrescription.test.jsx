@@ -60,7 +60,7 @@ describe("Exercise Prescription visibility in Sessions", () => {
     const setMock = vi.fn();
     render(<QuickVisitForm PC={PC} data={data} set={setMock} navTo={() => {}} />);
     fireEvent.click(screen.getByText("＋ New session"));
-    fireEvent.click(screen.getByText("Save session"));
+    fireEvent.click(screen.getByText("Save Draft"));
     const [, savedSessions] = setMock.mock.calls.find(c => c[0] === "tx_sessions");
     expect(savedSessions[0].exercisePrescription).toEqual(
       expect.arrayContaining([expect.objectContaining({ name: "Bridging" })])
@@ -79,6 +79,7 @@ describe("Exercise Prescription visibility in Sessions", () => {
     ] };
     render(<QuickVisitForm PC={PC} data={data} set={vi.fn()} navTo={() => {}} />);
     fireEvent.click(screen.getByText(/Session 1/));
+    fireEvent.click(screen.getByText("Edit this session"));
     expect(screen.getByText("Currently prescribed exercise")).toBeTruthy();
     expect(screen.queryByText("Old prescribed exercise")).toBeNull();
   });
@@ -91,6 +92,7 @@ describe("Exercise Prescription visibility in Sessions", () => {
     const setMock = vi.fn();
     render(<QuickVisitForm PC={PC} data={data} set={setMock} navTo={() => {}} />);
     fireEvent.click(screen.getByText(/Session 1/));
+    fireEvent.click(screen.getByText("Edit this session"));
     fireEvent.click(screen.getByTitle("Remove"));
     expect(setMock).toHaveBeenCalledWith("tx_exercise_prescription", []);
   });
