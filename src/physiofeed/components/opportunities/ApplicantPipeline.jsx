@@ -71,6 +71,8 @@ export default function ApplicantPipeline({ opp, applicants, onBack, onOpenAppli
                     <span className="text-[11px] text-slate-400 shrink-0">Applied {a.appliedAgo}</span>
                   </div>
                   <p className="text-xs text-slate-500 truncate">{a.headline}</p>
+                  {a.currentRole && <p className="text-[11px] text-slate-400 truncate">Now: {[a.currentRole.title, a.currentRole.organization].filter(Boolean).join(" · ")}</p>}
+                  {a.resumeUrl && <span className="inline-block text-[10.5px] font-semibold text-indigo-600 mt-0.5">📄 CV attached</span>}
                   <div className="flex flex-wrap gap-1.5 mt-1.5">
                     {a.skills?.slice(0, 2).map((s) => <span key={s} className="text-[10.5px] font-medium px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">{s}</span>)}
                   </div>

@@ -1,5 +1,5 @@
 import { createPortal } from "react-dom";
-import { ChevronLeft, X, BadgeCheck, Phone, Mail, MapPin, MessageCircle, Star, XCircle } from "lucide-react";
+import { ChevronLeft, X, BadgeCheck, Phone, Mail, MapPin, MessageCircle, Star, XCircle, FileText, Briefcase, GraduationCap, Award } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
 
 // The "Applicant Clinical Dossier" sheet (2026-09-22, Aditi's brief + real
@@ -48,14 +48,111 @@ export default function ApplicantProfileSheet({ applicant: a, opp, onBack, onClo
             </div>
           </div>
 
-          <div className="flex items-center gap-4 text-xs text-slate-600 mb-4 pl-0.5">
-            <span className="inline-flex items-center gap-1.5"><Phone size={12} className="text-slate-400" />{a.phone}</span>
-            <span className="inline-flex items-center gap-1.5"><Mail size={12} className="text-slate-400" />{a.email}</span>
-          </div>
+          {(a.phone || a.email) && (
+            <div className="flex items-center gap-4 text-xs text-slate-600 mb-4 pl-0.5">
+              {a.phone && <span className="inline-flex items-center gap-1.5"><Phone size={12} className="text-slate-400" />{a.phone}</span>}
+              {a.email && <span className="inline-flex items-center gap-1.5"><Mail size={12} className="text-slate-400" />{a.email}</span>}
+            </div>
+          )}
+
+          {a.resumeUrl ? (
+            <a href={a.resumeUrl} target="_blank" rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-700 font-bold text-sm py-3 mb-5 hover:bg-indigo-100">
+              <FileText size={16} /> Open CV / résumé{a.resumeName ? ` · ${a.resumeName}` : ""}
+            </a>
+          ) : (
+            <p className="text-xs text-slate-400 mb-5">No CV uploaded.</p>
+          )}
 
           {a.note && (
             <div className="border-l-4 border-indigo-300 bg-slate-50 rounded-r-xl px-3.5 py-2.5 mb-5">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-1">Cover note</p>
               <p className="text-xs text-slate-600 italic leading-relaxed">&ldquo;{a.note}&rdquo;</p>
+            </div>
+          )}
+
+          {a.bio && (
+            <div className="mb-5">
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-2">About</p>
+              <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{a.bio}</p>
+            </div>
+          )}
+
+          {a.currentRole && (
+            <div className="mb-5">
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-2">Current role</p>
+              <div className="flex items-start gap-2.5 bg-slate-50 rounded-xl px-3.5 py-3">
+                <Briefcase size={15} className="text-indigo-500 mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-900">{a.currentRole.title || a.currentRole.organization}</p>
+                  {a.currentRole.title && a.currentRole.organization && <p className="text-xs text-slate-600">{a.currentRole.organization}</p>}
+                  {a.currentRole.range && <p className="text-[11px] text-slate-400 mt-0.5">{a.currentRole.range}</p>}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {a.experienceList?.length > 0 && (
+            <div className="mb-5">
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-2">Experience</p>
+              <div className="space-y-3">
+                {a.experienceList.map((x) => (
+                  <div key={x.id} className="flex items-start gap-2.5">
+                    <Briefcase size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-slate-800">{x.title || x.organization}</p>
+                      {x.title && x.organization && <p className="text-xs text-slate-600">{x.organization}</p>}
+                      {x.range && <p className="text-[11px] text-slate-400">{x.range}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {(a.educationList?.length > 0 || a.college) && (
+            <div className="mb-5">
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-2">Education</p>
+              <div className="space-y-3">
+                {a.educationList?.map((e) => (
+                  <div key={e.id} className="flex items-start gap-2.5">
+                    <GraduationCap size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                    <div className="min-w-0 flex-1 flex items-baseline justify-between gap-2">
+                      <div className="min-w-0"><p className="text-sm font-medium text-slate-800">{e.title}</p>{e.subtitle && <p className="text-xs text-slate-500">{e.subtitle}</p>}</div>
+                      {e.when && <p className="text-[11px] text-slate-400 shrink-0">{e.when}</p>}
+                    </div>
+                  </div>
+                ))}
+                {!a.educationList?.length && a.college && <p className="text-sm text-slate-700">{a.college}</p>}
+              </div>
+            </div>
+          )}
+
+          {a.certificationList?.length > 0 && (
+            <div className="mb-5">
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-2">Certifications</p>
+              <div className="space-y-3">
+                {a.certificationList.map((c) => (
+                  <div key={c.id} className="flex items-start gap-2.5">
+                    <Award size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-slate-800">{c.title}</p>
+                      {c.issuer && <p className="text-xs text-slate-500">{c.issuer}</p>}
+                      {c.when && <p className="text-[11px] text-slate-400">Issued {c.when}</p>}
+                      {c.credentialId && <p className="text-[11px] text-slate-400">Credential ID: {c.credentialId}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {(a.areaOfPractice?.length > 0 || a.clinicalInterests?.length > 0) && (
+            <div className="mb-5">
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-2">Clinical focus</p>
+              <div className="flex flex-wrap gap-1.5">
+                {[...(a.areaOfPractice || []), ...(a.clinicalInterests || [])].map((t) => <span key={t} className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">{t}</span>)}
+              </div>
             </div>
           )}
 
