@@ -39,7 +39,7 @@ describe("shared Clinical Interpretation page", () => {
 
   it("lets you pick from the list and also type your own", () => {
     render(<Harness kind="neuro" />);
-    const box = screen.getAllByPlaceholderText("Pick from the list or type your own")[0];
+    const box = screen.getAllByPlaceholderText("Tap to pick from the list, or type your own")[0];
     fireEvent.focus(box);
     fireEvent.click(screen.getByText("Spasticity"));
     expect(saved().interpretation.impairments).toBe("Spasticity");

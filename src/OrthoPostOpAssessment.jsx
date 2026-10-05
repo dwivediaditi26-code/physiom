@@ -480,7 +480,7 @@ export default function OrthoPostOpAssessment({ selectedRegions, condition, cust
           {current.id === "balance" && <BalanceSection data={data} setData={setData} />}
           {current.id === "activityTolerance" && <ActivityToleranceSection data={data} setData={setData} />}
           {current.id === "outcomeMeasure" && <OrthoOutcomeMeasureFlow data={data} setData={setData} selectedRegions={selectedRegions} regionLabelOf={regionLabelOf} />}
-          {current.id === "impression" && <ImpressionSection data={data} setData={setData} />}
+          {current.id === "impression" && <ImpressionSection data={data} setData={setData} selectedRegions={selectedRegions} />}
           {CAREPLAN_STEP_IDS.includes(current.id) && (
             <>
               <style>{orthoStyles()}</style>

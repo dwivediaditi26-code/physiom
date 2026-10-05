@@ -441,12 +441,13 @@ export function ActivityToleranceSection({ data, setData }) {
 }
 
 
-export function ImpressionSection({ data, setData }) {
+export function ImpressionSection({ data, setData, selectedRegions }) {
   return (
     <ClinicalInterpretationSection
       data={data}
       setData={setData}
       kind="ortho"
+      selectedRegions={selectedRegions}
       section="impression"
       title="Clinical Impression & Plan"
       keys={{ problemList: "problems" }}

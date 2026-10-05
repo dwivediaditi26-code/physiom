@@ -850,7 +850,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
           {current.id === "functionalAssessment" && <FunctionalAssessmentSection data={data} setData={setData} />}
           {current.id === "activityTolerance" && <ActivityToleranceSection data={data} setData={setData} />}
           {current.id === "outcomeMeasure" && <OrthoOutcomeMeasureFlow data={data} setData={setData} selectedRegions={selectedRegions} regionLabelOf={regionLabelOf} condition={condition} jumpTo={jumpTo} />}
-          {current.id === "clinicalAssessment" && <ClinicalAssessmentSection data={data} setData={setData} />}
+          {current.id === "clinicalAssessment" && <ClinicalAssessmentSection data={data} setData={setData} selectedRegions={selectedRegions} />}
           {/* CAREPLAN_PHASE_BY_STEP, not CAREPLAN_STEP_IDS -- the latter is
               trimmed to the active default steps (Progress removed,
               2026-09-18), but a record saved before that still has

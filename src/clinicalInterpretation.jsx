@@ -1,5 +1,6 @@
 import React from "react";
 import { SectionIntro, SelectField, TextField, TextArea, useSectionData } from "./orthoFieldKit.jsx";
+import { diagnosisOptionsFor } from "./orthoRegionDiagnoses.js";
 
 /* ============================================================
    CLINICAL INTERPRETATION — one page for every assessment.
@@ -42,7 +43,19 @@ export const INTERPRETATION_LISTS = {
   },
 };
 
-const PICK_OR_TYPE = "Pick from the list or type your own";
+const PICK_OR_TYPE = "Tap to pick from the list, or type your own";
+
+// Easier to read and clearly fillable (2026-10-05, Aditi: "can we read it ...
+// the font should be black ... so that people should fill it"): the pale grey
+// hint text was hard to read, so hints are dark slate, what you type is near
+// black, and the boxes have a clearer outline. Scoped to this page.
+const READABLE_CSS = `
+.ci-page .text-input-wrap, .ci-page .select-wrap, .ci-page .textarea { border-color: #c4b5fd; }
+.ci-page .text-input-wrap:focus-within, .ci-page .select-wrap:focus-within, .ci-page .textarea:focus { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,.14); }
+.ci-page .text-input, .ci-page .select-input, .ci-page .textarea { color: #0f172a; font-size: 15px; font-weight: 500; }
+.ci-page .text-input::placeholder, .ci-page .select-input::placeholder, .ci-page .textarea::placeholder { color: #475569; opacity: 1; font-weight: 500; }
+.ci-page .field-label { color: #0f172a; font-weight: 700; }
+`;
 
 /* kind: "ortho" | "neuro" | "cardio"   section: saved section id
    keys: { impairments, activityLimitations, participationRestrictions,
@@ -51,23 +64,31 @@ const PICK_OR_TYPE = "Pick from the list or type your own";
    extras: [{ key, label, placeholder? }] extra text boxes shown last
    top: anything to show under the title (Cardio's automatic flags)
    intro: extra props for SectionIntro (sub / info) */
-export function ClinicalInterpretationSection({ data, setData, kind, section = "interpretation", keys = {}, extras = [], top = null, intro = {}, title = "Clinical Interpretation", problemHowTo }) {
+export function ClinicalInterpretationSection({ data, setData, kind, section = "interpretation", keys = {}, extras = [], top = null, intro = {}, title = "Clinical Interpretation", problemHowTo, selectedRegions }) {
   const [d, set] = useSectionData(data, setData, section);
   const lists = INTERPRETATION_LISTS[kind];
   const k = (name) => keys[name] || name;
+  // Ortho: diagnosis and differential options for the case's own region(s).
+  const regional = kind === "ortho" ? diagnosisOptionsFor(selectedRegions) : { diagnoses: [], differentials: [], label: "" };
+  const differentialOptions = regional.differentials.length ? regional.differentials : lists.differential;
   const pick = (name, label, options) => (
     <SelectField label={label} type="multi" options={options} value={d[k(name)]} onChange={(v) => set(k(name), v)} placeholder={PICK_OR_TYPE} />
   );
   return (
-    <>
+    <div className="ci-page">
+      <style>{READABLE_CSS}</style>
       <SectionIntro icon="🧠" title={title} {...intro} />
       {top}
       {pick("impairments", "Key impairments", lists.impairments)}
       {pick("activityLimitations", "Activity limitations", lists.activityLimitations)}
       {pick("participationRestrictions", "Participation restrictions", lists.participationRestrictions)}
-      <TextField label="Medical / referral diagnosis" value={d[k("referralDiagnosis")]} onChange={(v) => set(k("referralDiagnosis"), v)} placeholder="Type the diagnosis from the referral" />
-      <TextField label="Physiotherapy diagnosis" value={d[k("physioDiagnosis")]} onChange={(v) => set(k("physioDiagnosis"), v)} placeholder="Your clinical diagnosis" />
-      {pick("differentialDiagnosis", "Differential diagnosis", lists.differential)}
+      <TextField label="Medical / referral diagnosis" value={d[k("referralDiagnosis")]} onChange={(v) => set(k("referralDiagnosis"), v)} placeholder="Type the diagnosis written on the referral" />
+      {regional.diagnoses.length > 0 ? (
+        <SelectField label="Physiotherapy diagnosis" type="multi" options={regional.diagnoses} value={d[k("physioDiagnosis")]} onChange={(v) => set(k("physioDiagnosis"), v)} placeholder={`Tap to pick a ${regional.label} diagnosis, or type your own`} />
+      ) : (
+        <TextField label="Physiotherapy diagnosis" value={d[k("physioDiagnosis")]} onChange={(v) => set(k("physioDiagnosis"), v)} placeholder="Type your clinical diagnosis" />
+      )}
+      {pick("differentialDiagnosis", "Differential diagnosis", differentialOptions)}
       {pick("investigations", "Investigations reviewed", lists.investigations)}
       {pick("redFlags", "Red flags / precautions", lists.redFlags)}
       <TextArea label="Clinical impression / hypothesis" value={d[k("impression")]} onChange={(v) => set(k("impression"), v)} placeholder="How the findings, diagnosis, impairments and daily-life limits fit together" />
@@ -75,6 +96,6 @@ export function ClinicalInterpretationSection({ data, setData, kind, section = "
       {extras.map((x) => (
         <TextArea key={x.key} label={x.label} value={d[x.key]} onChange={(v) => set(x.key, v)} placeholder={x.placeholder} />
       ))}
-    </>
+    </div>
   );
 }

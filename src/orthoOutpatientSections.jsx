@@ -367,12 +367,13 @@ export function FunctionalAssessmentSection({ data, setData }) {
   );
 }
 
-export function ClinicalAssessmentSection({ data, setData }) {
+export function ClinicalAssessmentSection({ data, setData, selectedRegions }) {
   return (
     <ClinicalInterpretationSection
       data={data}
       setData={setData}
       kind="ortho"
+      selectedRegions={selectedRegions}
       section="clinicalAssessment"
       title="Clinical Assessment"
       keys={{ physioDiagnosis: "finalDiagnosis", impression: "clinicalImpression" }}

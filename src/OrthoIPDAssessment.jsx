@@ -496,7 +496,7 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
           {current.id === "balance" && <BalanceSection data={data} setData={setData} />}
           {current.id === "activityTolerance" && <ActivityToleranceSection data={data} setData={setData} />}
           {current.id === "outcomeMeasure" && <OrthoOutcomeMeasureFlow data={data} setData={setData} selectedRegions={selectedRegions} regionLabelOf={regionLabelOf} extraRecommended={PRESSURE_RISK_CONDITIONS.includes(condition) ? SUGGEST_ADL_AND_PRESSURE : SUGGEST_ADL} />}
-          {current.id === "impression" && <ImpressionSection data={data} setData={setData} />}
+          {current.id === "impression" && <ImpressionSection data={data} setData={setData} selectedRegions={selectedRegions} />}
           {CAREPLAN_STEP_IDS.includes(current.id) && (
             <>
               <style>{orthoStyles()}</style>
