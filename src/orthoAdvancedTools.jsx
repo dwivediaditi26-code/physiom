@@ -3,6 +3,8 @@ import { createPortal } from "react-dom";
 import { FmaIcon, poseForJoint } from "./fmaIcons.jsx";
 import { SectionIntro, TextArea, InfoButton, InfoCard, Hint, useSectionData } from "./orthoFieldKit.jsx";
 import { humanizeKey } from "./medicalAbbreviations.js";
+import PhotoSlots from "./PhotoSlots.jsx";
+import { kcImageIds } from "./kcImages.js";
 import { RESTRICTION_GRADE } from "./orthoClinicalData.js";
 import {
   KC_REGIONS,
@@ -281,6 +283,7 @@ function optionMeaningCards(options, icon = "📊") {
 export function kcRichItem(t) {
   return {
     image: t.id,
+    images: kcImageIds(t.id),
     title: t.label,
     subtitle: t.joint,
     perform: <InfoCard icon="👐" label="How to perform" tint="violet">{t.how}</InfoCard>,
@@ -366,6 +369,7 @@ export function KineticChainSection({ data, setData, sectionKey = "kineticChain"
                 <InfoButton title={t.label} richItem={kcRichItem(t)} />
               </div>
               <div className="muscle-subtitle">{t.joint}</div>
+              <PhotoSlots ids={kcImageIds(t.id)} />
               <InfoCard icon="🔎" label="Helps find" tint="violet">{kcHelpsFind(t)}</InfoCard>
               <div style={{ fontSize: "0.7rem", fontWeight: 800, letterSpacing: ".05em", textTransform: "uppercase", color: "#6b7280", margin: "12px 0 6px" }}>Result</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>

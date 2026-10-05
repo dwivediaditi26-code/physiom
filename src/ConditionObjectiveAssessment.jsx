@@ -42,6 +42,8 @@ import { RESTRICTION_GRADE, spineRegionData, ROM_DATA, MMT_DATA, SPECIAL_TESTS_D
 import { romRichItem, specialRichItem, mmtRichItem, GradeSelect } from "./orthoRegionAssessments.jsx";
 import { kcRichItem, cpaRichItem, fmaRichItem, GradeSelect as ObserveSelect, FMA_HELPS, FMA_GRADE_COLOR } from "./orthoAdvancedTools.jsx";
 import { KC_REGIONS, NKT_REGIONS, FMA_DATA, CYRIAX_REGIONS_DATA } from "./orthoAdvancedLibrary.js";
+import PhotoSlots from "./PhotoSlots.jsx";
+import { kcImageIds } from "./kcImages.js";
 import { FmaIcon, poseForJoint } from "./fmaIcons.jsx";
 import { runCervicalDifferential, hasCervicalChecklistData } from "./orthoCervicalReasoning.js";
 import { runThoracicDifferential, hasThoracicChecklistData } from "./orthoThoracicReasoning.js";
@@ -2555,9 +2557,10 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
               <div className="movement-name-row">
                 {kcMatch && <FmaIcon pose={poseForJoint(kcMatch.joint)} size={22} />}
                 <span style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink }}>{condition.kineticChain.testName}</span>
-                <InfoButton title={condition.kineticChain.testName} richItem={kcRichItemFor(condition.kineticChain.testName)} />
+                <InfoButton title={condition.kineticChain.testName} richItem={kcMatch ? kcRichItem(kcMatch) : kcRichItemFor(condition.kineticChain.testName)} />
               </div>
               {kcMatch?.joint && <div className="muscle-subtitle">{kcMatch.joint}</div>}
+              {kcMatch && !condition.kineticChain.notApplicable && <PhotoSlots ids={kcImageIds(kcMatch.id)} />}
               {condition.kineticChain.notApplicable ? (
                 <div style={{ fontSize: "0.8rem", color: BRAND.grayLight, lineHeight: 1.5, fontStyle: "italic", marginTop: 8 }}>{condition.kineticChain.chainEffect}</div>
               ) : (
@@ -2589,7 +2592,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
               ) : (
                 <>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, marginBottom: 4 }}>
-                    <InfoButton imageTrigger size="lg" fallbackIcon="ti-link" title={condition.kineticChain.name} richItem={kcRichItemFor(condition.kineticChain.name)} />
+                    <InfoButton imageTrigger size="lg" fallbackIcon="ti-link" title={condition.kineticChain.name} richItem={kcMatch ? kcRichItem(kcMatch) : kcRichItemFor(condition.kineticChain.name)} />
                     <div style={{ minWidth: 0 }}>
                       <div className="movement-name-row">
                         {kcMatch && <FmaIcon pose={poseForJoint(kcMatch.joint)} size={22} />}
@@ -2599,6 +2602,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                       {kcMatch?.joint && <div className="muscle-subtitle">{kcMatch.joint}</div>}
                     </div>
                   </div>
+                  {kcMatch && <PhotoSlots ids={kcImageIds(kcMatch.id)} />}
                   <div style={{ marginTop: 8 }}>
                     <InfoCard icon="🔎" label="Helps find" tint="violet">{hasReal ? kcHelpsFindLocal(kcMatch) : condition.kineticChain.chainEffect}</InfoCard>
                   </div>
