@@ -109,7 +109,13 @@ Deno.serve(async (req) => {
   );
 
   const sent = results.filter((r) => r.status === "fulfilled").length;
-  return new Response(JSON.stringify({ sent, total: subs.length }), {
+  // Why a device was refused (e.g. 403 = the app's push key does not match the
+  // one this phone registered with), so a failed test can say so.
+  const failed = results
+    .filter((r): r is PromiseRejectedResult => r.status === "rejected")
+    .slice(0, 3)
+    .map((r) => ({ status: r.reason?.statusCode ?? null, body: String(r.reason?.body ?? r.reason?.message ?? "").slice(0, 200) }));
+  return new Response(JSON.stringify({ sent, total: subs.length, ...(failed.length ? { failed } : {}) }), {
     status: 200,
     headers: { "Content-Type": "application/json" },
   });

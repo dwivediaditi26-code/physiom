@@ -28,6 +28,19 @@ export function pushSupported() {
   return typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window;
 }
 
+// iPhone/iPad only allow web notifications once the app is added to the Home
+// Screen and opened from there; in a normal Safari tab the push API does not
+// exist at all.
+export function isStandalone() {
+  if (typeof window === "undefined") return false;
+  return window.navigator.standalone === true || (window.matchMedia?.("(display-mode: standalone)").matches ?? false);
+}
+export function isIosDevice() {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent || "";
+  return /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
 export function pushPermission() {
   if (typeof Notification === "undefined") return "unsupported";
   return Notification.permission; // "default" | "granted" | "denied"
@@ -64,15 +77,17 @@ async function registerDevice(userId) {
   }
 
   const json = subscription.toJSON();
-  const { error } = await supabase.from("push_subscriptions").upsert(
-    {
-      user_id: userId,
-      endpoint: json.endpoint,
-      p256dh: json.keys.p256dh,
-      auth: json.keys.auth,
-    },
-    { onConflict: "endpoint" }
-  );
+  // Delete then insert, not upsert: the table lets you insert, read and
+  // delete your own rows but has no UPDATE rule, so an upsert onto a row that
+  // already exists (turning notifications on again, or the repair above) was
+  // refused and the device silently stayed unregistered.
+  try { await supabase.from("push_subscriptions").delete().eq("endpoint", json.endpoint); } catch { /* not ours or not there -- the insert below decides */ }
+  const { error } = await supabase.from("push_subscriptions").insert({
+    user_id: userId,
+    endpoint: json.endpoint,
+    p256dh: json.keys.p256dh,
+    auth: json.keys.auth,
+  });
   if (error) { console.warn("[push] failed to save subscription", error); return { ok: false, reason: "save_failed" }; }
   return { ok: true };
 }

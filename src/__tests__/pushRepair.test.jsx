@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // A phone that turned notifications on before the 2026-10-02 key change holds
 // a registration the server can't use. ensurePushSubscription() replaces it.
-const upsert = vi.fn(() => Promise.resolve({ error: null }));
+const insert = vi.fn(() => Promise.resolve({ error: null }));
 const del = vi.fn(() => ({ eq: () => Promise.resolve({ error: null }) }));
 vi.mock("../supabase.js", () => ({
-  supabase: { from: vi.fn(() => ({ upsert, delete: del })) },
+  supabase: { from: vi.fn(() => ({ insert, delete: del })) },
 }));
 import { ensurePushSubscription, subscribeToPush } from "../pushNotifications.js";
 
@@ -26,7 +26,7 @@ function fakeSubscription(endpoint, keyBytes) {
   };
 }
 beforeEach(() => {
-  upsert.mockClear(); del.mockClear();
+  insert.mockClear(); del.mockClear();
   subscribeCalls = []; unsubscribed = []; existing = null;
   Object.defineProperty(window, "PushManager", { value: function () {}, configurable: true });
   Object.defineProperty(window, "Notification", { value: { permission: "granted", requestPermission: vi.fn(() => Promise.resolve("granted")) }, configurable: true });
@@ -46,7 +46,7 @@ describe("push registration repair", () => {
     expect(r.ok).toBe(true);
     expect(unsubscribed).toEqual(["https://push/old"]);
     expect(subscribeCalls).toHaveLength(1);
-    expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ user_id: "u1", endpoint: "https://push/new" }), expect.anything());
+    expect(insert).toHaveBeenCalledWith(expect.objectContaining({ user_id: "u1", endpoint: "https://push/new" }));
   });
 
   it("keeps a registration that already uses the current key", async () => {
