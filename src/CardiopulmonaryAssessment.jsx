@@ -1,5 +1,6 @@
 import { REMOVED_CAREPLAN_STEP_IDS, withCarePlanSummaryStep } from "./assessmentSteps.js";
 import { ClinicalInterpretationSection, DiagnosisSection } from "./clinicalInterpretation.jsx";
+import { cardioDiagnosisOptionsFor } from "./specialtyDiagnoses.js";
 import { AddAssessmentModal } from "./assessmentFrame.jsx";
 import { rowsForStep } from "./orthoSummary.jsx";
 import { MedicalRecordsSection } from "./MedicalRecords.jsx";
@@ -2472,7 +2473,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
           {current.id === "exercise" && <ExerciseSection data={data} setData={setData} setting={setting} />}
           {current.id === "outcomes" && <OutcomesSection data={data} setData={setData} setting={setting} system={system} />}
           {current.id === "interpretation" && <InterpretationSection data={data} setData={setData} />}
-          {current.id === "diagnosis" && <DiagnosisSection data={data} setData={setData} kind="cardio" legacy={{ section: "interpretation" }} />}
+          {current.id === "diagnosis" && <DiagnosisSection data={data} setData={setData} kind="cardio" options={cardioDiagnosisOptionsFor({ setting, system })} legacy={{ section: "interpretation" }} />}
           {/* CAREPLAN_PHASE_BY_STEP, not CAREPLAN_STEP_IDS -- the latter is
               trimmed to the active default steps (Progress removed,
               2026-09-18), but a record saved before that still has

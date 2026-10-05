@@ -101,15 +101,17 @@ export function ClinicalInterpretationSection({ data, setData, kind, section = "
    in `legacy.section` under the old names. Assessments saved that way still
    show their entries here, and the old copy is cleared the first time a box is
    edited so the Summary does not list it twice.
+   options: { diagnoses, differentials, label } -- see specialtyDiagnoses.js (Neuro, Cardio).
    legacy: { section, keys } -- keys maps this page's names (referralDiagnosis,
    physioDiagnosis, differentialDiagnosis) to the names used there. */
-export function DiagnosisSection({ data, setData, kind, selectedRegions, legacy = {} }) {
+export function DiagnosisSection({ data, setData, kind, selectedRegions, options, legacy = {} }) {
   const [d, set] = useSectionData(data, setData, "diagnosis");
   const [old, setOld] = useSectionData(data, setData, legacy.section || "__none");
   const oldKeys = { referralDiagnosis: "referralDiagnosis", physioDiagnosis: "physioDiagnosis", differentialDiagnosis: "differentialDiagnosis", ...(legacy.keys || {}) };
   const lists = INTERPRETATION_LISTS[kind];
-  // Ortho: options for the case's own region(s).
-  const regional = kind === "ortho" ? diagnosisOptionsFor(selectedRegions) : { diagnoses: [], differentials: [], label: "" };
+  // Options for the case itself: Ortho by region(s); Neuro by condition; Cardio
+  // by system and setting (computed by the wizard and passed in as `options`).
+  const regional = options || (kind === "ortho" ? diagnosisOptionsFor(selectedRegions) : { diagnoses: [], differentials: [], label: "" });
   const differentialOptions = regional.differentials.length ? regional.differentials : lists.differential;
 
   const value = (key, oldName) => (d[key] !== undefined ? d[key] : old[oldKeys[oldName]]);

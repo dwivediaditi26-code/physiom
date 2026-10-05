@@ -1,5 +1,6 @@
 import { REMOVED_CAREPLAN_STEP_IDS, withCarePlanSummaryStep } from "./assessmentSteps.js";
 import { ClinicalInterpretationSection, DiagnosisSection } from "./clinicalInterpretation.jsx";
+import { neuroDiagnosisOptionsFor } from "./specialtyDiagnoses.js";
 import { AddAssessmentModal } from "./assessmentFrame.jsx";
 import { rowsForStep } from "./orthoSummary.jsx";
 import { MedicalRecordsSection } from "./MedicalRecords.jsx";
@@ -2058,6 +2059,9 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
     [stepOrder, customStepsMeta]
   );
 
+  // Diagnosis and differential suggestions for the condition chosen / added.
+  const neuroDiagnosisOptions = useMemo(() => neuroDiagnosisOptionsFor({ condition, stepOrder }), [condition, stepOrder]);
+
   const total = 1 + assessSteps.length;
   const assessIndex = step - 1; // index within assessSteps
   const current = step < 1 ? STEP_META[0] : assessSteps[assessIndex];
@@ -2703,7 +2707,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
               {current.id === "functional" && <FunctionalSection data={data} setData={setData} />}
               {current.id === "outcomes" && <OutcomesSection data={data} setData={setData} onNav={onNav} />}
               {current.id === "interpretation" && <InterpretationSection data={data} setData={setData} />}
-              {current.id === "diagnosis" && <DiagnosisSection data={data} setData={setData} kind="neuro" legacy={{ section: "interpretation" }} />}
+              {current.id === "diagnosis" && <DiagnosisSection data={data} setData={setData} kind="neuro" options={neuroDiagnosisOptions} legacy={{ section: "interpretation" }} />}
               {current.id === "precautions" && <PrecautionsSection data={data} setData={setData} setting={setting} />}
               {/* CAREPLAN_PHASE_BY_STEP, not CAREPLAN_STEP_IDS -- the latter
                   is trimmed to the active default steps (Progress removed,
