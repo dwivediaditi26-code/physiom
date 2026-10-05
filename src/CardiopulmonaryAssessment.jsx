@@ -1,5 +1,5 @@
 import { REMOVED_CAREPLAN_STEP_IDS, withCarePlanSummaryStep } from "./assessmentSteps.js";
-import { ClinicalInterpretationSection } from "./clinicalInterpretation.jsx";
+import { ClinicalInterpretationSection, DiagnosisSection } from "./clinicalInterpretation.jsx";
 import { AddAssessmentModal } from "./assessmentFrame.jsx";
 import { rowsForStep } from "./orthoSummary.jsx";
 import { MedicalRecordsSection } from "./MedicalRecords.jsx";
@@ -97,6 +97,7 @@ const STEP_META = [
   { id: "exercise", icon: <Icon name="run" />, label: "Exercise Response" },
   { id: "outcomes", icon: <Icon name="chart" />, label: "Outcome Measures" },
   { id: "interpretation", icon: <Icon name="brain" />, label: "Clinical Interpretation" },
+  { id: "diagnosis", icon: <Icon name="stethoscope" />, label: "Diagnosis" },
   // Care Plan — Problem List / Goals / Treatment / Plan / Sessions / Progress
   // (2026-09-17, Aditi: "do the same for the cardio ... goals, treatment ...
   // library and session and progress and plan"), same shared CarePlanSection
@@ -145,11 +146,16 @@ function ensureCarePlanSteps(order) {
     order = [...order];
     order.splice(chartIdx === -1 ? Math.min(order.length, 5) : chartIdx + 1, 0, "medicalRecords");
   }
+  // Diagnosis (2026-10) -- its own page right after Clinical Interpretation.
+  if (!order.includes("diagnosis") && order.includes("interpretation")) {
+    order = [...order];
+    order.splice(order.indexOf("interpretation") + 1, 0, "diagnosis");
+  }
   const present = new Set(order);
   const missing = CAREPLAN_STEP_IDS.filter((id) => !present.has(id));
   if (!missing.length) return order;
-  const interpIdx = order.indexOf("interpretation");
-  const insertAt = interpIdx === -1 ? order.length : interpIdx + 1;
+  const anchorIdx = order.includes("diagnosis") ? order.indexOf("diagnosis") : order.indexOf("interpretation");
+  const insertAt = anchorIdx === -1 ? order.length : anchorIdx + 1;
   const out = [...order];
   out.splice(insertAt, 0, ...missing);
   return out;
@@ -2466,6 +2472,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
           {current.id === "exercise" && <ExerciseSection data={data} setData={setData} setting={setting} />}
           {current.id === "outcomes" && <OutcomesSection data={data} setData={setData} setting={setting} system={system} />}
           {current.id === "interpretation" && <InterpretationSection data={data} setData={setData} />}
+          {current.id === "diagnosis" && <DiagnosisSection data={data} setData={setData} kind="cardio" legacy={{ section: "interpretation" }} />}
           {/* CAREPLAN_PHASE_BY_STEP, not CAREPLAN_STEP_IDS -- the latter is
               trimmed to the active default steps (Progress removed,
               2026-09-18), but a record saved before that still has

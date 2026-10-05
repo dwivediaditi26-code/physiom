@@ -11,6 +11,6 @@ describe("Neuro step order", () => {
     expect(got).not.toContain("carePlanSessions");
     expect(got).not.toContain("carePlanProgress");
     const tail = got.slice(got.indexOf("interpretation"));
-    expect(tail).toEqual(["interpretation", "carePlanProblems", "carePlanGoals", "exercisePrescription", "precautions", "summary"]);
+    expect(tail).toEqual(["interpretation", "diagnosis", "carePlanProblems", "carePlanGoals", "exercisePrescription", "precautions", "summary"]);
   });
 });

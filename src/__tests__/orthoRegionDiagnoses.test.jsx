@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { describe, it, expect } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { diagnosisOptionsFor, regionBucketsOf, REGION_CONDITIONS } from "../orthoRegionDiagnoses.js";
-import { ClinicalInterpretationSection } from "../clinicalInterpretation.jsx";
+import { DiagnosisSection } from "../clinicalInterpretation.jsx";
 import cervical from "../cervicalConditions.json";
 import thoracic from "../thoracicConditions.json";
 import lumbar from "../lumbarConditions.json";
@@ -65,28 +65,28 @@ function Harness({ regions }) {
   const [data, setData] = useState({});
   return (
     <>
-      <ClinicalInterpretationSection data={data} setData={setData} kind="ortho" selectedRegions={regions} section="clinicalAssessment" />
+      <DiagnosisSection data={data} setData={setData} kind="ortho" selectedRegions={regions} />
       <pre data-testid="data">{JSON.stringify(data)}</pre>
     </>
   );
 }
 const saved = () => JSON.parse(screen.getByTestId("data").textContent);
 
-describe("Ortho Clinical Interpretation page, by region", () => {
+describe("Ortho Diagnosis page, by region", () => {
   it("lets you pick the region's physiotherapy diagnosis and still type your own", () => {
     render(<Harness regions={[{ id: "knee" }]} />);
     const box = screen.getByPlaceholderText("Tap to pick a Knee diagnosis, or type your own");
     fireEvent.focus(box);
     fireEvent.click(screen.getByText("Meniscal Tear"));
-    expect(saved().clinicalAssessment.physioDiagnosis).toBe("Meniscal Tear");
+    expect(saved().diagnosis.physiotherapyDiagnosis).toBe("Meniscal Tear");
     fireEvent.change(box, { target: { value: "Meniscal Tear, Post-traumatic effusion" } });
-    expect(saved().clinicalAssessment.physioDiagnosis).toBe("Meniscal Tear, Post-traumatic effusion");
+    expect(saved().diagnosis.physiotherapyDiagnosis).toBe("Meniscal Tear, Post-traumatic effusion");
   });
 
   it("offers the region's differential, not the generic list", () => {
     render(<Harness regions={[{ id: "shoulder" }]} />);
-    const generic = screen.getAllByPlaceholderText("Tap to pick from the list, or type your own");
-    fireEvent.focus(generic[3]); // impairments, activity, participation, then differential (diagnosis uses its own hint)
+    const differential = screen.getByPlaceholderText("Tap to pick from the list, or type your own"); // the physiotherapy diagnosis box has its own region hint
+    fireEvent.focus(differential);
     expect(screen.getByText("Adhesive Capsulitis (Frozen Shoulder)")).toBeTruthy();
     expect(screen.getByText("Thoracic outlet syndrome")).toBeTruthy();
     expect(screen.queryByText("Ligament sprain")).toBeNull();
@@ -95,8 +95,7 @@ describe("Ortho Clinical Interpretation page, by region", () => {
   it("falls back to a typed diagnosis and the general differential list when the region has no list", () => {
     render(<Harness regions={[{ id: "thigh" }]} />);
     expect(screen.getByPlaceholderText("Type your clinical diagnosis")).toBeTruthy();
-    const boxes = screen.getAllByPlaceholderText("Tap to pick from the list, or type your own");
-    fireEvent.focus(boxes[3]);
+    fireEvent.focus(screen.getByPlaceholderText("Tap to pick from the list, or type your own"));
     expect(screen.getByText("Ligament sprain")).toBeTruthy();
   });
 });

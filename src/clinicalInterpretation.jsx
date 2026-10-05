@@ -59,18 +59,17 @@ const READABLE_CSS = `
 
 /* kind: "ortho" | "neuro" | "cardio"   section: saved section id
    keys: { impairments, activityLimitations, participationRestrictions,
-           referralDiagnosis, physioDiagnosis, differentialDiagnosis,
            investigations, redFlags, impression, problemList } -> saved field names
    extras: [{ key, label, placeholder? }] extra text boxes shown last
    top: anything to show under the title (Cardio's automatic flags)
-   intro: extra props for SectionIntro (sub / info) */
-export function ClinicalInterpretationSection({ data, setData, kind, section = "interpretation", keys = {}, extras = [], top = null, intro = {}, title = "Clinical Interpretation", problemHowTo, selectedRegions }) {
+   intro: extra props for SectionIntro (sub / info)
+
+   The three diagnosis boxes are their own page, right after this one
+   (DiagnosisSection below). */
+export function ClinicalInterpretationSection({ data, setData, kind, section = "interpretation", keys = {}, extras = [], top = null, intro = {}, title = "Clinical Interpretation", problemHowTo }) {
   const [d, set] = useSectionData(data, setData, section);
   const lists = INTERPRETATION_LISTS[kind];
   const k = (name) => keys[name] || name;
-  // Ortho: diagnosis and differential options for the case's own region(s).
-  const regional = kind === "ortho" ? diagnosisOptionsFor(selectedRegions) : { diagnoses: [], differentials: [], label: "" };
-  const differentialOptions = regional.differentials.length ? regional.differentials : lists.differential;
   const pick = (name, label, options) => (
     <SelectField label={label} type="multi" options={options} value={d[k(name)]} onChange={(v) => set(k(name), v)} placeholder={PICK_OR_TYPE} />
   );
@@ -82,13 +81,6 @@ export function ClinicalInterpretationSection({ data, setData, kind, section = "
       {pick("impairments", "Key impairments", lists.impairments)}
       {pick("activityLimitations", "Activity limitations", lists.activityLimitations)}
       {pick("participationRestrictions", "Participation restrictions", lists.participationRestrictions)}
-      <TextField label="Medical / referral diagnosis" value={d[k("referralDiagnosis")]} onChange={(v) => set(k("referralDiagnosis"), v)} placeholder="Type the diagnosis written on the referral" />
-      {regional.diagnoses.length > 0 ? (
-        <SelectField label="Physiotherapy diagnosis" type="multi" options={regional.diagnoses} value={d[k("physioDiagnosis")]} onChange={(v) => set(k("physioDiagnosis"), v)} placeholder={`Tap to pick a ${regional.label} diagnosis, or type your own`} />
-      ) : (
-        <TextField label="Physiotherapy diagnosis" value={d[k("physioDiagnosis")]} onChange={(v) => set(k("physioDiagnosis"), v)} placeholder="Type your clinical diagnosis" />
-      )}
-      {pick("differentialDiagnosis", "Differential diagnosis", differentialOptions)}
       {pick("investigations", "Investigations reviewed", lists.investigations)}
       {pick("redFlags", "Red flags / precautions", lists.redFlags)}
       <TextArea label="Clinical impression / hypothesis" value={d[k("impression")]} onChange={(v) => set(k("impression"), v)} placeholder="How the findings, diagnosis, impairments and daily-life limits fit together" />
@@ -96,6 +88,47 @@ export function ClinicalInterpretationSection({ data, setData, kind, section = "
       {extras.map((x) => (
         <TextArea key={x.key} label={x.label} value={d[x.key]} onChange={(v) => set(x.key, v)} placeholder={x.placeholder} />
       ))}
+    </div>
+  );
+}
+
+/* The Diagnosis page (2026-10-05, Aditi: "make diagnosis and differential
+   diagnosis, medical diagnosis -- separate tab after clinical assessment"):
+   medical / referral diagnosis, physiotherapy diagnosis, differential diagnosis.
+   Saved in its own "diagnosis" section.
+
+   Before this page existed those three boxes lived on the Clinical page, saved
+   in `legacy.section` under the old names. Assessments saved that way still
+   show their entries here, and the old copy is cleared the first time a box is
+   edited so the Summary does not list it twice.
+   legacy: { section, keys } -- keys maps this page's names (referralDiagnosis,
+   physioDiagnosis, differentialDiagnosis) to the names used there. */
+export function DiagnosisSection({ data, setData, kind, selectedRegions, legacy = {} }) {
+  const [d, set] = useSectionData(data, setData, "diagnosis");
+  const [old, setOld] = useSectionData(data, setData, legacy.section || "__none");
+  const oldKeys = { referralDiagnosis: "referralDiagnosis", physioDiagnosis: "physioDiagnosis", differentialDiagnosis: "differentialDiagnosis", ...(legacy.keys || {}) };
+  const lists = INTERPRETATION_LISTS[kind];
+  // Ortho: options for the case's own region(s).
+  const regional = kind === "ortho" ? diagnosisOptionsFor(selectedRegions) : { diagnoses: [], differentials: [], label: "" };
+  const differentialOptions = regional.differentials.length ? regional.differentials : lists.differential;
+
+  const value = (key, oldName) => (d[key] !== undefined ? d[key] : old[oldKeys[oldName]]);
+  const change = (key, oldName, v) => {
+    set(key, v);
+    if (legacy.section && old[oldKeys[oldName]]) setOld(oldKeys[oldName], "");
+  };
+
+  return (
+    <div className="ci-page">
+      <style>{READABLE_CSS}</style>
+      <SectionIntro icon="🩺" title="Diagnosis" info="What the referral says, what you conclude, and what else it could be." />
+      <TextField label="Medical diagnosis" value={value("medicalDiagnosis", "referralDiagnosis")} onChange={(v) => change("medicalDiagnosis", "referralDiagnosis", v)} placeholder="Type the diagnosis written on the referral" />
+      {regional.diagnoses.length > 0 ? (
+        <SelectField label="Physiotherapy diagnosis" type="multi" options={regional.diagnoses} value={value("physiotherapyDiagnosis", "physioDiagnosis")} onChange={(v) => change("physiotherapyDiagnosis", "physioDiagnosis", v)} placeholder={`Tap to pick a ${regional.label} diagnosis, or type your own`} />
+      ) : (
+        <TextField label="Physiotherapy diagnosis" value={value("physiotherapyDiagnosis", "physioDiagnosis")} onChange={(v) => change("physiotherapyDiagnosis", "physioDiagnosis", v)} placeholder="Type your clinical diagnosis" />
+      )}
+      <SelectField label="Differential diagnosis" type="multi" options={differentialOptions} value={value("differentialDiagnosis", "differentialDiagnosis")} onChange={(v) => change("differentialDiagnosis", "differentialDiagnosis", v)} placeholder={PICK_OR_TYPE} />
     </div>
   );
 }
