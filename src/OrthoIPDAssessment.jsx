@@ -1,3 +1,4 @@
+import { withCarePlanSummaryStep } from "./assessmentSteps.js";
 import { AddAssessmentModal } from "./assessmentFrame.jsx";
 import { regionLabelOf, formatPainSection } from "./orthoWizardHelpers.js";
 import React, { useState, useMemo, useEffect } from "react";
@@ -52,7 +53,7 @@ export const IPD_CONDITIONS = [
 ];
 const FALLBACK_OPTIONAL = ["edema", "neurovascular", "rom", "mmt", "activityTolerance"];
 
-const CAREPLAN_STEP_IDS = ["carePlanPlan", "carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanSessions", "carePlanProgress"];
+const CAREPLAN_STEP_IDS = ["carePlanProblems", "carePlanGoals", "carePlanTreatment"];
 const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "goals", carePlanTreatment: "treatment", carePlanPlan: "plan", carePlanSessions: "sessions", carePlanProgress: "progress" };
 const BASE_IDS = ["caseInfo", "medicalReview", "medicalRecords", "precautions", "vitals", "subjective", "pain", "observation", "functionalMobility", "gait", "impression", ...CAREPLAN_STEP_IDS, "review"];
 const OPTIONAL_IDS = ["edema", "wound", "neurovascular", "neuroScreen", "rom", "mmt", "limbLength", "jointMobility", "balance", "activityTolerance", "outcomeMeasure", "specialTests"];
@@ -127,7 +128,7 @@ const ADD_LIBRARY = OPTIONAL_IDS.map((id) => ({ id, ...STEP_META[id] }));
 // doesn't persist stepOrder, so this always returns the full canonical
 // order -- AssessmentSummary already skips any step with no data.
 export function buildOrthoIPDAssessSteps() {
-  return ORDERED_ALL.map((id) => ({ id, ...STEP_META[id] }));
+  return withCarePlanSummaryStep(ORDERED_ALL.map((id) => ({ id, ...STEP_META[id] })), { id: "carePlanPlan", ...STEP_META.carePlanPlan });
 }
 export const orthoIPDSummaryFormatters = { limbLength: formatLimbLengthSection, carePlanPlan: formatCarePlanSection, rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection, pain: formatPainSection };
 
@@ -312,6 +313,7 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
   }, [step]);
 
   const steps = useMemo(() => stepOrder.map((id) => ({ id, ...STEP_META[id] })), [stepOrder]);
+  const summarySteps = useMemo(() => withCarePlanSummaryStep(steps, { id: "carePlanPlan", ...STEP_META.carePlanPlan }), [steps]);
   const current = steps[step] || steps[0];
   // OrthoCarePlanStep saves straight to patientData.ortho_care_plan, not
   // this wizard's local data/setData, so the Review screen (which reads
@@ -330,7 +332,8 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
     else onExit?.();
   }
   function jumpTo(id) {
-    const idx = stepOrder.indexOf(id);
+    // The care plan block in the Summary has no page of its own any more; open Problem List.
+    const idx = stepOrder.indexOf(id === "carePlanPlan" ? "carePlanProblems" : id);
     if (idx >= 0) setStep(idx);
   }
   // Browser/hardware Back & Forward inside this wizard -- see
@@ -515,7 +518,7 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
                 icon={<Icon name="check" />}
                 title="IPD Orthopedic Assessment"
                 sub={`${regionsLabel} · ${conditionLabel}`}
-                steps={steps}
+                steps={summarySteps}
                 data={reviewData}
                 onEdit={jumpTo}
                 onShare={onNav ? (text) => onNav("physiofeed", { pfShareDiscussion: { text } }) : undefined}

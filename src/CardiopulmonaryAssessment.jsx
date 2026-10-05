@@ -1,3 +1,4 @@
+import { REMOVED_CAREPLAN_STEP_IDS, withCarePlanSummaryStep } from "./assessmentSteps.js";
 import { ClinicalInterpretationSection } from "./clinicalInterpretation.jsx";
 import { AddAssessmentModal } from "./assessmentFrame.jsx";
 import { rowsForStep } from "./orthoSummary.jsx";
@@ -116,7 +117,7 @@ const STEP_META = [
   { id: "summary", icon: <Icon name="check" />, label: "Summary & Review" },
 ];
 const ASSESS_STEPS = STEP_META.slice(2); // full canonical list, including retired ids (label/icon lookup + legacy stepOrder rendering)
-const CAREPLAN_STEP_IDS = ["carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanPlan", "carePlanSessions"];
+const CAREPLAN_STEP_IDS = ["carePlanProblems", "carePlanGoals", "carePlanTreatment"];
 const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "goals", carePlanTreatment: "treatment", carePlanPlan: "plan", carePlanSessions: "sessions", carePlanProgress: "progress" };
 // Cardio has no domain/region filtering step (unlike Ortho/Neuro), so a
 // brand-new assessment's stepOrder is simply every id in ASSESS_STEPS --
@@ -125,7 +126,9 @@ const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "g
 // assessment's steps. 18 steps shown in the step nav (2026-09-18, Aditi:
 // "do in neuro and cardio the care plan do the same the serial number" --
 // Care Plan Progress dropped, matching Ortho's own reorder).
-const RETIRED_STEP_IDS = ["carePlanProgress"];
+// Care Plan, Sessions and Care Plan Progress are not assessment steps any more
+// (they stay in the patient profile); the Summary still shows the care plan.
+const RETIRED_STEP_IDS = REMOVED_CAREPLAN_STEP_IDS;
 const DEFAULT_ASSESS_STEP_IDS = ASSESS_STEPS.filter((s) => !RETIRED_STEP_IDS.includes(s.id)).map((s) => s.id);
 
 // Migration for patients assessed before the Care Plan steps existed: their
@@ -1624,7 +1627,7 @@ function SummarySectionBody({ setting, system, data, setData, assessSteps, forma
   const systemLabel = setting === "rehab" && system ? rehabSubLabel(system) : SYSTEMS.find((s) => s.id === system)?.label || "—";
   const [copied, setCopied] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
-  const steps = assessSteps || ASSESS_STEPS;
+  const steps = useMemo(() => withCarePlanSummaryStep(assessSteps || ASSESS_STEPS, STEP_META.find((s) => s.id === "carePlanPlan")), [assessSteps]);
 
   // Share as Clinical Discussion (2026-09-23): same content-bearing filter
   // as exportText below, minus SHARE_EXCLUDED_STEP_IDS -- demographics
@@ -1952,7 +1955,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
   }, [data.demographics]);
 
   const assessSteps = useMemo(
-    () => stepOrder.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepIcon(customStepsMeta[id], "stethoscope"), label: customStepsMeta[id]?.label || "Assessment" }),
+    () => stepOrder.filter((id) => !RETIRED_STEP_IDS.includes(id)).map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepIcon(customStepsMeta[id], "stethoscope"), label: customStepsMeta[id]?.label || "Assessment" }),
     [stepOrder, customStepsMeta]
   );
 

@@ -1,3 +1,4 @@
+import { withCarePlanSummaryStep } from "./assessmentSteps.js";
 import { AddAssessmentModal } from "./assessmentFrame.jsx";
 import { regionLabelOf, formatPainSection } from "./orthoWizardHelpers.js";
 import { MedicalRecordsSection } from "./MedicalRecords.jsx";
@@ -115,7 +116,7 @@ const FALLBACK_PROMOTE = ["activityTolerance", "outcomeMeasure"];
 // the same request -- kept in STEP_META (below) so a record saved before
 // this change still renders its old Progress step in Review/Summary,
 // same as how "techniques" was retired.
-const CAREPLAN_STEP_IDS = ["carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanPlan", "carePlanSessions"];
+const CAREPLAN_STEP_IDS = ["carePlanProblems", "carePlanGoals", "carePlanTreatment"];
 const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "goals", carePlanTreatment: "treatment", carePlanPlan: "plan", carePlanSessions: "sessions", carePlanProgress: "progress" };
 // specialTests moved from OPTIONAL_IDS to BASE_IDS (2026-09-16, Aditi:
 // "why the special test is not showing constantly? It should show") -- it
@@ -215,7 +216,7 @@ const ORDERED_ALL = ["demographics", "subjective", "redFlags", "vitals", "pain",
 // doesn't persist stepOrder, so this always returns the full canonical
 // order -- AssessmentSummary already skips any step with no data.
 export function buildOrthoAssessSteps() {
-  return ORDERED_ALL.map((id) => ({ id, ...STEP_META[id] }));
+  return withCarePlanSummaryStep(ORDERED_ALL.map((id) => ({ id, ...STEP_META[id] })), { id: "carePlanPlan", ...STEP_META.carePlanPlan });
 }
 
 const STEP_META = {
@@ -455,6 +456,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
   const [missingDemFields, setMissingDemFields] = useState(null);
 
   const steps = useMemo(() => stepOrder.map((id) => ({ id, ...STEP_META[id] })), [stepOrder]);
+  const summarySteps = useMemo(() => withCarePlanSummaryStep(steps, { id: "carePlanPlan", ...STEP_META.carePlanPlan }), [steps]);
   const current = steps[step] || steps[0];
   // OrthoCarePlanStep persists straight to the patient record
   // (patientData.ortho_care_plan via onSave), bypassing this wizard's own
@@ -485,7 +487,8 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
     onExit?.();
   }
   function jumpTo(id) {
-    const idx = stepOrder.indexOf(id);
+    // The care plan block in the Summary has no page of its own any more; open Problem List.
+    const idx = stepOrder.indexOf(id === "carePlanPlan" ? "carePlanProblems" : id);
     if (idx >= 0) setStep(idx);
   }
   // Browser/hardware Back & Forward inside this wizard (see
@@ -882,7 +885,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
                 icon={<Icon name="check" />}
                 title="Outpatient Musculoskeletal Assessment"
                 sub={`${regionsLabel} · ${conditionLabel}`}
-                steps={steps}
+                steps={summarySteps}
                 data={reviewData}
                 onEdit={jumpTo}
                 exportHeaderLines={[`OUTPATIENT / MUSCULOSKELETAL ASSESSMENT`, `Region(s): ${regionsLabel}`, `Clinical context: ${conditionLabel}`]}
@@ -968,7 +971,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
                 icon={<Icon name="check" />}
                 title="Outpatient Musculoskeletal Assessment"
                 sub={`${regionsLabel} · ${conditionLabel}`}
-                steps={steps}
+                steps={summarySteps}
                 data={reviewData}
                 onEdit={(id) => {
                   jumpTo(id);
