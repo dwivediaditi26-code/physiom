@@ -28,6 +28,7 @@ describe("Care plan sessions (Start Session)", () => {
     fresh();
     render(<Harness launch />);
     expect(screen.getByText("Check-in")).toBeTruthy();
+    fireEvent.click(screen.getByRole("tab", { name: /Techniques/ }));
     expect(screen.getByText("Gait training")).toBeTruthy();
     expect(screen.getByText("Save Draft")).toBeTruthy();
   });
@@ -37,7 +38,7 @@ describe("Care plan sessions (Start Session)", () => {
     const first = render(<Harness launch />);
     bump("Before", 6);
     fireEvent.click(screen.getByText("Save Draft"));
-    fireEvent.click(screen.getByText(/Draft saved|Save Draft/));
+    fireEvent.click(screen.getByText(/Saved|Save Draft/));
     expect(saved()).toHaveLength(1);
     expect(saved()[0].status).toBe("draft");
     first.unmount();
@@ -45,7 +46,7 @@ describe("Care plan sessions (Start Session)", () => {
     render(<Harness launch />);                    // "refresh" -> Start Session resumes the draft
     expect(screen.getByLabelText("Before pain").textContent).toContain("6");
     bump("After", 3);
-    fireEvent.click(screen.getByText(/Complete Session →/));   // -> review
+    fireEvent.click(screen.getByText(/Complete Session/));   // -> review
     fireEvent.click(screen.getByText("✓ Complete Session"));   // confirm
     expect(screen.getByText("Session Completed")).toBeTruthy();
     expect(saved()).toHaveLength(1);
@@ -53,9 +54,10 @@ describe("Care plan sessions (Start Session)", () => {
     const s1 = { ...saved()[0] };
 
     fireEvent.click(screen.getByText("Start Next Session"));
+    fireEvent.click(screen.getByRole("tab", { name: /Techniques/ }));
     expect(screen.getByText("Gait training")).toBeTruthy();
     bump("Before", 5); bump("After", 2);
-    fireEvent.click(screen.getByText(/Complete Session →/));
+    fireEvent.click(screen.getByText(/Complete Session/));
     fireEvent.click(screen.getByText("✓ Complete Session"));
     expect(saved()).toHaveLength(2);
     expect(saved().find((x) => x.no === 2)).toMatchObject({ status: "completed" });
@@ -65,7 +67,7 @@ describe("Care plan sessions (Start Session)", () => {
   it("will not complete without the pain rating, and says why", () => {
     fresh();
     render(<Harness launch />);
-    fireEvent.click(screen.getByText(/Complete Session →/));
+    fireEvent.click(screen.getByText(/Complete Session/));
     expect(screen.getByRole("alert").textContent).toMatch(/pain rating/);
     expect(saved()).toHaveLength(0);
   });
@@ -120,5 +122,60 @@ describe("Treatment page session screen", () => {
     expect(saved[1].neuro.neuroCarePlan.sessions[0]).toMatchObject({ status: "draft", no: 1, painBefore: "4" });
     fireEvent.click(screen.getByLabelText("Back to Treatment"));
     expect(back).toBe(true);
+  });
+});
+
+describe("no repeated techniques", () => {
+  it("a plan with the same technique twice shows it once in the session", () => {
+    const tech = { name: "Lumbar PA mobilisation", category: "Technique", type: "mobilisation", goalIds: [] };
+    store.data = { neuroCarePlan: { ...plan, treatments: [{ id: "a", ...tech }, { id: "b", ...tech }], sessions: [] } };
+    render(<Harness launch />);
+    fireEvent.click(screen.getByRole("tab", { name: /Techniques/ }));
+    expect(screen.getAllByText("Lumbar PA mobilisation")).toHaveLength(1);
+  });
+});
+
+describe("compact session editor", () => {
+  it("View Plan shows problems, goals and plan without leaving the session", () => {
+    fresh();
+    render(<Harness launch />);
+    expect(screen.queryByText(/Impaired gait/)).toBeNull();
+    fireEvent.click(screen.getByText("View Plan"));
+    expect(screen.getByText(/Impaired gait/)).toBeTruthy();
+    expect(screen.getByText(/10MWT 20→10/)).toBeTruthy();
+  });
+
+  it("a quick modality is added with one tap, counted, and saved on the session", () => {
+    fresh();
+    render(<Harness launch />);
+    fireEvent.click(screen.getByRole("tab", { name: /Modalities/ }));
+    fireEvent.click(screen.getByText("＋ TENS"));
+    expect(screen.getByRole("tab", { name: /Modalities 1/ })).toBeTruthy();
+    bump("Before", 5); bump("After", 2);
+    fireEvent.click(screen.getByText(/Complete Session/));
+    fireEvent.click(screen.getByText("✓ Complete Session"));
+    expect(saved()[0].extras).toEqual([expect.objectContaining({ name: "TENS" })]);
+  });
+
+  it("a patient with no treatment plan can still be documented (note + pain)", () => {
+    store.data = { neuroCarePlan: { sessions: [] } };
+    render(<Harness launch />);
+    fireEvent.click(screen.getByText("View Plan"));
+    expect(screen.getByText(/No plan recorded yet/)).toBeTruthy();
+    fireEvent.change(screen.getByPlaceholderText(/Add treatment notes/), { target: { value: "Education only" } });
+    bump("Before", 4); bump("After", 3);
+    fireEvent.click(screen.getByText(/Complete Session/));
+    fireEvent.click(screen.getByText("✓ Complete Session"));
+    expect(saved()[0]).toMatchObject({ status: "completed", note: "Education only" });
+  });
+
+  it("a red flag needs a description before the session can be completed", () => {
+    fresh();
+    render(<Harness launch />);
+    fireEvent.click(screen.getByText("＋ New symptom / red flag"));
+    fireEvent.change(screen.getByPlaceholderText(/numbness/), { target: { value: "" } });
+    bump("Before", 4); bump("After", 3);
+    fireEvent.click(screen.getByText(/Complete Session/));
+    expect(screen.getByRole("alert").textContent).toMatch(/red flag/);
   });
 });

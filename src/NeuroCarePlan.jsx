@@ -1171,12 +1171,16 @@ const todayISO = () => new Date().toISOString().slice(0, 10);
 // Aditi: "Sessions ... seeded from the plan"). Every planned treatment
 // starts ticked 'done' with its planned dose pre-filled as the actual;
 // the therapist only edits the exceptions.
+// Identity of a treatment for de-duplication: the library exercise, else technique name + type.
+const treatmentKey = (t) => (t.exerciseId ? `ex:${t.exerciseId}` : `tx:${(t.name || "").toLowerCase()}|${t.type || t.category || ""}`);
+const uniqueTreatments = (list) => { const seen = new Set(); return list.filter((t) => { const k = treatmentKey(t); if (seen.has(k)) return false; seen.add(k); return true; }); };
+
 function newSessionDraft(treatments, no) {
   return {
     id: uid(),
     no,
     date: todayISO(),
-    items: treatments.map((t) => ({ treatmentId: t.id, done: true, actual: doseLine(t), note: "" })),
+    items: uniqueTreatments(treatments).map((t) => ({ treatmentId: t.id, done: true, actual: doseLine(t), note: "" })),
     measures: {},
     note: "",
     status: "draft",
@@ -1185,18 +1189,19 @@ function newSessionDraft(treatments, no) {
   };
 }
 
-function PainStepper({ label, caption, value, onChange }) {
+function PainStepper({ label, caption, value, onChange, compact }) {
   const n = parseFloat(value);
   const has = Number.isFinite(n);
   const step = (d) => onChange(String(Math.max(0, Math.min(10, (has ? n : 0) + d))));
-  const btn = { width: 38, height: 38, borderRadius: 11, border: `1px solid ${BRAND.border}`, background: "#f5f3ff", color: BRAND.ink, fontSize: 20, fontWeight: 800, cursor: "pointer" };
+  const sz = compact ? 34 : 38;
+  const btn = { width: sz, height: sz, borderRadius: 10, border: `1px solid ${BRAND.border}`, background: "#f5f3ff", color: BRAND.ink, fontSize: 18, fontWeight: 800, cursor: "pointer", padding: 0 };
   return (
-    <div style={{ flex: "1 1 130px" }}>
-      <div style={{ fontSize: 12, fontWeight: 700, color: BRAND.gray, marginBottom: 4 }}>{caption || label}</div>
-      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+    <div style={{ flex: compact ? "0 0 auto" : "1 1 130px" }}>
+      {caption && <div style={{ fontSize: 12, fontWeight: 700, color: BRAND.gray, marginBottom: 3 }}>{caption}</div>}
+      <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
         <button type="button" aria-label={`${label} pain minus`} onClick={() => step(-1)} style={btn}>−</button>
-        <div aria-label={`${label} pain`} style={{ minWidth: 50, height: 38, borderRadius: 11, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 17, border: `1.5px solid ${BRAND.border}`, background: "#fff", color: BRAND.ink }}>
-          {has ? n : "–"}<span style={{ fontSize: 11, color: BRAND.gray, marginLeft: 2 }}>/10</span>
+        <div aria-label={`${label} pain`} style={{ minWidth: 46, height: sz, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 16, border: `1.5px solid ${BRAND.border}`, background: "#fff", color: BRAND.ink }}>
+          {has ? n : "–"}<span style={{ fontSize: 10.5, color: BRAND.gray, marginLeft: 2 }}>/10</span>
         </div>
         <button type="button" aria-label={`${label} pain plus`} onClick={() => step(1)} style={btn}>+</button>
       </div>
@@ -1215,12 +1220,12 @@ const QUICK_MODALITIES = ["Heat / Cold", "IFT", "TENS", "Ultrasound", "Taping", 
 
 function Chips({ options, value, onChange, tone }) {
   return (
-    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+    <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
       {options.map((o) => {
         const on = value === o;
         return (
           <button key={o} type="button" aria-pressed={on} onClick={() => onChange(on ? "" : o)}
-            style={{ padding: "6px 14px", minHeight: 36, borderRadius: 99, border: `1.5px solid ${on ? (tone || BRAND.purple) : BRAND.border}`, background: on ? "#EDE9FE" : "#fff", color: on ? BRAND.purpleDark : BRAND.ink, fontWeight: on ? 800 : 600, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>{o}</button>
+            style={{ padding: "4px 10px", minHeight: 32, borderRadius: 99, border: `1.5px solid ${on ? (tone || BRAND.purple) : BRAND.border}`, background: on ? "#EDE9FE" : "#fff", color: on ? BRAND.purpleDark : BRAND.ink, fontWeight: on ? 800 : 600, fontSize: 12.5, cursor: "pointer", fontFamily: "inherit" }}>{o}</button>
         );
       })}
     </div>
@@ -1229,6 +1234,8 @@ function Chips({ options, value, onChange, tone }) {
 
 const sCard = { background: "#fff", border: `1px solid ${BRAND.border}`, borderRadius: 14, padding: "10px 12px", marginBottom: 8, boxShadow: "0 2px 8px rgba(109,40,217,.05)" };
 const sTitle = { fontSize: 12.5, fontWeight: 800, color: BRAND.ink, textTransform: "uppercase", letterSpacing: ".6px", marginBottom: 6 };
+const rowStyle = { display: "flex", alignItems: "center", gap: 8, marginTop: 6, flexWrap: "wrap" };
+const rowLabel = { fontSize: 11.5, fontWeight: 700, color: BRAND.gray, width: 66, flexShrink: 0, lineHeight: 1.2 };
 const sLabel = { fontSize: 12, fontWeight: 700, color: BRAND.gray, margin: "8px 0 4px" };
 
 // One planned treatment / exercise in today's session: tick = done today, untick = skipped today.
@@ -1236,9 +1243,9 @@ function PlanItemRow({ it, t, open, onToggleOpen, onChange, onRemoveFromPlan }) 
   const [confirm, setConfirm] = useState(false);
   return (
     <div style={{ borderTop: `1px solid ${BRAND.border}` }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", minHeight: 44 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "5px 0", minHeight: 42 }}>
         <button type="button" role="checkbox" aria-checked={it.done} aria-label={`${t.name} done today`} onClick={() => onChange({ done: !it.done })}
-          style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, border: it.done ? "none" : `1.5px solid ${BRAND.border}`, background: it.done ? "#16A34A" : "#fff", color: "#fff", fontWeight: 800, fontSize: 16, cursor: "pointer" }}>{it.done ? "✓" : ""}</button>
+          style={{ width: 26, height: 26, borderRadius: 8, flexShrink: 0, border: it.done ? "none" : `1.5px solid ${BRAND.border}`, background: it.done ? "#16A34A" : "#fff", color: "#fff", fontWeight: 800, fontSize: 16, cursor: "pointer" }}>{it.done ? "✓" : ""}</button>
         <button type="button" onClick={onToggleOpen} style={{ flex: 1, minWidth: 0, textAlign: "left", background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit" }}>
           <span style={{ display: "block", fontWeight: 700, fontSize: 14, color: it.done ? BRAND.ink : BRAND.gray, textDecoration: it.done ? "none" : "line-through" }}>{t.name}</span>
           <span style={{ display: "block", fontSize: 12, color: BRAND.gray }}>{it.done ? (it.actual || "—") : "Skipped today"}{it.note ? ` · ${it.note}` : ""}</span>
@@ -1268,6 +1275,8 @@ function PlanItemRow({ it, t, open, onToggleOpen, onChange, onRemoveFromPlan }) 
 function SessionEditor({ draft, setDraft, treatments, goals, problems = [], sessions, onSave, onSaveDraft, onCancel, error, flash, onAddTreatment, onRemoveFromPlan }) {
   const [openId, setOpenId] = useState(null);
   const [adding, setAdding] = useState(false);
+  const [viewPlan, setViewPlan] = useState(false);
+  const [txTab, setTxTab] = useState("ex");
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [measuresOpen, setMeasuresOpen] = useState(false);
@@ -1278,116 +1287,179 @@ function SessionEditor({ draft, setDraft, treatments, goals, problems = [], sess
   const setCi = (patch) => setDraft({ ...draft, checkIn: { ...ci, ...patch } });
   const setItem = (tid, patch) => setDraft({ ...draft, items: draft.items.map((it) => (it.treatmentId === tid ? { ...it, ...patch } : it)) });
   const extras = Array.isArray(draft.extras) ? draft.extras : [];
-  const isExercise = (t) => !!t.exerciseId;
-  const rows = draft.items.map((it) => ({ it, t: treatments.find((x) => x.id === it.treatmentId) })).filter((r) => r.t);
-  const exRows = rows.filter((r) => isExercise(r.t));
-  const txRows = rows.filter((r) => !isExercise(r.t));
+  const seen = new Set();
+  const rows = draft.items.map((it) => ({ it, t: treatments.find((x) => x.id === it.treatmentId) })).filter((r) => r.t && !seen.has(treatmentKey(r.t)) && seen.add(treatmentKey(r.t)));
+  const exRows = rows.filter((r) => !!r.t.exerciseId);
+  const txRows = rows.filter((r) => !r.t.exerciseId);
   const prev = sessions.filter((x) => x.id !== draft.id && !isDraftSession(x)).sort((a, b) => (b.no || 0) - (a.no || 0))[0];
   const doneCount = rows.filter((r) => r.it.done).length + extras.length;
   const addExtra = (name) => { if (!extras.some((e) => e.name === name)) setDraft({ ...draft, extras: [...extras, { id: uid(), name }] }); };
+  // Everything on the plan was done as planned (the common case) -- one tap.
+  const tickAll = () => setDraft({ ...draft, items: draft.items.map((it) => ({ ...it, done: true })) });
+  const measuresFilled = Object.values(draft.measures || {}).filter((v) => v !== "" && v != null).length;
   const planRow = (r) => (
     <PlanItemRow key={r.it.treatmentId} it={r.it} t={r.t} open={openId === r.it.treatmentId}
       onToggleOpen={() => setOpenId(openId === r.it.treatmentId ? null : r.it.treatmentId)}
       onChange={(patch) => setItem(r.it.treatmentId, patch)}
       onRemoveFromPlan={() => onRemoveFromPlan(r.it.treatmentId)} />
   );
+  const tabBtn = (k, label, n) => (
+    <button key={k} type="button" role="tab" aria-selected={txTab === k} onClick={() => setTxTab(k)}
+      style={{ flex: 1, padding: "8px 4px", minHeight: 38, borderRadius: 10, border: "none", background: txTab === k ? BRAND.purple : "#F5F3FF", color: txTab === k ? "#fff" : BRAND.ink, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
+      {label} <span style={{ opacity: 0.85, fontWeight: 600 }}>{n}</span>
+    </button>
+  );
 
   return (
     <div>
-      {/* Header: which session, when, and what this patient is being treated for */}
       <style>{`
         .sess-compact .primary-btn, .sess-compact .ghost-btn { min-height: 40px; padding: 8px 14px; font-size: 13.5px; border-radius: 12px; }
         .sess-compact .tile-card, .sess-compact .source-tab { padding-top: 8px; padding-bottom: 8px; }
       `}</style>
+
+      {/* Header: session, status, date, and the plan for reference */}
       <div style={{ ...sCard, padding: "8px 12px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontSize: 18, fontWeight: 900, color: BRAND.purpleDark, lineHeight: 1.2 }}>Session {draft.no}
-              {draft.status === "draft" ? <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 99, background: "#FEF3C7", color: "#B45309", verticalAlign: "middle" }}>Draft</span> : null}
-            </div>
-            <div style={{ fontSize: 11.5, color: BRAND.gray }}>{prev ? `Previous: ${longDay(prev.date)}` : "First session"}</div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+          <div style={{ fontSize: 18, fontWeight: 900, color: BRAND.purpleDark, lineHeight: 1.2, whiteSpace: "nowrap" }}>Session {draft.no}
+            {draft.status === "draft" ? <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 99, background: "#FEF3C7", color: "#B45309", verticalAlign: "middle" }}>Draft</span> : null}
           </div>
-          <input type="date" aria-label="Session date" value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })}
-            style={{ border: `1.5px solid ${BRAND.border}`, borderRadius: 10, padding: "6px 6px", fontSize: 12.5, fontFamily: "inherit", color: BRAND.ink, background: "#fff", width: 132, flexShrink: 0, boxSizing: "border-box" }} />
+          <button type="button" aria-expanded={viewPlan} onClick={() => setViewPlan(!viewPlan)}
+            style={{ flexShrink: 0, padding: "6px 12px", minHeight: 34, borderRadius: 10, border: "none", background: viewPlan ? BRAND.purple : "#EDE9FE", color: viewPlan ? "#fff" : BRAND.purpleDark, fontWeight: 800, fontSize: 12.5, cursor: "pointer", fontFamily: "inherit" }}>View Plan</button>
         </div>
-        {problems.length > 0 && (
-          <div style={{ marginTop: 6, fontSize: 12, color: BRAND.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            <b>Problems:</b> {problems.slice(0, 2).map((p) => p.name).join(" · ")}{problems.length > 2 ? ` +${problems.length - 2}` : ""}{goals.length > 0 ? ` · ${goals.length} goal${goals.length > 1 ? "s" : ""}` : ""}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginTop: 4 }}>
+          <span style={{ fontSize: 11.5, color: BRAND.gray }}>{prev ? `Previous: ${longDay(prev.date)}` : "First session"}</span>
+          <input type="date" aria-label="Session date" value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })}
+            style={{ border: `1.5px solid ${BRAND.border}`, borderRadius: 10, padding: "4px 6px", fontSize: 12.5, fontFamily: "inherit", color: BRAND.ink, background: "#fff", width: 150, flexShrink: 0, boxSizing: "border-box" }} />
+        </div>
+        {viewPlan && (
+          <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${BRAND.border}`, fontSize: 12.5, lineHeight: 1.5 }}>
+            {problems.length > 0 && <div><b>Problems:</b> {problems.map((p) => p.name).join(" · ")}</div>}
+            {goals.length > 0 && <div style={{ marginTop: 3 }}><b>Goals:</b> {goals.map((g) => `${g.measure} ${g.baseline}→${g.target}`).join(" · ")}</div>}
+            {treatments.length > 0 && <div style={{ marginTop: 3 }}><b>Plan:</b> {uniqueTreatments(treatments).map((t) => `${t.name}${doseLine(t) ? ` (${doseLine(t)})` : ""}`).join(" · ")}</div>}
+            {problems.length === 0 && goals.length === 0 && treatments.length === 0 && <div style={{ color: BRAND.gray }}>No plan recorded yet for this patient.</div>}
           </div>
         )}
       </div>
 
-      {/* 1. Check-in: what the patient tells you before you touch them */}
+      {/* 1. Check-in: a few taps */}
       <div style={sCard}>
         <div style={sTitle}>Check-in</div>
-        <PainStepper label="Before" caption="Pain now (before treatment)" value={draft.painBefore} onChange={(v) => setDraft({ ...draft, painBefore: v })} />
-        <div style={sLabel}>Since last visit</div>
-        <Chips options={["Better", "Same", "Worse"]} value={ci.trend || ""} onChange={(v) => setCi({ trend: v })} tone={ci.trend === "Worse" ? "#dc2626" : undefined} />
-        <div style={sLabel}>Home exercises done?</div>
-        <Chips options={["Fully", "Partly", "Not done"]} value={ci.adherence || ""} onChange={(v) => setCi({ adherence: v })} />
+        <div style={rowStyle}>
+          <span style={rowLabel}>Pain before</span>
+          <PainStepper compact label="Before" value={draft.painBefore} onChange={(v) => setDraft({ ...draft, painBefore: v })} />
+        </div>
+        <div style={rowStyle}>
+          <span style={rowLabel}>Since last visit</span>
+          <Chips options={["Better", "Same", "Worse"]} value={ci.trend || ""} onChange={(v) => setCi({ trend: v })} tone={ci.trend === "Worse" ? "#dc2626" : undefined} />
+        </div>
+        <div style={rowStyle}>
+          <span style={rowLabel}>Home exercises</span>
+          <Chips options={["Done", "Partly", "Not done"]} value={ci.adherence === "Fully" ? "Done" : ci.adherence || ""} onChange={(v) => setCi({ adherence: v })} />
+        </div>
         <div style={{ marginTop: 8 }}>
           <button type="button" aria-pressed={!!ci.redFlag} onClick={() => setCi({ redFlag: !ci.redFlag })}
-            style={{ padding: "6px 12px", minHeight: 36, borderRadius: 10, border: `1.5px solid ${ci.redFlag ? "#dc2626" : BRAND.border}`, background: ci.redFlag ? "#FEF2F2" : "#fff", color: ci.redFlag ? "#dc2626" : BRAND.ink, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
-            {ci.redFlag ? "⚠ New symptom / red flag reported" : "＋ New symptom or red flag?"}
+            style={{ padding: "5px 12px", minHeight: 34, borderRadius: 10, border: `1.5px solid ${ci.redFlag ? "#dc2626" : BRAND.border}`, background: ci.redFlag ? "#FEF2F2" : "#fff", color: ci.redFlag ? "#dc2626" : BRAND.purpleDark, fontWeight: 700, fontSize: 12.5, cursor: "pointer", fontFamily: "inherit" }}>
+            {ci.redFlag ? "⚠ New symptom / red flag reported" : "＋ New symptom / red flag"}
           </button>
-          {ci.redFlag && <div style={{ marginTop: 6 }}><TextField label="What was reported" value={ci.redFlagNote || ""} onChange={(v) => setCi({ redFlagNote: v })} placeholder="e.g. new numbness in left foot, night pain" /></div>}
+          {ci.redFlag && <div style={{ marginTop: 4 }}><TextField label="What was reported" value={ci.redFlagNote || ""} onChange={(v) => setCi({ redFlagNote: v })} placeholder="e.g. new numbness in left foot, night pain" /></div>}
         </div>
       </div>
 
-      {/* 2. Exercises */}
+      {/* 2. Today's treatment: exercises / techniques / modalities */}
       <div style={sCard}>
-        <div style={sTitle}>Exercises <span style={{ textTransform: "none", fontWeight: 600, color: BRAND.gray }}>· {exRows.filter((r) => r.it.done).length}/{exRows.length} done</span></div>
-        {exRows.length === 0 && <div className="summary-empty" style={{ marginBottom: 6 }}>No exercises in the plan yet — add one below.</div>}
-        {exRows.map(planRow)}
-        <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 6, minHeight: 40, padding: "8px 14px", fontSize: 13.5 }} onClick={() => setAdding(true)}>＋ Add exercise</button>
-      </div>
-
-      {/* 3. Treatment / modalities */}
-      <div style={sCard}>
-        <div style={sTitle}>Treatment & modalities</div>
-        {txRows.length === 0 && extras.length === 0 && <div className="summary-empty" style={{ marginBottom: 6 }}>Nothing yet — tick what you did today.</div>}
-        {txRows.map(planRow)}
-        {extras.map((e) => (
-          <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderTop: `1px solid ${BRAND.border}`, minHeight: 48 }}>
-            <span style={{ width: 28, height: 28, borderRadius: 8, background: "#16A34A", color: "#fff", fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>✓</span>
-            <span style={{ flex: 1, fontWeight: 700, fontSize: 14 }}>{e.name}</span>
-            <button type="button" aria-label={`Remove ${e.name}`} onClick={() => setDraft({ ...draft, extras: extras.filter((x) => x.id !== e.id) })} style={{ width: 40, height: 40, border: "none", background: "none", color: "#dc2626", fontSize: 18, cursor: "pointer" }}>✕</button>
-          </div>
-        ))}
-        <div style={sLabel}>Quick add (today only)</div>
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-          {QUICK_MODALITIES.filter((m) => !extras.some((e) => e.name === m)).map((m) => (
-            <button key={m} type="button" onClick={() => addExtra(m)} style={{ padding: "5px 11px", minHeight: 34, borderRadius: 99, border: `1px dashed ${BRAND.purple}`, background: "#fff", color: BRAND.purpleDark, fontWeight: 600, fontSize: 12.5, cursor: "pointer", fontFamily: "inherit" }}>＋ {m}</button>
-          ))}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+          <div style={{ ...sTitle, marginBottom: 0 }}>Today's treatment</div>
+          {rows.length > 0 && <button type="button" onClick={tickAll} style={{ border: "none", background: "#EDE9FE", color: BRAND.purpleDark, fontWeight: 800, fontSize: 12, borderRadius: 10, padding: "7px 10px", minHeight: 32, cursor: "pointer", fontFamily: "inherit" }}>Tick all as planned</button>}
         </div>
-        <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 8, minHeight: 40, padding: "8px 14px", fontSize: 13.5 }} onClick={() => setAdding(true)}>＋ Add technique / protocol from library</button>
+        <div role="tablist" style={{ display: "flex", gap: 6, marginBottom: 4 }}>
+          {tabBtn("ex", "Exercises", `${exRows.filter((r) => r.it.done).length}/${exRows.length}`)}
+          {tabBtn("tech", "Techniques", txRows.length)}
+          {tabBtn("mod", "Modalities", extras.length)}
+        </div>
+        {txTab === "ex" && (
+          <>
+            {exRows.length === 0 && <div className="summary-empty" style={{ margin: "6px 0" }}>No exercises in the plan yet.</div>}
+            {exRows.map(planRow)}
+            <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 6 }} onClick={() => setAdding(true)}>＋ Add exercise from library</button>
+          </>
+        )}
+        {txTab === "tech" && (
+          <>
+            {txRows.length === 0 && <div className="summary-empty" style={{ margin: "6px 0" }}>No manual / other treatment on the plan yet.</div>}
+            {txRows.map(planRow)}
+            <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 6 }} onClick={() => setAdding(true)}>＋ Add technique / protocol</button>
+          </>
+        )}
+        {txTab === "mod" && (
+          <>
+            {extras.map((e) => (
+              <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "4px 0", borderTop: `1px solid ${BRAND.border}`, minHeight: 40 }}>
+                <span style={{ width: 24, height: 24, borderRadius: 7, background: "#16A34A", color: "#fff", fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>✓</span>
+                <span style={{ flex: 1, fontWeight: 700, fontSize: 14 }}>{e.name}</span>
+                <button type="button" aria-label={`Remove ${e.name}`} onClick={() => setDraft({ ...draft, extras: extras.filter((x) => x.id !== e.id) })} style={{ width: 36, height: 36, border: "none", background: "none", color: "#dc2626", fontSize: 16, cursor: "pointer" }}>✕</button>
+              </div>
+            ))}
+            <div style={sLabel}>Quick modalities (if used)</div>
+            <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+              {QUICK_MODALITIES.filter((m) => !extras.some((e) => e.name === m)).map((m) => (
+                <button key={m} type="button" onClick={() => addExtra(m)} style={{ padding: "5px 11px", minHeight: 34, borderRadius: 99, border: `1px dashed ${BRAND.purple}`, background: "#fff", color: BRAND.purpleDark, fontWeight: 600, fontSize: 12.5, cursor: "pointer", fontFamily: "inherit" }}>＋ {m}</button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {adding && (
         <div ref={addRef} style={{ ...sCard, borderColor: BRAND.purple, scrollMarginTop: 70 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-            <div style={sTitle}>Add to plan & today's session</div>
-            <button type="button" onClick={() => setAdding(false)} style={{ border: "none", background: "#EDE9FE", color: BRAND.purpleDark, fontWeight: 800, borderRadius: 10, padding: "8px 12px", cursor: "pointer" }}>Close</button>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+            <div style={{ ...sTitle, marginBottom: 0 }}>Add to plan & today's session</div>
+            <button type="button" onClick={() => setAdding(false)} style={{ border: "none", background: "#EDE9FE", color: BRAND.purpleDark, fontWeight: 800, borderRadius: 10, padding: "6px 12px", minHeight: 34, cursor: "pointer" }}>Close</button>
           </div>
           <div className="sess-compact" style={{ paddingBottom: 8 }}>
-          <AddTreatmentPanel allGoals={goals} existing={new Set(treatments.map((t) => t.exerciseId))} floatingCTA
-            search={search} setSearch={setSearch} searchOpen={searchOpen} setSearchOpen={setSearchOpen}
-            onAdd={(t) => { onAddTreatment(t); setAdding(false); }} />
+            <AddTreatmentPanel allGoals={goals} existing={new Set(treatments.map((t) => t.exerciseId))} floatingCTA
+              search={search} setSearch={setSearch} searchOpen={searchOpen} setSearchOpen={setSearchOpen}
+              onAdd={(t) => { onAddTreatment(t); setAdding(false); }} />
           </div>
         </div>
       )}
 
-      {/* 4. Measures that feed Progress */}
+      {/* 3. One notes field */}
+      <div style={sCard}>
+        <TextArea label="Today's treatment notes" value={draft.note} onChange={(v) => setDraft({ ...draft, note: v })} placeholder="Add treatment notes, patient response, changes…" />
+      </div>
+
+      {/* 4. Patient response */}
+      <div style={sCard}>
+        <div style={sTitle}>Patient response</div>
+        <div style={rowStyle}>
+          <span style={rowLabel}>Pain after</span>
+          <PainStepper compact label="After" value={draft.painAfter} onChange={(v) => setDraft({ ...draft, painAfter: v })} />
+        </div>
+        <div style={{ ...sLabel, marginTop: 8 }}>Overall response</div>
+        <Chips options={["Tolerated well", "Mild soreness", "Aggravated"]} value={draft.tolerance || ""} onChange={(v) => setDraft({ ...draft, tolerance: v })} tone={draft.tolerance === "Aggravated" ? "#dc2626" : undefined} />
+      </div>
+
+      {/* 5. Next session */}
+      <div style={sCard}>
+        <TextField label="Plan for next session" value={draft.nextPlan || ""} onChange={(v) => setDraft({ ...draft, nextPlan: v })} placeholder="e.g. Continue plan. Progress calf raise if pain ≤3/10" />
+        <button type="button" role="checkbox" aria-checked={!!draft.hepReviewed} onClick={() => setDraft({ ...draft, hepReviewed: !draft.hepReviewed })}
+          style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", background: draft.hepReviewed ? "#F0FDF4" : "none", border: "none", borderRadius: 10, padding: "8px 6px", marginTop: 4, cursor: "pointer", fontFamily: "inherit", fontSize: 13.5, color: BRAND.ink, fontWeight: 600, textAlign: "left" }}>
+          <span style={{ width: 24, height: 24, borderRadius: 7, flexShrink: 0, border: draft.hepReviewed ? "none" : `1.5px solid ${BRAND.border}`, background: draft.hepReviewed ? "#16A34A" : "#fff", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800 }}>{draft.hepReviewed ? "✓" : ""}</span>
+          Home program reviewed with patient
+        </button>
+      </div>
+
+      {/* 6. Measures: only when you want to record one */}
       {goals.length > 0 && (
         <div style={sCard}>
           <button type="button" onClick={() => setMeasuresOpen(!measuresOpen)} style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit" }}>
-            <span style={{ ...sTitle, marginBottom: 0 }}>Measures (feed Progress) <span style={{ textTransform: "none", fontWeight: 600, color: BRAND.gray }}>· {Object.values(draft.measures || {}).filter((v) => v !== "" && v != null).length}/{goals.length}</span></span>
-            <span style={{ color: BRAND.purple, fontWeight: 800 }}>{measuresOpen ? "▲" : "▼"}</span>
+            <span style={{ ...sTitle, marginBottom: 0 }}>Measures <span style={{ textTransform: "none", fontWeight: 600, color: BRAND.gray }}>· optional · {measuresFilled}/{goals.length} recorded</span></span>
+            <span style={{ color: BRAND.purple, fontWeight: 800, fontSize: 13 }}>{measuresOpen ? "Hide" : "Record"}</span>
           </button>
           {measuresOpen && goals.map((g) => {
             const pm = previousMeasureForGoal(sessions, g.id, draft.id, g.baseline);
             return (
-              <div key={g.id} style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
+              <div key={g.id} style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}>
                 <span style={{ flex: 1, fontSize: 12.5 }}>
                   {g.measure} <span style={{ color: BRAND.gray, fontSize: 11 }}>({g.baseline} → {g.target})</span>
                   {pm && <span style={{ display: "block", fontSize: 10.5, color: BRAND.purpleDark }}>Previous: {pm.value} <span style={{ color: BRAND.gray }}>({pm.source})</span></span>}
@@ -1401,28 +1473,8 @@ function SessionEditor({ draft, setDraft, treatments, goals, problems = [], sess
         </div>
       )}
 
-      {/* 5. After treatment */}
-      <div style={sCard}>
-        <div style={sTitle}>After treatment</div>
-        <PainStepper label="After" caption="Pain after treatment" value={draft.painAfter} onChange={(v) => setDraft({ ...draft, painAfter: v })} />
-        <div style={sLabel}>How did they tolerate it?</div>
-        <Chips options={["Tolerated well", "Mild soreness", "Aggravated"]} value={draft.tolerance || ""} onChange={(v) => setDraft({ ...draft, tolerance: v })} tone={draft.tolerance === "Aggravated" ? "#dc2626" : undefined} />
-        <div style={{ marginTop: 8 }}>
-          <TextArea label="Session Notes" value={draft.note} onChange={(v) => setDraft({ ...draft, note: v })} placeholder="Add treatment notes, patient response, changes, etc." />
-        </div>
-        <TextField label="Plan for next session" value={draft.nextPlan || ""} onChange={(v) => setDraft({ ...draft, nextPlan: v })} placeholder="e.g. progress to single-leg bridge, re-test ROM" />
-        <div style={{ marginTop: 6 }}>
-          <button type="button" role="checkbox" aria-checked={!!draft.hepReviewed} onClick={() => setDraft({ ...draft, hepReviewed: !draft.hepReviewed })}
-            style={{ display: "flex", alignItems: "center", gap: 10, background: "none", border: "none", padding: "8px 0", cursor: "pointer", fontFamily: "inherit", fontSize: 13.5, color: BRAND.ink, fontWeight: 600 }}>
-            <span style={{ width: 26, height: 26, borderRadius: 8, border: draft.hepReviewed ? "none" : `1.5px solid ${BRAND.border}`, background: draft.hepReviewed ? "#16A34A" : "#fff", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800 }}>{draft.hepReviewed ? "✓" : ""}</span>
-            Home program reviewed / updated with patient
-          </button>
-        </div>
-      </div>
-
-      <div style={{ position: "sticky", bottom: 0, zIndex: 5, background: "#fff", padding: "10px 0 calc(10px + env(safe-area-inset-bottom))", borderTop: `1px solid ${BRAND.border}` }}>
-        {error && <div role="alert" style={{ fontSize: 12.5, color: "#dc2626", fontWeight: 700, marginBottom: 8 }}>{error}</div>}
-        <div style={{ fontSize: 11.5, color: BRAND.gray, marginBottom: 6 }}>{doneCount} item{doneCount === 1 ? "" : "s"} done today</div>
+      <div style={{ position: "sticky", bottom: 0, zIndex: 5, background: "#fff", padding: "8px 0 calc(8px + env(safe-area-inset-bottom))", borderTop: `1px solid ${BRAND.border}` }}>
+        {error && <div role="alert" style={{ fontSize: 12.5, color: "#dc2626", fontWeight: 700, marginBottom: 6 }}>{error}</div>}
         <div style={{ display: "flex", gap: 8 }}>
           {draft.status === "completed" ? (
             <>
@@ -1431,12 +1483,15 @@ function SessionEditor({ draft, setDraft, treatments, goals, problems = [], sess
             </>
           ) : (
             <>
-              <button type="button" className="ghost-btn" style={{ flex: 1 }} onClick={onSaveDraft}>{flash ? "✓ Draft saved" : "Save Draft"}</button>
-              <button type="button" className="primary-btn" style={{ flex: 1.6 }} onClick={onSave}>✓ Complete Session →</button>
+              <button type="button" className="ghost-btn" style={{ flex: 1 }} onClick={onSaveDraft}>{flash ? "✓ Saved" : "Save Draft"}</button>
+              <button type="button" className="primary-btn" style={{ flex: 1.6 }} onClick={onSave}>✓ Complete Session</button>
             </>
           )}
         </div>
-        {draft.status !== "completed" && <div onClick={onCancel} style={{ textAlign: "center", fontSize: 12, color: BRAND.gray, padding: "8px 0 0", cursor: "pointer" }}>Close without saving</div>}
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, color: BRAND.gray, paddingTop: 5 }}>
+          <span>{doneCount} item{doneCount === 1 ? "" : "s"} done today</span>
+          {draft.status !== "completed" && <span onClick={onCancel} style={{ cursor: "pointer" }}>Close without saving</span>}
+        </div>
       </div>
     </div>
   );
@@ -1611,7 +1666,9 @@ function SessionsPhase({ problems, treatments, goals, sessions, setSessions, set
   // Adding an exercise / technique mid-session also puts it on the care plan (so the next session is
   // seeded with it) and ticks it as done today. Removing one takes it off the plan and out of this session.
   const addToSession = (t) => {
-    const dup = t.exerciseId ? treatments.find((x) => x.exerciseId === t.exerciseId) : null;
+    // Same exercise, or the same technique (same name + type), is never added twice.
+    const sameTech = (x) => !x.exerciseId && !t.exerciseId && x.name === t.name && (x.type || x.category) === (t.type || t.category);
+    const dup = treatments.find((x) => (t.exerciseId ? x.exerciseId === t.exerciseId : sameTech(x)));
     const tid = dup ? dup.id : t.id;
     if (!dup) setTreatments([...treatments, t]);
     setDraft((d) => (d.items.some((i) => i.treatmentId === tid) ? d : { ...d, items: [...d.items, { treatmentId: tid, done: true, actual: doseLine(dup || t), note: "" }] }));
