@@ -79,7 +79,13 @@ function buildFlatShoulderData(data) {
   // radiation/red-flags per side.
   flat.shl_radiation = joinMulti(regionData.radiation);
   flat.shr_radiation = flat.shl_radiation;
-  flat.shl_rf = joinMulti(regionData.redFlags);
+  // The engine searches for "septic joint" and "pain at rest and night"; the checklist words these
+  // red flags differently, so ticking them changed nothing. Append the engine's phrase, keep the text.
+  const rfText = joinMulti(regionData.redFlags);
+  const rfExtra = [];
+  if (rfText.includes("(possible infection)")) rfExtra.push("septic joint");
+  if (rfText.includes("Night pain unrelated to position") || rfText.includes("Constant progressive pain unrelated to movement")) rfExtra.push("pain at rest and night");
+  flat.shl_rf = rfExtra.length ? `${rfText}, ${rfExtra.join(", ")}` : rfText;
   flat.shr_rf = flat.shl_rf;
 
   const romData = (data.rom && data.rom["Shoulder"]) || {};

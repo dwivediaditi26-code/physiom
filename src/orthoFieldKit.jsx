@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, createContext, useContext } from "r
 import { createPortal } from "react-dom";
 import { FieldLabel, SectionTitle } from "./assessmentTypography.jsx";
 import { uploadImage, uploadErrorMessage } from "./services/cloudinary.js";
+import PhotoSlots from "./PhotoSlots.jsx";
 
 /* ============================================================
    BRAND / TOKENS — shared by every Ortho assessment module
@@ -269,7 +270,9 @@ export function InfoButton(props) {
             <div className="sheet-scroll">
               {richItem ? (
                 <>
-                  {!(richItem.hideHeroOn || []).includes(activeTab) && <SheetHero name={richItem.image} />}
+                  {!(richItem.hideHeroOn || []).includes(activeTab) && (richItem.images?.length
+                    ? <PhotoSlots ids={richItem.images} />
+                    : <SheetHero name={richItem.image} />)}
                   {richItem[activeTab]}
                 </>
               ) : (

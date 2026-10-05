@@ -21,6 +21,10 @@ import { injectConsolidatedNotes } from "./subjectiveTiering.js";
 // behavior is unchanged; only what has to load eagerly shrinks.
 
 // ─── from OutcomeMeasuresPro.jsx ───────────────────────────────────────────
+// The guided form stores the whole option text ("4 — Able to stand ..."), so a score must read the
+// number in front of the dash. A bare +value gives NaN for that text (Berg, DGI and FAC did).
+const _lead = (x) => parseFloat(String(x).split(" — ")[0]);
+const OPT6 = ["0 — No movement", "9 — Palpable flicker, no movement", "14 — Movement, but not against gravity", "19 — Full movement against gravity", "25 — Movement against resistance, weaker than the other side", "33 — Normal power"];
 const SCALES = {
   ndi:{id:"ndi",label:"NDI",full:"Neck Disability Index",icon:"🔄",category:"Cervical Spine",
     maxScore:100,unit:"%",mcid:8,
@@ -119,7 +123,7 @@ Object.assign(SCALES, {
     interpret:(s)=>s>=45?{label:"Low fall risk",color:"#16a34a"}:s>=36?{label:"Medium fall risk",color:"#d97706"}:{label:"High fall risk",color:"#dc2626"},
     score:(v)=>{
       const ids=Array.from({length:14},(_,i)=>`bbs_${i+1}`);
-      const s=ids.map(id=>v[id]!==undefined?+v[id]:null).filter(x=>x!==null);
+      const s=ids.map(id=>v[id]!==undefined?_lead(v[id]):null).filter(x=>x!==null);
       return s.length===14?s.reduce((a,b)=>a+b,0):null;
     },
     fields:[
@@ -166,7 +170,7 @@ Object.assign(SCALES, {
   dgi:{id:"dgi",label:"DGI",full:"Dynamic Gait Index",icon:"🏃",category:"Balance / Gait",
     maxScore:24,unit:"/24",mcid:3,
     interpret:(s)=>s>=22?{label:"Community ambulation",color:"#16a34a"}:s>=19?{label:"Some fall risk",color:"#d97706"}:{label:"High fall risk",color:"#dc2626"},
-    score:(v)=>{const ids=Array.from({length:8},(_,i)=>`dgi_${i+1}`);const s=ids.map(id=>v[id]!==undefined?+v[id]:null).filter(x=>x!==null);return s.length===8?s.reduce((a,b)=>a+b,0):null;},
+    score:(v)=>{const ids=Array.from({length:8},(_,i)=>`dgi_${i+1}`);const s=ids.map(id=>v[id]!==undefined?_lead(v[id]):null).filter(x=>x!==null);return s.length===8?s.reduce((a,b)=>a+b,0):null;},
     fields:[
       {id:"dgi_1",label:"1. Gait on level surface — 6 metres",options:["3 — Normal, no assistive device, good pace, no imbalance","2 — Mild — uses device, slower speed, mild gait deviations","1 — Moderate — slow speed, abnormal gait, evidence of imbalance","0 — Severe — cannot walk without assistance, severe imbalance"]},
       {id:"dgi_2",label:"2. Gait with speed changes (normal → fast → slow)",options:["3 — Performs smoothly, no difficulty, no gait deviation","2 — Mild — unable to change speed smoothly, minor deviations","1 — Moderate — unable to change speed, significant deviations","0 — Severe — cannot change speed, loses balance"]},
@@ -183,7 +187,7 @@ Object.assign(SCALES, {
   fac:{id:"fac",label:"FAC",full:"Functional Ambulation Classification",icon:"🦽",category:"Balance / Gait",
     maxScore:5,unit:"/5",mcid:1,
     interpret:(s)=>s>=5?{label:"Independent all terrain",color:"#16a34a"}:s>=3?{label:"Supervised / limited",color:"#0891b2"}:s>=1?{label:"Dependent — assist needed",color:"#d97706"}:{label:"Non-ambulatory",color:"#dc2626"},
-    score:(v)=>v.fac_score!==undefined?+v.fac_score:null,
+    score:(v)=>v.fac_score!==undefined?_lead(v.fac_score):null,
     fields:[
       {id:"fac_score",label:"Functional Ambulation Level",options:["0 — Non-functional: unable to ambulate, uses wheelchair","1 — Dependent level 2: requires physical assist — continuous","2 — Dependent level 1: requires physical assist — intermittent","3 — Supervised: requires supervision but no physical contact","4 — Independent level 1: on level surfaces only","5 — Independent level 2: any surface, stairs, slopes, uneven"]}
     ]
@@ -653,6 +657,85 @@ Object.assign(SCALES, {
       ]},
     ],
     score:(v)=>v.rankin_grade?+v.rankin_grade.split(" — ")[0]:null
+  },
+
+  hughes:{id:"hughes",label:"Hughes GBS",full:"Guillain-Barré Syndrome Disability Scale (Hughes)",icon:"⚡",category:"Neuromuscular / GBS",
+    maxScore:6,unit:"/6",mcid:1,
+    adminNote:"Grade today's function: how the patient walks, or whether they are bed-bound or ventilated. In grades 2 and 3, help can be a stick, a waist-level frame or one person (not two). A change of one grade is the standard definition of improvement in Guillain-Barré trials. Record the date, because the grade can rise and fall in the first weeks.",
+    interpret:(s)=>s<=1?{label:"Minor symptoms or healthy",color:"#16a34a"}:s===2?{label:"Walks 10 m unaided, cannot run",color:"#65a30d"}:s===3?{label:"Needs help to walk (usually needs hospital care)",color:"#d97706"}:s===4?{label:"Bedridden or chairbound",color:"#ea580c"}:s===5?{label:"Needs assisted ventilation",color:"#dc2626"}:{label:"Dead",color:"#450a0a"},
+    fields:[
+      {id:"hughes_grade",label:"Hughes disability grade today",options:[
+        "0 — Healthy",
+        "1 — Minor symptoms and capable of running",
+        "2 — Able to walk 10 m or more without assistance, but unable to run",
+        "3 — Able to walk 10 m across an open space with help (stick, frame or one person)",
+        "4 — Bedridden or chairbound",
+        "5 — Needs assisted ventilation for at least part of the day",
+        "6 — Dead",
+      ]},
+    ],
+    score:(v)=>v.hughes_grade?_lead(v.hughes_grade):null
+  },
+
+  gose:{id:"gose",label:"GOSE",full:"Glasgow Outcome Scale — Extended (GOSE)",icon:"🧭",category:"TBI",
+    maxScore:8,unit:"/8",mcid:null,
+    adminNote:"Choose the single category that best describes the patient's overall outcome, from a structured interview with the patient or a carer. If two categories seem to fit, record the lower one. Record the date, because the category is expected to change over the first year.",
+    interpret:(s)=>s===1?{label:"Dead",color:"#450a0a"}:s===2?{label:"Vegetative state",color:"#dc2626"}:s<=4?{label:"Severe disability",color:"#ea580c"}:s<=6?{label:"Moderate disability",color:"#d97706"}:s===7?{label:"Good recovery — lower",color:"#65a30d"}:{label:"Good recovery — upper",color:"#16a34a"},
+    fields:[
+      {id:"gose_category",label:"Overall outcome category",options:[
+        "1 — Dead",
+        "2 — Vegetative state: unresponsive, no awareness of self or surroundings",
+        "3 — Lower severe disability: needs frequent help and someone at home most of the time",
+        "4 — Upper severe disability: needs help for some daily activities but can be left alone for up to 8 hours",
+        "5 — Lower moderate disability: independent at home but cannot return to work or shopping/travel as before",
+        "6 — Upper moderate disability: some reduction in work or social life, but independent",
+        "7 — Lower good recovery: minor problems that affect daily life",
+        "8 — Upper good recovery: no problems that affect daily life",
+      ]},
+    ],
+    score:(v)=>v.gose_category?_lead(v.gose_category):null
+  },
+
+  fss:{id:"fss",label:"FSS",full:"Fatigue Severity Scale (Krupp et al., 1989)",icon:"🔋",category:"Fatigue (MS / neuro)",
+    maxScore:7,unit:"/7 (mean)",mcid:null,
+    adminNote:"The patient rates how much they agree with each statement for the past week, from 1 (strongly disagree) to 7 (strongly agree). The score is the average of the nine answers. An average of 4 or more is the usual cut-off for significant fatigue.",
+    interpret:(s)=>s>=4?{label:"Significant fatigue (mean 4 or more)",color:"#dc2626"}:{label:"Below the fatigue cut-off",color:"#16a34a"},
+    fields:[
+      "My motivation is lower when I am fatigued.",
+      "Exercise brings on my fatigue.",
+      "I am easily fatigued.",
+      "Fatigue interferes with my physical functioning.",
+      "Fatigue causes frequent problems for me.",
+      "My fatigue prevents sustained physical functioning.",
+      "Fatigue interferes with carrying out certain duties and responsibilities.",
+      "Fatigue is among my three most disabling symptoms.",
+      "Fatigue interferes with my work, family or social life.",
+    ].map((label,i)=>({id:`fss_${i+1}`,label:`${i+1}. ${label}`,options:["1 — Strongly disagree","2","3","4 — Neutral","5","6","7 — Strongly agree"]})),
+    score:(v)=>{const ids=Array.from({length:9},(_,i)=>`fss_${i+1}`);const s=ids.map(id=>v[id]!==undefined?_lead(v[id]):null).filter(x=>x!==null&&!Number.isNaN(x));return s.length===9?Math.round((s.reduce((a,b)=>a+b,0)/9)*10)/10:null;}
+  },
+
+  mi_arm:{id:"mi_arm",label:"MI arm",full:"Motricity Index — Arm (Demeurisse et al., 1980)",icon:"💪",category:"Stroke",
+    maxScore:100,unit:"/100",mcid:null,
+    adminNote:"Test the three arm movements on the affected side: pinch grip (a 2.5 cm cube between thumb and index finger), elbow flexion (from 90°) and shoulder abduction (from the side). Score each item 0, 9, 14, 19, 25 or 33. The arm score is the sum of the three items plus 1, so a normal arm scores 100. Test the other side too and compare.",
+    interpret:(s)=>s>=100?{label:"Normal power",color:"#16a34a"}:{label:"Reduced power — compare with the other side and the last score",color:"#d97706"},
+    fields:[
+      {id:"mi_arm_pinch",label:"Pinch grip (2.5 cm cube)",options:["0 — No movement","9 — Beginning of prehension","14 — Grips cube but cannot hold it against gravity","19 — Grips cube, cannot hold it against pull","25 — Grips cube, weaker than the other hand","33 — Normal grip"]},
+      {id:"mi_arm_elbow",label:"Elbow flexion",options:OPT6},
+      {id:"mi_arm_shoulder",label:"Shoulder abduction",options:OPT6},
+    ],
+    score:(v)=>{const ids=["mi_arm_pinch","mi_arm_elbow","mi_arm_shoulder"];const s=ids.map(id=>v[id]!==undefined?_lead(v[id]):null).filter(x=>x!==null&&!Number.isNaN(x));return s.length===3?s.reduce((a,b)=>a+b,0)+1:null;}
+  },
+
+  mi_leg:{id:"mi_leg",label:"MI leg",full:"Motricity Index — Leg (Demeurisse et al., 1980)",icon:"🦵",category:"Stroke",
+    maxScore:100,unit:"/100",mcid:null,
+    adminNote:"Test the three leg movements on the affected side: ankle dorsiflexion, knee extension and hip flexion, sitting. Score each item 0, 9, 14, 19, 25 or 33. The leg score is the sum of the three items plus 1, so a normal leg scores 100. Test the other side too and compare.",
+    interpret:(s)=>s>=100?{label:"Normal power",color:"#16a34a"}:{label:"Reduced power — compare with the other side and the last score",color:"#d97706"},
+    fields:[
+      {id:"mi_leg_ankle",label:"Ankle dorsiflexion",options:OPT6},
+      {id:"mi_leg_knee",label:"Knee extension",options:OPT6},
+      {id:"mi_leg_hip",label:"Hip flexion",options:OPT6},
+    ],
+    score:(v)=>{const ids=["mi_leg_ankle","mi_leg_knee","mi_leg_hip"];const s=ids.map(id=>v[id]!==undefined?_lead(v[id]):null).filter(x=>x!==null&&!Number.isNaN(x));return s.length===3?s.reduce((a,b)=>a+b,0)+1:null;}
   },
 
   hoehnyahr:{id:"hoehnyahr",label:"H&Y",full:"Hoehn and Yahr Scale — Parkinson Disease Staging",icon:"🌀",category:"Parkinson's",
@@ -1168,7 +1251,7 @@ import { ALL_TESTS } from "./screenModules.js";
 const ROM_DATA={
   "Cervical":[
     {id:"rom_cflex",mv:"Flexion",bilateral:false,normal:45,unit:"°",plane:"Sagittal",axis:"Frontal (coronal)",
-     start:"Seated, head neutral, stabilise thorax",gonio:"Axis: C7 SP; Fixed: vertical ref; Moving: along mastoid/ear",
+     start:"Seated, head neutral, stabilise thorax",gonio:"Axis: external acoustic meatus (ear opening); Fixed: perpendicular to the floor; Moving: parallel to the base of the nose",
      muscles:"Sternocleidomastoid, longus colli/capitis, anterior scalenes",
      endfeel:{normal:"Firm (ligamentous — posterior structures)",abnormal:"Hard=OA/disc; Empty=fracture/neoplasm; Springy=meniscoid"},
      compensation:"Thoracic flexion, chin poke (forward head)",
@@ -1179,7 +1262,7 @@ const ROM_DATA={
      pediatric:"Neonatal: limited = torticollis, Klippel-Feil. Children: normal=80°",
      geriatric:"Degenerative changes reduce all planes by 25–30% by age 70"},
     {id:"rom_cext",mv:"Extension",bilateral:false,normal:45,unit:"°",plane:"Sagittal",axis:"Frontal",
-     start:"Seated, head neutral",gonio:"Axis: C7 SP; Fixed: vertical ref; Moving: along mastoid",
+     start:"Seated, head neutral",gonio:"Axis: external acoustic meatus (ear opening); Fixed: perpendicular to the floor; Moving: parallel to the base of the nose",
      muscles:"Semispinalis capitis, splenius capitis, upper trapezius, suboccipitals",
      endfeel:{normal:"Firm (anterior ligaments)",abnormal:"Hard=OA/stenosis; Empty=instability; Springy=disc"},
      compensation:"Thoracic extension, mouth opening",
@@ -1368,14 +1451,6 @@ const ROM_DATA={
      adl:"Reaching out to side, dressing (arm into sleeve), carrying objects at side",
      pathology:"Arc 60–120°: impingement or partial RC; Full loss: frozen shoulder, GH OA, complete RC tear",
      redflag:"Acute painful arc + weakness + trauma = complete RC tear. Document scapulohumeral rhythm deviation"},
-    {id:"rom_sadd",mv:"Adduction",bilateral:true,normal:30,unit:"°",plane:"Frontal",axis:"AP",
-     start:"Seated, assess cross-body adduction (horizontal adduction)",gonio:"Axis: anterior GH; Fixed: acromion to acromion line; Moving: humerus",
-     muscles:"Pec major, latissimus dorsi, teres major, anterior deltoid",
-     endfeel:{normal:"Soft (arm contact with trunk) or firm",abnormal:"Pain at extreme: AC joint pathology (horizontal add)"},
-     compensation:"Trunk lean",capsular:"AC joint positive: horizontal adduction most painful",
-     adl:"Hugging, crossing arms, ADL cross-body reach",
-     pathology:"Horizontal adduction pain: AC joint OA, ACJ injury, subacromial pathology",
-     redflag:"Cross-body pain after fall = ACJ sprain — assess step deformity"},
     {id:"rom_ser",mv:"ER",bilateral:true,normal:90,unit:"°",plane:"Transverse",axis:"Vertical",
      start:"Supine, shoulder 0° abduction, elbow 90°; ALSO test at 90° abduction",gonio:"Axis: olecranon; Fixed: vertical/perpendicular to table; Moving: ulna/forearm",
      muscles:"Infraspinatus, teres minor, posterior deltoid",

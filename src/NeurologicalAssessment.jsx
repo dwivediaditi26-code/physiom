@@ -286,6 +286,9 @@ const TONE_TYPES = ["Normal", "Hypotonia", "Flaccidity", "Hypertonia", "Spastici
 // Examination step's own Myotomal Strength Screen (any suspected
 // radiculopathy) and the Spinal Cord Injury condition library's full
 // ASIA exam below, so the two don't drift out of sync with each other.
+// ISNCSCI levels: C1-S3, S4-5 as one segment, INT = intact, ND = not determined.
+const SCI_LEVELS = ["C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12", "L1", "L2", "L3", "L4", "L5", "S1", "S2", "S3", "S4-5", "INT (intact)", "ND (not determined)"];
+
 const MYOTOME_ROWS = ["C5 Elbow flexors", "C6 Wrist extensors", "C7 Elbow extensors", "C8 Finger flexors", "T1 Finger abductors", "L2 Hip flexors", "L3 Knee extensors", "L4 Ankle dorsiflexors", "L5 Great toe extensors", "S1 Ankle plantarflexors"];
 const MYOTOME_ROW_INFO = Object.fromEntries(MYOTOME_ROWS.map((r) => [r, neuroExamLibraryData["myo" + r]]));
 
@@ -359,7 +362,7 @@ const NEURO_LIBRARY = [
   {
     cat: "Traumatic Brain Injury",
     icon: <Icon name="burst" />,
-    items: ["Rancho Los Amigos level", "Post-traumatic amnesia screen", "Agitation / behaviour screen"],
+    items: ["Rancho Los Amigos level", "Level of consciousness (disorders of consciousness)", "Neurosurgical status", "Post-traumatic amnesia screen", "Agitation / behaviour screen"],
   },
   {
     cat: "Vestibular Disorders",
@@ -379,7 +382,7 @@ const NEURO_LIBRARY = [
   {
     cat: "Peripheral Nerve",
     icon: <Icon name="dna" />,
-    items: ["Neurodynamic / neural mobility testing", "Tinel's sign", "Muscle wasting", "Peripheral sensory/motor distribution"],
+    items: ["Neurodynamic / neural mobility testing", "Tinel's sign", "Muscle wasting", "Peripheral sensory/motor distribution", "Guillain-Barré course & treatment"],
   },
   {
     cat: "Ataxia",
@@ -454,10 +457,27 @@ const NEURO_RENDERERS = {
   [neuroId("Stroke", "Fugl-Meyer Assessment")]: (d, set) => (
     <>
       <div className="vitals-grid">
-        <NumberField label="UE motor" value={d.fmUE} onChange={(v) => set("fmUE", v)} unit="/66" width="45%" info={condInfo("Stroke", "Fugl-Meyer Assessment")} />
+        <NumberField label="UE motor (total)" value={d.fmUE} onChange={(v) => set("fmUE", v)} unit="/66" width="45%" info={condInfo("Stroke", "Fugl-Meyer Assessment")} />
         <NumberField label="LE motor" value={d.fmLE} onChange={(v) => set("fmLE", v)} unit="/34" width="45%" />
         <NumberField label="Balance" value={d.fmBalance} onChange={(v) => set("fmBalance", v)} unit="/14" width="45%" />
         <NumberField label="Sensation" value={d.fmSensation} onChange={(v) => set("fmSensation", v)} unit="/24" width="45%" />
+      </div>
+      <div className="subheading">UE motor sub-scores (optional — fills the total)</div>
+      <div className="vitals-grid">
+        {[["fmShoulderElbow", "Shoulder / elbow / forearm", "/36"], ["fmWrist", "Wrist", "/10"], ["fmHand", "Hand", "/14"], ["fmCoord", "Coordination / speed", "/6"]].map(([key, label, unit]) => (
+          <NumberField
+            key={key}
+            label={label}
+            value={d[key]}
+            unit={unit}
+            width="45%"
+            onChange={(v) => {
+              set(key, v);
+              const parts = { fmShoulderElbow: d.fmShoulderElbow, fmWrist: d.fmWrist, fmHand: d.fmHand, fmCoord: d.fmCoord, [key]: v };
+              set("fmUE", String(Object.values(parts).reduce((sum, x) => sum + (Number(x) || 0), 0)));
+            }}
+          />
+        ))}
       </div>
       <Hint>Standardised measure of post-stroke motor recovery, balance, sensation and joint function — higher score reflects less impairment.</Hint>
     </>
@@ -520,9 +540,38 @@ const NEURO_RENDERERS = {
   ),
 
   /* ---------------- Spinal Cord Injury ---------------- */
-  [neuroId("Spinal Cord Injury", "Neurological level of injury")]: (d, set) => (
-    <TextField label="Neurological level of injury" value={d.nli} onChange={(v) => set("nli", v)} placeholder="e.g. C6 (ASIA)" info={condInfo("Spinal Cord Injury", "Neurological level of injury")} />
-  ),
+  [neuroId("Spinal Cord Injury", "Neurological level of injury")]: (d, set) => {
+    const lacksSacral = d.vac === "No" && d.dap === "No" && d.s45 === "No";
+    const hasSacral = d.vac === "Yes" || d.dap === "Yes" || d.s45 === "Yes";
+    return (
+      <>
+        <SelectField label="Cause of injury" type="single" options={["Road traffic accident", "Fall", "Diving / water accident", "Sport", "Violence / gunshot", "Non-traumatic (tumour, infection, vascular, degenerative)", "Other"]} value={d.sciCause} onChange={(v) => set("sciCause", v)} />
+        <TextField label="Date of injury" value={d.injuryDate} onChange={(v) => set("injuryDate", v)} placeholder="DD/MM/YYYY" />
+        <SelectField label="Phase" type="single" options={["Acute (spinal shock possible)", "Subacute", "Chronic"]} value={d.sciPhase} onChange={(v) => set("sciPhase", v)} hint="Spinal shock can hide the true level and grade in the first days; ISNCSCI grading is most reliable once it has passed." />
+        <div className="subheading">Levels (ISNCSCI)</div>
+        <>
+          <SelectField label="Sensory level — right" type="single" options={SCI_LEVELS} value={d.sensoryLevelR} onChange={(v) => set("sensoryLevelR", v)} />
+          <SelectField label="Sensory level — left" type="single" options={SCI_LEVELS} value={d.sensoryLevelL} onChange={(v) => set("sensoryLevelL", v)} />
+          <SelectField label="Motor level — right" type="single" options={SCI_LEVELS} value={d.motorLevelR} onChange={(v) => set("motorLevelR", v)} />
+          <SelectField label="Motor level — left" type="single" options={SCI_LEVELS} value={d.motorLevelL} onChange={(v) => set("motorLevelL", v)} />
+        </>
+        <TextField label="Neurological level of injury (NLI)" value={d.nli} onChange={(v) => set("nli", v)} placeholder="Most rostral of the four levels, e.g. C6" info={condInfo("Spinal Cord Injury", "Neurological level of injury")} />
+        <div className="subheading">Totals</div>
+        <div className="vitals-grid">
+          <NumberField label="Upper extremity motor score" value={d.uems} onChange={(v) => set("uems", v)} unit="/50" width="45%" />
+          <NumberField label="Lower extremity motor score" value={d.lems} onChange={(v) => set("lems", v)} unit="/50" width="45%" />
+          <NumberField label="Light touch total" value={d.ltTotal} onChange={(v) => set("ltTotal", v)} unit="/112" width="45%" />
+          <NumberField label="Pinprick total" value={d.ppTotal} onChange={(v) => set("ppTotal", v)} unit="/112" width="45%" />
+        </div>
+        <div className="subheading">Sacral sparing</div>
+        <Segmented label="Voluntary anal contraction (VAC)" options={["Yes", "No", "Not tested"]} value={d.vac} onChange={(v) => set("vac", v)} />
+        <Segmented label="Deep anal pressure (DAP)" options={["Yes", "No", "Not tested"]} value={d.dap} onChange={(v) => set("dap", v)} hint="Felt on gentle pressure on the anal wall with the examining finger." />
+        <Segmented label="Light touch or pinprick felt at S4-5" options={["Yes", "No", "Not tested"]} value={d.s45} onChange={(v) => set("s45", v)} />
+        {hasSacral && <Hint>Sacral sparing present — the injury is incomplete (AIS B or better).</Hint>}
+        {lacksSacral && <Hint>No sacral sparing on all three checks — a complete injury (AIS A) if the exam was done after spinal shock has passed.</Hint>}
+      </>
+    );
+  },
   [neuroId("Spinal Cord Injury", "Myotome grading (ASIA key muscles)")]: (d, set) => (
     <LRGrid
       label="Key myotomes (MMT 0-5)"
@@ -614,6 +663,22 @@ const NEURO_RENDERERS = {
       info={condInfo("Traumatic Brain Injury", "Rancho Los Amigos level")}
     />
   ),
+  [neuroId("Traumatic Brain Injury", "Level of consciousness (disorders of consciousness)")]: (d, set) => (
+    <>
+      <SelectField label="Consciousness category" type="single" options={["Coma", "Unresponsive wakefulness syndrome (vegetative state)", "Minimally conscious state minus", "Minimally conscious state plus", "Emerged from minimally conscious state", "Not formally assessed"]} value={d.docCategory} onChange={(v) => set("docCategory", v)} info={condInfo("Traumatic Brain Injury", "Level of consciousness (disorders of consciousness)")} />
+      <TextField label="Best behaviours seen" value={d.docBehaviours} onChange={(v) => set("docBehaviours", v)} placeholder="e.g. visual pursuit, localises pain, follows 1-step command (inconsistent)" />
+      <TextField label="Formal scale and score" value={d.docScale} onChange={(v) => set("docScale", v)} placeholder="e.g. CRS-R total, date, assessor" />
+    </>
+  ),
+  [neuroId("Traumatic Brain Injury", "Neurosurgical status")]: (d, set) => (
+    <>
+      <SelectField label="Decompressive craniectomy" type="single" options={["No", "Yes — bone flap off (protect with helmet)", "Cranioplasty done"]} value={d.craniectomy} onChange={(v) => set("craniectomy", v)} info={condInfo("Traumatic Brain Injury", "Neurosurgical status")} />
+      <SelectField label="Intracranial monitoring / drainage" type="single" options={["None", "ICP monitor", "External ventricular drain (EVD)", "Both", "Shunt in situ"]} value={d.icpDevice} onChange={(v) => set("icpDevice", v)} />
+      <TextField label="Position and activity limits set by neurosurgery" value={d.neurosurgeryLimits} onChange={(v) => set("neurosurgeryLimits", v)} placeholder="e.g. head of bed ≥30°, EVD clamped for mobilising, no sitting out" />
+      <SelectField label="Airway" type="single" options={["Own airway", "Tracheostomy — cuffed", "Tracheostomy — uncuffed / capped", "Intubated"]} value={d.airway} onChange={(v) => set("airway", v)} />
+      <SelectField label="Seizures" type="single" options={["None", "On prophylaxis", "Seizures this admission"]} value={d.seizures} onChange={(v) => set("seizures", v)} />
+    </>
+  ),
   [neuroId("Traumatic Brain Injury", "Post-traumatic amnesia screen")]: (d, set) => (
     <>
       <SelectField label="Currently in PTA" type="single" options={["Yes", "No", "Unclear"]} value={d.pta} onChange={(v) => set("pta", v)} info={condInfo("Traumatic Brain Injury", "Post-traumatic amnesia screen")} />
@@ -662,6 +727,14 @@ const NEURO_RENDERERS = {
         <NumberField label="Chest expansion" value={d.chestExpansion} onChange={(v) => set("chestExpansion", v)} unit="cm" width="45%" />
       </div>
       <SelectField label="Respiratory muscle strength" type="single" options={["Not assessed", "Normal", "Reduced - accessory muscle use noted", "Severely reduced - ventilator dependent"]} value={d.respMuscle} onChange={(v) => set("respMuscle", v)} />
+      <div className="vitals-grid">
+        <NumberField label="Vital capacity" value={d.vitalCapacity} onChange={(v) => set("vitalCapacity", v)} unit="mL/kg" width="30%" />
+        <NumberField label="MIP" value={d.mip} onChange={(v) => set("mip", v)} unit="cmH₂O" width="30%" />
+        <NumberField label="MEP" value={d.mep} onChange={(v) => set("mep", v)} unit="cmH₂O" width="30%" />
+      </div>
+      {((Number(d.vitalCapacity) > 0 && Number(d.vitalCapacity) < 20) || (Number(d.mip) > 0 && Math.abs(Number(d.mip)) < 30) || (Number(d.mep) > 0 && Number(d.mep) < 40)) && (
+        <Alert tone="red">⚠️ Below the 20/30/40 thresholds (vital capacity under 20 mL/kg, MIP weaker than 30, MEP under 40 cmH₂O) — a warning of possible respiratory failure in neuromuscular weakness such as Guillain-Barré. Tell the medical team now; do not wait for the next review.</Alert>
+      )}
     </>
   ),
   [neuroId("Neuro-Respiratory", "Cough effectiveness")]: (d, set) => (
@@ -694,6 +767,20 @@ const NEURO_RENDERERS = {
   ),
   [neuroId("Peripheral Nerve", "Tinel's sign")]: (d, set) => (
     <TextField label="Tinel's sign" value={d.tinels} onChange={(v) => set("tinels", v)} placeholder="e.g. Positive over carpal tunnel, reproduces median distribution tingling" info={condInfo("Peripheral Nerve", "Tinel's sign")} />
+  ),
+  [neuroId("Peripheral Nerve", "Guillain-Barré course & treatment")]: (d, set) => (
+    <>
+      <SelectField label="Preceding illness" type="single" options={["None known", "Diarrhoea / gastroenteritis", "Respiratory infection", "Recent vaccination", "Other infection", "Surgery / trauma"]} value={d.gbsTrigger} onChange={(v) => set("gbsTrigger", v)} info={condInfo("Peripheral Nerve", "Guillain-Barré course & treatment")} />
+      <TextField label="Date weakness began" value={d.gbsOnset} onChange={(v) => set("gbsOnset", v)} placeholder="DD/MM/YYYY" />
+      <SelectField label="Phase of illness" type="single" options={["Progressing", "Plateau", "Recovering", "Relapse / treatment-related fluctuation"]} value={d.gbsPhase} onChange={(v) => set("gbsPhase", v)} hint="Weakness worsens for up to 4 weeks, then plateaus, then recovers. Avoid fatiguing exercise while the illness is still progressing." />
+      <SelectField label="Immunotherapy" type="single" options={["None", "IVIG", "Plasma exchange", "Planned", "Not documented"]} value={d.gbsTreatment} onChange={(v) => set("gbsTreatment", v)} />
+      <SelectField label="Ventilatory support" type="single" options={["None", "Non-invasive ventilation", "Invasive ventilation", "Tracheostomy", "Weaned"]} value={d.gbsVentilation} onChange={(v) => set("gbsVentilation", v)} />
+      <SelectField label="Hughes disability grade" type="single" options={["0 - Healthy", "1 - Minor symptoms, can run", "2 - Walks 10 m without help, cannot run", "3 - Walks 10 m with help (stick, frame or one person)", "4 - Bedridden or chairbound", "5 - Needs assisted ventilation for part of the day", "6 - Dead"]} value={d.gbsHughes} onChange={(v) => set("gbsHughes", v)} />
+      <SelectField label="Autonomic features" type="multi" options={["None", "Fast or irregular heart rate", "Blood pressure swings", "Urinary retention", "Ileus / constipation", "Sweating abnormality"]} value={d.gbsAutonomic} onChange={(v) => set("gbsAutonomic", v)} />
+      {(String(d.gbsHughes || "").startsWith("5") || (d.gbsAutonomic || "").includes("Blood pressure swings") || (d.gbsAutonomic || "").includes("Fast or irregular")) && (
+        <Alert tone="amber">Ventilator dependence or autonomic instability — keep monitoring on during all handling, change position slowly and agree activity limits with the medical team.</Alert>
+      )}
+    </>
   ),
   [neuroId("Peripheral Nerve", "Muscle wasting")]: (d, set) => (
     <TextArea label="Muscle wasting / atrophy" value={d.wasting} onChange={(v) => set("wasting", v)} placeholder="Location and distribution, e.g. thenar wasting suggesting median nerve involvement" info={condInfo("Peripheral Nerve", "Muscle wasting")} />
@@ -839,6 +926,16 @@ function SafetySection({ data, setData, setting }) {
     <>
       <SectionIntro icon={<Icon name="siren" />} title="Safety / Medical Stability" sub="Screen for red flags and confirm the patient is stable enough to proceed." />
       {flagCount > 0 && <Alert tone="red">⚠️ {flagCount} red-flag item(s) selected — correlate clinically / notify the medical team before continuing.</Alert>}
+      <div className="subheading">Vital signs (current)</div>
+      <div className="vitals-grid">
+        <NumberField label="BP systolic" value={d.bpSys} onChange={(v) => set("bpSys", v)} unit="mmHg" width="45%" />
+        <NumberField label="BP diastolic" value={d.bpDia} onChange={(v) => set("bpDia", v)} unit="mmHg" width="45%" />
+        <NumberField label="Heart rate" value={d.hr} onChange={(v) => set("hr", v)} unit="bpm" width="45%" />
+        <NumberField label="SpO₂" value={d.spo2} onChange={(v) => set("spo2", v)} unit="%" width="45%" />
+        <NumberField label="Respiratory rate" value={d.rr} onChange={(v) => set("rr", v)} unit="/min" width="45%" />
+        <NumberField label="Temperature" value={d.temp} onChange={(v) => set("temp", v)} unit="°C" width="45%" />
+      </div>
+      <Hint>Record before mobilising. In stroke, SCI and neurosurgical patients follow the medical team's blood-pressure limits, and note any drop on sitting or standing.</Hint>
       {isICU && (
         <>
           <SelectField label="Hemodynamic / respiratory stability" type="single" options={["Stable", "Unstable", "Labile"]} value={d.stability} onChange={(v) => set("stability", v)} />
@@ -1008,14 +1105,19 @@ function CognitionSection({ data, setData }) {
   const gcsVerbal = Number((d.gcsVerbal || "").match(/^\d/)?.[0] || 0);
   const gcsMotor = Number((d.gcsMotor || "").match(/^\d/)?.[0] || 0);
   const gcsTotal = gcsEye + gcsVerbal + gcsMotor;
+  // A component that cannot be tested is recorded with its letter, never as 1
+  // ("None"): C = eyes closed by swelling, T = intubated / tracheostomy. The
+  // total is then written with the letter (e.g. "3T") and not read as a full score.
+  const gcsLetters = `${String(d.gcsEye || "").startsWith("C") ? "C" : ""}${String(d.gcsVerbal || "").startsWith("T") ? "T" : ""}`;
   return (
     <>
       <SectionIntro icon={<Icon name="brain" />} title="Mental Status / Cognition" />
       <SelectField label="Level of consciousness" type="single" options={["Alert", "Drowsy", "Lethargic", "Obtunded", "Stuporous", "Comatose"]} value={d.loc} onChange={(v) => set("loc", v)} />
-      <SelectField label="Eye opening (E)" type="single" options={["4 - Spontaneous", "3 - To voice", "2 - To pain", "1 - None"]} value={d.gcsEye} onChange={(v) => set("gcsEye", v)} info={neuroExamLibraryData.gcsEye} />
-      <SelectField label="Verbal response (V)" type="single" options={["5 - Oriented", "4 - Confused", "3 - Inappropriate words", "2 - Incomprehensible sounds", "1 - None"]} value={d.gcsVerbal} onChange={(v) => set("gcsVerbal", v)} info={neuroExamLibraryData.gcsVerbal} />
+      <SelectField label="Eye opening (E)" type="single" options={["4 - Spontaneous", "3 - To voice", "2 - To pain", "1 - None", "C - Eyes closed by swelling (not testable)"]} value={d.gcsEye} onChange={(v) => set("gcsEye", v)} info={neuroExamLibraryData.gcsEye} />
+      <SelectField label="Verbal response (V)" type="single" options={["5 - Oriented", "4 - Confused", "3 - Inappropriate words", "2 - Incomprehensible sounds", "1 - None", "T - Intubated / tracheostomy (not testable)"]} value={d.gcsVerbal} onChange={(v) => set("gcsVerbal", v)} info={neuroExamLibraryData.gcsVerbal} />
       <SelectField label="Motor response (M)" type="single" options={["6 - Obeys commands", "5 - Localises pain", "4 - Withdraws from pain", "3 - Abnormal flexion", "2 - Abnormal extension", "1 - None"]} value={d.gcsMotor} onChange={(v) => set("gcsMotor", v)} info={neuroExamLibraryData.gcsMotor} />
-      {gcsTotal > 0 && <Hint>Total GCS: {gcsTotal}/15 {gcsTotal <= 8 ? "(severe)" : gcsTotal <= 12 ? "(moderate)" : "(mild)"}</Hint>}
+      {gcsTotal > 0 && !gcsLetters && <Hint>Total GCS: {gcsTotal}/15 {gcsTotal <= 8 ? "(severe)" : gcsTotal <= 12 ? "(moderate)" : "(mild)"}</Hint>}
+      {gcsTotal > 0 && gcsLetters && <Hint>{`GCS ${gcsTotal}${gcsLetters} — one component could not be tested (C = eyes closed by swelling, T = intubated). Write the score with its letter and compare it only with scores that carry the same letter; the number on its own understates the patient's real level.`}</Hint>}
       <SelectField
         label="Orientation"
         type="multi"
@@ -1518,7 +1620,33 @@ export function SummarySection(props) {
   );
 }
 
-function SummarySectionBody({ setting, data, assessSteps, formatters, onShare, onGeneratePdf }) {
+// Scale results from the Outcome Measures tool are saved as flat "om_summary_<scale>" lines (or, for older
+// saves, only an "om_history_<scale>" list). The summary reads each step's own section, so without this a
+// recorded NIHSS, Berg or Barthel never appeared in the review, the share text or the profile.
+export function outcomeSummaryRows(data = {}) {
+  const rows = [];
+  const seen = new Set();
+  Object.entries(data).forEach(([k, v]) => {
+    if (!k.startsWith("om_summary_") || typeof v !== "string" || !v) return;
+    const id = k.slice("om_summary_".length);
+    seen.add(id);
+    const i = v.indexOf(": ");
+    rows.push({ label: i > 0 ? v.slice(0, i) : id.toUpperCase(), value: i > 0 ? v.slice(i + 2) : v });
+  });
+  Object.entries(data).forEach(([k, v]) => {
+    if (!k.startsWith("om_history_") || seen.has(k.slice("om_history_".length))) return;
+    try {
+      const h = JSON.parse(v || "[]");
+      const last = h[h.length - 1];
+      if (last && last.score !== null && last.score !== undefined) rows.push({ label: k.slice("om_history_".length).toUpperCase(), value: `${last.score} (${String(last.date || "").slice(0, 10)})` });
+    } catch { /* ignore a malformed history */ }
+  });
+  return rows;
+}
+
+function SummarySectionBody({ setting, data: rawData, assessSteps, formatters: formattersIn, onShare, onGeneratePdf }) {
+  const data = useMemo(() => ({ ...rawData, outcomes: { __rows: outcomeSummaryRows(rawData) } }), [rawData]);
+  const formatters = useMemo(() => ({ ...formattersIn, outcomes: (section) => section.__rows || [] }), [formattersIn]);
   const settingLabel = SETTINGS.find((s) => s.id === setting)?.label || "—";
   const [copied, setCopied] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -1679,9 +1807,10 @@ const REGIONS = [
 const NEURO_TEMPLATES = [
   { id: "stroke", icon: <Icon name="brain" />, label: "Stroke", domainSteps: DOMAIN_STEP_IDS, libraryItems: [["Stroke", "Higher mental function screen"], ["Stroke", "Neglect / inattention"], ["Stroke", "Visual field screen"], ["Stroke", "Synergy pattern (UE/LE)"], ["Stroke", "Selective motor control"], ["Stroke", "Brunnstrom recovery stage"], ["Stroke", "Fugl-Meyer Assessment"], ["Stroke", "Modified Rankin Scale"]] },
   { id: "parkinsons", icon: <Icon name="spiral" />, label: "Parkinson's", domainSteps: ["cognition", "motor", "tone", "balance", "gait", "coordination", "functional"], libraryItems: [["Parkinson's Disease", "Bradykinesia"], ["Parkinson's Disease", "Rigidity type"], ["Parkinson's Disease", "Resting tremor"], ["Parkinson's Disease", "Postural instability (pull test)"], ["Parkinson's Disease", "Freezing of gait"], ["Parkinson's Disease", "Turning / axial rotation"], ["Parkinson's Disease", "Dual-task gait"], ["Parkinson's Disease", "Hoehn & Yahr staging"]] },
-  { id: "tbi", icon: <Icon name="burst" />, label: "TBI", domainSteps: DOMAIN_STEP_IDS, libraryItems: [["Traumatic Brain Injury", "Rancho Los Amigos level"], ["Traumatic Brain Injury", "Post-traumatic amnesia screen"], ["Traumatic Brain Injury", "Agitation / behaviour screen"]] },
-  { id: "sci", icon: <Icon name="bone" />, label: "Spinal Cord Injury", domainSteps: ["motor", "sensory", "tone", "balance", "gait", "functional"], libraryItems: [["Spinal Cord Injury", "Neurological level of injury"], ["Spinal Cord Injury", "Myotome grading (ASIA key muscles)"], ["Spinal Cord Injury", "Dermatome grading (ASIA sensory)"], ["Spinal Cord Injury", "ASIA Impairment Scale (AIS)"], ["Spinal Cord Injury", "Sitting balance (SCI)"], ["Spinal Cord Injury", "Transfer ability"], ["Spinal Cord Injury", "Wheelchair mobility"], ["Spinal Cord Injury", "Autonomic dysreflexia screen"]] },
-  { id: "peripheralneuropathy", icon: <Icon name="dna" />, label: "Peripheral Neuropathy", domainSteps: ["sensory", "motor", "tone", "gait"], libraryItems: [["Peripheral Nerve", "Neurodynamic / neural mobility testing"], ["Peripheral Nerve", "Tinel's sign"], ["Peripheral Nerve", "Muscle wasting"], ["Peripheral Nerve", "Peripheral sensory/motor distribution"]] },
+  { id: "tbi", icon: <Icon name="burst" />, label: "TBI", domainSteps: DOMAIN_STEP_IDS, libraryItems: [["Traumatic Brain Injury", "Rancho Los Amigos level"], ["Traumatic Brain Injury", "Level of consciousness (disorders of consciousness)"], ["Traumatic Brain Injury", "Neurosurgical status"], ["Traumatic Brain Injury", "Post-traumatic amnesia screen"], ["Traumatic Brain Injury", "Agitation / behaviour screen"]] },
+  { id: "sci", icon: <Icon name="bone" />, label: "Spinal Cord Injury", domainSteps: ["motor", "sensory", "tone", "balance", "gait", "functional", "outcomes"], libraryItems: [["Spinal Cord Injury", "Neurological level of injury"], ["Spinal Cord Injury", "Myotome grading (ASIA key muscles)"], ["Spinal Cord Injury", "Dermatome grading (ASIA sensory)"], ["Spinal Cord Injury", "ASIA Impairment Scale (AIS)"], ["Spinal Cord Injury", "Sitting balance (SCI)"], ["Spinal Cord Injury", "Transfer ability"], ["Spinal Cord Injury", "Wheelchair mobility"], ["Spinal Cord Injury", "Autonomic dysreflexia screen"], ["Neuro-Respiratory", "Respiratory status"], ["Neuro-Respiratory", "Cough effectiveness"]] },
+  { id: "gbs", icon: <Icon name="dna" />, label: "Guillain-Barré / acute neuropathy", domainSteps: ["cranial", "sensory", "motor", "tone", "gait", "functional", "outcomes"], libraryItems: [["Peripheral Nerve", "Guillain-Barré course & treatment"], ["Neuro-Respiratory", "Respiratory status"], ["Neuro-Respiratory", "Cough effectiveness"], ["Communication / Bulbar", "Swallowing screen"], ["Peripheral Nerve", "Muscle wasting"], ["Peripheral Nerve", "Peripheral sensory/motor distribution"]] },
+  { id: "peripheralneuropathy", icon: <Icon name="dna" />, label: "Peripheral Neuropathy", domainSteps: ["sensory", "motor", "tone", "gait", "outcomes"], libraryItems: [["Peripheral Nerve", "Neurodynamic / neural mobility testing"], ["Peripheral Nerve", "Tinel's sign"], ["Peripheral Nerve", "Muscle wasting"], ["Peripheral Nerve", "Peripheral sensory/motor distribution"]] },
   { id: "vestibulartemplate", icon: <Icon name="spiral" />, label: "Vestibular", domainSteps: ["cranial", "balance", "gait"], libraryItems: [["Vestibular Disorders", "Dix-Hallpike test"], ["Vestibular Disorders", "Head impulse test"], ["Vestibular Disorders", "Nystagmus assessment"], ["Vestibular Disorders", "Dynamic Gait Index"], ["Vestibular Disorders", "Dizziness Handicap Inventory screen"]] },
   { id: "ms", icon: <Icon name="flame" />, label: "Multiple Sclerosis", domainSteps: DOMAIN_STEP_IDS, libraryItems: [["Multiple Sclerosis", "Fatigue screen"], ["Multiple Sclerosis", "Nystagmus / INO screen"], ["Multiple Sclerosis", "Lhermitte's sign"], ["Multiple Sclerosis", "Uhthoff's phenomenon"], ["Multiple Sclerosis", "EDSS staging"], ["Multiple Sclerosis", "Bladder / bowel function"]] },
   { id: "neuromusculartemplate", icon: <Icon name="muscle" />, label: "Neuromuscular", domainSteps: ["motor", "tone", "sensory", "gait"], libraryItems: [["Peripheral Nerve", "Muscle wasting"], ["Neuro-Respiratory", "Respiratory status"], ["Neuro-Respiratory", "Cough effectiveness"]] },

@@ -68,7 +68,7 @@ export const neuroConditionLibraryData = {
     interpret: {
       normal: ["Symmetrical performance on bisection/cancellation/clock drawing"],
       abnormal: ["Left visual neglect → most common after right MCA stroke, significantly impacts safety (collisions, missed food on one side of the plate) and rehab potential"],
-      note: "Neglect is a stronger negative predictor of functional recovery than motor weakness alone — flag it early to the whole team, not just document it.",
+      note: "Neglect is an independent negative predictor of functional recovery after stroke, over and above the degree of weakness — flag it early to the whole team, not just document it.",
     },
   },
 
@@ -201,7 +201,7 @@ export const neuroConditionLibraryData = {
     },
     scaleLabel: "4 domains (/138 total)",
     scale: { type: "table", rows: [
-      { k: "UE motor", v: "/66" },
+      { k: "UE motor", v: "/66 — shoulder/elbow/forearm /36, wrist /10, hand /14, coordination/speed /6" },
       { k: "LE motor", v: "/34" },
       { k: "Balance", v: "/14" },
       { k: "Sensation", v: "/24" },
@@ -233,7 +233,7 @@ export const neuroConditionLibraryData = {
       { chip: "1", color: "#16A34A", name: "No significant disability", desc: "Some symptoms, no limitation in usual activities" },
       { chip: "2", color: "#F59E0B", name: "Slight disability", desc: "Unable to carry out all previous activities, but independent" },
       { chip: "3", color: "#F59E0B", name: "Moderate disability", desc: "Requires some help, walks unassisted" },
-      { chip: "4", color: "#E9484B", name: "Moderately severe", desc: "Unable to attend own bodily needs without assistance" },
+      { chip: "4", color: "#E9484B", name: "Moderately severe", desc: "Unable to walk without assistance and unable to attend to own bodily needs without assistance" },
       { chip: "5", color: "#E9484B", name: "Severe disability", desc: "Bedridden, incontinent, requires constant care" },
       { chip: "6", color: "#7C3AED", name: "Death", desc: "" },
     ]},
@@ -311,7 +311,7 @@ export const neuroConditionLibraryData = {
       caption: "Passive ROM through the wrist/elbow, feel resistance quality",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated and relaxed, arm supported; ask the patient to relax and not resist." },
-        { tone: "blue", label: "🖐️ Technique", text: "Slowly and passively move the wrist and/or elbow through flexion/extension while feeling resistance quality; consider having the patient perform a simple contralateral task (e.g. tapping the other hand) to bring out latent rigidity (activation manoeuvre/Froment's sign)." },
+        { tone: "blue", label: "🖐️ Technique", text: "Slowly and passively move the wrist and/or elbow through flexion/extension while feeling resistance quality; consider having the patient perform a simple contralateral task (e.g. tapping the other hand) to bring out latent rigidity (an activation manoeuvre, sometimes called Froment's manoeuvre — not to be confused with Froment's sign for the ulnar nerve)." },
         { tone: "purple", label: "🩺 Special consideration", text: "Cogwheel rigidity = ratchety, catch-and-release resistance, often with a superimposed tremor. Lead-pipe rigidity = smooth, uniform resistance throughout the range, without the ratcheting quality." },
         { tone: "amber", label: "⚠️ Tip", text: "Rigidity is velocity-INdependent (unlike spasticity, which is velocity-dependent) — moving the joint faster doesn't change the resistance felt, which is a useful way to distinguish the two at the bedside." },
       ],
@@ -501,29 +501,33 @@ export const neuroConditionLibraryData = {
   /* ===================== SPINAL CORD INJURY ===================== */
 
   "Spinal Cord Injury|||Neurological level of injury": {
-    title: "Neurological Level of Injury (NLI)",
+    title: "Neurological Level of Injury & ISNCSCI Totals",
     icon: "🦴",
     category: "Learn · Neuro · Spinal Cord Injury",
     perform: {
       image: null,
-      caption: "Derived from completed myotome + dermatome grading, per ISNCSCI/ASIA",
+      caption: "Sensory and motor levels (each side), NLI, motor/sensory totals and sacral sparing — per ISNCSCI",
       boxes: [
-        { tone: "", label: "👤 Position", text: "Requires the full myotome (key muscle) and dermatome (key sensory point) grading to be completed first, on both sides." },
-        { tone: "blue", label: "🖐️ Technique", text: "The neurological level of injury is the most CAUDAL segment with normal (intact) sensory AND motor function on BOTH sides of the body — determine sensory level and motor level separately per side first, then NLI is the most rostral (highest) of those four levels." },
-        { tone: "purple", label: "🩺 Special consideration", text: "NLI often differs from the bony/vertebral level of fracture or the level named on imaging — always report the NEUROLOGICAL level (determined by exam) as distinct from the skeletal level, and expect the two to sometimes differ by a segment or more." },
-        { tone: "amber", label: "⚠️ Tip", text: "Document sensory and motor levels for each side separately before combining into a single NLI — asymmetric injuries are extremely common and this detail matters for prognosis and goal-setting." },
+        { tone: "", label: "👤 Position", text: "Supine, relaxed and comfortable. Needs the full key-muscle (myotome) and key-sensory-point (dermatome) grading on both sides, plus the anorectal exam." },
+        { tone: "blue", label: "🖐️ Technique", text: "SENSORY level = the most caudal dermatome with intact (normal) sensation, right and left. MOTOR level = the lowest key muscle graded at least 3 provided the key muscle above it is 5, right and left. NLI = the most cephalad (rostral) of those four levels. Then add the totals: upper-limb motor score (/50), lower-limb motor score (/50), light touch (/112) and pinprick (/112). Finally test sacral sparing: light touch and pinprick at S4-5, deep anal pressure, and voluntary anal contraction." },
+        { tone: "purple", label: "🩺 Special consideration", text: "The reflexes anal wink and bulbocavernosus are NOT part of the sacral-sparing decision. Voluntary anal contraction, deep anal pressure, or any light touch or pinprick at S4-5 means the injury is incomplete. Write 'ND' (not determined) rather than guessing when a level cannot be established, and 'INT' when the level is intact." },
+        { tone: "amber", label: "⚠️ Tip", text: "The NLI is the level found on examination and often differs from the vertebral level on imaging. Record the date of injury and of the exam: in the first days after injury spinal shock can hide the true level, and exams after about 72 hours predict recovery better than earlier ones." },
       ],
     },
-    scaleLabel: "Determination logic",
+    scaleLabel: "ISNCSCI summary",
     scale: { type: "table", rows: [
-      { k: "Sensory level (R/L)", v: "Most caudal dermatome with normal sensation" },
-      { k: "Motor level (R/L)", v: "Most caudal myotome graded ≥3, with the level above graded 5" },
-      { k: "NLI", v: "Most rostral of the four levels above" },
+      { k: "Sensory level (R/L)", v: "Most caudal dermatome with intact sensation" },
+      { k: "Motor level (R/L)", v: "Lowest key muscle ≥3 with the one above graded 5" },
+      { k: "NLI", v: "Most cephalad of the four levels" },
+      { k: "Motor scores", v: "UEMS 0–50 and LEMS 0–50 (total 0–100)" },
+      { k: "Sensory scores", v: "Light touch 0–112 and pinprick 0–112" },
+      { k: "Sacral sparing", v: "Any of: LT/PP at S4-5, deep anal pressure, voluntary anal contraction" },
     ]},
     interpret: {
-      normal: ["N/A — a level, not a normal/abnormal finding"],
-      abnormal: ["Higher (more rostral) NLI → generally more extensive functional impact, drives expected functional outcome discussions (e.g. respiratory involvement at C3-5, hand function at C6-8)"],
-      note: "NLI, together with the AIS grade, forms the core classification used to communicate SCI severity and expected functional prognosis across the whole care team.",
+      normal: ["N/A — levels and scores describe the injury, they are not normal/abnormal"],
+      abnormal: ["A higher (more rostral) NLI generally means more extensive functional loss, e.g. respiratory involvement around C3–C5, hand function around C6–C8", "Motor level lower than sensory level (or the reverse) is common — report both sides separately"],
+      redFlags: ["New rise in the level, new loss of motor score or new sacral signs in the days after injury or surgery — possible extension of the injury or compression, urgent medical review"],
+      note: "The NLI plus the AIS grade is the core classification used to describe an injury and discuss prognosis. Compare every exam against the previous one rather than judging a single result alone.",
     },
   },
 
@@ -557,7 +561,7 @@ export const neuroConditionLibraryData = {
     interpret: {
       normal: ["All 10 key muscles graded 5 bilaterally"],
       abnormal: ["Graded pattern of weakness below a level → contributes to motor level and, combined with sensory findings and sacral sparing, the AIS grade"],
-      note: "Always test T2–L1 myotomes are NOT part of the key-muscle set (no reliable key muscle exists at those levels) — motor level there is inferred from the sensory level per ISNCSCI convention.",
+      note: "T2–L1 have no key muscle. Where the key muscles above are normal, the motor level in this region is taken to be the same as the sensory level, following ISNCSCI convention.",
     },
   },
 
@@ -571,7 +575,7 @@ export const neuroConditionLibraryData = {
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient supine, eyes closed, key sensory points exposed per the ISNCSCI dermatome map." },
         { tone: "blue", label: "🖐️ Technique", text: "Test light touch (cotton wisp) and pinprick (disposable pin, sharp vs. dull) separately at each key sensory point, comparing to a known-normal area (e.g. cheek) as the reference for 'normal'; grade each modality 0 (absent), 1 (impaired/altered), or 2 (normal) at each point." },
-        { tone: "purple", label: "🩺 Special consideration", text: "The S4-5 (perianal) sensory point is critical — sensory preservation there specifically, combined with voluntary anal contraction, defines 'sacral sparing' and distinguishes AIS B (sensory incomplete) from AIS A (complete)." },
+        { tone: "purple", label: "🩺 Special consideration", text: "The S4-5 (perianal) sensory point is critical — sensory preservation there, together with deep anal pressure and voluntary anal contraction, defines 'sacral sparing' and distinguishes an incomplete injury (AIS B or better) from AIS A (complete)." },
         { tone: "amber", label: "⚠️ Tip", text: "Test light touch and pinprick as two SEPARATE passes over the whole body, not modality-by-modality-per-point — this is both the standard protocol and easier for the patient to track reliably." },
       ],
     },
@@ -597,10 +601,10 @@ export const neuroConditionLibraryData = {
       image: null,
       caption: "A–E grade, determined from completed myotome + dermatome + sacral sparing exam",
       boxes: [
-        { tone: "", label: "👤 Position", text: "Requires the complete ISNCSCI exam (myotomes, dermatomes, and specifically sacral sparing — S4-5 sensation and voluntary anal contraction) to be finished first." },
-        { tone: "blue", label: "🖐️ Technique", text: "Apply the ISNCSCI algorithm: Grade A if no sensory or motor function is preserved in S4-5. Grade B if sensory but not motor function is preserved below the level, including S4-5. Grade C if motor function is preserved below the level but fewer than half of key muscles below the NLI grade ≥3. Grade D if half or more grade ≥3. Grade E if sensory and motor function are entirely normal." },
+        { tone: "", label: "👤 Position", text: "Requires the complete ISNCSCI exam (myotomes, dermatomes, and sacral sparing — S4-5 light touch and pinprick, deep anal pressure and voluntary anal contraction) to be finished first." },
+        { tone: "blue", label: "🖐️ Technique", text: "Apply the ISNCSCI algorithm: Grade A if no sensory or motor function is preserved in S4-5. Grade B if sensory but not motor function is preserved below the neurological level, including the sacral segments S4-5. Grade C if the injury is motor incomplete (voluntary anal contraction, or motor function more than three levels below the motor level) and fewer than half of the key muscles below the NLI grade ≥3. Grade D if motor incomplete and at least half grade ≥3. Grade E if sensory and motor function are entirely normal." },
         { tone: "purple", label: "🩺 Special consideration", text: "Sacral sparing (any sensory or motor function at S4-5, including voluntary anal contraction) is the single deciding factor between AIS A (complete) and B (sensory incomplete) — always check it explicitly rather than inferring from limb findings alone." },
-        { tone: "amber", label: "⚠️ Tip", text: "AIS grade at 72 hours post-injury (once spinal shock has resolved) is far more prognostically reliable than a grade taken immediately post-injury — document the timing of grading relative to injury." },
+        { tone: "amber", label: "⚠️ Tip", text: "A grade taken in the first 24 hours is less reliable for prognosis than one taken after about 72 hours (when spinal shock has usually passed) — document the timing of grading relative to injury." },
       ],
     },
     scaleLabel: "5 grades",
@@ -1095,7 +1099,7 @@ export const neuroConditionLibraryData = {
       { k: "≤19/24", v: "Associated with increased fall risk" },
     ]},
     interpret: {
-      normal: ["≥19/24 (specific cutoffs vary by population studied)"],
+      normal: ["20/24 or more — a score of 19 or below is the usual cut-off for increased fall risk (cut-offs vary by population studied)"],
       abnormal: ["Low score → increased fall risk, prioritise dynamic balance and gait training addressing the specific failed items (e.g. head turns, obstacle negotiation)"],
       note: "Note WHICH specific items were failed, not just the total — this directs which specific skill to target in vestibular rehabilitation.",
     },
@@ -1149,11 +1153,12 @@ export const neuroConditionLibraryData = {
       { k: "Respiratory rate", v: "Normal 12–20/min" },
       { k: "SpO2", v: "Normal ≥95% on room air (context-dependent)" },
       { k: "Respiratory muscle strength", v: "Normal / Reduced / Severely reduced (ventilator-dependent)" },
+      { k: "Vital capacity / MIP / MEP", v: "Warning thresholds (20/30/40 rule): vital capacity <20 mL/kg, MIP weaker than 30, MEP <40 cmH₂O" },
     ]},
     interpret: {
       normal: ["RR 12–20/min, SpO2 within normal limits, normal respiratory muscle strength, no accessory muscle use"],
       abnormal: ["Reduced strength with accessory muscle use → screen before mobilising, consider respiratory therapy involvement, monitor closely during activity"],
-      redFlags: ["Marked desaturation, severe accessory muscle use, or inability to complete sentences — escalate to medical/respiratory team before proceeding"],
+      redFlags: ["Marked desaturation, severe accessory muscle use, or inability to complete sentences — escalate to medical/respiratory team before proceeding", "Vital capacity under about 20 mL/kg, MIP weaker than 30 cmH₂O or MEP under 40 cmH₂O in a patient with progressive neuromuscular weakness (e.g. Guillain-Barré) — warning of respiratory failure; tell the medical team now. The 20/30/40 rule comes from a single-centre retrospective study, so use it as a warning sign and not as the only trigger for intubation"],
       note: "Respiratory status can change quickly in progressive neuromuscular conditions — reassess at each visit rather than relying on a baseline finding from days/weeks prior.",
     },
   },
@@ -1380,7 +1385,7 @@ export const neuroConditionLibraryData = {
     interpret: {
       normal: ["Negative at the site tested"],
       abnormal: ["Positive → supports nerve entrapment/irritation at that site (e.g. positive at the wrist supports carpal tunnel syndrome); correlate with the broader clinical picture and other special tests"],
-      note: "Tinel's has good sensitivity but only moderate specificity for entrapment neuropathies — use it as one supporting finding alongside history, other special tests, and (where available) nerve conduction studies.",
+      note: "Tinel's accuracy is only moderate for entrapment neuropathies, so a negative test does not rule one out. Use it as one supporting finding alongside history, other special tests and nerve conduction studies.",
     },
   },
 
@@ -1494,4 +1499,110 @@ export const neuroConditionLibraryData = {
       note: "Document whether truncal ataxia is out of proportion to limb findings — this pattern specifically points toward cerebellar vermis involvement and is worth flagging in the clinical interpretation.",
     },
   },
+
+  /* ===================== ADDED AFTER REAL-CASE REVIEW ===================== */
+
+  "Peripheral Nerve|||Guillain-Barré course & treatment": {
+    title: "Guillain-Barré: Course, Treatment & Disability Grade",
+    icon: "⚡",
+    category: "Learn · Neuro · Peripheral Nerve",
+    perform: {
+      image: null,
+      caption: "Trigger, phase, immunotherapy, ventilation, Hughes grade and autonomic signs",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Chart review plus bedside check, with monitoring attached if the patient is on a ward or in ICU." },
+        { tone: "blue", label: "🖐️ Technique", text: "Record the illness before onset (diarrhoea, respiratory infection, vaccination), the date weakness began, and the phase: weakness progresses for up to about 4 weeks, then plateaus, then recovers. Note immunotherapy (IVIG or plasma exchange), any ventilatory support, and the Hughes disability grade for today. Ask about heart-rate or blood-pressure swings, urinary retention and constipation." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Hughes grade: 0 healthy; 1 minor symptoms, can run; 2 walks 10 m unaided but cannot run; 3 walks 10 m with help (stick, frame or one person); 4 bedridden or chairbound; 5 needs assisted ventilation for part of the day; 6 dead. Breathing muscles and the autonomic nervous system can be affected even when the limbs look only mildly weak." },
+        { tone: "amber", label: "⚠️ Tip", text: "Avoid exhausting exercise while the illness is still progressing, and plan short sessions with rests afterwards. Fatigue and pain are common and can last long into recovery." },
+      ],
+    },
+    scaleLabel: "Hughes disability grade",
+    scale: { type: "table", rows: [
+      { k: "0", v: "Healthy" },
+      { k: "1", v: "Minor symptoms, capable of running" },
+      { k: "2", v: "Walks 10 m or more without help, cannot run" },
+      { k: "3", v: "Walks 10 m with help (stick, frame or one person)" },
+      { k: "4", v: "Bedridden or chairbound" },
+      { k: "5", v: "Needs assisted ventilation for at least part of the day" },
+      { k: "6", v: "Dead" },
+    ]},
+    interpret: {
+      normal: ["Grade 0–1 with no autonomic features"],
+      abnormal: ["Grade 3 or more usually means hospital care and immunotherapy", "Grade 4–5 → high risk of respiratory failure, immobility complications and pressure injury; combine with respiratory measures and the 20/30/40 warning thresholds"],
+      redFlags: ["Rapidly rising weakness, breathlessness, a weak cough or difficulty swallowing — tell the medical team at once", "Blood-pressure swings or arrhythmia during handling — stop and call for review"],
+      note: "Recovery often takes months. Record the Hughes grade at each review so progress, plateau or relapse (including treatment-related fluctuation) is visible.",
+    },
+  },
+
+  "Traumatic Brain Injury|||Level of consciousness (disorders of consciousness)": {
+    title: "Level of Consciousness (Disorders of Consciousness)",
+    icon: "🧠",
+    category: "Learn · Neuro · Traumatic Brain Injury",
+    perform: {
+      image: null,
+      caption: "Coma, unresponsive wakefulness, minimally conscious state, emergence",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient as upright and awake as safely possible, sedation reviewed with the medical team, quiet room with the family or a familiar voice available." },
+        { tone: "blue", label: "🖐️ Technique", text: "Repeat a standardised bedside scale such as the Coma Recovery Scale-Revised several times over days, because behaviour fluctuates. Look for visual pursuit, localisation to pain, following commands, intelligible words or intentional communication, and consistent object use. Record the best behaviour seen, and the scale and date." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Coma: eyes closed, cannot be roused. Unresponsive wakefulness syndrome (vegetative state): eyes open but only reflex behaviour. Minimally conscious state: inconsistent but reproducible purposeful behaviour; MCS plus if the patient follows commands, produces intelligible words or communicates intentionally, MCS minus if only visual pursuit, localisation or similar behaviour. Emerged: reliable functional communication or functional object use." },
+        { tone: "amber", label: "⚠️ Tip", text: "Sedatives, pain, infection, hearing or vision loss, aphasia, and paralysis can all hide awareness. A patient who cannot move may still be conscious — so repeat testing and involve the specialist team before giving a prognosis to the family." },
+      ],
+    },
+    scaleLabel: "Categories",
+    scale: { type: "table", rows: [
+      { k: "Coma", v: "Eyes closed, cannot be roused, no sleep-wake cycles" },
+      { k: "Unresponsive wakefulness syndrome", v: "Wakefulness without awareness; reflex behaviour only" },
+      { k: "Minimally conscious state minus", v: "Visual pursuit, localisation to pain; no language-related behaviour" },
+      { k: "Minimally conscious state plus", v: "Follows commands, intelligible words or intentional communication" },
+      { k: "Emerged from MCS", v: "Functional communication or functional object use" },
+    ]},
+    interpret: {
+      normal: ["Emerged — consistent, reliable communication or functional use of objects"],
+      abnormal: ["Any category below 'emerged' needs a structured, repeated scale and a plan to stimulate and protect the patient"],
+      note: "The 2018 AAN/ACRM guideline recommends serial structured assessment, and warns against giving a poor-prognosis statement too early. Record the scale used so changes can be followed.",
+    },
+  },
+
+  "Traumatic Brain Injury|||Neurosurgical status": {
+    title: "Neurosurgical Status (craniectomy, ICP, drains, airway)",
+    icon: "🩺",
+    category: "Learn · Neuro · Traumatic Brain Injury",
+    perform: {
+      image: null,
+      caption: "What devices and limits the neurosurgical team has set before you move the patient",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Chart and bedside check before any mobilising: look for the bone flap site, drains, monitors and airway." },
+        { tone: "blue", label: "🖐️ Technique", text: "Record whether a decompressive craniectomy was done (bone flap off, or cranioplasty already replaced), any ICP monitor or external ventricular drain (EVD) or shunt, the airway (own, tracheostomy cuffed or uncuffed, intubated), seizure history or prophylaxis, and the exact head-of-bed, drain-clamping and activity limits written by neurosurgery." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Protect an unprotected skull: avoid pressure on the flap site and use the helmet if ordered. Intracranial pressure rises with coughing, straining, neck flexion or compression, and head-down positions; treatment is usually started when ICP stays above about 20 to 22 mmHg. Never move or unclamp a drain without clear permission." },
+        { tone: "amber", label: "⚠️ Tip", text: "Ask neurosurgery before sitting out or standing a patient with an EVD or a recent craniectomy. New headache, vomiting, drowsiness or a fall in GCS during or after handling means stop and call for review." },
+      ],
+    },
+    scaleLabel: "Checklist",
+    scale: { type: "table", rows: [
+      { k: "Craniectomy", v: "No / bone flap off (protect) / cranioplasty done" },
+      { k: "ICP / drain", v: "None / ICP monitor / EVD / both / shunt" },
+      { k: "Airway", v: "Own / trach cuffed / trach uncuffed or capped / intubated" },
+      { k: "Seizures", v: "None / on prophylaxis / seizures this admission" },
+    ]},
+    interpret: {
+      normal: ["No devices, own airway, no neurosurgical restrictions"],
+      abnormal: ["Any device or restriction → get written limits and agree them with the team before mobilising"],
+      redFlags: ["New severe headache, repeated vomiting, falling GCS, a new seizure, or a bulging or tense flap — stop and call for urgent medical review"],
+      note: "Re-check the limits each session: orders change as ICP, drains and flaps are managed.",
+    },
+  },
+
 };
+
+// Every card gets three deterministic Cloudinary photo slots (nc_<card>, _2, _3),
+// the same scheme as the exam-library cards, so InfoCard.jsx can offer in-app
+// "tap to upload a photo" on them. Without an image address a slot has no upload
+// button at all (this is why the GCS card lacked it).
+const CLOUDINARY_BASE = "https://res.cloudinary.com/dr15y1pwj/image/upload/f_auto,q_auto/";
+const slugOf = (key) => key.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+Object.entries(neuroConditionLibraryData).forEach(([key, card]) => {
+  if (!card.perform || card.perform.images) return;
+  const id = "nc_" + slugOf(key);
+  const first = card.perform.image && String(card.perform.image).startsWith("http") ? card.perform.image : CLOUDINARY_BASE + id;
+  card.perform.images = [first, CLOUDINARY_BASE + id + "_2", CLOUDINARY_BASE + id + "_3"];
+});
