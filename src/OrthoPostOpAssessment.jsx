@@ -1,3 +1,4 @@
+import { withCarePlanSummaryStep } from "./assessmentSteps.js";
 import { AddAssessmentModal } from "./assessmentFrame.jsx";
 import { regionLabelOf, formatPainSection } from "./orthoWizardHelpers.js";
 import React, { useState, useMemo, useEffect } from "react";
@@ -79,7 +80,7 @@ const INCISION_TYPES_BY_CONDITION = {
 };
 const GENERIC_INCISION_TYPES = ["Anterior", "Posterior", "Medial", "Lateral", "Anterolateral", "Posterolateral", "Percutaneous / minimally invasive", "Arthroscopic portal(s)"];
 
-const CAREPLAN_STEP_IDS = ["carePlanPlan", "carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanSessions", "carePlanProgress"];
+const CAREPLAN_STEP_IDS = ["carePlanProblems", "carePlanGoals", "carePlanTreatment"];
 const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "goals", carePlanTreatment: "treatment", carePlanPlan: "plan", carePlanSessions: "sessions", carePlanProgress: "progress" };
 /* Always present for every post-op patient, regardless of surgery type. */
 const BASE_IDS = ["caseInfo", "surgicalReview", "medicalRecords", "vitals", "pain", "observation", "surgicalSite", "rom", "mmt", "functionalMobility", "gait", "balance", "activityTolerance", "outcomeMeasure", "impression", ...CAREPLAN_STEP_IDS, "review"];
@@ -148,7 +149,7 @@ const ADD_LIBRARY = OPTIONAL_IDS.map((id) => ({ id, ...STEP_META[id] }));
 // pattern as OrthoOutpatientAssessment.jsx's buildOrthoAssessSteps /
 // orthoSummaryFormatters).
 export function buildOrthoPostOpAssessSteps() {
-  return ORDERED_ALL.map((id) => ({ id, ...STEP_META[id] }));
+  return withCarePlanSummaryStep(ORDERED_ALL.map((id) => ({ id, ...STEP_META[id] })), { id: "carePlanPlan", ...STEP_META.carePlanPlan });
 }
 export const orthoPostOpSummaryFormatters = { carePlanPlan: formatCarePlanSection, rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection };
 
@@ -305,6 +306,7 @@ export default function OrthoPostOpAssessment({ selectedRegions, condition, cust
   }, [step]);
 
   const steps = useMemo(() => stepOrder.map((id) => ({ id, ...STEP_META[id] })), [stepOrder]);
+  const summarySteps = useMemo(() => withCarePlanSummaryStep(steps, { id: "carePlanPlan", ...STEP_META.carePlanPlan }), [steps]);
   const current = steps[step] || steps[0];
   // OrthoCarePlanStep saves straight to patientData.ortho_care_plan, not
   // this wizard's local data/setData, so the Review screen (which reads
@@ -323,7 +325,8 @@ export default function OrthoPostOpAssessment({ selectedRegions, condition, cust
     else onExit?.();
   }
   function jumpTo(id) {
-    const idx = stepOrder.indexOf(id);
+    // The care plan block in the Summary has no page of its own any more; open Problem List.
+    const idx = stepOrder.indexOf(id === "carePlanPlan" ? "carePlanProblems" : id);
     if (idx >= 0) setStep(idx);
   }
   // Browser/hardware Back & Forward inside this wizard -- see
@@ -499,7 +502,7 @@ export default function OrthoPostOpAssessment({ selectedRegions, condition, cust
                 icon={<Icon name="check" />}
                 title="Post-operative Rehab Assessment"
                 sub={`${regionsLabel} · ${conditionLabel}`}
-                steps={steps}
+                steps={summarySteps}
                 data={reviewData}
                 onEdit={jumpTo}
                 onShare={onNav ? (text) => onNav("physiofeed", { pfShareDiscussion: { text } }) : undefined}

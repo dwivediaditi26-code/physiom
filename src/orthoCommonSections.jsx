@@ -1,3 +1,4 @@
+import { ClinicalInterpretationSection } from "./clinicalInterpretation.jsx";
 import React, { useEffect, lazy, Suspense } from "react";
 import { SectionIntro, TextField, SelectField, Segmented, NumberField, TextArea, ScaleField, AssistField, Hint, LRGrid, VitalRow, useSectionData, DateField, InfoCard } from "./orthoFieldKit.jsx";
 import { neuroExamLibraryData } from "./neuroExamLibraryData.js";
@@ -441,14 +442,19 @@ export function ActivityToleranceSection({ data, setData }) {
 
 
 export function ImpressionSection({ data, setData }) {
-  const [d, set] = useSectionData(data, setData, "impression");
   return (
-    <>
-      <SectionIntro icon="🧠" title="Clinical Impression & Plan" />
-      <TextArea label="Problem list" value={d.problems} onChange={(v) => set("problems", v)} placeholder="Key problems in priority order..." />
-      <TextArea label="Short-term goals" value={d.shortGoals} onChange={(v) => set("shortGoals", v)} />
-      <TextArea label="Long-term goals" value={d.longGoals} onChange={(v) => set("longGoals", v)} />
-      <TextArea label="Treatment plan / precautions for treatment" value={d.plan} onChange={(v) => set("plan", v)} />
-    </>
+    <ClinicalInterpretationSection
+      data={data}
+      setData={setData}
+      kind="ortho"
+      section="impression"
+      title="Clinical Impression & Plan"
+      keys={{ problemList: "problems" }}
+      extras={[
+        { key: "shortGoals", label: "Short-term goals" },
+        { key: "longGoals", label: "Long-term goals" },
+        { key: "plan", label: "Treatment plan / precautions for treatment" },
+      ]}
+    />
   );
 }

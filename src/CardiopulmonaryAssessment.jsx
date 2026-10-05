@@ -1,3 +1,5 @@
+import { REMOVED_CAREPLAN_STEP_IDS, withCarePlanSummaryStep } from "./assessmentSteps.js";
+import { ClinicalInterpretationSection } from "./clinicalInterpretation.jsx";
 import { AddAssessmentModal } from "./assessmentFrame.jsx";
 import { rowsForStep } from "./orthoSummary.jsx";
 import { MedicalRecordsSection } from "./MedicalRecords.jsx";
@@ -115,7 +117,7 @@ const STEP_META = [
   { id: "summary", icon: <Icon name="check" />, label: "Summary & Review" },
 ];
 const ASSESS_STEPS = STEP_META.slice(2); // full canonical list, including retired ids (label/icon lookup + legacy stepOrder rendering)
-const CAREPLAN_STEP_IDS = ["carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanPlan", "carePlanSessions"];
+const CAREPLAN_STEP_IDS = ["carePlanProblems", "carePlanGoals", "carePlanTreatment"];
 const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "goals", carePlanTreatment: "treatment", carePlanPlan: "plan", carePlanSessions: "sessions", carePlanProgress: "progress" };
 // Cardio has no domain/region filtering step (unlike Ortho/Neuro), so a
 // brand-new assessment's stepOrder is simply every id in ASSESS_STEPS --
@@ -124,7 +126,9 @@ const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "g
 // assessment's steps. 18 steps shown in the step nav (2026-09-18, Aditi:
 // "do in neuro and cardio the care plan do the same the serial number" --
 // Care Plan Progress dropped, matching Ortho's own reorder).
-const RETIRED_STEP_IDS = ["carePlanProgress"];
+// Care Plan, Sessions and Care Plan Progress are not assessment steps any more
+// (they stay in the patient profile); the Summary still shows the care plan.
+const RETIRED_STEP_IDS = REMOVED_CAREPLAN_STEP_IDS;
 const DEFAULT_ASSESS_STEP_IDS = ASSESS_STEPS.filter((s) => !RETIRED_STEP_IDS.includes(s.id)).map((s) => s.id);
 
 // Migration for patients assessed before the Care Plan steps existed: their
@@ -1466,8 +1470,6 @@ function OutcomesSection({ data, setData, setting, system }) {
 
 /* ---------- Clinical Interpretation ---------- */
 function InterpretationSection({ data, setData }) {
-  const [d, set] = useSectionData(data, setData, "interpretation");
-
   const flags = useMemo(() => {
     const out = [];
     const safety = data.safety || {};
@@ -1486,25 +1488,25 @@ function InterpretationSection({ data, setData }) {
   }, [data]);
 
   return (
-    <>
-      <SectionIntro icon={<Icon name="brain" />} title="Clinical Interpretation" sub="Synthesize subjective + objective findings into a problem list." />
-      {flags.map((f, i) => (
-        <Alert tone={f.tone} key={i}>
-          {f.text}
-        </Alert>
-      ))}
-      {flags.length === 0 && <Alert tone="green">No automatic pattern flags triggered from entries so far.</Alert>}
-      <TextArea
-        label="Problem list"
-        value={d.problems}
-        onChange={(v) => set("problems", v)}
-        placeholder="List the patient's key problems in priority order..."
-        howTo="Correlate symptoms with signs (e.g. dyspnea + crackles + reduced expansion) before forming a working impression. The flags above are rule-based prompts, not a diagnosis — always correlate clinically."
-      />
-      <TextArea label="Short-term goals" value={d.shortGoals} onChange={(v) => set("shortGoals", v)} />
-      <TextArea label="Long-term goals" value={d.longGoals} onChange={(v) => set("longGoals", v)} />
-      <TextArea label="Clinical impression" value={d.impression} onChange={(v) => set("impression", v)} />
-    </>
+    <ClinicalInterpretationSection
+      data={data}
+      setData={setData}
+      kind="cardio"
+      keys={{ problemList: "problems" }}
+      intro={{ icon: <Icon name="brain" />, sub: "Synthesize subjective + objective findings into a problem list." }}
+      top={
+        <>
+          {flags.map((f, i) => (
+            <Alert tone={f.tone} key={i}>
+              {f.text}
+            </Alert>
+          ))}
+          {flags.length === 0 && <Alert tone="green">No automatic pattern flags triggered from entries so far.</Alert>}
+        </>
+      }
+      problemHowTo="Correlate symptoms with signs (e.g. dyspnea + crackles + reduced expansion) before forming a working impression. The flags above are rule-based prompts, not a diagnosis — always correlate clinically."
+      extras={[{ key: "shortGoals", label: "Short-term goals" }, { key: "longGoals", label: "Long-term goals" }]}
+    />
   );
 }
 
@@ -1625,7 +1627,7 @@ function SummarySectionBody({ setting, system, data, setData, assessSteps, forma
   const systemLabel = setting === "rehab" && system ? rehabSubLabel(system) : SYSTEMS.find((s) => s.id === system)?.label || "—";
   const [copied, setCopied] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
-  const steps = assessSteps || ASSESS_STEPS;
+  const steps = useMemo(() => withCarePlanSummaryStep(assessSteps || ASSESS_STEPS, STEP_META.find((s) => s.id === "carePlanPlan")), [assessSteps]);
 
   // Share as Clinical Discussion (2026-09-23): same content-bearing filter
   // as exportText below, minus SHARE_EXCLUDED_STEP_IDS -- demographics
@@ -1653,7 +1655,7 @@ function SummarySectionBody({ setting, system, data, setData, assessSteps, forma
       }
       if (result.length) {
         lines.push(`— ${step.label} —`);
-        result.forEach(([k, v]) => lines.push(`${k}: ${v}`));
+        result.forEach(({ label, value }) => lines.push(`${label}: ${value}`));
         lines.push("");
       }
     });
@@ -1679,7 +1681,7 @@ function SummarySectionBody({ setting, system, data, setData, assessSteps, forma
       }
       if (result.length) {
         lines.push(`— ${step.label} —`);
-        result.forEach(([k, v]) => lines.push(`${k}: ${v}`));
+        result.forEach(({ label, value }) => lines.push(`${label}: ${value}`));
         lines.push("");
       }
     });
@@ -1715,8 +1717,8 @@ function SummarySectionBody({ setting, system, data, setData, assessSteps, forma
             <div className="summary-title">
               {step.icon} {step.label}
             </div>
-            {result.map(([k, v]) => (
-              <SummaryRow key={k} label={k} value={v} />
+            {result.map(({ label, value }) => (
+              <SummaryRow key={label} label={label} value={value} />
             ))}
           </div>
         );
@@ -1953,7 +1955,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
   }, [data.demographics]);
 
   const assessSteps = useMemo(
-    () => stepOrder.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepIcon(customStepsMeta[id], "stethoscope"), label: customStepsMeta[id]?.label || "Assessment" }),
+    () => stepOrder.filter((id) => !RETIRED_STEP_IDS.includes(id)).map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepIcon(customStepsMeta[id], "stethoscope"), label: customStepsMeta[id]?.label || "Assessment" }),
     [stepOrder, customStepsMeta]
   );
 

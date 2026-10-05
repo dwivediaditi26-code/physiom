@@ -1,3 +1,5 @@
+import { REMOVED_CAREPLAN_STEP_IDS, withCarePlanSummaryStep } from "./assessmentSteps.js";
+import { ClinicalInterpretationSection } from "./clinicalInterpretation.jsx";
 import { AddAssessmentModal } from "./assessmentFrame.jsx";
 import { rowsForStep } from "./orthoSummary.jsx";
 import { MedicalRecordsSection } from "./MedicalRecords.jsx";
@@ -7,7 +9,8 @@ import InfoCard from "./InfoCard.jsx";
 import { neuroConditionLibraryData } from "./neuroConditionLibraryData.js";
 import { neuroExamLibraryData } from "./neuroExamLibraryData.js";
 import { neuroRegionInfoData, LIGHT_TOUCH_ROW_INFO, PINPRICK_ROW_INFO, TEMPERATURE_ROW_INFO, PROPRIOCEPTION_ROW_INFO, VIBRATION_ROW_INFO, MMT_ROW_INFO, MAS_ROW_INFO } from "./neuroRegionInfoData.js";
-import { NeuroExercisePrescriptionSection, formatNeuroExercisePrescriptionSection } from "./neuroExercisePrescription.jsx";
+import { formatNeuroExercisePrescriptionSection } from "./neuroExercisePrescription.jsx";
+import { ExercisePrescriptionSection } from "./orthoExercisePrescription.jsx";
 import { NeuroCarePlanSection, formatNeuroCarePlanSection } from "./NeuroCarePlan.jsx";
 import { orthoStyles } from "./orthoStyles.js";
 import { humanizeKey } from "./medicalAbbreviations.js";
@@ -123,7 +126,9 @@ const ASSESS_STEPS = STEP_META.slice(1); // full canonical list, including retir
 // paths even though buildStepOrder/ensureAlwaysSteps already correctly drop
 // it (2026-09-18, Aditi: "do in neuro and cardio the care plan do the same
 // the serial number").
-const RETIRED_STEP_IDS = ["carePlanProgress"];
+// Care Plan, Sessions and Care Plan Progress are not assessment steps any more
+// (they stay in the patient profile); the Summary still shows the care plan.
+const RETIRED_STEP_IDS = REMOVED_CAREPLAN_STEP_IDS;
 const DEFAULT_ASSESS_STEP_IDS = ASSESS_STEPS.filter((s) => !RETIRED_STEP_IDS.includes(s.id)).map((s) => s.id);
 
 /* ============================================================
@@ -1527,20 +1532,15 @@ function OutcomesSection({ data, setData }) {
 }
 
 /* ---------- Clinical Interpretation ---------- */
-const IMPAIRMENTS = ["Muscle weakness", "Abnormal tone", "Sensory loss", "Impaired coordination", "Impaired balance", "Cognitive impairment", "Communication impairment", "Impaired gait", "Reduced endurance", "Pain"];
-
 function InterpretationSection({ data, setData }) {
-  const [d, set] = useSectionData(data, setData, "interpretation");
   return (
-    <>
-      <SectionIntro icon={<Icon name="brain" />} title="Clinical Interpretation" sub="Summarise findings using an impairment → activity → participation framework (ICF)." />
-      <SelectField label="Key impairments (body structure/function)" type="multi" options={IMPAIRMENTS} value={d.impairments} onChange={(v) => set("impairments", v)} />
-      <TextArea label="Activity limitations" value={d.activityLimitations} onChange={(v) => set("activityLimitations", v)} placeholder="What the patient cannot currently do — e.g. walk >10m unaided, dress independently..." />
-      <TextArea label="Participation restrictions" value={d.participationRestrictions} onChange={(v) => set("participationRestrictions", v)} placeholder="Impact on work, home role, social activity..." />
-      <TextArea label="Clinical impression / hypothesis" value={d.impression} onChange={(v) => set("impression", v)} placeholder="Likely lesion site/level, correlation between findings and diagnosis, prognostic factors..." />
-      <TextArea label="Physiotherapy problem list" value={d.problemList} onChange={(v) => set("problemList", v)} />
-      <TextArea label="Short and long-term goals" value={d.goals} onChange={(v) => set("goals", v)} />
-    </>
+    <ClinicalInterpretationSection
+      data={data}
+      setData={setData}
+      kind="neuro"
+      intro={{ icon: <Icon name="brain" />, sub: "Summarise findings using an impairment → activity → participation framework (ICF)." }}
+      extras={[{ key: "goals", label: "Short and long-term goals" }]}
+    />
   );
 }
 
@@ -1650,7 +1650,7 @@ function SummarySectionBody({ setting, data: rawData, assessSteps, formatters: f
   const settingLabel = SETTINGS.find((s) => s.id === setting)?.label || "—";
   const [copied, setCopied] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
-  const steps = assessSteps || ASSESS_STEPS;
+  const steps = useMemo(() => withCarePlanSummaryStep(assessSteps || ASSESS_STEPS, STEP_META.find((s) => s.id === "carePlanPlan")), [assessSteps]);
 
   // Share as Clinical Discussion (2026-09-23): same content-bearing filter
   // as exportText below, minus SHARE_EXCLUDED_STEP_IDS -- demographics
@@ -1752,7 +1752,7 @@ const ENTRY_MODES = [
 ];
 
 const DOMAIN_STEP_IDS = ["cognition", "cranial", "sensory", "motor", "tone", "coordination", "balance", "gait", "functional", "outcomes"];
-const CAREPLAN_STEP_IDS = ["carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanPlan", "carePlanSessions"];
+const CAREPLAN_STEP_IDS = ["carePlanProblems", "carePlanGoals", "carePlanTreatment"];
 const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "goals", carePlanTreatment: "treatment", carePlanPlan: "plan", carePlanSessions: "sessions", carePlanProgress: "progress" };
 const ALWAYS_STEP_IDS = ["demographics", "safety", "subjective", "chart", "medicalRecords", "observation", "interpretation", ...CAREPLAN_STEP_IDS, "precautions", "exercisePrescription", "summary"];
 const FULL_STEP_ORDER = ASSESS_STEPS.map((s) => s.id);
@@ -2035,7 +2035,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
   const [saveName, setSaveName] = useState("");
 
   const assessSteps = useMemo(
-    () => stepOrder.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepIcon(customStepsMeta[id], "brain"), label: customStepsMeta[id]?.label || "Assessment" }),
+    () => stepOrder.filter((id) => !RETIRED_STEP_IDS.includes(id)).map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepIcon(customStepsMeta[id], "brain"), label: customStepsMeta[id]?.label || "Assessment" }),
     [stepOrder, customStepsMeta]
   );
 
@@ -2707,7 +2707,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
                       to just this step the same way SpecialtyPatientProfile.jsx
                       already does when it renders an Ortho summary. */}
                   <style>{orthoStyles()}</style>
-                  <FieldKitContext.Provider value={SHARED_KIT_LOOK}><NeuroExercisePrescriptionSection data={data} setData={setData} /></FieldKitContext.Provider>
+                  <FieldKitContext.Provider value={SHARED_KIT_LOOK}><ExercisePrescriptionSection data={data} setData={setData} sectionKey="neuroExercisePrescription" onlyRegion="neurological" /></FieldKitContext.Provider>
                 </>
               )}
               {current.id === "summary" && (

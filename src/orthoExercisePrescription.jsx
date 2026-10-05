@@ -66,8 +66,10 @@ export function ProgrammeEntryCard({ ex, onUpdate, onRemove }) {
   );
 }
 
-export function ExercisePrescriptionSection({ data, setData, selectedRegions = [], requireAuth }) {
-  const [d, set] = useSectionData(data, setData, "exercisePrescription");
+// sectionKey: where the programme is saved (Neuro saves to "neuroExercisePrescription").
+// onlyRegion: show just that exercise library (e.g. "neurological") -- no Region picker.
+export function ExercisePrescriptionSection({ data, setData, selectedRegions = [], requireAuth, sectionKey = "exercisePrescription", onlyRegion }) {
+  const [d, set] = useSectionData(data, setData, sectionKey);
   const programme = Array.isArray(d.programme) ? d.programme : [];
   // Defaults to the case's own first selected region (same matchRegionKey
   // ROM/MMT/Special Tests/CPA already use) instead of always "cervical" --
@@ -78,7 +80,7 @@ export function ExercisePrescriptionSection({ data, setData, selectedRegions = [
   // fine to fall back arbitrarily on, unlike the clinical-content call
   // sites that need to know "no match" means "skip it", so the fallback
   // lives here rather than inside matchRegionKey itself.
-  const defaultRegionKey = (selectedRegions.length && matchRegionKey(selectedRegions[0].id, Object.keys(EXERCISE_DB))) || Object.keys(EXERCISE_DB)[0];
+  const defaultRegionKey = onlyRegion || (selectedRegions.length && matchRegionKey(selectedRegions[0].id, Object.keys(EXERCISE_DB))) || Object.keys(EXERCISE_DB)[0];
   const [activeRegion, setActiveRegion] = useState(defaultRegionKey);
   const [activePhase, setActivePhase] = useState("All");
   const [search, setSearch] = useState("");
@@ -88,7 +90,7 @@ export function ExercisePrescriptionSection({ data, setData, selectedRegions = [
   // grid; "All" or a real category name = showing that scope's exercises.
   // Resets whenever the region changes, same as search/phase implicitly do.
   const [activeCategory, setActiveCategory] = useState(null);
-  const changeRegion = (key) => { setActiveRegion(key); setActiveCategory(null); setSearch(""); };
+  const changeRegion = (key) => { if (onlyRegion) return; setActiveRegion(key); setActiveCategory(null); setSearch(""); };
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [templateMsg, setTemplateMsg] = useState("");
   const progRef = React.useRef(null);
@@ -167,7 +169,7 @@ export function ExercisePrescriptionSection({ data, setData, selectedRegions = [
           .subheading etc. render styled either way; a duplicate <style> tag
           with identical rules when nested is harmless. */}
       <style>{orthoStyles()}</style>
-      <SectionIntro icon="🏋" title="Exercise Prescription" info="Browse the exercise library by region, add to this patient's programme, then adjust sets/reps/hold/frequency for them specifically." />
+      <SectionIntro icon="🏋" title="Exercise Prescription" info={onlyRegion ? "Browse the exercise library, add to this patient's programme, then adjust sets/reps/hold/frequency for them specifically." : "Browse the exercise library by region, add to this patient's programme, then adjust sets/reps/hold/frequency for them specifically."} />
 
       <button type="button" className="ghost-btn" style={{ width: "100%", marginBottom: 12 }} onClick={() => setLibraryOpen(true)}>
         📚 Exercise Library
@@ -205,7 +207,9 @@ export function ExercisePrescriptionSection({ data, setData, selectedRegions = [
       )}
 
       <div className="subheading">Browse exercises</div>
-      <SelectField label="Region" type="single" options={Object.values(EXERCISE_DB).map((r) => r.label)} value={region?.label} onChange={(label) => changeRegion(Object.keys(EXERCISE_DB).find((k) => EXERCISE_DB[k].label === label) || activeRegion)} />
+      {!onlyRegion && (
+        <SelectField label="Region" type="single" options={Object.values(EXERCISE_DB).map((r) => r.label)} value={region?.label} onChange={(label) => changeRegion(Object.keys(EXERCISE_DB).find((k) => EXERCISE_DB[k].label === label) || activeRegion)} />
+      )}
       <TextField label="Search" value={search} onChange={setSearch} placeholder="Search exercises or muscles..." />
 
       {/* Search overrides the tile picker entirely -- results span every

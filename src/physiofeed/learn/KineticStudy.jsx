@@ -1,5 +1,6 @@
 import { useState, useMemo, Fragment } from "react";
 import { KC_REGIONS } from "../../sharedClinicalData.js";
+import { kcImageIds } from "../../kcImages.js";
 import StudyShell from "./StudyShell.jsx";
 import StudyGrid from "./StudyGrid.jsx";
 import StudyDetail from "./StudyDetail.jsx";
@@ -11,14 +12,17 @@ const REGION_KEYS = Object.keys(KC_REGIONS);
 // clinical screen (KineticChainFMS.jsx) uses. Detail sections mirror that
 // real screen's own content (How to test, real graded findings with their
 // actual clinical meaning, Treatment, kinetic-chain-effect) -- just
-// without the result-recording buttons, read-only. No `image`/`emoji` set
-// -- these tests don't have an uploaded photo or a per-test icon in the
-// real data (only the region itself has a color, not an icon), so the
-// grid shows the same honest "no image" placeholder ROM/MMT/Special use
-// for any item without real media, rather than inventing one.
+// without the result-recording buttons, read-only. Photos: the same 4
+// Cloudinary slots the live Kinetic Chain screen and its info card upload
+// to (kcImages.js), so a photo added there shows here too; a slot nobody has
+// uploaded to yet shows the usual "no image" placeholder. No `emoji` -- there
+// is no per-test icon in the real data.
 function toCard(t) {
+  const images = kcImageIds(t.id);
   return {
     id: t.id,
+    image: images[0],
+    images,
     title: t.label,
     subtitle: t.joint,
     tags: [t.role].filter(Boolean),
