@@ -5,6 +5,7 @@ import ReportUserModal from "../components/shared/ReportUserModal.jsx";
 import ProfileViewSwitch from "../components/profile/ProfileViewSwitch.jsx";
 import ProfileAboutSection from "../components/profile/ProfileAboutSection.jsx";
 import CurrentRoleSection from "../components/profile/CurrentRoleSection.jsx";
+import { getCurrentRoleEntry, getExperienceEntries } from "../components/profile/experienceUtils.js";
 import RotationsCard from "../components/profile/RotationsCard.jsx";
 import EducationCard from "../components/profile/EducationCard.jsx";
 import CertificationsCard from "../components/profile/CertificationsCard.jsx";
@@ -95,9 +96,9 @@ export default function OtherProfilePage() {
   const person = people.find((p) => p.id === userId);
 
   const hasAbout = !!otherProfile.bio || !!otherProfile.resumeUrl;
-  const hasCurrentRole = rotations.length > 0;
+  const hasCurrentRole = !!getCurrentRoleEntry(rotations);
   const hasEducation = education.length > 0;
-  const hasExperience = rotations.length > 0;
+  const hasExperience = getExperienceEntries(rotations).length > 0;
   const hasCertifications = achievements.length > 0;
   const hasResearch =
     (otherProfile.researchInterests || []).length > 0 ||

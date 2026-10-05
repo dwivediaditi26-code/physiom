@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Pencil, Building2 } from "lucide-react";
 import { useAppData } from "../../context/AppDataContext.jsx";
 import EditRotationsModal from "./EditRotationsModal.jsx";
-import { parseExperienceEntry } from "./experienceUtils.js";
+import { parseExperienceEntry, getExperienceEntries } from "./experienceUtils.js";
 
 // Experience section (2026-09-22 "LinkedIn for physiotherapists" redesign,
 // Aditi's brief: "one of the most important sections... chronological,
@@ -18,7 +18,7 @@ import { parseExperienceEntry } from "./experienceUtils.js";
 // reason as green).
 export default function RotationsCard({ entries, readOnly = false }) {
   const { rotations: ownRotations } = useAppData();
-  const rotations = entries ?? ownRotations;
+  const rotations = getExperienceEntries(entries ?? ownRotations);   // Current Role is kept separate
   const [editing, setEditing] = useState(false);
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">

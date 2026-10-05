@@ -117,17 +117,17 @@ function EntryRow({ entry }) {
 
   return (
     <div className="border border-slate-200 rounded-xl p-3 space-y-2">
-      <div className="flex items-start gap-2">
+      <div className="space-y-2">
         <IconPicker value={iconName} onChange={setIconName} />
-        <div className="flex-1 min-w-0 space-y-1.5">
+        <div className="min-w-0 space-y-1.5">
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Dry Needling" className={FIELD} />
           <input value={issuer} onChange={(e) => setIssuer(e.target.value)} placeholder="Issuing organization" className={FIELD} />
-          <div className="flex gap-1.5">
-            <select value={month} onChange={(e) => setMonth(e.target.value)} className={`${SELECT} flex-1`}>
+          <div className="grid grid-cols-2 gap-1.5">
+            <select value={month} onChange={(e) => setMonth(e.target.value)} aria-label="Month" className={`${SELECT} w-full min-w-0`}>
               <option value="">Month</option>
               {MONTHS.map((m) => <option key={m} value={m}>{m}</option>)}
             </select>
-            <input value={year} onChange={(e) => setYear(e.target.value)} placeholder="Year" className={`${FIELD} w-20`} />
+            <input value={year} onChange={(e) => setYear(e.target.value)} placeholder="Year" inputMode="numeric" maxLength={4} aria-label="Year" className={`${FIELD} min-w-0`} />
           </div>
           <input value={credentialId} onChange={(e) => setCredentialId(e.target.value)} placeholder="Credential ID (optional)" className={FIELD} />
         </div>
@@ -192,17 +192,17 @@ function NewEntryRow({ onAdded, onCancel }) {
 
   return (
     <div className="border border-dashed border-violet-300 rounded-xl p-3 space-y-2 bg-violet-50/40">
-      <div className="flex items-start gap-2">
+      <div className="space-y-2">
         <IconPicker value={iconName} onChange={setIconName} />
-        <div className="flex-1 min-w-0 space-y-1.5">
+        <div className="min-w-0 space-y-1.5">
           <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Dry Needling" className={FIELD} />
           <input value={issuer} onChange={(e) => setIssuer(e.target.value)} placeholder="Issuing organization" className={FIELD} />
-          <div className="flex gap-1.5">
-            <select value={month} onChange={(e) => setMonth(e.target.value)} className={`${SELECT} flex-1`}>
+          <div className="grid grid-cols-2 gap-1.5">
+            <select value={month} onChange={(e) => setMonth(e.target.value)} aria-label="Month" className={`${SELECT} w-full min-w-0`}>
               <option value="">Month</option>
               {MONTHS.map((m) => <option key={m} value={m}>{m}</option>)}
             </select>
-            <input value={year} onChange={(e) => setYear(e.target.value)} placeholder="Year" className={`${FIELD} w-20`} />
+            <input value={year} onChange={(e) => setYear(e.target.value)} placeholder="Year" inputMode="numeric" maxLength={4} aria-label="Year" className={`${FIELD} min-w-0`} />
           </div>
           <input value={credentialId} onChange={(e) => setCredentialId(e.target.value)} placeholder="Credential ID (optional)" className={FIELD} />
         </div>

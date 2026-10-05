@@ -35,7 +35,9 @@ export default function CertificationsCard({ entries, readOnly = false }) {
                   <p className="text-sm font-medium text-slate-800">{a.title}</p>
                   {a.verified && <Check size={12} className="text-violet-600 shrink-0" aria-label="Verified by PhysioFeed" />}
                 </div>
-                {a.subtitle && <p className="text-xs text-slate-400">{a.subtitle}</p>}
+                {a.issuer && <p className="text-xs text-slate-600">{a.issuer}</p>}
+                {(a.month || a.year) ? <p className="text-xs text-slate-400">Issued {[a.month, a.year].filter(Boolean).join(" ")}</p> : (!a.issuer && a.subtitle && <p className="text-xs text-slate-400">{a.subtitle}</p>)}
+                {a.credentialId && <p className="text-xs text-slate-400">Credential ID: {a.credentialId}</p>}
               </div>
             </div>
           ))}

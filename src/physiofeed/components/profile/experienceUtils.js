@@ -7,7 +7,7 @@
 // proper Experience card -- one parser so all three agree on what counts
 // as "current" and how a legacy/undelimited entry degrades.
 export function parseExperienceEntry(entry) {
-  const [titlePart, orgPart] = (entry.department || "").split(" — ");
+  const [titlePart, orgPart] = stripCurrentRoleMark(entry.department || "").split(" — ");
   const title = orgPart ? titlePart.trim() : "";
   const organization = orgPart ? orgPart.trim() : (entry.department || "").trim();
   const isCurrent = /present/i.test(entry.duration || "");
@@ -19,7 +19,11 @@ export function parseExperienceEntry(entry) {
 // getRotations() `.order("created_at", { ascending: true })`).
 export function getCurrentWorkplace(entries) {
   if (!entries?.length) return null;
-  const current = entries.find((e) => /present/i.test(e.duration || "")) || entries[entries.length - 1];
+  const standalone = getCurrentRoleEntry(entries);
+  if (standalone) return parseExperienceEntry(standalone).organization || null;
+  const list = getExperienceEntries(entries);
+  if (!list.length) return null;
+  const current = list.find((e) => /present/i.test(e.duration || "")) || list[list.length - 1];
   const { organization } = parseExperienceEntry(current);
   return organization || null;
 }
@@ -43,3 +47,12 @@ export function formatExperienceEntry({ title, organization, start, end }) {
   const duration = s && e ? `${s} – ${e}` : s || e;
   return { department, duration };
 }
+
+// ── Current Role is its own thing, separate from the Experience timeline ─────
+// It is stored in the same rotations table (no schema change) but its `department` text carries
+// this prefix, so Experience never lists it and editing one never touches the other.
+export const CURRENT_ROLE_MARK = "@current|";
+export const isCurrentRoleEntry = (e) => String(e?.department || "").startsWith(CURRENT_ROLE_MARK);
+export const stripCurrentRoleMark = (department) => String(department || "").replace(CURRENT_ROLE_MARK, "");
+export const getCurrentRoleEntry = (entries) => (entries || []).find(isCurrentRoleEntry) || null;
+export const getExperienceEntries = (entries) => (entries || []).filter((e) => !isCurrentRoleEntry(e));

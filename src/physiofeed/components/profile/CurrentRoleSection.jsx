@@ -1,21 +1,28 @@
 import { Briefcase, Pencil } from "lucide-react";
 import { useState } from "react";
-import { parseExperienceEntry } from "./experienceUtils.js";
-import EditRotationsModal from "./EditRotationsModal.jsx";
+import { parseExperienceEntry, getCurrentRoleEntry, getExperienceEntries, CURRENT_ROLE_MARK } from "./experienceUtils.js";
+import { useAppData } from "../../context/AppDataContext.jsx";
+import EditCurrentRoleModal from "./EditCurrentRoleModal.jsx";
 
-// Current Role card (2026-09-24 redesign, Aditi's brief: a dedicated
-// "WHAT THEY DO + WHERE THEY DO IT" section separate from the full
-// Experience timeline). Derived from the same rotations table -- the
-// most recent "Present" entry, or the last one if none is marked
-// Present. No new schema; if the therapist edits it, the edit opens
-// the same Experience modal since a "current role" IS an Experience
-// entry, just the topmost one.
+// Current Role card: a standalone "what I do + where" section. It used to be derived from the last
+// Experience entry and its edit pencil opened the Experience list; it is now its own entry with its
+// own editor (EditCurrentRoleModal) and never appears in, or changes, the Experience timeline.
 export default function CurrentRoleSection({ rotations = [], isOwn = false }) {
   const [editing, setEditing] = useState(false);
+  const { addRotation } = useAppData();
+  const [copying, setCopying] = useState(false);
 
-  const current =
-    rotations.find((r) => /present/i.test(r.duration || "")) ||
-    rotations[rotations.length - 1];
+  const current = getCurrentRoleEntry(rotations);
+  // Before this card was standalone it showed the latest Experience row. One tap copies that row in as
+  // the Current Role (Experience itself is left alone), so existing profiles don't lose what they saw.
+  const experience = getExperienceEntries(rotations);
+  const latest = experience.find((r) => /present/i.test(r.duration || "")) || experience[experience.length - 1];
+  const useLatest = async () => {
+    if (!latest || copying) return;
+    setCopying(true);
+    try { await addRotation({ department: CURRENT_ROLE_MARK + parseExperienceEntry(latest).title.concat(parseExperienceEntry(latest).title ? " — " : "", parseExperienceEntry(latest).organization), duration: latest.duration }); }
+    finally { setCopying(false); }
+  };
 
   if (!current) {
     if (!isOwn) return null;
@@ -35,7 +42,12 @@ export default function CurrentRoleSection({ rotations = [], isOwn = false }) {
             <p className="text-xs text-slate-400">Where do you currently work or study?</p>
           </div>
         </button>
-        {editing && <EditRotationsModal entries={rotations} onClose={() => setEditing(false)} />}
+        {latest && (
+          <button type="button" onClick={useLatest} disabled={copying} className="mt-2 w-full text-left text-xs font-semibold text-violet-600 hover:text-violet-700 px-1 py-1.5 disabled:opacity-50">
+            {copying ? "Adding…" : `Use my latest experience: ${parseExperienceEntry(latest).title || parseExperienceEntry(latest).organization}`}
+          </button>
+        )}
+        {editing && <EditCurrentRoleModal entry={null} onClose={() => setEditing(false)} />}
       </section>
     );
   }
@@ -60,7 +72,7 @@ export default function CurrentRoleSection({ rotations = [], isOwn = false }) {
           {dateRange && <p className="text-xs text-slate-400 mt-0.5">{dateRange}</p>}
         </div>
       </div>
-      {isOwn && editing && <EditRotationsModal entries={rotations} onClose={() => setEditing(false)} />}
+      {isOwn && editing && <EditCurrentRoleModal entry={current} onClose={() => setEditing(false)} />}
     </section>
   );
 }

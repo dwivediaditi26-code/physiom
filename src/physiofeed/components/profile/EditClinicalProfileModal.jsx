@@ -26,7 +26,6 @@ export default function EditClinicalProfileModal({ profile, onClose }) {
   const [clinicalInterests, setClinicalInterests] = useState(profile.clinicalInterests || []);
   const [interestDraft, setInterestDraft] = useState("");
   const [openToTypes, setOpenToTypes] = useState(profile.openToTypes || []);
-  const [willingToRelocate, setWillingToRelocate] = useState(!!profile.willingToRelocate);
   const [resumeUrl, setResumeUrl] = useState(profile.resumeUrl || null);
   const [resumeName, setResumeName] = useState(profile.resumeName || null);
   const [uploadingResume, setUploadingResume] = useState(false);
@@ -81,7 +80,7 @@ export default function EditClinicalProfileModal({ profile, onClose }) {
     try {
       await updateProfile({
         clinicalTitle: clinicalTitle.trim(), college: college.trim(), phone: phone.trim(),
-        skills, clinicalInterests, openToTypes, willingToRelocate, resumeUrl, resumeName,
+        skills, clinicalInterests, openToTypes, resumeUrl, resumeName,
       });
       onClose();
     } catch (e) {
@@ -207,10 +206,6 @@ export default function EditClinicalProfileModal({ profile, onClose }) {
             </button>
           ))}
         </div>
-        <label className="flex items-center gap-2 cursor-pointer select-none mb-4">
-          <input type="checkbox" checked={willingToRelocate} onChange={(e) => setWillingToRelocate(e.target.checked)} className="w-4 h-4 rounded border-slate-300 text-violet-600 focus:ring-violet-300" />
-          <span className="text-sm text-slate-700">Willing to relocate to other cities</span>
-        </label>
 
         {error && (
           <div className="flex items-start gap-1.5 mb-3 text-xs text-rose-600">
