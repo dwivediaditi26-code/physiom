@@ -24,7 +24,7 @@ export const NEURO_DIAGNOSES = {
   },
   parkinsons: {
     label: "Parkinson's",
-    diagnoses: ["Bradykinesia with reduced movement amplitude", "Rigidity (cogwheel / lead-pipe)", "Resting tremor", "Postural instability with high fall risk", "Freezing of gait / festinating gait", "Impaired transfers and bed mobility", "Reduced trunk rotation and axial mobility", "Reduced chest expansion / hypophonia", "Motor fluctuations (on / off)", "Reduced endurance / deconditioning"],
+    diagnoses: ["Bradykinesia with reduced movement amplitude", "Rigidity (cogwheel / lead-pipe)", "Resting tremor", "Postural instability with high fall risk", "Freezing of gait / festinating gait", "Impaired transfers and bed mobility", "Reduced trunk rotation and axial mobility", "Reduced chest expansion / hypophonia (refer to speech therapy)", "Motor fluctuations (on / off)", "Reduced endurance / deconditioning"],
     differentials: ["Parkinson's disease", "Atypical parkinsonism (MSA, PSP, CBD)", "Drug-induced parkinsonism", "Vascular parkinsonism", "Essential tremor", "Normal pressure hydrocephalus", "Lewy body dementia", "Depression with slowing of movement"],
   },
   tbi: {
@@ -34,12 +34,12 @@ export const NEURO_DIAGNOSES = {
   },
   sci: {
     label: "Spinal cord injury",
-    diagnoses: ["Tetraplegia", "Paraplegia", "Complete injury (ASIA A)", "Incomplete injury (ASIA B-D)", "Impaired trunk control and sitting balance", "Spasticity / spasms", "Impaired respiratory function (cervical / high thoracic)", "Impaired transfers and wheelchair mobility", "Orthostatic hypotension", "Pressure injury risk", "Neurogenic bladder / bowel (refer)"],
-    differentials: ["Traumatic spinal cord injury", "Central cord syndrome", "Brown-Séquard syndrome", "Cauda equina syndrome", "Cervical myelopathy", "Transverse myelitis", "Spinal cord tumour or compression", "Epidural abscess or haematoma", "Guillain-Barré syndrome"],
+    diagnoses: ["Tetraplegia", "Paraplegia", "Complete injury (AIS A)", "Incomplete injury (AIS B-D)", "Incomplete injury syndrome (central cord, Brown-Séquard, anterior cord)", "Impaired trunk control and sitting balance", "Spasticity / spasms", "Impaired respiratory function (cervical / high thoracic)", "Impaired transfers and wheelchair mobility", "Orthostatic hypotension", "Pressure injury risk", "Neurogenic bladder / bowel (refer)"],
+    differentials: ["Non-traumatic cause (tumour, infection, vascular)", "Cauda equina syndrome", "Cervical myelopathy", "Transverse myelitis", "Spinal cord tumour or compression", "Epidural abscess or haematoma", "Guillain-Barré syndrome"],
   },
   ms: {
     label: "Multiple sclerosis",
-    diagnoses: ["Fatigue", "Spasticity / spasms", "Ataxia / incoordination", "Impaired balance and gait", "Pyramidal weakness", "Sensory disturbance", "Visual impairment (optic neuritis / diplopia)", "Heat sensitivity", "Cognitive fatigue", "Bladder dysfunction (refer)"],
+    diagnoses: ["Fatigue", "Spasticity / spasms", "Ataxia / incoordination", "Impaired balance and gait", "Pyramidal weakness", "Sensory disturbance", "Visual impairment (optic neuritis / diplopia)", "Heat sensitivity (Uhthoff's phenomenon)", "Cognitive fatigue", "Bladder dysfunction (refer)"],
     differentials: ["Multiple sclerosis (relapsing-remitting)", "Progressive multiple sclerosis", "Neuromyelitis optica", "Transverse myelitis", "Stroke", "Vitamin B12 deficiency", "Cervical myelopathy", "Functional neurological disorder", "Infection (e.g. Lyme disease)"],
   },
   vestibular: {
