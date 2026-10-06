@@ -1,6 +1,7 @@
 // AppFull.jsx — Posture engine, camera, patient DB, dashboard, AppInner, App
 import { useState, useCallback, useRef, useEffect, useMemo, Suspense } from "react";
 import { lazy } from "./lazyReload.js";
+import { pushLinkTarget } from "./pushLink.js";
 import { carePlanOf, requestSessionLaunch, patientSessionView, sessionsRemovedPatch } from "./txSessions.js";
 import { track } from "@vercel/analytics";
 import { supabase } from "./supabase.js";
@@ -1138,6 +1139,16 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     try { track('module_opened', { module: key }); } catch {}
     trackEvent('module_opened', { entityType: 'module', entityId: key }); // same signal, also queryable from the admin dashboard
     window.__pmScreen = key; // read by errorReporter.js so a crash says which screen it happened on
+  }, []);
+
+  // A tapped push notification opens the app at one of PhysioFeed's paths (/news, /messages?with=...).
+  // Open that PhysioFeed screen and put the address back to "/". Runs once, here in the signed-in /
+  // guest app, so someone who is signed out is shown sign-in first with the link still in the address.
+  useEffect(() => {
+    const target = pushLinkTarget(window.location.pathname, window.location.search);
+    if (!target) return;
+    try { window.history.replaceState(null, "", "/"); } catch { /* ignore */ }
+    navTo("physiofeed", { pfPath: target });
   }, []);
 
   // "Save this assessment?" -> Yes: only actually leaves once the
