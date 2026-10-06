@@ -1,6 +1,7 @@
 // AppModules.jsx — PDF reports, HEP helpers, QuickVisit, Intake, Onboarding
 // Extracted from AppFull.jsx — pure extraction, no logic changes
 import React, { useState, useRef, useEffect } from "react";
+import { lazy } from "./lazyReload.js";
 import { isDraftSession, completedSessions } from "./txSessions.js";
 
 // Scroll-and-tap Day / Month / Year picker -- same "DD/MM/YYYY" string a
@@ -60,7 +61,7 @@ function DateWheelField({ value, onChange, inputStyle, placeholder }) {
 
 // Loaded on demand (see PdfReportsModal.jsx): it carries the SOAP builder and the
 // Ortho summary code, which the first screen does not need.
-const LazyPdfReportsModal = React.lazy(() => import("./PdfReportsModal.jsx"));
+const LazyPdfReportsModal = lazy(() => import("./PdfReportsModal.jsx"));
 function PdfReportsModal(props) {
   return (
     <React.Suspense fallback={null}>

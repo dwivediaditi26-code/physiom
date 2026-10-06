@@ -1,5 +1,6 @@
 import { ClinicalInterpretationSection } from "./clinicalInterpretation.jsx";
-import React, { useState, lazy, Suspense } from "react";
+import React, { useState, Suspense } from "react";
+import { lazy } from "./lazyReload.js";
 import { SectionIntro, TextField, SelectField, Segmented, TextArea, NumberField, Stepper, Hint, useSectionData, fmtVal, FieldShell } from "./orthoFieldKit.jsx";
 import { RedFlagFields } from "./orthoRedFlagScreen.jsx";
 import { subjectiveFieldsForRegion, sectionedFieldsForRegion, isMatchingRelevant } from "./orthoSubjectiveRegionData.js";

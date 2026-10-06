@@ -1,5 +1,6 @@
 import { ClinicalInterpretationSection } from "./clinicalInterpretation.jsx";
-import React, { useEffect, lazy, Suspense } from "react";
+import React, { useEffect, Suspense } from "react";
+import { lazy } from "./lazyReload.js";
 import { SectionIntro, TextField, SelectField, Segmented, NumberField, TextArea, ScaleField, AssistField, Hint, LRGrid, VitalRow, useSectionData, DateField, InfoCard } from "./orthoFieldKit.jsx";
 import { neuroExamLibraryData } from "./neuroExamLibraryData.js";
 

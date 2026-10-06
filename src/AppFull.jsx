@@ -1,5 +1,6 @@
 // AppFull.jsx — Posture engine, camera, patient DB, dashboard, AppInner, App
-import { useState, useCallback, useRef, useEffect, useMemo, Suspense, lazy } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo, Suspense } from "react";
+import { lazy } from "./lazyReload.js";
 import { carePlanOf, requestSessionLaunch, patientSessionView, sessionsRemovedPatch } from "./txSessions.js";
 import { track } from "@vercel/analytics";
 import { supabase } from "./supabase.js";
