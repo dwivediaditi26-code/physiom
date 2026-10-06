@@ -65,12 +65,12 @@ describe("Learn tab", () => {
     }, { timeout: 5_000 });
     expect(screen.getByText("Joint-by-joint")).toBeTruthy();
 
-    // Clear the search, then tap Exercise Prescription -- it has no study
-    // mode, so it opens the real (redesigned) Exercise Prescription screen.
+    // Clear the search, then tap Exercise Learn -- it opens the student exercise library
+    // (study mode), built from the app's own exercise data.
     fireEvent.change(search, { target: { value: "" } });
-    fireEvent.click(await screen.findByText("Treatment plan"));
+    fireEvent.click(await screen.findByText("Learn • Practice • Apply"));
     await waitFor(() => {
-      expect(screen.getByText("Browse exercises")).toBeTruthy();
+      expect(screen.getByText("Browse by region")).toBeTruthy();
     }, { timeout: 10_000 });
   }, 20_000);
 

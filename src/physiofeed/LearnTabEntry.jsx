@@ -25,7 +25,7 @@ import { usePreviewFeaturesForCurrentUser } from "../featureFlags.js";
 // Everything else (Demographics, Subjective, and the rest of Advanced
 // Assessment/Treatment & Exercise) still has no such per-item data, so
 // it keeps its single card as before -- no study mode invented for it.
-const STUDY_TYPES = new Set(["rom", "mmt", "special", "neuro", "outcome", "kinetic", "fma", "cardio", "palpation", "nkt"]);
+const STUDY_TYPES = new Set(["rom", "mmt", "special", "neuro", "outcome", "kinetic", "fma", "cardio", "palpation", "nkt", "exercise"]);
 
 // Real section keys, pulled straight from physiom's own ALL_TESTS (see
 // src/sharedClinicalData.js) -- same labels, same navTo(key) targets the
@@ -56,7 +56,7 @@ const ADVANCED_ASSESSMENT = [
 ];
 
 const EXERCISE = [
-  { key: "exercise", label: "Exercise Prescription", desc: "Treatment plan", icon: Dumbbell, tint: "violet" },
+  { key: "exercise", label: "Exercise Learn", desc: "Learn • Practice • Apply", icon: Dumbbell, tint: "violet" },
 ];
 
 
