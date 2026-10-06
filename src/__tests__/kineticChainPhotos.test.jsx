@@ -46,15 +46,33 @@ describe("PhotoSlots", () => {
     for (let n = 1; n <= 4; n++) expect(screen.getByTestId(`photo-slot-${n}`)).toBeTruthy();
   });
 
-  it("lays the slots out as a row that the phone grid-collapse CSS cannot stack", () => {
+  it("is a swipe gallery (one slide per photo, scroll-snap) that the phone grid-collapse CSS cannot stack", () => {
     // utils.jsx turns any inline style containing "repeat(4," / "1fr 1fr" into a
-    // single column on phones -- that made 4 huge stacked tiles. Keep this a flex row.
+    // single column on phones -- that made 4 huge stacked tiles. Slides sit side
+    // by side in a horizontal scroll-snap track instead (like the Cardio/Neuro cards).
     render(<PhotoSlots ids={kcImageIds("kc_x")} />);
-    const row = screen.getByTestId("photo-slots-row");
-    const style = row.getAttribute("style");
-    expect(style).toContain("display: flex");
+    const track = screen.getByTestId("photo-slots-track");
+    const style = track.getAttribute("style");
+    expect(style).toContain("scroll-snap-type: x mandatory");
     expect(style).not.toMatch(/repeat\(|1fr 1fr|grid/);
-    expect(row.children.length).toBe(4);
+    expect(track.children.length).toBe(4);
+  });
+
+  it("shows a dot per photo, and tapping a dot moves to that photo", () => {
+    render(<PhotoSlots ids={kcImageIds("kc_x")} />);
+    const dots = [1, 2, 3, 4].map((n) => screen.getByLabelText(`Show photo ${n} of 4`));
+    expect(dots[0].getAttribute("aria-current")).toBe("true");
+    fireEvent.click(dots[2]);
+    expect(dots[2].getAttribute("aria-current")).toBe("true");
+    expect(dots[0].getAttribute("aria-current")).toBeNull();
+  });
+
+  it("has a camera button on a photo that replaces it in the same slot", async () => {
+    render(<PhotoSlots ids={kcImageIds("kc_x")} />);
+    fireEvent.click(screen.getByLabelText("Replace photo 2"));
+    const file = new File([new Uint8Array(10)], "p.jpg", { type: "image/jpeg" });
+    fireEvent.change(screen.getByTestId("photo-slots-input"), { target: { files: [file] } });
+    await waitFor(() => expect(uploadImage).toHaveBeenCalledWith(file, "kc_x_2"));
   });
 
   it("uploads to the id of the empty slot that was tapped, then shows the photo", async () => {
