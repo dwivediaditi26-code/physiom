@@ -11,6 +11,8 @@
 // <label>"); uploading to that id is what makes the photo appear for every
 // user of the app, so the checks below matter.
 
+import { supabase } from "../supabase.js";
+
 export const CLOUDINARY_UPLOAD_URL = "https://api.cloudinary.com/v1_1/dr15y1pwj/image/upload";
 
 // Rejects a picked file before it reaches Cloudinary if it isn't a real
@@ -32,12 +34,47 @@ export function isRealPhoto(file) {
   });
 }
 
+// Asks the server for a signed upload. Only an admin gets one (the server checks); everyone else, a
+// signed-out person, or a server without the Cloudinary keys gets null and uses the open preset.
+async function getSignedUpload(publicId) {
+  try {
+    const { data } = await supabase.auth.getSession();
+    const token = data?.session?.access_token;
+    if (!token) return null;
+    const r = await fetch("/api/admin/cloudinarySign", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ public_id: publicId }),
+    });
+    if (r.status === 501) return { notConfigured: true };
+    if (!r.ok) return null;
+    return await r.json();
+  } catch {
+    return null;
+  }
+}
+
 // Uploads `file` to the Cloudinary slot `publicId`. Resolves with
 // Cloudinary's answer; rejects with an Error whose message is one of
 // "empty-image", "Upload failed" or "blocked-overwrite" (pass it to
 // uploadErrorMessage() for the text to show the user).
 export async function uploadImage(file, publicId) {
   if (!(await isRealPhoto(file))) throw new Error("empty-image");
+  // An admin gets a signed upload, which (unlike the open preset) may replace an existing photo.
+  const signed = await getSignedUpload(publicId);
+  if (signed?.signature) {
+    const sfd = new FormData();
+    sfd.append("file", file);
+    sfd.append("api_key", signed.api_key);
+    sfd.append("timestamp", String(signed.timestamp));
+    sfd.append("signature", signed.signature);
+    sfd.append("public_id", signed.public_id);
+    sfd.append("overwrite", "true");
+    sfd.append("invalidate", "true");
+    const sres = await fetch(CLOUDINARY_UPLOAD_URL, { method: "POST", body: sfd });
+    if (!sres.ok) throw new Error("Upload failed");
+    return await sres.json();
+  }
   const fd = new FormData();
   fd.append("file", file);
   fd.append("upload_preset", "ml_default");
@@ -56,7 +93,7 @@ export async function uploadImage(file, publicId) {
   // then this at least stops the app from claiming success when nothing
   // actually changed.
   const json = await res.json();
-  if (json.existing) throw new Error("blocked-overwrite");
+  if (json.existing) throw new Error(signed?.notConfigured ? "replace-not-set-up" : "blocked-overwrite");
   return json;
 }
 
@@ -67,6 +104,9 @@ export function uploadErrorMessage(err) {
   }
   if (err?.message === "blocked-overwrite") {
     return "This photo slot already has an image and couldn't be replaced right now — please let the app admin know.";
+  }
+  if (err?.message === "replace-not-set-up") {
+    return "Replacing photos isn't switched on yet: the Cloudinary keys still need to be added on Vercel (CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET).";
   }
   return "Photo upload failed — check your connection and try again.";
 }
