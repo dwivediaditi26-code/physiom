@@ -3,7 +3,7 @@ import { trackEvent } from "../analytics/trackEvent.js";
 import {
   Search, Bell, Hand, Move,
   Dumbbell, FlaskConical, Brain, BarChart3, Footprints, Link2,
-  GraduationCap, Activity, ChevronLeft, ChevronRight,
+  Activity, ChevronLeft, ChevronRight,
   BookOpen, ClipboardCheck, Stethoscope, Target,
 } from "lucide-react";
 import StudyMode from "./learn/StudyMode.jsx";
@@ -66,11 +66,6 @@ const TINT_GRAD = {
   amber: "from-amber-500 to-orange-400", rose: "from-rose-600 to-pink-500", teal: "from-cyan-500 to-sky-500", indigo: "from-indigo-600 to-violet-500",
   emerald: "from-emerald-600 to-green-500",
 };
-const TINT_PILL = {
-  violet: "bg-violet-100 text-violet-700", blue: "bg-sky-100 text-sky-700", green: "bg-cyan-100 text-cyan-700",
-  amber: "bg-amber-100 text-amber-700", rose: "bg-rose-100 text-rose-700", teal: "bg-cyan-100 text-cyan-700", indigo: "bg-indigo-100 text-indigo-700",
-  emerald: "bg-emerald-100 text-emerald-700",
-};
 const TINT_BORDER = {
   violet: "border-violet-200", blue: "border-sky-200", green: "border-cyan-200", amber: "border-amber-200", rose: "border-rose-200", teal: "border-cyan-200", indigo: "border-indigo-200",
   emerald: "border-emerald-200",
@@ -89,30 +84,41 @@ const CARD_ART = {
   cardio: "cardio-respiratory", fma: "functional-movement", kinetic: "kinetic-chain",
 };
 
+// Soft card colour per tint, so each card carries its own pastel.
+const TINT_CARD = {
+  violet: "from-violet-50 to-white", blue: "from-sky-50 to-white", green: "from-cyan-50 to-white",
+  amber: "from-amber-50 to-white", rose: "from-rose-50 to-white", teal: "from-cyan-50 to-white", indigo: "from-indigo-50 to-white",
+  emerald: "from-emerald-50 to-white",
+};
+
+// A grid card (2026-10-06, Aditi: "grid wise ... remove study mode written"): coloured icon,
+// title and subtitle at the top, a chevron at the top right, and the picture bottom right.
+// The whole card is the button; there is no separate "Study" pill any more.
 function Row({ item, onNav, onStudy }) {
   const Icon = item.icon;
   const art = CARD_ART[item.key];
   const studyable = STUDY_TYPES.has(item.key);
   const main = () => (studyable ? onStudy(item.key) : onNav(item.key));
   return (
-    <div className={`flex items-center gap-3 bg-white border ${TINT_BORDER[item.tint]} rounded-2xl px-3 py-2.5 mb-2.5 shadow-sm hover:shadow-md transition`}>
-      <button type="button" onClick={main} className="flex items-center gap-3 flex-1 min-w-0 text-left">
+    <button type="button" onClick={main} data-testid={`learn-card-${item.key}`}
+      className={`relative flex flex-col text-left h-full min-w-0 bg-gradient-to-br ${TINT_CARD[item.tint]} border ${TINT_BORDER[item.tint]} rounded-3xl p-3 shadow-sm hover:shadow-md transition overflow-hidden`}>
+      <span className="flex flex-col min-[360px]:flex-row items-start gap-2 min-[360px]:gap-2.5 min-w-0 w-full">
         <span className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-gradient-to-br ${TINT_GRAD[item.tint]} text-white shadow-sm`}>
           <Icon size={20} strokeWidth={2.2}/>
         </span>
-        <span className="min-w-0 flex-1">
+        <span className="min-w-0 w-full flex-1 min-[360px]:pr-4 break-words">
           <span className="cl-display block font-extrabold text-[15px] text-slate-900 leading-tight">{item.label}</span>
           <span className="block text-xs text-slate-500 mt-0.5 leading-snug">{item.desc}</span>
         </span>
-        {art && (
+      </span>
+      <ChevronRight size={16} className="absolute top-3 right-2.5 text-slate-400"/>
+      {art && (
+        <span className="flex justify-end mt-auto pt-2">
           <img src={`${import.meta.env.BASE_URL}learn/${art}.png`} alt="" aria-hidden="true" loading="lazy" decoding="async"
-            data-testid={`learn-art-${item.key}`} className="h-[52px] w-auto max-w-[34%] object-contain shrink-0 pointer-events-none" />
-        )}
-      </button>
-      {studyable
-        ? <button type="button" onClick={() => onStudy(item.key)} className={`flex items-center gap-1 text-[11px] font-bold rounded-full px-2.5 py-1.5 shrink-0 ${TINT_PILL[item.tint]}`}><GraduationCap size={12}/> Study</button>
-        : <ChevronRight size={16} className="text-slate-300 shrink-0"/>}
-    </div>
+            data-testid={`learn-art-${item.key}`} className="h-[72px] w-auto max-w-[55%] object-contain pointer-events-none" />
+        </span>
+      )}
+    </button>
   );
 }
 
@@ -121,7 +127,9 @@ function Section({ title, items, onNav, onStudy }) {
   return (
     <div className="mb-5">
       <div className="cl-display flex items-center gap-2 text-[13px] font-extrabold text-slate-700 mb-2.5 px-0.5"><span className="w-2.5 h-2.5 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500"/>{title}</div>
-      {items.map((item) => <Row key={item.key} item={item} onNav={onNav} onStudy={onStudy}/>)}
+      <div className="grid grid-cols-2 gap-3">
+        {items.map((item) => <Row key={item.key} item={item} onNav={onNav} onStudy={onStudy}/>)}
+      </div>
     </div>
   );
 }
