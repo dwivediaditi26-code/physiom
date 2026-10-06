@@ -46,6 +46,17 @@ describe("PhotoSlots", () => {
     for (let n = 1; n <= 4; n++) expect(screen.getByTestId(`photo-slot-${n}`)).toBeTruthy();
   });
 
+  it("lays the slots out as a row that the phone grid-collapse CSS cannot stack", () => {
+    // utils.jsx turns any inline style containing "repeat(4," / "1fr 1fr" into a
+    // single column on phones -- that made 4 huge stacked tiles. Keep this a flex row.
+    render(<PhotoSlots ids={kcImageIds("kc_x")} />);
+    const row = screen.getByTestId("photo-slots-row");
+    const style = row.getAttribute("style");
+    expect(style).toContain("display: flex");
+    expect(style).not.toMatch(/repeat\(|1fr 1fr|grid/);
+    expect(row.children.length).toBe(4);
+  });
+
   it("uploads to the id of the empty slot that was tapped, then shows the photo", async () => {
     const { container } = render(<PhotoSlots ids={kcImageIds("kc_x")} />);
     // nothing is uploaded yet: every image 404s

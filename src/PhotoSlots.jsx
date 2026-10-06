@@ -59,7 +59,9 @@ export default function PhotoSlots({ ids, label = "Reference photos" }) {
     <div style={{ margin: "10px 0" }}>
       <div style={{ fontSize: "0.7rem", fontWeight: 800, letterSpacing: ".05em", textTransform: "uppercase", color: "#6b7280", marginBottom: 6 }}>{label}</div>
       <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} data-testid="photo-slots-input" />
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(${ids.length}, minmax(0, 1fr))`, gap: 8 }}>
+      {/* A flex row, not a grid: utils.jsx collapses any inline "repeat(4," grid to ONE
+          column on phones, which stacked these into four huge full-width tiles. */}
+      <div data-testid="photo-slots-row" style={{ display: "flex", gap: 8 }}>
         {ids.map((id, i) => {
           const has = !failed[i];
           return (
@@ -69,7 +71,7 @@ export default function PhotoSlots({ ids, label = "Reference photos" }) {
               data-testid={`photo-slot-${i + 1}`}
               aria-label={has ? `View photo ${i + 1}` : `Add photo ${i + 1}`}
               onClick={(e) => { e.stopPropagation(); has ? setZoom(i) : pick(i); }}
-              style={{ position: "relative", aspectRatio: "1 / 1", padding: 0, overflow: "hidden", borderRadius: 12, cursor: "pointer", fontFamily: "inherit",
+              style={{ position: "relative", flex: "1 1 0", minWidth: 0, aspectRatio: "1 / 1", padding: 0, overflow: "hidden", borderRadius: 12, cursor: "pointer", fontFamily: "inherit",
                 border: has ? "1px solid #E5E7EB" : "1.5px dashed #C4B5FD", background: has ? "#F9FAFB" : "#FAF8FF" }}
             >
               {has ? (
