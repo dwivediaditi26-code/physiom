@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { SectionIntro, Segmented, TextArea, AddMovementRow, Hint, InfoButton, InfoCard, InfoCardGrid, AnatomyGrid, ProtocolList, useSectionData, Stepper } from "./orthoFieldKit.jsx";
 import { ALL_REGIONS, regionDisplayLabel } from "./orthoRegionLibrary.js";
+import PhotoSlots from "./PhotoSlots.jsx";
+import { kcImageIds } from "./kcImages.js";
 import { ROM_DATA, ROM_REGION_KEYS, RESTRICTION_GRADE, MMT_DATA, MMT_REGION_KEYS, MMT_GRADES, MMT_GRADE_OPTIONS, SPECIAL_TESTS_DATA, SPECIAL_TEST_REGION_KEYS, matchRegionKey, gradeColor } from "./orthoClinicalData.js";
 
 /* ============================================================
@@ -199,6 +201,7 @@ export function RomMovementCard({ m, val, gradeL, gradeR, pain, endFeel, norm, o
           </button>
         </div>
       )}
+      <PhotoSlots ids={kcImageIds(m.id)} label="Reference photos" />
       <div className="obj-item-row rom-detail-toggle" onClick={() => setDetailOpen((o) => !o)} role="button">
         <span className="obj-item-row-sub">Pain quality &amp; end feel</span>
         <div className="obj-item-row-right">
