@@ -53,16 +53,15 @@ describe("Learn tab", () => {
     // (dual-render pattern) -- its old Learn card's unique description text
     // is the reliable signal instead.
     expect(screen.queryByText("Visual inspection")).toBeNull();
-    expect(screen.getByText("Tissue assessment")).toBeTruthy(); // Palpation row
+    // Palpation is for admin accounts only (2026-10-06), so an ordinary user has no such row.
+    expect(screen.queryByText("Tissue assessment")).toBeNull();
     expect(screen.getByText("Joint-by-joint")).toBeTruthy();    // Kinetic Chain row
 
-    // Search narrows the list to real matches. Checked by each row's own
-    // description text, since labels like "Palpation" also appear in the
-    // always-present desktop sidebar.
+    // Search narrows the list to real matches, checked by each row's own description text.
     const search = screen.getByPlaceholderText(/search topics/i);
     fireEvent.change(search, { target: { value: "kinetic" } });
     await waitFor(() => {
-      expect(screen.queryByText("Tissue assessment")).toBeNull();
+      expect(screen.queryByText("Range of motion")).toBeNull();
     }, { timeout: 5_000 });
     expect(screen.getByText("Joint-by-joint")).toBeTruthy();
 
@@ -74,4 +73,21 @@ describe("Learn tab", () => {
       expect(screen.getByText("Browse exercises")).toBeTruthy();
     }, { timeout: 10_000 });
   }, 20_000);
+
+  it("shows the Palpation row to an admin account", async () => {
+    const realFrom = supabase.from.getMockImplementation();
+    vi.mocked(supabase.from).mockImplementation((table) => {
+      const chain = realFrom(table);
+      if (table !== "profiles") return chain;
+      return { ...chain, select: (cols) => (cols === "is_admin"
+        ? { eq: () => ({ maybeSingle: () => Promise.resolve({ data: { is_admin: true }, error: null }) }) }
+        : chain.select(cols)) };
+    });
+    render(<App />);
+    await waitFor(() => { expect(screen.getAllByText("Learn").length).toBeGreaterThan(0); }, { timeout: 10_000 });
+    fireEvent.click(screen.getByTestId("bnav-tab-learn"));
+    fireEvent.click(await screen.findByText("Practical Skills"));
+    await waitFor(() => { expect(screen.getByText("Tissue assessment")).toBeTruthy(); }, { timeout: 10_000 });
+    vi.mocked(supabase.from).mockImplementation(realFrom);
+  }, 30000);
 });

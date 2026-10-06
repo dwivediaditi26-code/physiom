@@ -24,8 +24,8 @@ describe("Learn tab — Study mode", () => {
 
     // Every item with real per-item data (palpation, ROM, MMT, special,
     // neuro, outcome, cardio, functional movement, kinetic chain, CPA) gets
-    // its own "Study" pill -- 10 in total. Tap ROM's.
-    expect(screen.getAllByRole("button", { name: /^Study$/ }).length).toBe(10);
+    // its own "Study" pill -- 9 in total for an ordinary user (Palpation is admin-only). Tap ROM's.
+    expect(screen.getAllByRole("button", { name: /^Study$/ }).length).toBe(9);
     const romRow = screen.getByText("ROM").closest("button").parentElement;
     fireEvent.click(within(romRow).getByRole("button", { name: /^Study$/ }));
 

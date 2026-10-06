@@ -10,6 +10,7 @@ import StudyMode from "./learn/StudyMode.jsx";
 import ClinicalLearning from "./learn/ClinicalLearning.jsx";
 import { DisplayFont } from "./learn/learnTheme.jsx";
 import "./physiofeed.css";
+import { usePreviewFeaturesForCurrentUser } from "../featureFlags.js";
 
 // These Assessment Library / Advanced Assessment items have real,
 // structured per-item data (technique/position/finding fields in
@@ -118,6 +119,9 @@ function Section({ title, items, onNav, onStudy }) {
 // Learning have real content today -- they open the existing study/
 // assessment library, filtered; BPT / Test / Exam Ready are marked Soon
 // instead of pretending to have content.
+// Palpation is shown to admin accounts only for now (Aditi, 2026-10-06); everyone else
+// does not see the row, the card count or the study screen.
+const ADMIN_ONLY_KEYS = new Set(["palpation"]);
 const ALL_ITEMS = [...ASSESSMENT_LIBRARY, ...ADVANCED_ASSESSMENT, ...EXERCISE];
 const HOME_CARDS = [
   { id: "practical", label: "Practical Skills", desc: "ROM • MMT • Assessment", icon: Hand, tint: "amber", count: ALL_ITEMS.length },
@@ -168,12 +172,14 @@ function greeting() {
 
 export default function LearnTabEntry({ onNav }) {
   useEffect(() => { trackEvent("learn_viewed"); }, []);
+  const { enabled: isAdmin } = usePreviewFeaturesForCurrentUser();
+  const visibleKeys = (item) => isAdmin || !ADMIN_ONLY_KEYS.has(item.key);
   const [view, setView] = useState("home");
   const [query, setQuery] = useState("");
   const [studyType, setStudyType] = useState(null);
   const [last, setLast] = useState(readLast);
   const openStudy = (key) => { saveLast(key); setLast({ key }); setStudyType(key); trackEvent("module_viewed", { entityType: "module", entityId: key }); };
-  const lastItem = last && ALL_ITEMS.find((i) => i.key === last.key);
+  const lastItem = last && ALL_ITEMS.filter(visibleKeys).find((i) => i.key === last.key);
 
   const filter = (items) => {
     if (!query.trim()) return items;
@@ -182,10 +188,10 @@ export default function LearnTabEntry({ onNav }) {
   };
 
   const filtered = useMemo(() => ({
-    assess: filter(ASSESSMENT_LIBRARY),
+    assess: filter(ASSESSMENT_LIBRARY.filter(visibleKeys)),
     adv: filter(ADVANCED_ASSESSMENT),
     exercise: filter(EXERCISE),
-  }), [query]);
+  }), [query, isAdmin]);
 
   const noResults = filtered.assess.length === 0 && filtered.adv.length === 0 && filtered.exercise.length === 0;
 
@@ -257,7 +263,7 @@ export default function LearnTabEntry({ onNav }) {
         <>
           <div className="grid grid-cols-2 gap-3">
             {LIVE_CARDS.map((c, i) => (
-              <HomeCard key={c.id} card={c} wide={LIVE_CARDS.length % 2 === 1 && i === LIVE_CARDS.length - 1} onOpen={setView}/>
+              <HomeCard key={c.id} card={c.count != null ? { ...c, count: ALL_ITEMS.filter(visibleKeys).length } : c} wide={LIVE_CARDS.length % 2 === 1 && i === LIVE_CARDS.length - 1} onOpen={setView}/>
             ))}
           </div>
           {/* The not-yet-built sections used to be three big disabled cards; one line says it. */}
