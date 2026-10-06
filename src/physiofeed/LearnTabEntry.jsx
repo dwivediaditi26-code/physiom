@@ -91,8 +91,8 @@ const TINT_CARD = {
   emerald: "from-emerald-50 to-white",
 };
 
-// A grid card (2026-10-06, Aditi: "grid wise ... remove study mode written"): coloured icon,
-// title and subtitle at the top, a chevron at the top right, and the picture bottom right.
+// A grid card (2026-10-06, Aditi): the picture top left (where the coloured icon used to be; rows
+// with no picture keep their icon), title and subtitle beside it, a chevron at the top right.
 // The whole card is the button; there is no separate "Study" pill any more.
 function Row({ item, onNav, onStudy }) {
   const Icon = item.icon;
@@ -101,23 +101,22 @@ function Row({ item, onNav, onStudy }) {
   const main = () => (studyable ? onStudy(item.key) : onNav(item.key));
   return (
     <button type="button" onClick={main} data-testid={`learn-card-${item.key}`}
-      className={`relative flex flex-col text-left h-full min-w-0 bg-gradient-to-br ${TINT_CARD[item.tint]} border ${TINT_BORDER[item.tint]} rounded-3xl p-3 shadow-sm hover:shadow-md transition overflow-hidden`}>
-      <span className="flex flex-col min-[360px]:flex-row items-start gap-2 min-[360px]:gap-2.5 min-w-0 w-full">
-        <span className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-gradient-to-br ${TINT_GRAD[item.tint]} text-white shadow-sm`}>
-          <Icon size={20} strokeWidth={2.2}/>
-        </span>
-        <span className="min-w-0 w-full flex-1 min-[360px]:pr-4 break-words">
-          <span className="cl-display block font-extrabold text-[15px] text-slate-900 leading-tight">{item.label}</span>
-          <span className="block text-xs text-slate-500 mt-0.5 leading-snug">{item.desc}</span>
+      className={`relative flex flex-col text-left h-full min-w-0 bg-gradient-to-br ${TINT_CARD[item.tint]} border ${TINT_BORDER[item.tint]} rounded-3xl p-2.5 min-[400px]:p-3 shadow-sm hover:shadow-md transition overflow-hidden`}>
+      <span className="flex flex-col min-[350px]:flex-row items-start gap-2 min-w-0 w-full">
+        {art ? (
+          <img src={`${import.meta.env.BASE_URL}learn/${art}.png`} alt="" aria-hidden="true" loading="lazy" decoding="async"
+            data-testid={`learn-art-${item.key}`} className="w-10 h-10 min-[400px]:w-12 min-[400px]:h-12 object-contain shrink-0 pointer-events-none" />
+        ) : (
+          <span className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-gradient-to-br ${TINT_GRAD[item.tint]} text-white shadow-sm`}>
+            <Icon size={20} strokeWidth={2.2}/>
+          </span>
+        )}
+        <span className="min-w-0 w-full flex-1 break-words">
+          <span className="cl-display block font-extrabold text-[13px] min-[400px]:text-[14px] text-slate-900 leading-tight pr-3">{item.label}</span>
+          <span className="block text-[11px] min-[400px]:text-xs text-slate-500 mt-0.5 leading-snug">{item.desc}</span>
         </span>
       </span>
       <ChevronRight size={16} className="absolute top-3 right-2.5 text-slate-400"/>
-      {art && (
-        <span className="flex justify-end mt-auto pt-2">
-          <img src={`${import.meta.env.BASE_URL}learn/${art}.png`} alt="" aria-hidden="true" loading="lazy" decoding="async"
-            data-testid={`learn-art-${item.key}`} className="h-[72px] w-auto max-w-[55%] object-contain pointer-events-none" />
-        </span>
-      )}
     </button>
   );
 }
