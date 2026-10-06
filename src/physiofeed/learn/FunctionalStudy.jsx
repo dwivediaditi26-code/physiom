@@ -5,6 +5,7 @@ import {
   Zap, Scale, Brain, Eye, Wind, Shield, Volume2, Link2,
 } from "lucide-react";
 import { FUNCTIONAL_SCREEN_DATA } from "../../RegionalFunctionalScreens.jsx";
+import { fmaImageIds } from "../../kcImages.js";
 import StudyShell from "./StudyShell.jsx";
 import StudyGrid from "./StudyGrid.jsx";
 import StudyDetail from "./StudyDetail.jsx";
@@ -50,8 +51,11 @@ const ICONS = {
 // per Aditi from both this study-mode card and the live assessment's info
 // card (orthoAdvancedTools.jsx's fmaRichItem).)
 function toCard(t) {
+  const images = fmaImageIds(t.id);
   return {
     id: t.id,
+    image: images[0],
+    images,
     Icon: ICONS[t.id] || Activity,
     title: t.label,
     subtitle: t.subtitle,

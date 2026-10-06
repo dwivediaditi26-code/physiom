@@ -4,7 +4,7 @@ import { FmaIcon, poseForJoint } from "./fmaIcons.jsx";
 import { SectionIntro, TextArea, InfoButton, InfoCard, Hint, useSectionData } from "./orthoFieldKit.jsx";
 import { humanizeKey } from "./medicalAbbreviations.js";
 import PhotoSlots from "./PhotoSlots.jsx";
-import { kcImageIds } from "./kcImages.js";
+import { kcImageIds, fmaImageIds } from "./kcImages.js";
 import { RESTRICTION_GRADE } from "./orthoClinicalData.js";
 import {
   KC_REGIONS,
@@ -680,7 +680,10 @@ export function fmaRichItem(t) {
       </InfoCard>
     );
   });
+  const images = fmaImageIds(t.id);
   return {
+    image: images[0],
+    images,
     hideHeroOn: ["interpret"],
     title: t.label,
     subtitle: t.phase,
@@ -820,6 +823,7 @@ export function FmaSection({ data, setData, sectionKey = "fma" }) {
               <InfoButton title={t.label} richItem={fmaRichItem(t)} />
             </div>
             <div className="muscle-subtitle">{t.subtitle}</div>
+            <PhotoSlots ids={fmaImageIds(t.id)} />
 
             <InfoCard icon="🔎" label="Helps find" tint="violet">{FMA_HELPS[t.id] || `${t.phase}. ${t.subtitle}.`}</InfoCard>
 

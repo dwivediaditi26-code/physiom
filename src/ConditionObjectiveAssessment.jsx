@@ -43,7 +43,7 @@ import { romRichItem, specialRichItem, mmtRichItem, GradeSelect } from "./orthoR
 import { kcRichItem, cpaRichItem, fmaRichItem, GradeSelect as ObserveSelect, FMA_HELPS, FMA_GRADE_COLOR } from "./orthoAdvancedTools.jsx";
 import { KC_REGIONS, NKT_REGIONS, FMA_DATA, CYRIAX_REGIONS_DATA } from "./orthoAdvancedLibrary.js";
 import PhotoSlots from "./PhotoSlots.jsx";
-import { kcImageIds } from "./kcImages.js";
+import { kcImageIds, fmaImageIds } from "./kcImages.js";
 import { FmaIcon, poseForJoint } from "./fmaIcons.jsx";
 import { runCervicalDifferential, hasCervicalChecklistData } from "./orthoCervicalReasoning.js";
 import { runThoracicDifferential, hasThoracicChecklistData } from "./orthoThoracicReasoning.js";
@@ -2672,6 +2672,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                 <InfoButton title={condition.functionalScreen.testName} richItem={functionalRichItem(condition.functionalScreen.testName, condition.functionalScreen.note)} />
               </div>
               {fmaMatch?.subtitle && <div className="muscle-subtitle">{fmaMatch.subtitle}</div>}
+              {fmaMatch && <PhotoSlots ids={fmaImageIds(fmaMatch.id)} />}
               {(condition.functionalScreen.note || hasReal) && (
                 <div style={{ marginTop: 8, marginBottom: hasReal ? 0 : 10 }}>
                   <InfoCard icon="🔎" label="Helps find" tint="violet">{hasReal ? (FMA_HELPS[fmaMatch.id] || condition.functionalScreen.note) : condition.functionalScreen.note}</InfoCard>
@@ -2739,6 +2740,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                       {fmaMatch?.subtitle && <div className="muscle-subtitle">{fmaMatch.subtitle}</div>}
                     </div>
                   </div>
+                  {fmaMatch && <PhotoSlots ids={fmaImageIds(fmaMatch.id)} />}
                   {(condition.functionalScreen.note || hasReal) && (
                     <div style={{ marginTop: 8, marginBottom: hasReal ? 0 : 12 }}>
                       <InfoCard icon="🔎" label="Helps find" tint="violet">{hasReal ? (FMA_HELPS[fmaMatch.id] || condition.functionalScreen.note) : condition.functionalScreen.note}</InfoCard>

@@ -16,3 +16,13 @@ export const KC_IMAGE_SLOTS = 4;
 export function kcImageIds(testId) {
   return Array.from({ length: KC_IMAGE_SLOTS }, (_, i) => (i === 0 ? testId : `${testId}_${i + 1}`));
 }
+
+// The Functional Movement Screen tests get the same 4 uploadable slots
+// (2026-10-05, Aditi: "do same for functional movement screen"). Their ids are
+// prefixed so they can never clash with another library's Cloudinary id. A test
+// that appears under several regions (the fms_* battery on Hip/Knee/Ankle) is
+// the same real-world test, so it shares one set of photos.
+export const FMA_IMAGE_SLOTS = 4;
+export function fmaImageIds(testId) {
+  return Array.from({ length: FMA_IMAGE_SLOTS }, (_, i) => (i === 0 ? `fma_${testId}` : `fma_${testId}_${i + 1}`));
+}
