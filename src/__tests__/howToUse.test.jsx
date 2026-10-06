@@ -65,7 +65,6 @@ describe("the guide only names things the app really has", () => {
     "Saved on this device", "Saved to cloud", "Not in the cloud yet", "Outpatient / Musculoskeletal",
     "General Assessment", "Advanced Assessment", "Start assessment", "Start Assessment", "Final Review",
     "Practical Skills", "Clinical Cases", "Case Discussion", "✏️ Edit", "Add to Home Screen",
-    "I confirm I will have each patient's permission before recording their details here.",
   ];
 
   for (const label of NAMED_ON_SCREEN) {

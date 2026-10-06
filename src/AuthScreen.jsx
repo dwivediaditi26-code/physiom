@@ -109,7 +109,7 @@ function Register({onSwitch,onAuth,onShowLegal}){
         <button type="button" onClick={()=>onShowLegal("terms")} style={{background:"none",border:"none",color:A,fontWeight:700,cursor:"pointer",fontSize:"0.76rem",padding:0}}>Terms of Service</button>
         {" "}and{" "}
         <button type="button" onClick={()=>onShowLegal("privacy")} style={{background:"none",border:"none",color:A,fontWeight:700,cursor:"pointer",fontSize:"0.76rem",padding:0}}>Privacy Policy</button>
-        , and I understand that PhysioMind is an academic training aid and that all clinical interpretations must be verified by a licensed physical therapist.
+        , I will have each patient's permission before recording their details here, and I understand that PhysioMind is an academic training aid and that all clinical interpretations must be verified by a licensed physical therapist.
       </span>
     </label>
     <button type="submit" style={{...btnS,opacity:loading||!agreed?0.5:1}} disabled={loading||!agreed} aria-describedby={!agreed?"signup-why-disabled":undefined}>{loading?"Creating…":"Create free account →"}</button>

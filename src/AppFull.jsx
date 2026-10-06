@@ -22,7 +22,7 @@ import { PrivacyPolicy, TermsOfService } from "./LegalPages.jsx";
 import { ALL_TESTS } from "./screenModules.js";
 
 import { PC } from "./postureColors.js";
-import { PatientPermissionCheck, PatientPermissionModal, PatientPermissionReminder } from "./PatientPermission.jsx";
+import { PatientPermissionReminder } from "./PatientPermission.jsx";
 import {
   draftKey,
   loadPatientDB, savePatientDB, savePatientDBLocalOnly,
@@ -573,29 +573,14 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // demographic data to be fill not this page") -- Ortho Outpatient is the
   // only pathway that's actually live, so there's nothing else to choose.
   const [showSpecialtyPicker, setShowSpecialtyPicker] = useState(false);
-  // The patient-permission confirmation: asked ONCE per account (signed-in users only; see
-  // PatientPermission.jsx). Remembered here and, like the onboarding flag, in the account
-  // itself so it follows the person to another device.
+  // The patient-permission promise is part of the sign-up agreement (Terms & Privacy tick on
+  // the sign-up form), so it is NOT asked again when starting a patient (Aditi, 2026-10-06).
+  // Accounts that ticked the old per-patient box keep the time they did so on each record.
   const PERM_KEY = `pm_perm_ack_${currentUser?.id || "anon"}`;
-  const [permAckAt, setPermAckAt] = useState(() => {
+  const permAckAt = (() => {
     try { return localStorage.getItem(PERM_KEY) || currentUser?.user_metadata?.pm_perm_ack || null; }
     catch { return currentUser?.user_metadata?.pm_perm_ack || null; }
-  });
-  useEffect(() => {
-    const m = currentUser?.user_metadata?.pm_perm_ack;
-    if (m) { try { localStorage.setItem(PERM_KEY, m); } catch {} setPermAckAt(m); }
-  }, [currentUser?.user_metadata?.pm_perm_ack]);
-  const needsPermissionAck = !isGuest && !permAckAt;
-  function confirmPatientPermission() {
-    const at = new Date().toISOString();
-    setPermAckAt(at);
-    try { localStorage.setItem(PERM_KEY, at); } catch {}
-    // Best effort: the confirmation is already remembered on this device even if this fails.
-    if (currentUser?.id) { try { Promise.resolve(supabase.auth.updateUser({ data: { pm_perm_ack: at } })).catch(() => {}); } catch { /* ignore */ } }
-    return at;
-  }
-  const [quickConsent, setQuickConsent] = useState(false);
-  const [aiPermissionAsk, setAiPermissionAsk] = useState(null); // null | { mode }
+  })();
   const [quickStart, setQuickStart] = useState({ name: "", age: "", sex: "", phone: "", specialty: "" });
   // Two-step picker (2026-09-10, Aditi: "change region to chief complaint
   // and then ask which specialty and then normal workflow") -- step 1
@@ -632,8 +617,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // differing only in whether the AI intake box auto-opens on Subjective.
   // See OrthoAssessment.jsx's entryMode handling for the skip-ahead logic.
   function startOrthoEntry(mode, justConfirmedAt) {
-    // Signed-in users confirm once, the first time (guests save nothing).
-    if (needsPermissionAck && !justConfirmedAt) { setAiPermissionAsk({ mode }); return; }
     const consentAt = justConfirmedAt || permAckAt;
     setData(consentAt ? { consent_confirmed_at: consentAt } : {});
     setActivePatientId(null);
@@ -658,13 +641,12 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       demographics: { name: name.trim(), age, sex },
       chiefComplaint: "",
       cc_main: "",
-      ...(isGuest ? {} : { consent_confirmed_at: permAckAt || confirmPatientPermission() }),
+      ...(isGuest || !permAckAt ? {} : { consent_confirmed_at: permAckAt }),
     };
     setActivePatientId(null);
     setData(seedData);
     setShowSpecialtyPicker(false);
     setQuickStart({ name: "", age: "", sex: "", phone: "", specialty: "" });
-    setQuickConsent(false);
     if (st.id === "cardio") {
       trackAssessmentStart("cardio"); navTo("cardio_assessment");
     } else if (st.id === "neuro") {
@@ -1644,31 +1626,23 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 </div>
               </div>
 
-              {needsPermissionAck && <PatientPermissionCheck checked={quickConsent} onChange={setQuickConsent} />}
-              {!isGuest && !needsPermissionAck && <PatientPermissionReminder />}
+              {!isGuest && <PatientPermissionReminder />}
               <button type="button" onClick={()=>{ const st=STREAMS.find(x=>x.id===quickStart.specialty); if(st) startQuickAssessment(st); }}
-                disabled={!quickStart.name.trim() || !quickStart.specialty || (needsPermissionAck && !quickConsent)}
-                style={{width:"100%",padding:"14px",background:!quickStart.name.trim()||!quickStart.specialty||(needsPermissionAck&&!quickConsent)?PC.border:"linear-gradient(135deg,#7c3aed,#9333ea)",
+                disabled={!quickStart.name.trim() || !quickStart.specialty}
+                style={{width:"100%",padding:"14px",background:!quickStart.name.trim()||!quickStart.specialty?PC.border:"linear-gradient(135deg,#7c3aed,#9333ea)",
                   border:"none",borderRadius:14,color:"white",fontWeight:800,fontSize:"0.9rem",
-                  cursor:!quickStart.name.trim()||!quickStart.specialty||(needsPermissionAck&&!quickConsent)?"not-allowed":"pointer",marginBottom:10,
-                  boxShadow:!quickStart.name.trim()||!quickStart.specialty||(needsPermissionAck&&!quickConsent)?"none":"0 4px 14px rgba(124,58,237,0.3)"}}>
+                  cursor:!quickStart.name.trim()||!quickStart.specialty?"not-allowed":"pointer",marginBottom:10,
+                  boxShadow:!quickStart.name.trim()||!quickStart.specialty?"none":"0 4px 14px rgba(124,58,237,0.3)"}}>
                 Next →
               </button>
 
-              <button type="button" onClick={()=>{ setShowSpecialtyPicker(false); setQuickStart({ name:"", age:"", sex:"", phone:"", specialty:"" }); setQuickConsent(false); }}
+              <button type="button" onClick={()=>{ setShowSpecialtyPicker(false); setQuickStart({ name:"", age:"", sex:"", phone:"", specialty:"" }) }}
                 style={{width:"100%",padding:"10px",background:"transparent",border:`1px solid ${PC.border}`,borderRadius:10,color:PC.muted,fontSize:"0.82rem",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
                 Cancel
               </button>
             </>
           </div>
         </div>
-      )}
-
-      {aiPermissionAsk && (
-        <PatientPermissionModal
-          onCancel={() => setAiPermissionAsk(null)}
-          onConfirm={() => { const m = aiPermissionAsk.mode; setAiPermissionAsk(null); startOrthoEntry(m, confirmPatientPermission()); }}
-        />
       )}
 
       {/* ── PDF REPORTS MODAL ── */}
