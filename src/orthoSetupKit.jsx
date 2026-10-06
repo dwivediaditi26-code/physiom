@@ -84,10 +84,10 @@ export function AiHubNav({ items, activeId, visited, onJump }) {
    still have emoji... make it like svg"), anything else (an emoji string,
    the many condition-picker lists across the app) renders exactly as
    before so those aren't touched by this. */
-// Anatomy picture for each body-region card (public/anatomy/<group>/<file>.png). Regions with no
-// picture (Pelvis, Multiple regions, Whole body) keep the plain bone icon.
+// Anatomy picture for each body-region card (public/anatomy/<group>/<file>.png). Pelvis uses the sacrum
+// picture (it shows the whole pelvis); Multiple regions and Whole body keep the plain bone icon.
 const REGION_ART = {
-  cervical: "spine/cervical", thoracic: "spine/thoracic", lumbar: "spine/lumbar", sacrum: "spine/sacrum-coccyx",
+  cervical: "spine/cervical", thoracic: "spine/thoracic", lumbar: "spine/lumbar", sacrum: "spine/sacrum-coccyx", pelvis: "spine/sacrum-coccyx",
   shoulder: "upper-limb/shoulder", upperArm: "upper-limb/upper-arm", elbow: "upper-limb/elbow",
   forearm: "upper-limb/forearm", wrist: "upper-limb/wrist", hand: "upper-limb/hand-fingers",
   hip: "lower-limb/hip", thigh: "lower-limb/thigh", knee: "lower-limb/knee",
