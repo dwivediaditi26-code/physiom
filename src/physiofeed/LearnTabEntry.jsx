@@ -82,8 +82,16 @@ const TINT_BORDER = {
 // The small "Tool" link that used to sit beside the Study pill, opening the
 // live assessment screen from here, was removed (2026-09-19, Aditi: "when we
 // click on tool written it opens... so normal study mode open").
+// Small medical illustration on the right of a row (public/learn/*.png). Rows with no
+// picture here (Palpation, CPA, Exercise Prescription) are unchanged.
+const CARD_ART = {
+  rom: "rom", mmt: "mmt", special: "special-tests", neuro: "neurological", outcome: "outcome-measures",
+  cardio: "cardio-respiratory", fma: "functional-movement", kinetic: "kinetic-chain",
+};
+
 function Row({ item, onNav, onStudy }) {
   const Icon = item.icon;
+  const art = CARD_ART[item.key];
   const studyable = STUDY_TYPES.has(item.key);
   const main = () => (studyable ? onStudy(item.key) : onNav(item.key));
   return (
@@ -92,10 +100,14 @@ function Row({ item, onNav, onStudy }) {
         <span className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-gradient-to-br ${TINT_GRAD[item.tint]} text-white shadow-sm`}>
           <Icon size={20} strokeWidth={2.2}/>
         </span>
-        <span className="min-w-0">
+        <span className="min-w-0 flex-1">
           <span className="cl-display block font-extrabold text-[15px] text-slate-900 leading-tight">{item.label}</span>
           <span className="block text-xs text-slate-500 mt-0.5 leading-snug">{item.desc}</span>
         </span>
+        {art && (
+          <img src={`${import.meta.env.BASE_URL}learn/${art}.png`} alt="" aria-hidden="true" loading="lazy" decoding="async"
+            data-testid={`learn-art-${item.key}`} className="h-[52px] w-auto max-w-[34%] object-contain shrink-0 pointer-events-none" />
+        )}
       </button>
       {studyable
         ? <button type="button" onClick={() => onStudy(item.key)} className={`flex items-center gap-1 text-[11px] font-bold rounded-full px-2.5 py-1.5 shrink-0 ${TINT_PILL[item.tint]}`}><GraduationCap size={12}/> Study</button>
