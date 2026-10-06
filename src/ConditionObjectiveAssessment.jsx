@@ -44,6 +44,7 @@ import { kcRichItem, cpaRichItem, fmaRichItem, GradeSelect as ObserveSelect, FMA
 import { KC_REGIONS, NKT_REGIONS, FMA_DATA, CYRIAX_REGIONS_DATA } from "./orthoAdvancedLibrary.js";
 import PhotoSlots from "./PhotoSlots.jsx";
 import { kcImageIds, fmaImageIds } from "./kcImages.js";
+import { uploadImage, uploadErrorMessage } from "./services/cloudinary.js";
 import { FmaIcon, poseForJoint } from "./fmaIcons.jsx";
 import { runCervicalDifferential, hasCervicalChecklistData } from "./orthoCervicalReasoning.js";
 import { runThoracicDifferential, hasThoracicChecklistData } from "./orthoThoracicReasoning.js";
@@ -1159,29 +1160,7 @@ function splitSentences(text) {
 // device it's the exact URL every other device/user requests too, with no
 // separate database/mapping step (2026-09-12, Aditi: "I click it and it
 // uploaded... presented in the main web app... for all the people").
-// Uploads go straight to Cloudinary's unsigned endpoint client-side --
-// explicitly passing public_id makes Cloudinary honor that exact id
-// instead of auto-generating one, which is what keeps the URL predictable.
-// Rejects a picked file before it reaches Cloudinary if it isn't a real
-// photo -- guards against a rare mobile-browser failure mode where the file
-// picker hands back a valid-but-empty stub image (e.g. an iCloud photo
-// whose full-res version hadn't finished downloading yet) instead of the
-// actual photo. These slots are shared across every user of the app, so a
-// stub upload silently overwrites the real photo for everyone, not just
-// the uploader (2026-09-25, Aditi: a Neuro info-card photo showed solid
-// black after upload -- the stored file turned out to be a genuine, fully
-// opaque 1x1px image, not a broken render; same unguarded upload pattern
-// as this file's finding/patient photo tiles below).
-function isRealPhoto(file) {
-  return new Promise((resolve) => {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => { URL.revokeObjectURL(url); resolve(img.naturalWidth >= 40 && img.naturalHeight >= 40); };
-    img.onerror = () => { URL.revokeObjectURL(url); resolve(false); };
-    img.src = url;
-  });
-}
-
+// Uploads go through services/cloudinary.js (an admin's replace is signed by the server).
 function FindingCard({ index, icon, label, active, instruction, interpretation, onToggle, photoId }) {
   const [imgFailed, setImgFailed] = useState(false);
   const [imgVersion, setImgVersion] = useState(0);
@@ -1199,34 +1178,11 @@ function FindingCard({ index, icon, label, active, instruction, interpretation, 
     if (!file || !photoId) return;
     setUploading(true);
     try {
-      if (!(await isRealPhoto(file))) throw new Error("empty-image");
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("upload_preset", "ml_default");
-      fd.append("public_id", photoId);
-      const res = await fetch("https://api.cloudinary.com/v1_1/dr15y1pwj/image/upload", { method: "POST", body: fd });
-      if (!res.ok) throw new Error("Upload failed");
-      // The unsigned "ml_default" preset has Overwrite off in Cloudinary's
-      // dashboard -- uploading to a public_id that already holds a photo
-      // is silently ignored: Cloudinary still answers 200 OK, but
-      // `existing: true` means it just handed back the OLD asset's info
-      // and stored nothing new (2026-09-25, Aditi: replaced a wrong photo
-      // and "its not replacing at all" -- same gap as InfoCard.jsx's
-      // isRealPhoto guard above, confirmed by re-POSTing a slot directly
-      // and getting the untouched original back). Needs the Overwrite
-      // toggle turned on for ml_default in the Cloudinary console to
-      // actually fix -- Cloudinary rejects the `overwrite` upload param
-      // outright on unsigned requests, so it can't be forced from here.
-      const json = await res.json();
-      if (json.existing) throw new Error("blocked-overwrite");
+      await uploadImage(file, photoId);
       setImgFailed(false);
       setImgVersion(Date.now());
     } catch (err) {
-      alert(err?.message === "empty-image"
-        ? "That photo didn't come through properly (it looked empty) — please try again."
-        : err?.message === "blocked-overwrite"
-        ? "This photo slot already has an image and couldn't be replaced right now — please let the app admin know."
-        : "Photo upload failed — check your connection and try again.");
+      alert(uploadErrorMessage(err));
     } finally {
       setUploading(false);
     }
@@ -1367,34 +1323,11 @@ function PatientPhotoTile({ photoId, size = 40 }) {
     if (!file || !photoId) return;
     setUploading(true);
     try {
-      if (!(await isRealPhoto(file))) throw new Error("empty-image");
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("upload_preset", "ml_default");
-      fd.append("public_id", photoId);
-      const res = await fetch("https://api.cloudinary.com/v1_1/dr15y1pwj/image/upload", { method: "POST", body: fd });
-      if (!res.ok) throw new Error("Upload failed");
-      // The unsigned "ml_default" preset has Overwrite off in Cloudinary's
-      // dashboard -- uploading to a public_id that already holds a photo
-      // is silently ignored: Cloudinary still answers 200 OK, but
-      // `existing: true` means it just handed back the OLD asset's info
-      // and stored nothing new (2026-09-25, Aditi: replaced a wrong photo
-      // and "its not replacing at all" -- same gap as InfoCard.jsx's
-      // isRealPhoto guard above, confirmed by re-POSTing a slot directly
-      // and getting the untouched original back). Needs the Overwrite
-      // toggle turned on for ml_default in the Cloudinary console to
-      // actually fix -- Cloudinary rejects the `overwrite` upload param
-      // outright on unsigned requests, so it can't be forced from here.
-      const json = await res.json();
-      if (json.existing) throw new Error("blocked-overwrite");
+      await uploadImage(file, photoId);
       setImgFailed(false);
       setImgVersion(Date.now());
     } catch (err) {
-      alert(err?.message === "empty-image"
-        ? "That photo didn't come through properly (it looked empty) — please try again."
-        : err?.message === "blocked-overwrite"
-        ? "This photo slot already has an image and couldn't be replaced right now — please let the app admin know."
-        : "Photo upload failed — check your connection and try again.");
+      alert(uploadErrorMessage(err));
     } finally {
       setUploading(false);
     }
