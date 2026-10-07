@@ -702,11 +702,30 @@ async function persistPatientsLocal(patients, userId) {
   try {
     if (hasSessionKey()) {
       const envelope = await encryptJSON(patients);
-      if (envelope) { localStorage.setItem(dbKey(userId), JSON.stringify(envelope)); return; }
+      if (envelope) { localStorage.setItem(dbKey(userId), JSON.stringify(envelope)); setLocalSaveFailed(false); return true; }
     }
     localStorage.setItem(dbKey(userId), JSON.stringify(patients));
-  } catch {}
+    setLocalSaveFailed(false);
+    return true;
+  } catch {
+    // Almost always "the phone's storage for this app is full" (a browser keeps only a few MB per
+    // site, and attached files count against it). This used to vanish silently; now the banner
+    // (OfflineBanner.jsx) tells the clinician. The list stays correct in memory, and in the cloud
+    // once it is uploaded.
+    setLocalSaveFailed(true);
+    return false;
+  }
 }
+
+// Whether the last attempt to keep a copy on this phone failed. A change event is sent only when
+// that flips, so a failing save every couple of seconds does not spam the banner.
+let _localSaveFailed = false;
+function setLocalSaveFailed(failed) {
+  if (failed === _localSaveFailed) return;
+  _localSaveFailed = failed;
+  try { window.dispatchEvent(new CustomEvent("pm-local-save-state", { detail: { failed } })); } catch { /* no window */ }
+}
+function localSaveFailed() { return _localSaveFailed; }
 
 // For call sites that already have the authoritative list (e.g. just
 // fetched from Supabase) and only need to update the local cache, not
@@ -1701,7 +1720,7 @@ export {
   dbKey, draftKey,
   loadPatientDB, savePatientDB, savePatientDBLocalOnly,
   hydrateLocalCache, clearPatientCache, relockLocalCache,
-  isSyncDirty, flushPendingSync,
+  isSyncDirty, flushPendingSync, localSaveFailed,
   fetchPatientsFromSupabase,
   loadTaskDB, saveTaskDB,
   genId,

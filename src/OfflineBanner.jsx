@@ -12,7 +12,7 @@
 import React, { useEffect, useState } from "react";
 import { Network } from "@capacitor/network";
 import { supabase } from "./supabase.js";
-import { isSyncDirty, flushPendingSync } from "./PatientDatabase.jsx";
+import { isSyncDirty, flushPendingSync, localSaveFailed } from "./PatientDatabase.jsx";
 
 // "syncing" is shown briefly right after reconnect, while a save made
 // offline is being retried -- without it, connectivity flips back to
@@ -23,6 +23,19 @@ import { isSyncDirty, flushPendingSync } from "./PatientDatabase.jsx";
 export default function OfflineBanner() {
   const [online, setOnline] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  // This phone could not keep its own copy of the patients (its storage is full).
+  const [storageFull, setStorageFull] = useState(() => localSaveFailed());
+  const [signedIn, setSignedIn] = useState(false);
+
+  useEffect(() => {
+    const onState = (e) => setStorageFull(Boolean(e.detail?.failed));
+    window.addEventListener("pm-local-save-state", onState);
+    return () => window.removeEventListener("pm-local-save-state", onState);
+  }, []);
+  useEffect(() => {
+    if (!storageFull) return;
+    supabase.auth.getUser().then(({ data }) => setSignedIn(Boolean(data?.user?.id))).catch(() => setSignedIn(false));
+  }, [storageFull]);
 
   useEffect(() => {
     let sub;
@@ -53,6 +66,23 @@ export default function OfflineBanner() {
       window.removeEventListener("offline", onOffline);
     };
   }, []);
+
+  if (storageFull) {
+    // Safe only when the cloud is getting the work; otherwise this is the one place it lives.
+    const safeInCloud = online && signedIn;
+    return (
+      <div role="alert" style={{
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 9998,
+        background: safeInCloud ? "#92400e" : "#991b1b", color: "#fff", fontSize: "0.76rem", fontWeight: 600,
+        textAlign: "center", padding: "7px 12px",
+        paddingTop: "max(7px, env(safe-area-inset-top))",
+      }}>
+        {safeInCloud
+          ? "This phone's storage is full, so it can't keep its own copy. Your work is still being saved to the cloud. Remove big attached files or free some space."
+          : "This phone's storage is full and your work can't reach the cloud right now, so your latest changes are NOT saved. Free some space or reconnect before closing the app."}
+      </div>
+    );
+  }
 
   if (online && !syncing) return null;
 
