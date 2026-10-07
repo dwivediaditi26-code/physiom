@@ -54,9 +54,9 @@ const SENSORY_REGIONS = {
   },
   "UE proximal": {
     icon: "💪",
-    sites: "the shoulder tip (C4), lateral upper arm (C5, the axillary-nerve 'badge' area) and medial upper arm/elbow (T1)",
+    sites: "the shoulder tip (C4), lateral upper arm (C5, the axillary-nerve 'badge' area), the medial upper arm (T2) and the medial elbow/forearm (T1)",
     position: "Patient seated or supine, eyes closed, both arms exposed to the shoulder.",
-    pattern: "A patch limited to the lateral upper arm suggests the axillary nerve (e.g. after shoulder dislocation); a band that follows a segment suggests a C4–C5 or T1 root; loss over the whole arm suggests a plexus, cord or brain lesion.",
+    pattern: "A patch limited to the lateral upper arm suggests the axillary nerve (e.g. after shoulder dislocation); a band that follows a segment suggests a C4–C5, T1 or T2 root; loss over the whole arm suggests a plexus, cord or brain lesion.",
     tip: "Compare the two sides at matching points rather than judging each side alone.",
     red: "New arm sensory loss with weakness or neck pain after trauma — possible cord or root injury, urgent medical review",
   },
@@ -287,7 +287,7 @@ function mmtCard(m) {
     caption: isGrip ? "Hand-held dynamometer, three trials each side" : `${m.row} against resistance, ${m.region.toLowerCase()}`,
     position: m.position,
     technique: m.technique + (m.elim ? ` For grades 2 and below, test with gravity eliminated: ${m.elim}` : ""),
-    special: `${m.muscles} — ${m.innervation}. ${m.caution || "Compare the two sides, and always grade the weaker side first if the patient has a painful side."}`,
+    special: `${m.muscles} — ${m.innervation}. ${m.caution || "Compare the two sides. Test the pain-free side first to set a baseline and the painful side last, and stop if pain increases."}`,
     tip: `Watch for substitution: ${m.sub}`,
     scaleLabel: "MRC / Oxford 0–5",
     scale: MMT_SCALE,
@@ -311,7 +311,7 @@ const MAS_SCALE = [
 
 const MAS_GROUPS = {
   "Elbow flexors": { icon: "💪", position: "Supine, arm by the side, forearm in a neutral or slightly supinated position, the muscle in its most shortened position (elbow fully flexed).", technique: "Move the elbow passively from full flexion to full extension over about one second. Grade the resistance you feel as the elbow extends.", special: "Elbow flexors are the classic post-stroke spastic group (with wrist and finger flexors and shoulder adductors). Test with the shoulder in the same position each time, because shoulder position changes the biceps' length.", tip: "Check for a contracture: if the elbow cannot reach full extension slowly, the limit may be joint or soft tissue shortening rather than spasticity." },
-  "Wrist flexors": { icon: "🤚", position: "Seated or supine, forearm supported and pronated, fingers relaxed, the wrist in full flexion (the flexors in their shortened position).", technique: "Move the wrist passively from full flexion to full extension over about one second, with the fingers relaxed. Grade the resistance felt.", special: "Wrist and finger flexors often show a flexed, clenched-fist posture after stroke. Test the wrist with the elbow extended and again with the elbow flexed; a difference points to the two-joint finger flexors.", tip: "Test the wrist flexors with the fingers free, so the long finger flexors are not stretched at the same time." },
+  "Wrist flexors": { icon: "🤚", position: "Seated or supine, forearm supported and pronated, fingers relaxed, the wrist in full flexion (the flexors in their shortened position).", technique: "Move the wrist passively from full flexion to full extension over about one second, with the fingers relaxed. Grade the resistance felt.", special: "Wrist and finger flexors often show a flexed, clenched-fist posture after stroke. The wrist flexors share their origin at the elbow, so test the wrist with the elbow extended and again with the elbow flexed; a difference means the elbow-crossing wrist flexors are tight.", tip: "Test the wrist flexors with the fingers free, so the long finger flexors are not stretched at the same time." },
   "Hip adductors": { icon: "🦵", position: "Supine, both legs in neutral with the knees extended and the hips together (the adductors in their shortened position).", technique: "Move the hip passively into abduction, from the midline to the end of the available range, over about one second. Test each side separately and compare.", special: "Adductor spasticity causes scissoring in walking and makes hygiene and perineal care difficult. Note whether the resistance is symmetric.", tip: "Support the whole leg so the patient does not tense to stay upright. Stop at the first firm resistance if the range is limited by pain." },
   "Knee extensors": { icon: "🦵", position: "Supine, hip in neutral, the knee fully extended (the quadriceps shortened) with the leg supported.", technique: "Move the knee passively from full extension into flexion over about one second, keeping the hip in neutral. Grade the resistance as the knee bends.", special: "Quadriceps spasticity gives a stiff-legged gait and swing-phase problems. Test the knee with the hip flexed as well as extended to separate rectus femoris from the vasti.", tip: "Tone in the quadriceps often rises with an unsupported hip or a full bladder, so keep positions and conditions the same each time." },
   "Ankle plantarflexors": { icon: "🦶", position: "Supine, the knee extended to test the gastrocnemius and again with the knee flexed to test the soleus, ankle in full plantarflexion (muscle shortened).", technique: "Move the ankle passively from full plantarflexion into dorsiflexion over about one second. Grade the resistance. Repeat with the knee flexed and compare.", special: "Plantarflexor spasticity is a common cause of equinus and toe-walking after stroke, brain injury and in cerebral palsy. A stiffer response with the knee extended points to the gastrocnemius.", tip: "A fixed equinus that will not dorsiflex slowly is likely a contracture rather than spasticity — record the passive range separately." },
@@ -383,7 +383,7 @@ const reboundTest = card({
   caption: "Resist elbow flexion, release suddenly, watch how the arm is checked",
   position: "Patient seated or supine, elbow bent to about 90°, the other hand of the examiner guarding the patient's shoulder or face.",
   technique: "Hold the patient's wrist and ask them to pull the forearm toward the shoulder against your firm resistance. Release the wrist suddenly while your other hand guards in front of the patient's shoulder or face. A normal patient checks the movement within a short distance as the triceps brakes the arm. Test both sides.",
-  special: "In cerebellar disease the antagonist (triceps) fails to brake the movement, so the arm 'rebounds' or overshoots far toward the body. This is a sign of ipsilateral cerebellar hemisphere disease. Gordon Holmes described the rebound response as present in normal limbs, exaggerated in spastic limbs and lost (unchecked) in cerebellar disease, so read it together with tone.",
+  special: "In cerebellar disease the antagonist (triceps) fails to brake the movement, so the arm 'rebounds' or overshoots far toward the body. This is a sign of ipsilateral cerebellar hemisphere disease. A normal limb checks the movement quickly, whereas a cerebellar limb is slow to check it and overshoots, so read the result together with tone.",
   tip: "Always guard the patient's face or chest with your free hand or a padded surface before releasing — a positive rebound can hit the patient.",
   scaleLabel: "Findings",
   scale: [

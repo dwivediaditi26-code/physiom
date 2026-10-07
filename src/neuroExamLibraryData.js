@@ -202,7 +202,7 @@ export const neuroExamLibraryData = {
     ]},
     interpret: {
       normal: ["Symmetrical palate elevation, normal voice quality"],
-      abnormal: ["Asymmetric elevation with deviation → suggests a IX/X lesion on the non-elevating side"],
+      abnormal: ["Asymmetric elevation with deviation → suggests an IX/X lesion on the non-elevating side"],
       redFlags: ["New dysphagia or absent gag with aspiration risk — hold oral intake, refer for formal swallow assessment before feeding"],
       note: "Coordinate closely with speech-language therapy whenever a swallowing concern arises from this exam.",
     },
@@ -425,7 +425,7 @@ export const neuroExamLibraryData = {
       normal: ["2+ bilaterally, no inverted response"],
       abnormal: ["Absent → C5/6 radiculopathy"],
       redFlags: ["Inverted brachioradialis reflex (absent BR + finger flexor contraction) — strongly suggests cervical cord compression at about C5/6; refer promptly for medical review and cervical imaging"],
-      note: "The inverted reflex pattern is a high-yield localising finding in the cervical exam — don't miss it, and interpret it with the other UMN signs (Hoffmann's, hyperreflexia, gait change). Its accuracy as a stand-alone test is modest (reported sensitivity roughly 60–75%, specificity about 78%).",
+      note: "The inverted reflex pattern is a high-yield localising finding in the cervical exam — don't miss it, and interpret it with the other UMN signs (Hoffmann's, hyperreflexia, gait change). Its accuracy as a stand-alone test is only modest, so never rely on it alone.",
     },
   },
 
@@ -563,7 +563,7 @@ export const neuroExamLibraryData = {
     interpret: {
       normal: ["Negative"],
       abnormal: ["Positive, especially bilateral → suspect cervical myelopathy, refer for cervical spine MRI"],
-      note: "Trömner's sign (flicking the palmar surface upward instead) has equivalent significance and can be used to confirm an equivocal Hoffmann's.",
+      note: "Trömner's sign (tapping or flicking the palmar surface of the fingertip instead) has equivalent significance and can be used to confirm an equivocal Hoffmann's.",
     },
   },
 
@@ -672,10 +672,10 @@ export const neuroExamLibraryData = {
     category: "Learn · Neuro · Dermatomes",
     perform: {
       images: [img("n_c8"), img("n_c8_2"), img("n_c8_3")],
-      caption: "Little + ring finger / medial forearm",
+      caption: "Little finger / ulnar border of the hand",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
-        { tone: "blue", label: "🖐️ Technique", text: "Test with light touch + pinprick over the little and ring fingers and medial forearm. Compare side to side." },
+        { tone: "blue", label: "🖐️ Technique", text: "Test with light touch + pinprick over the little finger and the ulnar border of the hand. Compare side to side." },
         { tone: "purple", label: "🩺 Special consideration", text: "Disc level C7/T1. No standard associated reflex. Associated myotome: Finger flexion / intrinsics." },
       ],
     },
@@ -894,14 +894,14 @@ export const neuroExamLibraryData = {
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient positioned for a dignified, private perianal exam." },
         { tone: "blue", label: "🖐️ Technique", text: "Test light touch + pinprick at the perianal/saddle region (S4-5). Then, per ISNCSCI, test deep anal pressure (gentle pressure on the anal wall with the examining finger) and voluntary anal contraction. If light touch and pinprick are absent, deep anal pressure is what decides whether sensation is truly absent. The anal wink reflex is not part of the ISNCSCI sacral-sparing determination." },
-        { tone: "purple", label: "🩺 Special consideration", text: "Sacral sparing (any sensory or motor function preserved at S4-5) is THE deciding factor between AIS A (complete) and AIS B (sensory incomplete) — never skip this test." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Sacral sparing (any sensory or motor function preserved at S4-5) is THE deciding factor between AIS A (complete) and an incomplete injury (AIS B if sensory only; AIS C or D if voluntary anal contraction is present) — never skip this test." },
       ],
     },
     scaleLabel: "0–2 grading",
     scale: { type: "table", rows: [{ k: "0", v: "Absent" }, { k: "1", v: "Altered" }, { k: "2", v: "Normal" }] },
     interpret: {
       normal: ["Intact sensation, grade 2, deep anal pressure felt, voluntary anal contraction present"],
-      abnormal: ["Any preserved sensation here (light touch, pinprick or deep anal pressure) or voluntary anal contraction → sacral sparing present → the injury is sensory incomplete at minimum (AIS B or better), a major prognostic distinction"],
+      abnormal: ["Any preserved sensation (light touch, pinprick, deep anal pressure) or voluntary anal contraction → sacral sparing → incomplete injury (AIS B minimum; C or D with voluntary contraction)"],
       redFlags: ["New loss of perianal sensation with saddle anaesthesia and bowel/bladder change → possible cauda equina syndrome, emergency referral"],
       note: "This single sensory point changes the entire AIS classification — always document it explicitly, never infer it from limb findings.",
     },
@@ -927,11 +927,11 @@ export const neuroExamLibraryData = {
       ],
     },
     scaleLabel: "0–5 MMT grading",
-    scale: { type: "table", rows: [{ k: "5", v: "Normal — full resistance" }, { k: "3", v: "Full ROM against gravity only" }, { k: "0", v: "No contraction" }] },
+    scale: { type: "table", rows: [{ k: "5", v: "Normal — full range against gravity and full resistance" }, { k: "4", v: "Good — full range against gravity and moderate resistance" }, { k: "3", v: "Fair — full range against gravity only" }, { k: "2", v: "Poor — full range with gravity eliminated" }, { k: "1", v: "Trace — flicker or palpable contraction, no movement" }, { k: "0", v: "No contraction" }] },
     interpret: {
       normal: ["Grade 5, no compensation"],
       abnormal: ["Weakness with trunk lean/shoulder hike compensation → suggests C5 involvement, correlate with the C5 dermatome and biceps reflex"],
-      note: "C5 is typically the highest level with meaningful function preserved in a mid-cervical SCI — small gains here have large functional impact (self-feeding, transfers).",
+      note: "C5 is typically the highest level with meaningful function preserved in a mid-cervical SCI — small gains here have large functional impact (for example self-feeding with adaptive equipment; transfers still need assistance at this level).",
     },
   },
 
@@ -949,7 +949,7 @@ export const neuroExamLibraryData = {
       ],
     },
     scaleLabel: "0–5 MMT grading",
-    scale: { type: "table", rows: [{ k: "5", v: "Normal — full resistance" }, { k: "3", v: "Full ROM against gravity only" }, { k: "0", v: "No contraction" }] },
+    scale: { type: "table", rows: [{ k: "5", v: "Normal — full range against gravity and full resistance" }, { k: "4", v: "Good — full range against gravity and moderate resistance" }, { k: "3", v: "Fair — full range against gravity only" }, { k: "2", v: "Poor — full range with gravity eliminated" }, { k: "1", v: "Trace — flicker or palpable contraction, no movement" }, { k: "0", v: "No contraction" }] },
     interpret: {
       normal: ["Grade 5, no compensation"],
       abnormal: ["Weakness → correlate with C6 dermatome and brachioradialis reflex"],
@@ -971,7 +971,7 @@ export const neuroExamLibraryData = {
       ],
     },
     scaleLabel: "0–5 MMT grading",
-    scale: { type: "table", rows: [{ k: "5", v: "Normal — full resistance" }, { k: "3", v: "Full ROM against gravity only" }, { k: "0", v: "No contraction" }] },
+    scale: { type: "table", rows: [{ k: "5", v: "Normal — full range against gravity and full resistance" }, { k: "4", v: "Good — full range against gravity and moderate resistance" }, { k: "3", v: "Fair — full range against gravity only" }, { k: "2", v: "Poor — full range with gravity eliminated" }, { k: "1", v: "Trace — flicker or palpable contraction, no movement" }, { k: "0", v: "No contraction" }] },
     interpret: {
       normal: ["Grade 5, no compensation"],
       abnormal: ["Weakness → correlate with C7 dermatome and triceps reflex"],
@@ -993,7 +993,7 @@ export const neuroExamLibraryData = {
       ],
     },
     scaleLabel: "0–5 MMT grading",
-    scale: { type: "table", rows: [{ k: "5", v: "Normal — full resistance" }, { k: "3", v: "Full ROM against gravity only" }, { k: "0", v: "No contraction" }] },
+    scale: { type: "table", rows: [{ k: "5", v: "Normal — full range against gravity and full resistance" }, { k: "4", v: "Good — full range against gravity and moderate resistance" }, { k: "3", v: "Fair — full range against gravity only" }, { k: "2", v: "Poor — full range with gravity eliminated" }, { k: "1", v: "Trace — flicker or palpable contraction, no movement" }, { k: "0", v: "No contraction" }] },
     interpret: {
       normal: ["Grade 5, no compensation"],
       abnormal: ["Weakness → correlate with C8 dermatome (no standard reflex tests C8 directly)"],
@@ -1015,7 +1015,7 @@ export const neuroExamLibraryData = {
       ],
     },
     scaleLabel: "0–5 MMT grading",
-    scale: { type: "table", rows: [{ k: "5", v: "Normal — full resistance" }, { k: "3", v: "Full ROM against gravity only" }, { k: "0", v: "No contraction" }] },
+    scale: { type: "table", rows: [{ k: "5", v: "Normal — full range against gravity and full resistance" }, { k: "4", v: "Good — full range against gravity and moderate resistance" }, { k: "3", v: "Fair — full range against gravity only" }, { k: "2", v: "Poor — full range with gravity eliminated" }, { k: "1", v: "Trace — flicker or palpable contraction, no movement" }, { k: "0", v: "No contraction" }] },
     interpret: {
       normal: ["Grade 5, no compensation"],
       abnormal: ["Weakness → correlate with T1 dermatome; screen for Horner's syndrome if T1 root/sympathetic chain involvement is suspected"],
@@ -1037,7 +1037,7 @@ export const neuroExamLibraryData = {
       ],
     },
     scaleLabel: "0–5 MMT grading",
-    scale: { type: "table", rows: [{ k: "5", v: "Normal — full resistance" }, { k: "3", v: "Full ROM against gravity only" }, { k: "0", v: "No contraction" }] },
+    scale: { type: "table", rows: [{ k: "5", v: "Normal — full range against gravity and full resistance" }, { k: "4", v: "Good — full range against gravity and moderate resistance" }, { k: "3", v: "Fair — full range against gravity only" }, { k: "2", v: "Poor — full range with gravity eliminated" }, { k: "1", v: "Trace — flicker or palpable contraction, no movement" }, { k: "0", v: "No contraction" }] },
     interpret: {
       normal: ["Grade 5, no compensation"],
       abnormal: ["Weakness with trunk-lean compensation → suggests L1/L2 involvement"],
@@ -1059,7 +1059,7 @@ export const neuroExamLibraryData = {
       ],
     },
     scaleLabel: "0–5 MMT grading",
-    scale: { type: "table", rows: [{ k: "5", v: "Normal — full resistance" }, { k: "3", v: "Full ROM against gravity only" }, { k: "0", v: "No contraction" }] },
+    scale: { type: "table", rows: [{ k: "5", v: "Normal — full range against gravity and full resistance" }, { k: "4", v: "Good — full range against gravity and moderate resistance" }, { k: "3", v: "Fair — full range against gravity only" }, { k: "2", v: "Poor — full range with gravity eliminated" }, { k: "1", v: "Trace — flicker or palpable contraction, no movement" }, { k: "0", v: "No contraction" }] },
     interpret: {
       normal: ["Grade 5, no compensation"],
       abnormal: ["Weakness → correlate with L3 dermatome and the patellar reflex"],
@@ -1081,7 +1081,7 @@ export const neuroExamLibraryData = {
       ],
     },
     scaleLabel: "0–5 MMT grading",
-    scale: { type: "table", rows: [{ k: "5", v: "Normal — full resistance" }, { k: "3", v: "Full ROM against gravity only" }, { k: "0", v: "No contraction" }] },
+    scale: { type: "table", rows: [{ k: "5", v: "Normal — full range against gravity and full resistance" }, { k: "4", v: "Good — full range against gravity and moderate resistance" }, { k: "3", v: "Fair — full range against gravity only" }, { k: "2", v: "Poor — full range with gravity eliminated" }, { k: "1", v: "Trace — flicker or palpable contraction, no movement" }, { k: "0", v: "No contraction" }] },
     interpret: {
       normal: ["Grade 5, no compensation"],
       abnormal: ["Weakness → correlate with L4 dermatome; a classic foot-drop pattern"],
@@ -1103,7 +1103,7 @@ export const neuroExamLibraryData = {
       ],
     },
     scaleLabel: "0–5 MMT grading",
-    scale: { type: "table", rows: [{ k: "5", v: "Normal — full resistance" }, { k: "3", v: "Full ROM against gravity only" }, { k: "0", v: "No contraction" }] },
+    scale: { type: "table", rows: [{ k: "5", v: "Normal — full range against gravity and full resistance" }, { k: "4", v: "Good — full range against gravity and moderate resistance" }, { k: "3", v: "Fair — full range against gravity only" }, { k: "2", v: "Poor — full range with gravity eliminated" }, { k: "1", v: "Trace — flicker or palpable contraction, no movement" }, { k: "0", v: "No contraction" }] },
     interpret: {
       normal: ["Grade 5, no compensation"],
       abnormal: ["Weakness → correlate with L5 dermatome — the most common single-root cause of foot drop"],
@@ -1160,7 +1160,7 @@ export const neuroExamLibraryData = {
     ]},
     interpret: {
       normal: ["0 across all tested muscle groups"],
-      abnormal: ["≥1+ in an UMN-lesion pattern (e.g. elbow/wrist flexors, knee extensors, ankle plantarflexors) is consistent with spasticity from stroke, SCI, or TBI"],
+      abnormal: ["≥1 in an UMN-lesion pattern (e.g. elbow/wrist flexors, knee extensors, ankle plantarflexors) is consistent with spasticity from stroke, SCI, or TBI"],
       note: "Document per muscle group, not a single global score — the distribution itself is diagnostic (e.g. UE flexors + LE extensors is the classic post-stroke pattern).",
     },
   },
@@ -1214,7 +1214,7 @@ export const neuroExamLibraryData = {
     ]},
     interpret: {
       normal: ["Intact bilaterally, matching examiner"],
-      abnormal: ["Reduced/absent distally → dorsal column pathology (peripheral neuropathy, B12 deficiency, tabes dorsalis, MS)"],
+      abnormal: ["Reduced/absent distally → peripheral neuropathy, or dorsal column pathology (B12 deficiency, tabes dorsalis, MS)"],
       note: "Vibration and proprioception travel in the same dorsal column pathway — an isolated deficit in one without the other is unusual and worth double-checking technique.",
     },
   },
@@ -1323,7 +1323,7 @@ export const neuroExamLibraryData = {
     ]},
     interpret: {
       normal: ["Intact distally, both sides"],
-      abnormal: ["Impaired distally → dorsal column pathology (peripheral neuropathy, B12 deficiency, MS, tabes dorsalis) — correlate with vibration sense, which travels the same pathway"],
+      abnormal: ["Impaired distally → peripheral neuropathy, or dorsal column pathology (B12 deficiency, MS, tabes dorsalis) — correlate with vibration sense, which travels the same pathway"],
       note: "Proprioceptive loss with a normal motor exam can still cause significant functional impairment (sensory ataxia) — don't assume gait/balance is fine just because strength is normal.",
     },
   },
@@ -1647,7 +1647,7 @@ export const neuroExamLibraryData = {
       caption: "Passively move the limb through range, feel for resistance quality",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient relaxed, seated or supine, limb fully supported by the examiner." },
-        { tone: "blue", label: "🖐️ Technique", text: "Passively flex and extend the wrist or elbow at a slow, constant speed, independent of velocity (unlike spasticity, which is velocity-dependent). Ask the patient to perform a distracting task with the opposite limb (e.g. opening and closing the other fist) to bring out latent rigidity." },
+        { tone: "blue", label: "🖐️ Technique", text: "Passively flex and extend the wrist or elbow slowly at first, then at a faster speed. Rigidity feels the same at any speed (unlike spasticity, which is velocity-dependent). Ask the patient to perform a distracting task with the opposite limb (e.g. opening and closing the other fist) to bring out latent rigidity." },
         { tone: "purple", label: "🩺 Special consideration", text: "Cogwheel rigidity (a ratchety, catch-release quality, classic in Parkinson's) and lead-pipe rigidity (smooth, uniform resistance throughout range) are distinguishable by feel — document which pattern, not just 'rigid'." },
         { tone: "amber", label: "⚠️ Tip", text: "Rigidity is present equally in both flexion and extension and doesn't vary with speed — this is what distinguishes it from spasticity (which is speed-dependent and direction-specific, typically a 'catch' only in one direction)." },
       ],
