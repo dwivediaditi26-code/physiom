@@ -47,10 +47,30 @@ async function getSignedUpload(publicId) {
       body: JSON.stringify({ public_id: publicId }),
     });
     if (r.status === 501) return { notConfigured: true };
-    if (!r.ok) return null;
+    if (!r.ok) return { signFailed: r.status };
     return await r.json();
   } catch {
     return null;
+  }
+}
+
+// An "Upload failed" error that also says why (Cloudinary's own words, or that it could not be
+// reached), so a failure on someone's phone can be diagnosed from the message instead of guessed.
+async function uploadFailure(res, signed) {
+  const err = new Error("Upload failed");
+  let why = String(res.status);
+  try { const j = await res.json(); if (j?.error?.message) why += `: ${j.error.message}`; } catch { /* no body */ }
+  err.detail = signed?.signFailed ? `${why}; admin sign step answered ${signed.signFailed}` : why;
+  return err;
+}
+
+async function postToCloudinary(body) {
+  try {
+    return await fetch(CLOUDINARY_UPLOAD_URL, { method: "POST", body });
+  } catch (e) {
+    const err = new Error("Upload failed");
+    err.detail = `could not reach Cloudinary (${e?.message || "network error"})`;
+    throw err;
   }
 }
 
@@ -71,16 +91,16 @@ export async function uploadImage(file, publicId) {
     sfd.append("public_id", signed.public_id);
     sfd.append("overwrite", "true");
     sfd.append("invalidate", "true");
-    const sres = await fetch(CLOUDINARY_UPLOAD_URL, { method: "POST", body: sfd });
-    if (!sres.ok) throw new Error("Upload failed");
+    const sres = await postToCloudinary(sfd);
+    if (!sres.ok) throw await uploadFailure(sres, signed);
     return await sres.json();
   }
   const fd = new FormData();
   fd.append("file", file);
   fd.append("upload_preset", "ml_default");
   fd.append("public_id", publicId);
-  const res = await fetch(CLOUDINARY_UPLOAD_URL, { method: "POST", body: fd });
-  if (!res.ok) throw new Error("Upload failed");
+  const res = await postToCloudinary(fd);
+  if (!res.ok) throw await uploadFailure(res, signed);
   // The unsigned "ml_default" preset has Overwrite off in Cloudinary's
   // dashboard -- uploading to a public_id that already holds a photo is
   // silently ignored: Cloudinary still answers 200 OK, but `existing: true`
@@ -93,7 +113,7 @@ export async function uploadImage(file, publicId) {
   // then this at least stops the app from claiming success when nothing
   // actually changed.
   const json = await res.json();
-  if (json.existing) throw new Error(signed?.notConfigured ? "replace-not-set-up" : "blocked-overwrite");
+  if (json.existing) throw new Error(signed?.notConfigured || signed?.signFailed >= 500 ? "replace-not-set-up" : "blocked-overwrite");
   return json;
 }
 
@@ -106,7 +126,8 @@ export function uploadErrorMessage(err) {
     return "This photo slot already has an image and couldn't be replaced right now — please let the app admin know.";
   }
   if (err?.message === "replace-not-set-up") {
-    return "Replacing photos isn't switched on yet: the Cloudinary keys still need to be added on Vercel (CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET).";
+    return "Replacing photos isn't switched on yet: the server is missing keys on Vercel (SUPABASE_SERVICE_ROLE_KEY, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET).";
   }
-  return "Photo upload failed — check your connection and try again.";
+  const detail = err?.detail ? ` (${err.detail})` : "";
+  return `Photo upload failed — check your connection and try again.${detail}`;
 }

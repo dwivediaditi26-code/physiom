@@ -63,6 +63,7 @@ describe("uploadImage", () => {
     const err = await uploadImage(file(), "slot_1").catch((e) => e);
     expect(err.message).toBe("replace-not-set-up");
     expect(uploadErrorMessage(err)).toMatch(/CLOUDINARY_API_KEY/);
+    expect(uploadErrorMessage(err)).toMatch(/SUPABASE_SERVICE_ROLE_KEY/);
   });
 
   it("signed out: no sign request at all", async () => {
@@ -72,5 +73,40 @@ describe("uploadImage", () => {
     await uploadImage(file(), "slot_1");
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock.mock.calls[0][0]).toBe(CLOUDINARY_UPLOAD_URL);
+  });
+});
+
+describe("upload failures say why", () => {
+  it("includes Cloudinary's own message and status", async () => {
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({ data: { session: null }, error: null });
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 400, json: async () => ({ error: { message: "Invalid image file" } }) })));
+    const err = await uploadImage(file(), "slot_1").catch((e) => e);
+    expect(err.message).toBe("Upload failed");
+    expect(uploadErrorMessage(err)).toMatch(/\(400: Invalid image file\)/);
+  });
+  it("says Cloudinary could not be reached on a network error", async () => {
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({ data: { session: null }, error: null });
+    vi.stubGlobal("fetch", vi.fn(async () => { throw new TypeError("Load failed"); }));
+    const err = await uploadImage(file(), "slot_1").catch((e) => e);
+    expect(uploadErrorMessage(err)).toMatch(/could not reach Cloudinary \(Load failed\)/);
+  });
+  it("mentions the admin sign step when it failed before the fallback upload failed", async () => {
+    signIn();
+    vi.stubGlobal("fetch", vi.fn(async (url) => url === "/api/admin/cloudinarySign"
+      ? { ok: false, status: 500, json: async () => ({}) }
+      : { ok: false, status: 400, json: async () => ({}) }));
+    const err = await uploadImage(file(), "slot_1").catch((e) => e);
+    expect(uploadErrorMessage(err)).toMatch(/admin sign step answered 500/);
+  });
+});
+
+describe("photo exists and the sign step is down (server 500)", () => {
+  it("tells the admin the server is missing keys instead of 'ask the admin'", async () => {
+    signIn();
+    vi.stubGlobal("fetch", vi.fn(async (url) => url === "/api/admin/cloudinarySign"
+      ? { ok: false, status: 500, json: async () => ({}) }
+      : { ok: true, json: async () => ({ existing: true }) }));
+    const err = await uploadImage(file(), "slot_1").catch((e) => e);
+    expect(err.message).toBe("replace-not-set-up");
   });
 });
