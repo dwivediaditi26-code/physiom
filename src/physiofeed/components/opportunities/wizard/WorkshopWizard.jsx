@@ -620,7 +620,7 @@ function CoverImageStep({ preview, onPick, onClear }) {
       <label className="block w-full border-2 border-dashed border-indigo-200 bg-indigo-50/40 rounded-xl p-5 text-center cursor-pointer hover:bg-indigo-50 transition-colors">
         <ImagePlus size={22} className="mx-auto mb-1.5" color="#4F46E5" />
         <p className="text-xs font-semibold text-slate-700">Add cover image</p>
-        <p className="text-[11px] text-slate-400 mt-0.5 mb-2.5">Recommended: 1200 × 630 · PNG, JPG up to 5MB</p>
+        <p className="text-[11px] text-slate-400 mt-0.5 mb-2.5">Recommended: 1200 × 630 · PNG, JPG up to 10MB</p>
         <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 bg-white border border-indigo-200 rounded-lg px-3 py-1.5">
           <Folder size={13} /> Browse File
         </span>

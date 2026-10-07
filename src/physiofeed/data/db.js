@@ -28,6 +28,8 @@ import { supabase, authHeader } from "../../supabase.js";
 import { apiUrl } from "../../apiUrl.js";
 import { initialsOf } from "../components/shared/constants.js";
 import { trackEvent } from "../../analytics/trackEvent.js";
+import { putMedia } from "./mediaStorage.js";
+import { validateImageFile, compressImage } from "../lib/media.js";
 
 let _posts = INITIAL_POSTS.map((p) => ({ ...p }));
 let _people = PEOPLE.map((p) => ({ ...p }));
@@ -465,11 +467,8 @@ export async function votePoll(postId, optionIndex) {
 // pretending an upload worked when it didn't.
 
 async function uploadToBucket(bucket, uid, fileOrBlob, ext) {
-  const path = `${uid}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
-  const { error } = await supabase.storage.from(bucket).upload(path, fileOrBlob, { contentType: fileOrBlob.type, upsert: false });
-  if (error) throw error;
-  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-  return data.publicUrl;
+  // All storage I/O lives in mediaStorage.js (one place to change when the store changes).
+  return putMedia({ bucket, uid, file: fileOrBlob, ext });
 }
 
 export async function uploadPostImage(blob) {
@@ -528,6 +527,13 @@ export async function uploadResume(file) {
 export async function uploadOpportunityCoverImage(blob) {
   const uid = await currentUserId();
   if (!uid) throw new Error("Sign in to upload a cover image.");
+  // The screen said "up to 5MB" but nothing checked it and the original phone photo was stored
+  // as it was. Check the type and size, then shrink it like every other photo.
+  if (blob instanceof File) {
+    const problem = validateImageFile(blob);
+    if (problem) throw new Error(problem);
+    blob = await compressImage(blob);
+  }
   return uploadToBucket("opportunity-covers", uid, blob, "jpg");
 }
 
