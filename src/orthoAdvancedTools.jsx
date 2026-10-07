@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { FmaIcon, poseForJoint } from "./fmaIcons.jsx";
-import { SectionIntro, TextArea, InfoButton, InfoCard, Hint, useSectionData } from "./orthoFieldKit.jsx";
+import { SectionIntro, TextArea, InfoButton, InfoCard, Hint, useSectionData, CLOUDINARY_BASE } from "./orthoFieldKit.jsx";
 import { humanizeKey } from "./medicalAbbreviations.js";
 import PhotoSlots from "./PhotoSlots.jsx";
 import { kcImageIds, fmaImageIds } from "./kcImages.js";
@@ -316,6 +316,23 @@ function kcHelpsFind(t) {
   return `Screens ${t.joint || "this joint"} (${String(t.role || "").toLowerCase()}). ${first}`.trim();
 }
 
+// Card photo for a Kinetic Chain test: the first of its photo slots that has
+// actually been uploaded. A test with no photo shows nothing here (no icon, no
+// empty box), so cards only carry a picture when there is a real one.
+function KcTilePhoto({ ids }) {
+  const [i, setI] = useState(0);
+  if (i >= ids.length) return null;
+  return (
+    <img
+      key={ids[i]}
+      src={`${CLOUDINARY_BASE}/f_auto,q_auto,w_300,h_300,c_fill/${ids[i]}`}
+      alt=""
+      onError={() => setI((n) => n + 1)}
+      style={{ width: 64, height: 64, borderRadius: 11, objectFit: "cover", display: "block", background: "#F3EFFF" }}
+    />
+  );
+}
+
 export function KineticChainSection({ data, setData, sectionKey = "kineticChain" }) {
   const { d, set, activeKey, setActiveKey } = useAdvActiveRegion(data, setData, sectionKey, KC_REGION_KEYS);
   const [openId, setOpenId] = useState(null);
@@ -344,7 +361,7 @@ export function KineticChainSection({ data, setData, sectionKey = "kineticChain"
               return (
                 <button type="button" key={t.id} onClick={() => setOpenId(t.id)}
                   style={{ textAlign: "left", fontFamily: "inherit", cursor: "pointer", background: "#fff", borderRadius: 14, padding: "12px 12px 10px", border: done ? "1.5px solid #34D399" : "1px solid #E5E7EB", display: "flex", flexDirection: "column", gap: 4 }}>
-                  <span style={{ width: 38, height: 38, borderRadius: 11, background: "#F3EFFF", display: "flex", alignItems: "center", justifyContent: "center" }}><FmaIcon pose={poseForJoint(t.joint)} size={28} /></span>
+                  <KcTilePhoto ids={kcImageIds(t.id)} />
                   <span style={{ fontWeight: 700, fontSize: "0.86rem", color: "#1f2937", lineHeight: 1.25 }}>{t.label}</span>
                   <span style={{ fontSize: "0.68rem", color: "#6b7280", lineHeight: 1.3 }}>{t.joint}</span>
                   <HelpsFindLine text={firstSentence(t.chainEffect)} />
