@@ -63,7 +63,6 @@ describe("uploadImage", () => {
     const err = await uploadImage(file(), "slot_1").catch((e) => e);
     expect(err.message).toBe("replace-not-set-up");
     expect(uploadErrorMessage(err)).toMatch(/CLOUDINARY_API_KEY/);
-    expect(uploadErrorMessage(err)).toMatch(/SUPABASE_SERVICE_ROLE_KEY/);
   });
 
   it("signed out: no sign request at all", async () => {
@@ -101,7 +100,7 @@ describe("upload failures say why", () => {
 });
 
 describe("photo exists and the sign step is down (server 500)", () => {
-  it("tells the admin the server is missing keys instead of 'ask the admin'", async () => {
+  it("tells the admin the server is not set up instead of 'ask the admin'", async () => {
     signIn();
     vi.stubGlobal("fetch", vi.fn(async (url) => url === "/api/admin/cloudinarySign"
       ? { ok: false, status: 500, json: async () => ({}) }

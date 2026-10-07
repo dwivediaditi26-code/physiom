@@ -126,7 +126,7 @@ export function uploadErrorMessage(err) {
     return "This photo slot already has an image and couldn't be replaced right now — please let the app admin know.";
   }
   if (err?.message === "replace-not-set-up") {
-    return "Replacing photos isn't switched on yet: the server is missing keys on Vercel (SUPABASE_SERVICE_ROLE_KEY, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET).";
+    return "Replacing photos isn't switched on yet: the Cloudinary keys (CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET) still need to be added on Vercel.";
   }
   const detail = err?.detail ? ` (${err.detail})` : "";
   return `Photo upload failed — check your connection and try again.${detail}`;

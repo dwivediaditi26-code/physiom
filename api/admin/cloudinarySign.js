@@ -1,6 +1,5 @@
 import crypto from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
-import { authenticateAndRateLimit } from '../_lib/rateLimit.js';
 
 // Lets an ADMIN replace a reference photo. The app uploads straight to Cloudinary with an unsigned
 // preset (ml_default), and Cloudinary does not allow an unsigned preset to overwrite an existing
@@ -8,17 +7,33 @@ import { authenticateAndRateLimit } from '../_lib/rateLimit.js';
 // caller really is an admin (profiles.is_admin, server-side) and only then returns the signature
 // for that one photo id. The Cloudinary secret never leaves the server.
 //
+// The admin check uses the caller's OWN login (Supabase verifies the token) and the public
+// (publishable) key, so it needs no Supabase service-role secret. Profiles are publicly readable
+// (policy profiles_select_all), so reading the is_admin flag works with the public key.
+//
 // Needs two Vercel environment variables: CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET.
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://gkhcysvayjrkrufcnqvz.supabase.co';
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// The same public key the app itself ships in its code (src/supabase.js); not a secret.
+const SUPABASE_PUBLIC_KEY = process.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_v-dPE6_pd7a88gOFVuoDag_DmLUbgrT';
 const API_KEY = process.env.CLOUDINARY_API_KEY;
 const API_SECRET = process.env.CLOUDINARY_API_SECRET;
 
-let adminClient = null;
-function getAdminClient() {
-  if (!SERVICE_ROLE_KEY) return null;
-  if (!adminClient) adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { autoRefreshToken: false, persistSession: false } });
-  return adminClient;
+let publicClient = null;
+function getPublicClient() {
+  if (!publicClient) publicClient = createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY, { auth: { autoRefreshToken: false, persistSession: false } });
+  return publicClient;
+}
+
+// A few signatures a minute per person is plenty for tapping Replace photo.
+const recent = new Map();
+const WINDOW_MS = 60_000;
+const MAX_PER_WINDOW = 30;
+function tooMany(userId) {
+  const now = Date.now();
+  const hits = (recent.get(userId) || []).filter((t) => now - t < WINDOW_MS);
+  hits.push(now);
+  recent.set(userId, hits);
+  return hits.length > MAX_PER_WINDOW;
 }
 
 // Cloudinary's rule: sort the parameters by name, join as name=value with &, add the secret, SHA-1.
@@ -37,11 +52,15 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const userId = await authenticateAndRateLimit(req, res, 'cloudinary-sign');
-  if (!userId) return;
-  const admin = getAdminClient();
-  if (!admin) return res.status(500).json({ error: 'Server misconfigured.' });
-  const { data: profile, error } = await admin.from('profiles').select('is_admin').eq('id', userId).maybeSingle();
+  const authHeader = req.headers['authorization'] || req.headers['Authorization'] || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
+  if (!token) return res.status(401).json({ error: 'Sign in required.' });
+  const client = getPublicClient();
+  const { data: userData, error: userErr } = await client.auth.getUser(token);
+  if (userErr || !userData?.user) return res.status(401).json({ error: 'Your session has expired -- please sign in again.' });
+  const userId = userData.user.id;
+  if (tooMany(userId)) return res.status(429).json({ error: 'Too many requests -- wait a moment.' });
+  const { data: profile, error } = await client.from('profiles').select('is_admin').eq('id', userId).maybeSingle();
   if (error || !profile?.is_admin) return res.status(403).json({ error: 'Admin access required.' });
 
   if (!API_KEY || !API_SECRET) return res.status(501).json({ error: 'not_configured' });
