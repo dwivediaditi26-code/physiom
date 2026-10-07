@@ -222,7 +222,7 @@ describe("ConditionObjectiveAssessment — Elbow/Wrist/Hand", () => {
     openTopic("Special tests");
     expect(screen.getByText("Cozen's Test")).toBeInTheDocument();
     openTopic("ROM");
-    expect(screen.getByText("Elbow / Wrist ROM")).toBeInTheDocument();
+    expect(screen.getByText("Elbow / Wrist / Hand ROM")).toBeInTheDocument();
     expect(screen.getByText("Supination")).toBeInTheDocument();
   });
 

@@ -49,3 +49,23 @@ describe("ROM movement coverage in the SOAP Objective section", () => {
     expect(failures).toEqual([]);
   });
 });
+
+describe("Hand & Fingers ROM list", () => {
+  const hand = ROM_DATA["Hand & Fingers"];
+  const names = hand.map((m) => m.mv);
+  it("has finger extension, thumb joint and whole-hand rows", () => {
+    for (const mv of ["MCP Extension", "PIP Extension", "DIP Extension", "MCP Abduction / Adduction", "Thumb CMC Flexion", "Thumb CMC Extension", "Thumb Palmar Abduction", "Thumb Radial Abduction", "Thumb MCP Flexion", "Thumb IP Flexion", "Thumb IP Extension", "Thumb Opposition", "Fingertip-to-Palm Distance"]) {
+      expect(names).toContain(mv);
+    }
+  });
+  it("keeps the ids of the movements that already existed (photos are stored under the id)", () => {
+    for (const id of ["rom_mcp", "rom_pip", "rom_dip", "rom_thopp", "rom_thabdm"]) expect(hand.map((m) => m.id)).toContain(id);
+  });
+  it("has unique ids and gives no made-up range where none was settled", () => {
+    expect(new Set(hand.map((m) => m.id)).size).toBe(hand.length);
+    for (const id of ["rom_mcpabd", "rom_dipext", "rom_thradabd"]) expect(hand.find((m) => m.id === id).normal).toBeNull();
+  });
+  it("every row has a goniometer/measurement description and a start position", () => {
+    for (const m of hand) { expect(m.gonio, m.id).toBeTruthy(); expect(m.start, m.id).toBeTruthy(); }
+  });
+});

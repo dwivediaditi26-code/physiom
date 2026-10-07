@@ -113,6 +113,11 @@ const ELBOW_WRIST_HAND_ROM_MOVEMENTS = [
   { id: "esup", label: "Supination", normal: 90 }, { id: "epro", label: "Pronation", normal: 90 },
   { id: "wflex", label: "Wrist Flexion", normal: 80 }, { id: "wext", label: "Wrist Extension", normal: 70 },
   { id: "wrad", label: "Radial Deviation", normal: 20 }, { id: "wuln", label: "Ulnar Deviation", normal: 30 },
+  // Finger and thumb movements come straight from ROM_DATA's "Hand & Fingers" list (same ids, labels
+  // and normal values as the ROM tab), so the two screens cannot disagree. Only the movements
+  // measured in degrees are used here; Thumb Opposition (Kapandji score) and Fingertip-to-Palm
+  // Distance (cm) stay in the ROM tab, since this screen records degrees.
+  ...(ROM_DATA["Hand & Fingers"] || []).filter((m) => m.unit === "°").map((m) => ({ id: m.id, label: m.mv, normal: m.normal })),
 ];
 
 // Real Cloudinary reference photos for ROM/Special Tests already exist,
@@ -136,7 +141,8 @@ const ROM_ID_TO_DATA_ID = {
   hip: { hflex: "rom_hflex", hext: "rom_hext", habd: "rom_habd", hadd: "rom_hadd", her: "rom_her", hir: "rom_hir" },
   knee: { kflex: "rom_kflex", kext: "rom_kext" },
   ankleFoot: { adf: "rom_adf", apf: "rom_apf", ainv: "rom_ainv", aev: "rom_aev" },
-  elbowWristHand: { eflex: "rom_eflex", eext: "rom_eext", esup: "rom_esup", epro: "rom_epro", wflex: "rom_wflex", wext: "rom_wext", wrad: "rom_wrad", wuln: "rom_wuln" },
+  elbowWristHand: { eflex: "rom_eflex", eext: "rom_eext", esup: "rom_esup", epro: "rom_epro", wflex: "rom_wflex", wext: "rom_wext", wrad: "rom_wrad", wuln: "rom_wuln",
+    ...Object.fromEntries((ROM_DATA["Hand & Fingers"] || []).filter((m) => m.unit === "°").map((m) => [m.id, m.id])) },
 };
 function romRichItemFor(regionKey, movementId) {
   const buckets = [].concat(ROM_DATA_BUCKET[regionKey] || []);
@@ -564,7 +570,7 @@ const REGION_CONFIGS = [
     conditions: ELBOW_WRIST_HAND_CONDITIONS, order: ELBOW_WRIST_HAND_CONDITION_ORDER,
     getRedFlag: evidenceModelRedFlag,
     suggestedTestsMode: "single",
-    romMovements: ELBOW_WRIST_HAND_ROM_MOVEMENTS, romLabel: "Elbow / Wrist ROM", romBilateral: true,
+    romMovements: ELBOW_WRIST_HAND_ROM_MOVEMENTS, romLabel: "Elbow / Wrist / Hand ROM", romBilateral: true,
     emptyNote: "Pick Elbow, Forearm, Wrist, or Hand as a region in Subjective first — this page shows the condition-wise objective assessment for it.",
   },
 ];
@@ -2194,7 +2200,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                             <InfoButton imageTrigger size="md" fallbackIcon="ti-arrows-maximize" title={m.label} richItem={romRichItemFor(config.key, m.id)} />
                             <div style={{ minWidth: 0 }}>
                               <div style={{ fontWeight: 700, fontSize: "0.845rem", color: BRAND.ink, letterSpacing: "-0.01em" }}>{m.label}</div>
-                              <div style={{ fontSize: "0.656rem", color: BRAND.grayLight, fontWeight: 500 }}>Normal {m.normal}°</div>
+                              {m.normal != null && <div style={{ fontSize: "0.656rem", color: BRAND.grayLight, fontWeight: 500 }}>Normal {m.normal}°</div>}
                             </div>
                           </div>
                           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
@@ -2230,7 +2236,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                           <InfoButton imageTrigger size="md" fallbackIcon="ti-arrows-maximize" title={m.label} richItem={romRichItemFor(config.key, m.id)} />
                           <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap", minWidth: 0 }}>
                             <span style={{ fontWeight: 700, fontSize: "0.845rem", color: BRAND.ink, letterSpacing: "-0.01em" }}>{m.label}</span>
-                            <span style={{ fontSize: "0.656rem", color: BRAND.grayLight, fontWeight: 500 }}>Normal {m.normal}°</span>
+                            {m.normal != null && <span style={{ fontSize: "0.656rem", color: BRAND.grayLight, fontWeight: 500 }}>Normal {m.normal}°</span>}
                           </div>
                         </div>
                         <Stepper value={val} placeholder={normalStr || "--"} startAt={m.normal ?? undefined} onChange={(nv) => sv("rom", m.id, nv)} min={0} max={max} />

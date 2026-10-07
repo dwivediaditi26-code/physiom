@@ -15,7 +15,7 @@ function toCard(m) {
     raw: m,
     image: m.id,
     title: m.mv,
-    tags: [m.plane, `Normal ${m.normal}${m.unit}`].filter(Boolean),
+    tags: [m.plane, m.normal != null && `Normal ${m.normal}${m.unit}`].filter(Boolean),
     sections: (
       <Fragment>
         <InfoBox icon="📐" label="Goniometer placement" tint="violet">
