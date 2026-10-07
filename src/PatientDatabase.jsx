@@ -8,6 +8,7 @@ import { Search as SearchIcon, ChevronRight, Bone, HeartPulse, Brain, Footprints
 import { supabase } from "./supabase.js";
 import { hasSessionKey, encryptJSON, decryptJSON, isEncryptedEnvelope } from "./localCrypto.js";
 import { SAMPLE_PATIENT_IDS, isSamplePatient, withoutSamples } from "./samplePatients.js";
+import { fingerprintOf, syncedPrint, recordSynced, recordCloudRows, planBatches, looksLikeNetworkError } from "./patientSyncState.js";
 // Loaded on demand: PostureEngine is ~600 KB of source and only these two cards
 // (inside a posture session's results) need it from here.
 const LazyMuscleImbalanceCard = lazy(() => import("./PostureEngine.jsx").then((m) => ({ default: m.MuscleImbalanceCard })));
@@ -540,27 +541,88 @@ async function hydrateLocalCache(userId) {
 // retry"). Demo patients are sample data, so they stay on the device.
 const DEMO_PATIENT_IDS = new Set(SAMPLE_PATIENT_IDS);
 
-// Resolves to true only when the patients really reached Supabase, and to
-// false when there was nothing to upload (not logged in, or only the demo
-// patients) -- so the header can say "Saved to cloud" only when it is true.
-// Rejects when the upload failed.
-async function syncPatientsToSupabase(patients, userId) {
+// A save sends only the patients that changed since the cloud last confirmed them
+// (fingerprints: patientSyncState.js), a few at a time. Before, every save re-sent
+// the whole list in one request, so it slowed down with every patient and every
+// attached file, one refused record made the whole request fail, and an untouched
+// but out-of-date copy on one phone could overwrite a newer edit from another phone.
+//
+// Resolves to true when everything that should be in the cloud is there (including
+// "nothing had changed"), and to false when there was nothing to upload at all (not
+// logged in, or only the demo patients) -- so the header can say "Saved to cloud" only
+// when it is true. Rejects when something could not be uploaded; whatever did upload
+// stays recorded, so the next save (or the reconnect retry) sends only the rest.
+// One save runs at a time per user, in the order they were asked for, so an older
+// copy can never land after a newer one.
+const _syncQueue = new Map(); // userId -> promise of the newest save that is still running
+function syncPatientsToSupabase(patients, userId) {
+  if (!userId) return Promise.resolve(false); // not logged in — don't sync
+  const running = _syncQueue.get(userId);
+  // Nothing running: start right now (the upload request is made before this returns).
+  // Something running: wait for it to finish, whatever its outcome, then go.
+  const run = running
+    ? running.catch(() => {}).then(() => uploadChangedPatients(patients, userId))
+    : uploadChangedPatients(patients, userId);
+  _syncQueue.set(userId, run);
+  const clear = () => { if (_syncQueue.get(userId) === run) _syncQueue.delete(userId); };
+  run.then(clear, clear);
+  return run;
+}
+
+function patientRow(p, userId) {
+  return {
+    id: p.id,
+    user_id: userId,
+    name: p.name || "Unknown",
+    data: p.data || {},
+    created_at: p.createdAt || new Date().toISOString(),
+    updated_at: p.updatedAt || new Date().toISOString(),
+    has_red_flags: p.hasRedFlags || false,
+    last_dx: p.lastDx || "",
+  };
+}
+
+// Sends one group of patients. If the group is refused, retries its patients one at a
+// time so a single refused or heavy record cannot block the others (unless the phone is
+// simply offline, where retrying would only repeat the failure).
+// Returns { error, offline }: error is null when every patient in the group got through.
+async function sendPatientGroup(group, userId) {
+  const { error } = await supabase.from("patients").upsert(group.map((g) => g.row), { onConflict: "id" });
+  if (!error) {
+    recordSynced(userId, group.map((g) => [g.row.id, g.print]));
+    return { error: null, offline: false };
+  }
+  const offline = looksLikeNetworkError(error);
+  if (group.length === 1 || offline) return { error, offline };
+  let firstError = null;
+  for (const item of group) {
+    const one = await sendPatientGroup([item], userId);
+    if (one.error) {
+      firstError = firstError || one.error;
+      if (one.offline) return { error: firstError, offline: true };
+    }
+  }
+  return { error: firstError, offline: false };
+}
+
+async function uploadChangedPatients(patients, userId) {
   try {
-    if (!userId) return false; // not logged in — don't sync
     const toSync = patients.filter(p => !DEMO_PATIENT_IDS.has(p.id));
     if (toSync.length === 0) return false; // only demo patients -- nothing to upload
-    const rows = toSync.map(p => ({
-      id: p.id,
-      user_id: userId,
-      name: p.name || "Unknown",
-      data: p.data || {},
-      created_at: p.createdAt || new Date().toISOString(),
-      updated_at: p.updatedAt || new Date().toISOString(),
-      has_red_flags: p.hasRedFlags || false,
-      last_dx: p.lastDx || "",
-    }));
-    const { error } = await supabase.from("patients").upsert(rows, { onConflict: "id" });
-    if (error) { console.warn("[Supabase sync]", error.message); throw error; }
+    const pending = [];
+    for (const p of toSync) {
+      const print = fingerprintOf(p);
+      if (syncedPrint(userId, p.id) !== print) pending.push({ row: patientRow(p, userId), print });
+    }
+    let firstError = null;
+    for (const group of planBatches(pending)) {
+      const { error, offline } = await sendPatientGroup(group, userId);
+      if (error) {
+        firstError = firstError || error;
+        if (offline) break; // the rest would fail the same way; they stay "not yet uploaded"
+      }
+    }
+    if (firstError) { console.warn("[Supabase sync]", firstError.message); throw firstError; }
     clearSyncDirty(userId);
     return true;
   } catch (e) {
@@ -578,9 +640,10 @@ async function syncPatientsToSupabase(patients, userId) {
 }
 
 // ── Background sync: retry queue for saves that failed while offline ───────
-// One flag per user (not per-record) -- upsert already re-sends the whole
-// patient list every save, so "dirty" just means "the last attempted sync
-// for this user didn't reach Supabase, try the current list again."
+// One flag per user (not per-record): "dirty" means "the last attempted sync for
+// this user didn't fully reach Supabase, try again". Which patients still need
+// sending is worked out from their fingerprints (patientSyncState.js), so a retry
+// sends only those, not the whole list.
 const syncDirtyKey = (userId) => `physio_sync_dirty_v1_${userId || "anon"}`;
 function markSyncDirty(userId) {
   try { localStorage.setItem(syncDirtyKey(userId), "1"); } catch {}
@@ -593,7 +656,7 @@ function isSyncDirty(userId) {
 }
 
 let _flushingUserId = null;
-// Re-sends the current local patient list for this user. Safe to call
+// Retries the upload for this user (only the patients not yet confirmed). Safe to call
 // repeatedly/concurrently -- guarded so overlapping triggers (an 'online'
 // event firing while the Capacitor Network listener also fires) can't kick
 // off two upserts at once.
@@ -1599,6 +1662,7 @@ async function fetchPatientsFromSupabase(userId, { pageSize = PATIENT_PAGE_SIZE,
     const page = await fetchPatientRange(userId, from, pageSize, retryDelays);
     if (!page.error) {
       rows.push(...page.rows);
+      recordCloudRows(userId, page.rows); // these are in the cloud already: no re-upload until edited here
       if (page.rows.length < pageSize) break;
       continue;
     }
@@ -1622,6 +1686,7 @@ async function fetchPatientsFromSupabase(userId, { pageSize = PATIENT_PAGE_SIZE,
       if (one.rows.length === 0) { reachedEnd = true; break; }
       readOne = true;
       rows.push(...one.rows);
+      recordCloudRows(userId, one.rows);
     }
     // Nothing in the group could be read (offline, signed out, a real
     // permission problem): carrying on would just repeat the same failure.
