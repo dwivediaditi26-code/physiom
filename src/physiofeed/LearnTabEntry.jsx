@@ -150,8 +150,6 @@ const HOME_CARDS = [
   { id: "exam", label: "Exam Ready", desc: "Revision • Mock tests", icon: Target, tint: "indigo", soon: true },
 ];
 
-const LIVE_CARDS = HOME_CARDS.filter((c) => !c.soon);
-const SOON_CARDS = HOME_CARDS.filter((c) => c.soon);
 
 function HomeCard({ card, onOpen, wide }) {
   const Icon = card.icon;
@@ -280,17 +278,13 @@ export default function LearnTabEntry({ onNav }) {
       )}
       {showCards ? (
         <>
+          {/* Practical Skills and Clinical Cases are live. Test, BPT and Exam Ready are shown as disabled
+              "Soon" cards (restored 2026-10-07, Aditi), so students can see what is coming. */}
           <div className="grid grid-cols-2 gap-3">
-            {LIVE_CARDS.map((c, i) => (
-              <HomeCard key={c.id} card={c.count != null ? { ...c, count: ALL_ITEMS.filter(visibleKeys).length } : c} wide={LIVE_CARDS.length % 2 === 1 && i === LIVE_CARDS.length - 1} onOpen={setView}/>
+            {HOME_CARDS.map((c, i) => (
+              <HomeCard key={c.id} card={c.count != null ? { ...c, count: ALL_ITEMS.filter(visibleKeys).length } : c} wide={HOME_CARDS.length % 2 === 1 && i === HOME_CARDS.length - 1} onOpen={setView}/>
             ))}
           </div>
-          {/* The not-yet-built sections used to be three big disabled cards; one line says it. */}
-          {SOON_CARDS.length > 0 && (
-            <p data-testid="learn-coming-soon" className="text-center text-xs text-slate-500 mt-1">
-              More coming soon: {SOON_CARDS.map((c) => c.label).join(", ")}.
-            </p>
-          )}
         </>
       ) : noResults ? (
         <div className="text-center py-14 text-slate-400 text-sm">No matches for "{query}".</div>

@@ -33,13 +33,17 @@ describe("Learn tab", () => {
 
     // Learn opens on a home grid of cards (2026-09-18 redesign). Only Practical Skills
     // and Clinical Cases have content; the not-yet-built sections (Test, BPT, Exam Ready)
-    // are one "More coming soon" line, not three disabled cards (2026-10-03).
+    // are shown as disabled "Soon" cards (restored 2026-10-07).
     await waitFor(() => {
       expect(screen.getByText("Practical Skills")).toBeTruthy();
     }, { timeout: 10_000 });
     expect(screen.getByText("Clinical Cases")).toBeTruthy();
-    expect(screen.getByTestId("learn-coming-soon").textContent).toMatch(/Test, BPT, Exam Ready/);
-    expect(screen.queryByText("Exam Ready", { selector: "span.cl-display" })).toBeNull();
+    for (const name of ["Test", "BPT", "Exam Ready"]) {
+      const card = screen.getByText(name, { selector: "span.cl-display" }).closest("button");
+      expect(card.disabled, name).toBe(true);
+      expect(card.textContent, name).toMatch(/Soon/);
+    }
+    expect(screen.queryByTestId("learn-coming-soon")).toBeNull();
 
     fireEvent.click(screen.getByText("Practical Skills"));
     expect(screen.getByRole("heading", { name: "Practical Skills" })).toBeTruthy();
