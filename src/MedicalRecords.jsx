@@ -1,5 +1,6 @@
 import React, { useRef, useState } from "react";
 import { SectionIntro, TextField, TextArea, DateField, Alert } from "./orthoFieldKit.jsx";
+import { moveDocToCloud, removeDocFile, openDocFile, downloadDocFile, useDocViewUrl, useMoveDocsToCloud } from "./patientFiles.js";
 
 /* ============================================================
    MEDICAL RECORDS — upload or photograph a patient's documents during
@@ -12,8 +13,10 @@ import { SectionIntro, TextField, TextArea, DateField, Alert } from "./orthoFiel
    X-ray, Lab report, Surgeon's protocol, ...). Small notes (source, date,
    key points) live in the assessment section itself.
 
-   Stored as base64 inside the patient record, so photos are downscaled
-   before saving and files are capped at 5 MB.
+   Photos are downscaled before saving and files are capped at 5 MB. The file itself is
+   kept in private cloud storage (patientFiles.js) and the record holds only a reference to
+   it; when that is not possible (signed out, offline) the file stays inside the record,
+   as base64, and is moved to the cloud later.
    ============================================================ */
 
 export const PROTOCOL_CATEGORY = "surgeon_protocol"; // legacy tag from the first version
@@ -120,24 +123,22 @@ export async function fileToDoc(file, { docType = null, source = "medical_record
   };
 }
 
-export function openDoc(doc) {
-  try {
-    const [head, b64] = doc.dataUrl.split(",");
-    const mime = (head.match(/data:(.*?);/) || [])[1] || doc.type || "application/octet-stream";
-    const bin = atob(b64);
-    const arr = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-    window.open(URL.createObjectURL(new Blob([arr], { type: mime })), "_blank");
-  } catch {
-    alert("Could not open this file. Try downloading it instead.");
-  }
+// Open / download a file, whether it is inside the record (older files) or in cloud storage.
+export function openDoc(doc) { return openDocFile(doc); }
+export function downloadDoc(doc) { return downloadDocFile(doc); }
+
+// File -> document record, uploaded to cloud storage when possible (see patientFiles.js).
+// Resolves { doc, moved, reason }; rejects with a readable message like fileToDoc.
+export async function attachFile(file, opts) {
+  return moveDocToCloud(await fileToDoc(file, opts));
 }
 
-export function downloadDoc(doc) {
-  const a = document.createElement("a");
-  a.href = doc.dataUrl;
-  a.download = doc.name;
-  a.click();
+// Small picture (or icon) for a file on file.
+function DocThumb({ doc }) {
+  const url = useDocViewUrl(doc);
+  return doc.type?.includes("image") && url
+    ? <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+    : <span style={{ fontSize: 18 }}>{doc.icon || "📄"}</span>;
 }
 
 const box = { border: "1px solid #e2e8f0", borderRadius: 12, padding: "10px 12px", marginBottom: 8, display: "flex", alignItems: "center", gap: 10, background: "#fff" };
@@ -152,6 +153,7 @@ export function MedicalRecordsSection({ data, setData, patientData, onSave }) {
   const [error, setError] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const [uploadType, setUploadType] = useState("");
+  const [notice, setNotice] = useState("");
 
   const docs = Array.isArray(patientData?.uploaded_docs) ? patientData.uploaded_docs : [];
   const canSave = typeof onSave === "function";
@@ -163,15 +165,25 @@ export function MedicalRecordsSection({ data, setData, patientData, onSave }) {
     setField("attachedFiles", nextDocs.map((d) => (docTypeOf(d) ? `${d.name} (${docTypeOf(d)})` : d.name)).join(", "));
   };
 
+  // Older files still held inside the record move to cloud storage while this screen is open.
+  useMoveDocsToCloud(docs, canSave ? commit : null);
+
   const addFiles = async (fileList) => {
     const files = Array.from(fileList || []);
     if (!files.length) return;
     setBusy(true);
     setError("");
+    setNotice("");
     try {
       const added = [];
-      for (const f of files) added.push(await fileToDoc(f, { docType: uploadType || null, source: "assessment" }));
+      let keptOnPhone = false;
+      for (const f of files) {
+        const { doc, moved, reason } = await attachFile(f, { docType: uploadType || null, source: "assessment" });
+        added.push(doc);
+        if (!moved && reason !== "signed_out") keptOnPhone = true;
+      }
       commit([...added, ...docs]);
+      if (keptOnPhone) setNotice("Saved with the patient for now. It moves to cloud storage by itself once the connection allows.");
     } catch (e) {
       setError(e.message || "Upload failed.");
     } finally {
@@ -183,6 +195,7 @@ export function MedicalRecordsSection({ data, setData, patientData, onSave }) {
   const deleteDoc = (doc) => {
     if (!window.confirm(`Delete "${doc.name}" from this patient's records? This cannot be undone.`)) return;
     commit(docs.filter((d) => d.id !== doc.id));
+    removeDocFile(doc);
   };
   const typeSelect = (value, onChange, label) => (
     <select aria-label={label} value={value || ""} onChange={(e) => onChange(e.target.value)}
@@ -227,13 +240,14 @@ export function MedicalRecordsSection({ data, setData, patientData, onSave }) {
       </div>
       {!canSave && <div style={{ fontSize: 12, color: "#b45309", marginBottom: 10 }}>Uploads need an open patient record — create or select the patient first.</div>}
       {error && <div role="alert" style={{ fontSize: 12.5, color: "#dc2626", fontWeight: 700, marginBottom: 10 }}>{error}</div>}
+      {notice && <div role="status" style={{ fontSize: 12.5, color: "#92400e", fontWeight: 600, marginBottom: 10 }}>{notice}</div>}
 
       <div className="subheading">Records on file ({docs.length})</div>
       {docs.length === 0 && <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 12 }}>No records attached yet.</div>}
       {docs.map((doc) => (
         <div key={doc.id} style={{ ...box, flexWrap: "wrap" }}>
           <div style={{ width: 38, height: 38, borderRadius: 8, background: "#f5f3ff", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0, cursor: "pointer" }} onClick={() => openDoc(doc)}>
-            {doc.type?.includes("image") ? <img src={doc.dataUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ fontSize: 18 }}>{doc.icon || "📄"}</span>}
+            <DocThumb doc={doc} />
           </div>
           <div style={{ flex: 1, minWidth: 120, cursor: "pointer" }} onClick={() => openDoc(doc)}>
             <div style={{ fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.name}</div>

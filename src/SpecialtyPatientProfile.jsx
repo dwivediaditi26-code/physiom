@@ -1,4 +1,5 @@
-import { fileToDoc, docTypeOf, withDocType, DOC_TYPES, DOC_ACCEPT } from "./MedicalRecords.jsx";
+import { attachFile, docTypeOf, withDocType, DOC_TYPES, DOC_ACCEPT } from "./MedicalRecords.jsx";
+import { removeDocFile, getDocBlobUrl, downloadDocFile, useDocViewUrl, useMoveDocsToCloud } from "./patientFiles.js";
 import { completedSessions, carePlanOf } from "./txSessions.js";
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { NeuroCarePlanSection, CarePlanSection, doseLine } from "./NeuroCarePlan.jsx";
@@ -121,6 +122,14 @@ function PainTrend({ sessions }) {
   );
 }
 
+// Small picture (or icon) for a document -- from cloud storage or from inside the record.
+function DocThumb({ doc }) {
+  const url = useDocViewUrl(doc);
+  return doc.type?.includes("image") && url
+    ? <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+    : <span>{doc.icon}</span>;
+}
+
 // Documents tab -- same storage shape (data.uploaded_docs, saved through
 // onSaveField) as the Ortho PatientProfileModal's Docs tab in
 // PatientDatabase.jsx, so a document uploaded from either profile shows up
@@ -134,6 +143,9 @@ function DocumentsPanel({ patient, onSaveField }) {
     if (typeof onSaveField === "function" && patient?.id) onSaveField(patient.id, { uploaded_docs: docs });
   };
 
+  // Older files still held inside the record move to cloud storage while this tab is open.
+  useMoveDocsToCloud(uploadedDocs, patient?.id ? setUploadedDocs : null);
+
   // Same store as the assessments' Medical Records step (data.uploaded_docs), so a
   // file added here shows there too. Photos are downscaled to fit the 5 MB cap.
   const handleFileUpload = async (e) => {
@@ -143,7 +155,7 @@ function DocumentsPanel({ patient, onSaveField }) {
     setUploading(true);
     try {
       const added = [];
-      for (const f of files) added.push(await fileToDoc(f, { docType: uploadType || null, source: "medical_records" }));
+      for (const f of files) added.push((await attachFile(f, { docType: uploadType || null, source: "medical_records" })).doc);
       setUploadedDocs([...added, ...uploadedDocs]);
     } catch (err) {
       alert(err.message || "Upload failed.");
@@ -153,12 +165,18 @@ function DocumentsPanel({ patient, onSaveField }) {
   };
   const handleSetType = (id, type) => setUploadedDocs(uploadedDocs.map((d) => (d.id === id ? withDocType(d, type) : d)));
 
-  const handleDeleteDoc = (id) => setUploadedDocs(uploadedDocs.filter((d) => d.id !== id));
-  const handleDownloadDoc = (doc) => { const a = document.createElement("a"); a.href = doc.dataUrl; a.download = doc.name; a.click(); };
-  const handlePreviewDoc = (doc) => {
-    const w = window.open();
+  const handleDeleteDoc = (id) => {
+    const gone = uploadedDocs.find((d) => d.id === id);
+    setUploadedDocs(uploadedDocs.filter((d) => d.id !== id));
+    if (gone) removeDocFile(gone);
+  };
+  const handleDownloadDoc = (doc) => { downloadDocFile(doc); };
+  const handlePreviewDoc = async (doc) => {
+    const w = window.open(); // opened inside the tap (phones refuse it after a wait); filled in below
     if (!w) return;
-    const inner = doc.type.includes("image") ? `<img src="${doc.dataUrl}" style="max-width:100%;"/>` : `<iframe src="${doc.dataUrl}" style="width:100%;height:100vh;border:none;"></iframe>`;
+    const url = await getDocBlobUrl(doc);
+    if (!url) { w.close(); alert("Could not open this file. Check your connection and try again."); return; }
+    const inner = doc.type.includes("image") ? `<img src="${url}" style="max-width:100%;"/>` : `<iframe src="${url}" style="width:100%;height:100vh;border:none;"></iframe>`;
     w.document.write(injectViewerControls(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${doc.name || "Document"}</title><style>body{margin:0}</style></head><body>${inner}</body></html>`));
     w.document.close();
   };
@@ -189,7 +207,7 @@ function DocumentsPanel({ patient, onSaveField }) {
           uploadedDocs.map((doc, i) => (
             <div key={doc.id} style={{ display: "flex", gap: 12, alignItems: "center", padding: "10px 0", borderTop: i > 0 ? `1px solid #f1f5f9` : "none" }}>
               <div onClick={() => handlePreviewDoc(doc)} style={{ width: 40, height: 40, borderRadius: 10, background: C.primaryBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0, cursor: "pointer", overflow: "hidden" }}>
-                {doc.type?.includes("image") ? <img src={doc.dataUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span>{doc.icon}</span>}
+                <DocThumb doc={doc} />
               </div>
               <div style={{ flex: 1, minWidth: 0, cursor: "pointer" }} onClick={() => handlePreviewDoc(doc)}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.name}{docTypeOf(doc) && <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 800, color: "#7c3aed", background: "#ede9fe", borderRadius: 6, padding: "2px 6px" }}>{docTypeOf(doc).toUpperCase()}</span>}</div>

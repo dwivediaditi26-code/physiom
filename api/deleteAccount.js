@@ -20,6 +20,20 @@ import { createClient } from '@supabase/supabase-js';
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://gkhcysvayjrkrufcnqvz.supabase.co';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+// Deletes everything under "<user id>/" in the private patient-files bucket. Returns true when there is
+// nothing left (including when the bucket was never set up), false when something could not be removed.
+export async function removeAllPatientFiles(admin, userId) {
+  const bucket = admin.storage.from('patient-files');
+  for (let round = 0; round < 50; round++) { // 50 x 1000 files is far beyond a 5 MB-per-file account
+    const { data, error } = await bucket.list(userId, { limit: 1000 });
+    if (error) return /not found/i.test(error.message || '') ? true : (console.error('deleteAccount: could not list patient files', userId, error), false);
+    if (!data || data.length === 0) return true;
+    const { error: removeErr } = await bucket.remove(data.map((o) => `${userId}/${o.name}`));
+    if (removeErr) { console.error('deleteAccount: could not remove patient files', userId, removeErr); return false; }
+  }
+  return false;
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -45,6 +59,14 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Your session has expired — please sign in again.' });
   }
   const userId = userData.user.id;
+
+  // The files this person attached to patients live in private storage, not in the database, so the
+  // cascade below does not reach them. Remove them first; if that fails, stop here rather than
+  // delete the account and leave patient documents behind.
+  const filesRemoved = await removeAllPatientFiles(admin, userId);
+  if (!filesRemoved) {
+    return res.status(500).json({ error: 'Could not remove your attached files right now, so your account was not deleted. Please try again or email support.' });
+  }
 
   // Immediate, not a 30-day queued job -- well within the Privacy Policy's
   // stated upper bound on deletion time.

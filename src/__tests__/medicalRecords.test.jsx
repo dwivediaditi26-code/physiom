@@ -1,6 +1,11 @@
 import React, { useState } from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+// Supabase is mocked (never remove this): signed out, so uploads stay inside the record as before.
+vi.mock("../supabase.js", () => ({
+  supabase: { auth: { getSession: () => Promise.resolve({ data: { session: null } }) } },
+  authHeader: () => Promise.resolve({}),
+}));
 import { MedicalRecordsSection, fileToDoc, docTypeOf, isProtocolDoc, withDocType, DOC_TYPES, PROTOCOL_CATEGORY } from "../MedicalRecords.jsx";
 import { buildOrthoPostOpAssessSteps } from "../OrthoPostOpAssessment.jsx";
 import { buildOrthoAssessSteps } from "../OrthoOutpatientAssessment.jsx";
