@@ -49,7 +49,7 @@ export const ORTHO_STEPS = [
   "Demographics", "Subjective", "Red Flag Screen", "Pain", "General Observation",
   "Palpation", "ROM", "MMT", "Joint Mobility", "Special Tests", "Neuro Screen",
   "Limb Length", "Functional Assessment", "Outcome Measure", "Clinical Assessment",
-  "Problem List", "Care Plan Goals", "Care Plan Treatment", "Care Plan", "Medical Records", "Final Review",
+  "Diagnosis", "Problem List", "Care Plan Goals", "Care Plan Treatment", "Medical Records", "Final Review",
 ] as const;
 
 // Body regions on the region step, exactly as labelled there.
