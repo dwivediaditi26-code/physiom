@@ -316,10 +316,10 @@ function kcHelpsFind(t) {
   return `Screens ${t.joint || "this joint"} (${String(t.role || "").toLowerCase()}). ${first}`.trim();
 }
 
-// Card photo for a Kinetic Chain test: the first of its photo slots that has
+// Card photo for a Kinetic Chain / Functional Screen test: the first of its photo slots that has
 // actually been uploaded. A test with no photo shows nothing here (no icon, no
 // empty box), so cards only carry a picture when there is a real one.
-function KcTilePhoto({ ids }) {
+function TestTilePhoto({ ids }) {
   const [i, setI] = useState(0);
   if (i >= ids.length) return null;
   return (
@@ -361,7 +361,7 @@ export function KineticChainSection({ data, setData, sectionKey = "kineticChain"
               return (
                 <button type="button" key={t.id} onClick={() => setOpenId(t.id)}
                   style={{ textAlign: "left", fontFamily: "inherit", cursor: "pointer", background: "#fff", borderRadius: 14, padding: "12px 12px 10px", border: done ? "1.5px solid #34D399" : "1px solid #E5E7EB", display: "flex", flexDirection: "column", gap: 4 }}>
-                  <KcTilePhoto ids={kcImageIds(t.id)} />
+                  <TestTilePhoto ids={kcImageIds(t.id)} />
                   <span style={{ fontWeight: 700, fontSize: "0.86rem", color: "#1f2937", lineHeight: 1.25 }}>{t.label}</span>
                   <span style={{ fontSize: "0.68rem", color: "#6b7280", lineHeight: 1.3 }}>{t.joint}</span>
                   <HelpsFindLine text={firstSentence(t.chainEffect)} />
@@ -815,7 +815,7 @@ export function FmaSection({ data, setData, sectionKey = "fma" }) {
               return (
                 <button type="button" key={t.id} onClick={() => setOpenId(t.id)}
                   style={{ textAlign: "left", fontFamily: "inherit", cursor: "pointer", background: "#fff", borderRadius: 14, padding: "12px 12px 10px", border: done ? "1.5px solid #34D399" : "1px solid #E5E7EB", display: "flex", flexDirection: "column", gap: 4 }}>
-                  <span style={{ width: 38, height: 38, borderRadius: 11, background: "#F3EFFF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}><FmaIcon id={t.id} size={28} /></span>
+                  <TestTilePhoto ids={kcImageIds(t.id)} />
                   <span style={{ fontWeight: 700, fontSize: "0.86rem", color: "#1f2937", lineHeight: 1.25 }}>{t.label}</span>
                   <HelpsFindLine text={firstSentence(FMA_HELPS[t.id]) || t.subtitle} />
                   <span style={{ alignSelf: "flex-start", marginTop: 4, fontSize: "0.68rem", padding: "1px 8px", borderRadius: 10, background: done ? "#DCFCE7" : "#F3F4F6", color: done ? "#166534" : "#6b7280", fontWeight: 600 }}>
