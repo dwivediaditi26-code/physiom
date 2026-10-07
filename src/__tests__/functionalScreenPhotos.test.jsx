@@ -5,13 +5,16 @@
 // the AI Ortho (Objective) screen and Learn. Cloudinary is mocked: the slots
 // are a shared, production account.
 import React from "react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 
 vi.mock("../services/cloudinary.js", () => ({
   uploadImage: vi.fn(() => Promise.resolve({})),
   uploadErrorMessage: vi.fn(() => "upload failed message"),
 }));
+
+// Only an admin sees the empty "Add" slots, so these tests run as one.
+vi.mock("../useIsAdmin.js", () => ({ useIsAdmin: () => true }));
 
 import { fmaImageIds, kcImageIds, FMA_IMAGE_SLOTS } from "../kcImages.js";
 import { FMA_DATA } from "../orthoAdvancedLibrary.js";
@@ -63,10 +66,30 @@ describe("the same 3 photos show everywhere", () => {
     for (let n = 1; n <= 3; n++) expect(screen.getByTestId(`photo-slot-${n}`)).toBeTruthy();
   });
 
-  it("Learn's detail view pages through the same 3 photos", () => {
-    render(<FunctionalStudy onBack={() => {}} />);
-    fireEvent.click(screen.getAllByText(firstTest.label)[0]);
-    expect(screen.getByLabelText("Photo 1 of 3")).toBeTruthy();
-    expect(screen.getByLabelText("Photo 3 of 3")).toBeTruthy();
+  describe("Learn's detail view", () => {
+    // The gallery checks each slot with an Image() to see what is uploaded.
+    // Fake that: only the ids in `uploaded` "load", the rest 404.
+    const RealImage = globalThis.Image;
+    let uploaded = [];
+    beforeEach(() => {
+      globalThis.Image = class {
+        set src(url) { setTimeout(() => (uploaded.some((id) => url.endsWith(`/${id}`)) ? this.onload?.() : this.onerror?.()), 0); }
+      };
+    });
+    afterEach(() => { globalThis.Image = RealImage; });
+
+    it("pages through only the photos that were uploaded", async () => {
+      uploaded = fmaImageIds(firstTest.id).slice(0, 2);
+      render(<FunctionalStudy onBack={() => {}} />);
+      fireEvent.click(screen.getAllByText(firstTest.label)[0]);
+      expect(await screen.findByLabelText("Photo 2 of 2")).toBeTruthy();
+      expect(screen.queryByLabelText("Photo 3 of 3")).toBeNull();
+    });
+  });
+
+  it("the reference photo is 40% smaller (60% of the card width) on the opened test", () => {
+    render(<FmaSection data={{}} setData={() => {}} />);
+    fireEvent.click(screen.getByText(firstTest.label));
+    expect(screen.getByTestId("photo-slots-frame").style.width).toBe("60%");
   });
 });

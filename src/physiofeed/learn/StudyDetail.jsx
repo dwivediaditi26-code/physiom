@@ -49,12 +49,45 @@ export default function StudyDetail({ item, onBack, children }) {
   );
 }
 
-// Pages through up to 3 real photos, same swipe-or-tap-dot interaction as
+const CLOUDINARY_BASE = "https://res.cloudinary.com/dr15y1pwj/image/upload";
+
+// Which of `names` actually have an uploaded photo. null while still
+// checking; then the names that do, in their original order. Lets the gallery
+// below skip slots nobody has uploaded to, so a student never swipes to a
+// blank page.
+function useUploadedPhotos(names) {
+  const key = names.join("|");
+  const [state, setState] = useState({ key, found: null });
+  useEffect(() => {
+    let live = true;
+    const hits = new Set();
+    let pending = names.length;
+    const finish = () => {
+      pending -= 1;
+      if (pending === 0 && live) setState({ key, found: names.filter((n) => hits.has(n)) });
+    };
+    names.forEach((n) => {
+      const img = new Image();
+      img.onload = () => { hits.add(n); finish(); };
+      img.onerror = finish;
+      img.src = `${CLOUDINARY_BASE}/f_auto,q_auto,w_60/${n}`;
+    });
+    return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  return state.key === key ? state.found : null;
+}
+
+// Pages through the photos that have really been uploaded (up to 4), same swipe-or-tap-dot interaction as
 // InfoCard.jsx's PerformPane so study mode matches the live info-card
 // gallery it's mirroring instead of only ever showing the first photo.
-export function ImageGallery({ names, fallback }) {
+export function ImageGallery({ names: allNames, fallback }) {
   const [idx, setIdx] = useState(0);
-  useEffect(() => { setIdx(0); }, [names]);
+  useEffect(() => { setIdx(0); }, [allNames]);
+  // While checking, or when nothing is uploaded, show the first slot as
+  // before (it shows the fallback icon / placeholder if it has no photo).
+  const found = useUploadedPhotos(allNames);
+  const names = found && found.length ? found : allNames.slice(0, 1);
   const active = Math.min(idx, names.length - 1);
   const touchStartX = useRef(null);
   function handleTouchStart(e) { touchStartX.current = e.touches[0].clientX; }

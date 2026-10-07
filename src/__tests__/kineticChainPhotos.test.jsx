@@ -6,13 +6,17 @@
 // upload goes to the slot that was tapped. The Cloudinary service is mocked:
 // the slots are a shared, production account.
 import React from "react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 
 vi.mock("../services/cloudinary.js", () => ({
   uploadImage: vi.fn(() => Promise.resolve({})),
   uploadErrorMessage: vi.fn(() => "upload failed message"),
 }));
+
+// Only an admin sees the empty "Add" slots, so most tests below run as one.
+let mockAdmin = true;
+vi.mock("../useIsAdmin.js", () => ({ useIsAdmin: () => mockAdmin }));
 
 import { uploadImage, uploadErrorMessage } from "../services/cloudinary.js";
 import { kcImageIds, KC_IMAGE_SLOTS } from "../kcImages.js";
@@ -26,7 +30,7 @@ const allTests = Object.values(KC_REGIONS).flatMap((r) => r.tests || []);
 const firstRegionKey = Object.keys(KC_REGIONS)[0];
 const firstTest = KC_REGIONS[firstRegionKey].tests[0];
 
-beforeEach(() => { vi.clearAllMocks(); window.alert = vi.fn(); });
+beforeEach(() => { vi.clearAllMocks(); window.alert = vi.fn(); mockAdmin = true; });
 
 describe("kcImageIds", () => {
   it("gives 3 slots, keeping the already-uploaded bare id as slot 1", () => {
@@ -111,6 +115,55 @@ describe("PhotoSlots", () => {
   });
 });
 
+describe("the reference photo is 40% smaller", () => {
+  it("Kinetic Chain's opened test shows the gallery at 60% of the card width, centred", () => {
+    render(<KineticChainSection data={{}} setData={() => {}} />);
+    fireEvent.click(screen.getByText(firstTest.label));
+    const frame = screen.getByTestId("photo-slots-frame");
+    expect(frame.style.width).toBe("60%");
+    expect(frame.style.margin).toMatch(/auto/);
+  });
+
+  it("other places that use PhotoSlots keep the full width", () => {
+    render(<PhotoSlots ids={kcImageIds("kc_x")} />);
+    expect(screen.getByTestId("photo-slots-frame").style.width).toBe("100%");
+  });
+});
+
+describe("PhotoSlots for a student (not an admin)", () => {
+  beforeEach(() => { mockAdmin = false; });
+
+  it("shows nothing at all -- no heading, no empty slots -- when no photo is uploaded", () => {
+    const { container } = render(<PhotoSlots ids={kcImageIds("kc_x")} />);
+    container.querySelectorAll("img").forEach((img) => fireEvent.error(img));
+    expect(screen.queryByText("Reference photos")).toBeNull();
+    expect(screen.queryByLabelText(/Add photo/)).toBeNull();
+    expect(screen.queryByLabelText(/View photo/)).toBeNull();
+  });
+
+  it("shows only the photos that loaded, with no Add slot for the rest", () => {
+    const { container } = render(<PhotoSlots ids={kcImageIds("kc_x")} />);
+    const imgs = container.querySelectorAll("img");
+    fireEvent.load(imgs[0]);
+    fireEvent.load(imgs[2]);
+    fireEvent.error(imgs[1]);
+    expect(screen.getByText("Reference photos")).toBeTruthy();
+    expect(screen.getByLabelText("View photo 1").parentElement.style.display).not.toBe("none");
+    expect(screen.getByLabelText("View photo 3").parentElement.style.display).not.toBe("none");
+    expect(screen.queryByLabelText(/Add photo/)).toBeNull();
+  });
+
+  it("opens a photo full size without a Replace button", () => {
+    const { container } = render(<PhotoSlots ids={kcImageIds("kc_x")} />);
+    const imgs = container.querySelectorAll("img");
+    fireEvent.load(imgs[0]);
+    fireEvent.load(imgs[2]);
+    fireEvent.click(screen.getByLabelText("View photo 3"));
+    expect(screen.getByText("Photo 2 of 2")).toBeTruthy();
+    expect(screen.queryByText(/Replace photo/)).toBeNull();
+  });
+});
+
 describe("the same 3 photos show everywhere", () => {
   it("the kinetic chain info card item carries the 3 ids", () => {
     expect(kcRichItem(firstTest).images).toEqual(kcImageIds(firstTest.id));
@@ -129,10 +182,33 @@ describe("the same 3 photos show everywhere", () => {
     for (let n = 1; n <= 3; n++) expect(screen.getByTestId(`photo-slot-${n}`)).toBeTruthy();
   });
 
-  it("Learn's detail view pages through the same 3 photos", () => {
-    render(<KineticStudy onBack={() => {}} />);
-    fireEvent.click(screen.getAllByText(firstTest.label)[0]);
-    expect(screen.getByLabelText("Photo 1 of 3")).toBeTruthy();
-    expect(screen.getByLabelText("Photo 3 of 3")).toBeTruthy();
+  describe("Learn's detail view", () => {
+    // The gallery checks each slot with an Image() to see what is uploaded.
+    // Fake that: only the ids in `uploaded` "load", the rest 404.
+    const RealImage = globalThis.Image;
+    let uploaded = [];
+    beforeEach(() => {
+      globalThis.Image = class {
+        set src(url) { setTimeout(() => (uploaded.some((id) => url.endsWith(`/${id}`)) ? this.onload?.() : this.onerror?.()), 0); }
+      };
+    });
+    afterEach(() => { globalThis.Image = RealImage; });
+
+    it("pages through only the photos that were uploaded", async () => {
+      uploaded = [firstTest.id, `${firstTest.id}_3`];
+      render(<KineticStudy onBack={() => {}} />);
+      fireEvent.click(screen.getAllByText(firstTest.label)[0]);
+      expect(await screen.findByLabelText("Photo 2 of 2")).toBeTruthy();
+      expect(screen.queryByLabelText("Photo 3 of 3")).toBeNull();
+      expect(screen.queryByLabelText("Photo 4 of 4")).toBeNull();
+    });
+
+    it("does not show a pager at all when only one photo is uploaded", async () => {
+      uploaded = [firstTest.id];
+      render(<KineticStudy onBack={() => {}} />);
+      fireEvent.click(screen.getAllByText(firstTest.label)[0]);
+      await new Promise((r) => setTimeout(r, 20));
+      expect(screen.queryByLabelText(/Photo \d of/)).toBeNull();
+    });
   });
 });

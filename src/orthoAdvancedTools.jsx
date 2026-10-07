@@ -386,7 +386,7 @@ export function KineticChainSection({ data, setData, sectionKey = "kineticChain"
                 <InfoButton title={t.label} richItem={kcRichItem(t)} />
               </div>
               <div className="muscle-subtitle">{t.joint}</div>
-              <PhotoSlots ids={kcImageIds(t.id)} />
+              <PhotoSlots ids={kcImageIds(t.id)} scale={0.6} />
               <InfoCard icon="🔎" label="Helps find" tint="violet">{kcHelpsFind(t)}</InfoCard>
               <div style={{ fontSize: "0.7rem", fontWeight: 800, letterSpacing: ".05em", textTransform: "uppercase", color: "#6b7280", margin: "12px 0 6px" }}>Result</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -840,7 +840,7 @@ export function FmaSection({ data, setData, sectionKey = "fma" }) {
               <InfoButton title={t.label} richItem={fmaRichItem(t)} />
             </div>
             <div className="muscle-subtitle">{t.subtitle}</div>
-            <PhotoSlots ids={fmaImageIds(t.id)} />
+            <PhotoSlots ids={fmaImageIds(t.id)} scale={0.6} />
 
             <InfoCard icon="🔎" label="Helps find" tint="violet">{FMA_HELPS[t.id] || `${t.phase}. ${t.subtitle}.`}</InfoCard>
 
