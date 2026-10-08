@@ -217,7 +217,16 @@ export function SubjectiveSection({ data, setData, selectedRegions = [], setSele
       // fields. fillBlank so re-dictating never wipes a note already
       // reviewed/edited by the clinician.
       let regions = prev.subjective?.regions || {};
-      if (updates.regionAiNotes && suggested.length) {
+      // Per region: the ticked checklist answers plus the plain-text note,
+      // blank fields only -- anything the clinician already answered or
+      // edited is never overwritten by a re-dictation.
+      if (updates.regionData) {
+        const nextRegions = { ...regions };
+        Object.entries(updates.regionData).forEach(([regionId, fields]) => {
+          nextRegions[regionId] = fillBlank(nextRegions[regionId], fields);
+        });
+        regions = nextRegions;
+      } else if (updates.regionAiNotes && suggested.length) {
         const nextRegions = { ...regions };
         suggested.forEach((r) => {
           nextRegions[r.id] = fillBlank(nextRegions[r.id], { aiNotes: updates.regionAiNotes });
@@ -330,7 +339,7 @@ export function formatSubjectiveSection(section) {
       const val = fmtVal(v);
       if (!val) return;
       const fieldLabel = fields.find((f) => f.id === fieldId)?.label || humanizeKey(fieldId);
-      rows.push({ label: `${regionLabel} — ${fieldLabel}`, value: val });
+      rows.push({ label: `${regionLabel} — ${fieldId === "aiNotes" ? "From AI intake" : fieldLabel}`, value: val });
     });
   });
   return rows;

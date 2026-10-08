@@ -529,6 +529,14 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
                     requireAuth={requireAuth}
                     onApply={(updates) => { applyIntakeUpdates(updates); }}
                   />
+                  {/* Same exit the "Manual" card above gives (2026-10-07, Aditi:
+                      the screen under the AI box was blank -- "when we click on
+                      the button it also should show add manually"): a clinician
+                      who opened AI Parse but would rather type it can carry on
+                      without going back a step first. */}
+                  <button type="button" className="ghost-btn" style={{ marginTop: 14, width: "100%" }} onClick={() => { setAiIntakeDone(true); setStep(3); }}>
+                    ✍️ Add manually instead
+                  </button>
                 </>
               )}
             </>

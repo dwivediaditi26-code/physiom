@@ -12,6 +12,8 @@
    NRS numbers -> strings, etc.) are necessarily different.
    ============================================================ */
 
+import { regionFillsFromParse } from "./orthoRegionAiFill.js";
+
 const PAIN_CHARACTER_OPTIONS = ["Dull", "Sharp", "Burning", "Throbbing", "Aching", "Shooting", "Stabbing"];
 
 // The 7 ids OUTPATIENT_CONDITIONS (OrthoOutpatientAssessment.jsx) already
@@ -246,6 +248,22 @@ export function mapParseResultToOrthoUpdates(result = {}) {
   // this step even though it was never guessed into a specific field.
   const regionAiNotes = extracted.map((r) => `${r.label}: ${r.value}`).join("\n");
 
+  // Region checklists (2026-10-07, Aditi: "see if the AI extracted subjective
+  // assessment fills out all the manual subjective assessment") -- the long
+  // comment above is why this was left empty before. It is now filled by
+  // orthoRegionAiFill.js, which ticks an option only when the extracted
+  // wording really names it (negation, side and direction respected) and
+  // leaves everything else for the clinician; the plain-text note stays as
+  // the safety net for whatever has no matching option. One entry per region
+  // the narrative named: { [regionId]: { ...tickedFields, aiNotes } }.
+  const regionFills = regionFillsFromParse(regions, result);
+  const regionData = {};
+  regions.forEach((r) => {
+    const entry = { ...(regionFills[r.id] || {}) };
+    if (regionAiNotes) entry.aiNotes = regionAiNotes;
+    if (Object.keys(entry).length) regionData[r.id] = entry;
+  });
+
   return {
     subjective,
     pain,
@@ -254,6 +272,7 @@ export function mapParseResultToOrthoUpdates(result = {}) {
     regions,
     extracted,
     regionAiNotes,
+    regionData,
     flags,
     missingInfo: [],
     confidence: result._confidence || {},

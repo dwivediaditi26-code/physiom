@@ -444,6 +444,10 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
       pain: { ...initialAiUpdates.pain },
     };
     if (initialAiUpdates.extracted?.length) seeded.subjective.__aiExtracted = initialAiUpdates.extracted;
+    // The region tabs open already filled with what the narrative named
+    // (same merge SubjectiveSection.applyAiUpdates does when dictating from
+    // inside the step) -- the AI-first screen used to drop this entirely.
+    if (initialAiUpdates.regionData && Object.keys(initialAiUpdates.regionData).length) seeded.subjective.regions = { ...initialAiUpdates.regionData };
     if (hasDemographics) seeded.demographics = demographics;
     if (initialAiUpdates.redFlags && Object.keys(initialAiUpdates.redFlags).length) seeded.redFlags = { ...initialAiUpdates.redFlags };
     return seeded;
@@ -456,7 +460,17 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
   const [missingDemFields, setMissingDemFields] = useState(null);
 
   const steps = useMemo(() => stepOrder.map((id) => ({ id, ...STEP_META[id] })), [stepOrder]);
-  const summarySteps = useMemo(() => withCarePlanSummaryStep(steps, { id: "carePlanPlan", ...STEP_META.carePlanPlan }), [steps]);
+  // AI entry collects Demographics before the wizard (AI_ENTRY_SKIP_IDS), so
+  // it is not a step here -- but Final Review, Copy and the PDF are built from
+  // these steps, and age/sex/occupation the AI heard were silently missing
+  // from them (2026-10-07). Put Demographics back at the top of the summary
+  // whenever it has content; it is never offered for sharing (SHARE_EXCLUDED_STEP_IDS).
+  const summarySteps = useMemo(() => {
+    const withPlan = withCarePlanSummaryStep(steps, { id: "carePlanPlan", ...STEP_META.carePlanPlan });
+    const hasDemographics = Object.values(data.demographics || {}).some((v) => String(v ?? "").trim());
+    if (hasDemographics && !withPlan.some((s) => s.id === "demographics")) return [{ id: "demographics", ...STEP_META.demographics }, ...withPlan];
+    return withPlan;
+  }, [steps, data.demographics]);
   const current = steps[step] || steps[0];
   // OrthoCarePlanStep persists straight to the patient record
   // (patientData.ortho_care_plan via onSave), bypassing this wizard's own

@@ -408,13 +408,28 @@ export function TextField({ label, value, onChange, placeholder, hint, howTo, in
   );
 }
 
+// A multi-select value is its picked options joined with ", ". A few option
+// labels contain ", " themselves ("... thumb, index, middle finger ..."), so
+// a plain split tears them into pieces and the option looks unticked.
+// Known options that contain ", " are lifted out whole before splitting.
+export function splitMultiValue(value, options = []) {
+  let rest = String(value || "");
+  if (!rest) return [];
+  const withComma = options.filter((o) => o.includes(", ")).sort((a, b) => b.length - a.length);
+  const held = [];
+  withComma.forEach((o) => {
+    if (rest.includes(o)) { held.push(o); rest = rest.split(o).join(`\u0000${held.length - 1}\u0000`); }
+  });
+  return rest.split(", ").map((x) => x.trim()).filter(Boolean).map((x) => x.replace(/\u0000(\d+)\u0000/g, (_, i) => held[Number(i)]));
+}
+
 function SelectPopover({ options, multi, value, onChange, onClose }) {
   const kit = useKit();
   const [q, setQ] = useState("");
   const query = q.trim().toLowerCase();
   const showSearch = kit.searchSelects && options.length > 6;
   const shown = showSearch && query ? options.filter((o) => o.toLowerCase().includes(query)) : options;
-  const selected = multi ? (value ? String(value).split(", ").filter(Boolean) : []) : value;
+  const selected = multi ? splitMultiValue(value, options) : value;
   function toggle(opt) {
     if (multi) {
       const has = selected.includes(opt);

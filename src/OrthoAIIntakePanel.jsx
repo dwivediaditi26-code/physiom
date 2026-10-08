@@ -94,7 +94,7 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen }
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Parse failed — try again.");
-      setResult(json);
+      setResult({ ...json, _narrative: text });
       setStatus("done");
     } catch (e) {
       setErrorMsg(e.message || "Something went wrong.");
