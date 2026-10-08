@@ -87,6 +87,13 @@ describe("the same 3 photos show everywhere", () => {
     });
   });
 
+  it("the test cards in the list show the test's own uploaded photo (the fma_ ids, not the Kinetic Chain ids)", () => {
+    const { container } = render(<FmaSection data={{}} setData={() => {}} />);
+    const srcs = [...container.querySelectorAll("img")].map((i) => i.getAttribute("src"));
+    expect(srcs.some((u) => u.endsWith(`/${fmaImageIds(firstTest.id)[0]}`))).toBe(true);
+    expect(srcs.some((u) => u.endsWith(`/${firstTest.id}`))).toBe(false);
+  });
+
   it("the reference photo is 40% smaller (60% of the card width) on the opened test", () => {
     render(<FmaSection data={{}} setData={() => {}} />);
     fireEvent.click(screen.getByText(firstTest.label));

@@ -815,7 +815,7 @@ export function FmaSection({ data, setData, sectionKey = "fma" }) {
               return (
                 <button type="button" key={t.id} onClick={() => setOpenId(t.id)}
                   style={{ textAlign: "left", fontFamily: "inherit", cursor: "pointer", background: "#fff", borderRadius: 14, padding: "12px 12px 10px", border: done ? "1.5px solid #34D399" : "1px solid #E5E7EB", display: "flex", flexDirection: "column", gap: 4 }}>
-                  <TestTilePhoto ids={kcImageIds(t.id)} />
+                  <TestTilePhoto ids={fmaImageIds(t.id)} />
                   <span style={{ fontWeight: 700, fontSize: "0.86rem", color: "#1f2937", lineHeight: 1.25 }}>{t.label}</span>
                   <HelpsFindLine text={firstSentence(FMA_HELPS[t.id]) || t.subtitle} />
                   <span style={{ alignSelf: "flex-start", marginTop: 4, fontSize: "0.68rem", padding: "1px 8px", borderRadius: 10, background: done ? "#DCFCE7" : "#F3F4F6", color: done ? "#166534" : "#6b7280", fontWeight: 600 }}>

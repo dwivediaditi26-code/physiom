@@ -115,6 +115,14 @@ describe("PhotoSlots", () => {
   });
 });
 
+describe("Kinetic Chain test cards", () => {
+  it("show the test's own uploaded photo in the list", () => {
+    const { container } = render(<KineticChainSection data={{}} setData={() => {}} />);
+    const srcs = [...container.querySelectorAll("img")].map((i) => i.getAttribute("src"));
+    expect(srcs.some((u) => u.endsWith(`/${firstTest.id}`))).toBe(true);
+  });
+});
+
 describe("the reference photo is 40% smaller", () => {
   it("Kinetic Chain's opened test shows the gallery at 60% of the card width, centred", () => {
     render(<KineticChainSection data={{}} setData={() => {}} />);
