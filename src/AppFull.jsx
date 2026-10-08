@@ -1831,6 +1831,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           stacked in the same scroll, the actual cause of the header
           jitter CSS containment alone couldn't fully fix. */}
       {!isFullScreenAssessment && (
+      <div className="pm-mobile-stack">
       <div className="pm-mobile-hdr" data-wide-icons={active==="physiofeed"||active==="profile"?"1":undefined} style={{
         background: "#FFFFFF",
         borderBottom: `1px solid ${PC.isDark?PC.border:"#E0E0E2"}`,
@@ -1913,6 +1914,11 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
             + New
           </button>
         )}
+      </div>
+      {/* Slot for a second row that must stay pinned under the top bar
+          (PhysioFeed's section tabs portal into it). It is empty for every
+          other screen. */}
+      <div id="pm-mobile-subnav"/>
       </div>
       )}
 

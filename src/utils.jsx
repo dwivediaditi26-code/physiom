@@ -561,6 +561,7 @@ const MOBILE_CSS = `
 
   /* ── Mobile-only compact header ── */
   .pm-mobile-hdr { display: none; }
+  .pm-mobile-stack { display: none; }
   @media (max-width: 1023px) {
     /* Exposed so any other sticky element on mobile (e.g. an assessment
        screen's own .topbar) can offset itself by exactly this header's
@@ -575,6 +576,16 @@ const MOBILE_CSS = `
       min-height: 64px; flex-shrink: 0;
       contain: paint; isolation: isolate;
     }
+    /* The top bar and PhysioFeed's section tabs used to be two separate
+       sticky elements stacked in one scroll, which iPhone Safari redraws
+       out of step with each other while the page glides (shows as a
+       vibrating header). They now share this ONE sticky wrapper, so only
+       one thing is pinned and the bar inside it simply sits in the flow. */
+    .pm-mobile-stack {
+      display: block; position: sticky; top: 0; z-index: 101; flex-shrink: 0;
+      contain: paint; isolation: isolate; transform: translateZ(0);
+    }
+    .pm-mobile-stack > .pm-mobile-hdr { position: relative; }
     /* PhysioFeed / Profile put four icons in the top bar. On a phone the written "PhysioMind"
      beside the logo no longer fits and was cut to "PhysioMir"; the logo already carries the name.
      (Only the text is hidden; its box stays so the icons keep their place at the right.) */

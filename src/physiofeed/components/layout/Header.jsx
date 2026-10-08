@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 import { Link, matchPath, useNavigate, useLocation } from "react-router-dom";
 import { Search, Bell, MessageSquare, ChevronDown, ChevronLeft, Home, Briefcase, MessageCircle, Users, BookOpen, Bookmark, Newspaper } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
@@ -147,6 +148,13 @@ function SearchResults({ trimmedQuery, selfMatches, matches, profile, goToOwnPro
 // row takes you to the People list rather than a profile you can't reach.
 export default function Header() {
   const [query, setQuery] = useState("");
+  // On phones/tablets the section row is drawn inside the app's own top bar
+  // (AppFull.jsx's #pm-mobile-subnav) so the two are ONE pinned bar -- two
+  // separate sticky bars stacked here made iPhone Safari shake the header
+  // while scrolling. Anywhere that slot doesn't exist (tests, other
+  // shells) the row stays in this header as before.
+  const [subnavSlot, setSubnavSlot] = useState(null);
+  useLayoutEffect(() => { setSubnavSlot(document.getElementById("pm-mobile-subnav")); }, []);
   const { notifications, profile, people, unreadMessages, canGoBack, goBack } = useAppData();
   const navigate = useNavigate();
 
@@ -188,8 +196,27 @@ export default function Header() {
     setQuery("");
   };
 
+  const sectionRow = (
+    <div className="lg:hidden bg-white border-t border-slate-200">
+      <div className="flex items-center max-w-[460px] mx-auto pl-1">
+        <button
+          onClick={goBack}
+          disabled={!canGoBack}
+          aria-label="Back"
+          className={`p-1 shrink-0 ${canGoBack ? "text-slate-500" : "text-slate-200 cursor-default"}`}
+        >
+          <ChevronLeft size={18} />
+        </button>
+        <div className="flex-1 min-w-0">
+          <MainNav />
+        </div>
+      </div>
+    </div>
+  );
+
   return (
-    <header className="pf-header sticky z-20 bg-white border-b border-slate-200">
+    <>
+    <header className="pf-header sticky z-20 bg-white border-b border-slate-200" data-in-app-bar={subnavSlot ? "1" : undefined}>
       {/* Mobile/tablet section nav (MainNav above). The back chevron used
           to sit above it in its own bordered row -- that was its own bit
           of dead white space (2026-09-28, Aditi: "why it is not...
@@ -206,21 +233,7 @@ export default function Header() {
           "it should take us to there not the scrolling", i.e. to the
           actual just-previous PhysioFeed screen, not whatever navigate(-1)
           happens to do. */}
-      <div className="lg:hidden bg-white border-t border-slate-200">
-        <div className="flex items-center max-w-[460px] mx-auto pl-1">
-          <button
-            onClick={goBack}
-            disabled={!canGoBack}
-            aria-label="Back"
-            className={`p-1 shrink-0 ${canGoBack ? "text-slate-500" : "text-slate-200 cursor-default"}`}
-          >
-            <ChevronLeft size={18} />
-          </button>
-          <div className="flex-1 min-w-0">
-            <MainNav />
-          </div>
-        </div>
-      </div>
+      {!subnavSlot && sectionRow}
 
       {/* Logo/icon row -- desktop only. On mobile the app's own top bar
           already carries the PhysioMind logo plus the search/bell/messages
@@ -306,5 +319,10 @@ export default function Header() {
       </div>
       </div>
     </header>
+    {subnavSlot && createPortal(
+      <div className="physiofeed-root border-b border-slate-200">{sectionRow}</div>,
+      subnavSlot
+    )}
+    </>
   );
 }

@@ -147,6 +147,12 @@
   .pf-header {
     top: var(--pm-mobile-hdr-h, 64px);
   }
+  /* The section row lives inside the app's own top bar now (Header.jsx
+     portals it into AppFull.jsx's #pm-mobile-subnav, so there is ONE pinned
+     bar, not two stacked ones that shook on iPhone). What is left in here
+     on a phone is empty, so drop it instead of leaving a second sticky
+     element behind. */
+  .pf-header[data-in-app-bar] { display: none; }
 }
 
 /* The profile page's tab bar and its scroll-jump predecessor both lived
