@@ -2,10 +2,12 @@ import React, { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { uploadImage, uploadErrorMessage } from "./services/cloudinary.js";
 
-// PhotoSlots -- a row of reference-photo slots (4 for a Kinetic Chain test),
-// each one a fixed Cloudinary id known before any photo exists. Tapping an
-// empty slot uploads straight from the browser; tapping a photo opens it
-// full size, where it can be replaced. Because the id never changes, the same
+// PhotoSlots -- a swipe-left/right gallery of reference-photo slots (4 for a
+// Kinetic Chain test), one big photo at a time with dots underneath, the same
+// way the Cardio/Neuro info cards (InfoCard.jsx) slide. Each slot is a fixed
+// Cloudinary id known before any photo exists. Tapping an empty slot uploads
+// straight from the browser; the camera button on a photo replaces it;
+// tapping a photo opens it full size. Because the id never changes, the same
 // photo shows on every screen and for every user that asks for that id.
 //
 // Inline styles only (no CSS classes): this renders both inside the Ortho
@@ -13,8 +15,16 @@ import { uploadImage, uploadErrorMessage } from "./services/cloudinary.js";
 const BASE = "https://res.cloudinary.com/dr15y1pwj/image/upload";
 const MAX_RETRIES = 3;
 
-export default function PhotoSlots({ ids, label = "Reference photos" }) {
+// Keyed on the first id so opening a different test starts again on photo 1
+// instead of carrying the last test's slide / failed-photo state over.
+export default function PhotoSlots(props) {
+  return <PhotoSlotsGallery key={props.ids[0]} {...props} />;
+}
+
+function PhotoSlotsGallery({ ids, label = "Reference photos" }) {
   const [failed, setFailed] = useState({});
+  const [active, setActive] = useState(0);
+  const trackRef = useRef(null);
   const [versions, setVersions] = useState({});
   const [uploading, setUploading] = useState(null);
   const [zoom, setZoom] = useState(null);
@@ -35,6 +45,21 @@ export default function PhotoSlots({ ids, label = "Reference photos" }) {
       return;
     }
     setFailed((f) => ({ ...f, [i]: true }));
+  }
+
+  // The slides sit side by side in a scroll-snap track, so a finger swipe (or
+  // trackpad / shift-wheel) moves between them natively; the dots follow it.
+  function onTrackScroll() {
+    const el = trackRef.current;
+    if (!el || !el.clientWidth) return;
+    setActive(Math.max(0, Math.min(ids.length - 1, Math.round(el.scrollLeft / el.clientWidth))));
+  }
+  function goTo(i) {
+    const el = trackRef.current;
+    setActive(i);
+    if (!el) return;
+    if (el.scrollTo) el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
+    else el.scrollLeft = i * el.clientWidth;
   }
 
   async function handleFile(e) {
@@ -59,34 +84,55 @@ export default function PhotoSlots({ ids, label = "Reference photos" }) {
     <div style={{ margin: "10px 0" }}>
       <div style={{ fontSize: "0.7rem", fontWeight: 800, letterSpacing: ".05em", textTransform: "uppercase", color: "#6b7280", marginBottom: 6 }}>{label}</div>
       <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} data-testid="photo-slots-input" />
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(${ids.length}, minmax(0, 1fr))`, gap: 8 }}>
+      {/* Slides side by side in a scroll-snap track -- no inline grid here: utils.jsx
+          collapses any inline "repeat(N," grid to one column on phones. */}
+      <div ref={trackRef} data-testid="photo-slots-track" onScroll={onTrackScroll}
+        style={{ display: "flex", overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", overscrollBehaviorX: "contain", WebkitOverflowScrolling: "touch", borderRadius: 14 }}>
         {ids.map((id, i) => {
           const has = !failed[i];
           return (
-            <button
-              key={id}
-              type="button"
-              data-testid={`photo-slot-${i + 1}`}
-              aria-label={has ? `View photo ${i + 1}` : `Add photo ${i + 1}`}
-              onClick={(e) => { e.stopPropagation(); has ? setZoom(i) : pick(i); }}
-              style={{ position: "relative", aspectRatio: "1 / 1", padding: 0, overflow: "hidden", borderRadius: 12, cursor: "pointer", fontFamily: "inherit",
-                border: has ? "1px solid #E5E7EB" : "1.5px dashed #C4B5FD", background: has ? "#F9FAFB" : "#FAF8FF" }}
-            >
-              {has ? (
-                <img src={src(i, "w_300,h_300,c_fill")} alt="" onError={() => onImgError(i)} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-              ) : (
-                <span style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: 2, color: "#7C3AED" }}>
-                  <span style={{ fontSize: 20 }} aria-hidden="true">{uploading === i ? "⏳" : "📷"}</span>
-                  <span style={{ fontSize: "0.62rem", fontWeight: 700 }}>{uploading === i ? "Uploading…" : `Add ${i + 1}`}</span>
-                </span>
+            <div key={id} style={{ flex: "0 0 100%", minWidth: 0, scrollSnapAlign: "center", scrollSnapStop: "always", position: "relative", aspectRatio: "1 / 1" }}>
+              <button
+                type="button"
+                data-testid={`photo-slot-${i + 1}`}
+                aria-label={has ? `View photo ${i + 1}` : `Add photo ${i + 1}`}
+                onClick={(e) => { e.stopPropagation(); has ? setZoom(i) : pick(i); }}
+                style={{ display: "block", width: "100%", height: "100%", padding: 0, overflow: "hidden", borderRadius: 14, cursor: "pointer", fontFamily: "inherit",
+                  border: has ? "1px solid #E5E7EB" : "1.5px dashed #C4B5FD", background: has ? "#F9FAFB" : "#FAF8FF" }}
+              >
+                {has ? (
+                  <img src={src(i, "w_900,c_limit")} alt="" onError={() => onImgError(i)} style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />
+                ) : (
+                  <span style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: 6, color: "#7C3AED" }}>
+                    <span style={{ fontSize: 34 }} aria-hidden="true">{uploading === i ? "⏳" : "🖼️"}</span>
+                    <span style={{ fontSize: "0.82rem", fontWeight: 700 }}>{uploading === i ? "Uploading…" : `Tap to add photo ${i + 1}`}</span>
+                  </span>
+                )}
+              </button>
+              {has && (
+                <button type="button" aria-label={`Replace photo ${i + 1}`} disabled={uploading !== null}
+                  onClick={(e) => { e.stopPropagation(); pick(i); }}
+                  style={{ position: "absolute", top: 10, right: 10, width: 38, height: 38, borderRadius: "50%", border: "none", padding: 0, background: "rgba(20,10,45,.55)", color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {uploading === i ? "…" : "📷"}
+                </button>
               )}
               {has && uploading === i && (
-                <span style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.75)", display: "flex", alignItems: "center", justifyContent: "center" }}>⏳</span>
+                <span style={{ position: "absolute", inset: 0, borderRadius: 14, background: "rgba(255,255,255,0.75)", display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>⏳</span>
               )}
-            </button>
+            </div>
           );
         })}
       </div>
+      {ids.length > 1 && (
+        <div style={{ display: "flex", justifyContent: "center", gap: 4, marginTop: 6 }}>
+          {ids.map((id, i) => (
+            <button key={id} type="button" aria-label={`Show photo ${i + 1} of ${ids.length}`} aria-current={i === active ? "true" : undefined} onClick={() => goTo(i)}
+              style={{ border: "none", background: "none", padding: "6px 3px", cursor: "pointer" }}>
+              <span style={{ display: "block", height: 8, width: i === active ? 22 : 8, borderRadius: 4, background: i === active ? "#7C3AED" : "#DDD6FE", transition: "width .2s" }} />
+            </button>
+          ))}
+        </div>
+      )}
       {zoom !== null && createPortal(
         <div onClick={() => setZoom(null)} style={{ position: "fixed", inset: 0, zIndex: 99999, background: "rgba(0,0,0,0.92)", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <img src={src(zoom, "w_1200,c_limit")} alt="" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "92vw", maxHeight: "80vh", objectFit: "contain", borderRadius: 8 }} />

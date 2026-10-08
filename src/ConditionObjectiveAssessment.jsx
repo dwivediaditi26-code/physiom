@@ -43,7 +43,8 @@ import { romRichItem, specialRichItem, mmtRichItem, GradeSelect } from "./orthoR
 import { kcRichItem, cpaRichItem, fmaRichItem, GradeSelect as ObserveSelect, FMA_HELPS, FMA_GRADE_COLOR } from "./orthoAdvancedTools.jsx";
 import { KC_REGIONS, NKT_REGIONS, FMA_DATA, CYRIAX_REGIONS_DATA } from "./orthoAdvancedLibrary.js";
 import PhotoSlots from "./PhotoSlots.jsx";
-import { kcImageIds } from "./kcImages.js";
+import { kcImageIds, fmaImageIds } from "./kcImages.js";
+import { uploadImage, uploadErrorMessage } from "./services/cloudinary.js";
 import { FmaIcon, poseForJoint } from "./fmaIcons.jsx";
 import { runCervicalDifferential, hasCervicalChecklistData } from "./orthoCervicalReasoning.js";
 import { runThoracicDifferential, hasThoracicChecklistData } from "./orthoThoracicReasoning.js";
@@ -112,6 +113,11 @@ const ELBOW_WRIST_HAND_ROM_MOVEMENTS = [
   { id: "esup", label: "Supination", normal: 90 }, { id: "epro", label: "Pronation", normal: 90 },
   { id: "wflex", label: "Wrist Flexion", normal: 80 }, { id: "wext", label: "Wrist Extension", normal: 70 },
   { id: "wrad", label: "Radial Deviation", normal: 20 }, { id: "wuln", label: "Ulnar Deviation", normal: 30 },
+  // Finger and thumb movements come straight from ROM_DATA's "Hand & Fingers" list (same ids, labels
+  // and normal values as the ROM tab), so the two screens cannot disagree. Only the movements
+  // measured in degrees are used here; Thumb Opposition (Kapandji score) and Fingertip-to-Palm
+  // Distance (cm) stay in the ROM tab, since this screen records degrees.
+  ...(ROM_DATA["Hand & Fingers"] || []).filter((m) => m.unit === "°").map((m) => ({ id: m.id, label: m.mv, normal: m.normal })),
 ];
 
 // Real Cloudinary reference photos for ROM/Special Tests already exist,
@@ -135,7 +141,8 @@ const ROM_ID_TO_DATA_ID = {
   hip: { hflex: "rom_hflex", hext: "rom_hext", habd: "rom_habd", hadd: "rom_hadd", her: "rom_her", hir: "rom_hir" },
   knee: { kflex: "rom_kflex", kext: "rom_kext" },
   ankleFoot: { adf: "rom_adf", apf: "rom_apf", ainv: "rom_ainv", aev: "rom_aev" },
-  elbowWristHand: { eflex: "rom_eflex", eext: "rom_eext", esup: "rom_esup", epro: "rom_epro", wflex: "rom_wflex", wext: "rom_wext", wrad: "rom_wrad", wuln: "rom_wuln" },
+  elbowWristHand: { eflex: "rom_eflex", eext: "rom_eext", esup: "rom_esup", epro: "rom_epro", wflex: "rom_wflex", wext: "rom_wext", wrad: "rom_wrad", wuln: "rom_wuln",
+    ...Object.fromEntries((ROM_DATA["Hand & Fingers"] || []).filter((m) => m.unit === "°").map((m) => [m.id, m.id])) },
 };
 function romRichItemFor(regionKey, movementId) {
   const buckets = [].concat(ROM_DATA_BUCKET[regionKey] || []);
@@ -563,7 +570,7 @@ const REGION_CONFIGS = [
     conditions: ELBOW_WRIST_HAND_CONDITIONS, order: ELBOW_WRIST_HAND_CONDITION_ORDER,
     getRedFlag: evidenceModelRedFlag,
     suggestedTestsMode: "single",
-    romMovements: ELBOW_WRIST_HAND_ROM_MOVEMENTS, romLabel: "Elbow / Wrist ROM", romBilateral: true,
+    romMovements: ELBOW_WRIST_HAND_ROM_MOVEMENTS, romLabel: "Elbow / Wrist / Hand ROM", romBilateral: true,
     emptyNote: "Pick Elbow, Forearm, Wrist, or Hand as a region in Subjective first — this page shows the condition-wise objective assessment for it.",
   },
 ];
@@ -1159,29 +1166,7 @@ function splitSentences(text) {
 // device it's the exact URL every other device/user requests too, with no
 // separate database/mapping step (2026-09-12, Aditi: "I click it and it
 // uploaded... presented in the main web app... for all the people").
-// Uploads go straight to Cloudinary's unsigned endpoint client-side --
-// explicitly passing public_id makes Cloudinary honor that exact id
-// instead of auto-generating one, which is what keeps the URL predictable.
-// Rejects a picked file before it reaches Cloudinary if it isn't a real
-// photo -- guards against a rare mobile-browser failure mode where the file
-// picker hands back a valid-but-empty stub image (e.g. an iCloud photo
-// whose full-res version hadn't finished downloading yet) instead of the
-// actual photo. These slots are shared across every user of the app, so a
-// stub upload silently overwrites the real photo for everyone, not just
-// the uploader (2026-09-25, Aditi: a Neuro info-card photo showed solid
-// black after upload -- the stored file turned out to be a genuine, fully
-// opaque 1x1px image, not a broken render; same unguarded upload pattern
-// as this file's finding/patient photo tiles below).
-function isRealPhoto(file) {
-  return new Promise((resolve) => {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => { URL.revokeObjectURL(url); resolve(img.naturalWidth >= 40 && img.naturalHeight >= 40); };
-    img.onerror = () => { URL.revokeObjectURL(url); resolve(false); };
-    img.src = url;
-  });
-}
-
+// Uploads go through services/cloudinary.js (an admin's replace is signed by the server).
 function FindingCard({ index, icon, label, active, instruction, interpretation, onToggle, photoId }) {
   const [imgFailed, setImgFailed] = useState(false);
   const [imgVersion, setImgVersion] = useState(0);
@@ -1199,34 +1184,11 @@ function FindingCard({ index, icon, label, active, instruction, interpretation, 
     if (!file || !photoId) return;
     setUploading(true);
     try {
-      if (!(await isRealPhoto(file))) throw new Error("empty-image");
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("upload_preset", "ml_default");
-      fd.append("public_id", photoId);
-      const res = await fetch("https://api.cloudinary.com/v1_1/dr15y1pwj/image/upload", { method: "POST", body: fd });
-      if (!res.ok) throw new Error("Upload failed");
-      // The unsigned "ml_default" preset has Overwrite off in Cloudinary's
-      // dashboard -- uploading to a public_id that already holds a photo
-      // is silently ignored: Cloudinary still answers 200 OK, but
-      // `existing: true` means it just handed back the OLD asset's info
-      // and stored nothing new (2026-09-25, Aditi: replaced a wrong photo
-      // and "its not replacing at all" -- same gap as InfoCard.jsx's
-      // isRealPhoto guard above, confirmed by re-POSTing a slot directly
-      // and getting the untouched original back). Needs the Overwrite
-      // toggle turned on for ml_default in the Cloudinary console to
-      // actually fix -- Cloudinary rejects the `overwrite` upload param
-      // outright on unsigned requests, so it can't be forced from here.
-      const json = await res.json();
-      if (json.existing) throw new Error("blocked-overwrite");
+      await uploadImage(file, photoId);
       setImgFailed(false);
       setImgVersion(Date.now());
     } catch (err) {
-      alert(err?.message === "empty-image"
-        ? "That photo didn't come through properly (it looked empty) — please try again."
-        : err?.message === "blocked-overwrite"
-        ? "This photo slot already has an image and couldn't be replaced right now — please let the app admin know."
-        : "Photo upload failed — check your connection and try again.");
+      alert(uploadErrorMessage(err));
     } finally {
       setUploading(false);
     }
@@ -1367,34 +1329,11 @@ function PatientPhotoTile({ photoId, size = 40 }) {
     if (!file || !photoId) return;
     setUploading(true);
     try {
-      if (!(await isRealPhoto(file))) throw new Error("empty-image");
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("upload_preset", "ml_default");
-      fd.append("public_id", photoId);
-      const res = await fetch("https://api.cloudinary.com/v1_1/dr15y1pwj/image/upload", { method: "POST", body: fd });
-      if (!res.ok) throw new Error("Upload failed");
-      // The unsigned "ml_default" preset has Overwrite off in Cloudinary's
-      // dashboard -- uploading to a public_id that already holds a photo
-      // is silently ignored: Cloudinary still answers 200 OK, but
-      // `existing: true` means it just handed back the OLD asset's info
-      // and stored nothing new (2026-09-25, Aditi: replaced a wrong photo
-      // and "its not replacing at all" -- same gap as InfoCard.jsx's
-      // isRealPhoto guard above, confirmed by re-POSTing a slot directly
-      // and getting the untouched original back). Needs the Overwrite
-      // toggle turned on for ml_default in the Cloudinary console to
-      // actually fix -- Cloudinary rejects the `overwrite` upload param
-      // outright on unsigned requests, so it can't be forced from here.
-      const json = await res.json();
-      if (json.existing) throw new Error("blocked-overwrite");
+      await uploadImage(file, photoId);
       setImgFailed(false);
       setImgVersion(Date.now());
     } catch (err) {
-      alert(err?.message === "empty-image"
-        ? "That photo didn't come through properly (it looked empty) — please try again."
-        : err?.message === "blocked-overwrite"
-        ? "This photo slot already has an image and couldn't be replaced right now — please let the app admin know."
-        : "Photo upload failed — check your connection and try again.");
+      alert(uploadErrorMessage(err));
     } finally {
       setUploading(false);
     }
@@ -2261,7 +2200,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                             <InfoButton imageTrigger size="md" fallbackIcon="ti-arrows-maximize" title={m.label} richItem={romRichItemFor(config.key, m.id)} />
                             <div style={{ minWidth: 0 }}>
                               <div style={{ fontWeight: 700, fontSize: "0.845rem", color: BRAND.ink, letterSpacing: "-0.01em" }}>{m.label}</div>
-                              <div style={{ fontSize: "0.656rem", color: BRAND.grayLight, fontWeight: 500 }}>Normal {m.normal}°</div>
+                              {m.normal != null && <div style={{ fontSize: "0.656rem", color: BRAND.grayLight, fontWeight: 500 }}>Normal {m.normal}°</div>}
                             </div>
                           </div>
                           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
@@ -2297,7 +2236,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                           <InfoButton imageTrigger size="md" fallbackIcon="ti-arrows-maximize" title={m.label} richItem={romRichItemFor(config.key, m.id)} />
                           <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap", minWidth: 0 }}>
                             <span style={{ fontWeight: 700, fontSize: "0.845rem", color: BRAND.ink, letterSpacing: "-0.01em" }}>{m.label}</span>
-                            <span style={{ fontSize: "0.656rem", color: BRAND.grayLight, fontWeight: 500 }}>Normal {m.normal}°</span>
+                            {m.normal != null && <span style={{ fontSize: "0.656rem", color: BRAND.grayLight, fontWeight: 500 }}>Normal {m.normal}°</span>}
                           </div>
                         </div>
                         <Stepper value={val} placeholder={normalStr || "--"} startAt={m.normal ?? undefined} onChange={(nv) => sv("rom", m.id, nv)} min={0} max={max} />
@@ -2672,6 +2611,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                 <InfoButton title={condition.functionalScreen.testName} richItem={functionalRichItem(condition.functionalScreen.testName, condition.functionalScreen.note)} />
               </div>
               {fmaMatch?.subtitle && <div className="muscle-subtitle">{fmaMatch.subtitle}</div>}
+              {fmaMatch && <PhotoSlots ids={fmaImageIds(fmaMatch.id)} />}
               {(condition.functionalScreen.note || hasReal) && (
                 <div style={{ marginTop: 8, marginBottom: hasReal ? 0 : 10 }}>
                   <InfoCard icon="🔎" label="Helps find" tint="violet">{hasReal ? (FMA_HELPS[fmaMatch.id] || condition.functionalScreen.note) : condition.functionalScreen.note}</InfoCard>
@@ -2739,6 +2679,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                       {fmaMatch?.subtitle && <div className="muscle-subtitle">{fmaMatch.subtitle}</div>}
                     </div>
                   </div>
+                  {fmaMatch && <PhotoSlots ids={fmaImageIds(fmaMatch.id)} />}
                   {(condition.functionalScreen.note || hasReal) && (
                     <div style={{ marginTop: 8, marginBottom: hasReal ? 0 : 12 }}>
                       <InfoCard icon="🔎" label="Helps find" tint="violet">{hasReal ? (FMA_HELPS[fmaMatch.id] || condition.functionalScreen.note) : condition.functionalScreen.note}</InfoCard>

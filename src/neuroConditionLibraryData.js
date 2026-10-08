@@ -575,7 +575,7 @@ export const neuroConditionLibraryData = {
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient supine, eyes closed, key sensory points exposed per the ISNCSCI dermatome map." },
         { tone: "blue", label: "🖐️ Technique", text: "Test light touch (cotton wisp) and pinprick (disposable pin, sharp vs. dull) separately at each key sensory point, comparing to a known-normal area (e.g. cheek) as the reference for 'normal'; grade each modality 0 (absent), 1 (impaired/altered), or 2 (normal) at each point." },
-        { tone: "purple", label: "🩺 Special consideration", text: "The S4-5 (perianal) sensory point is critical — sensory preservation there, together with deep anal pressure and voluntary anal contraction, defines 'sacral sparing' and distinguishes an incomplete injury (AIS B or better) from AIS A (complete)." },
+        { tone: "purple", label: "🩺 Special consideration", text: "The S4-5 (perianal) sensory point is critical — sensory preservation there, together with deep anal pressure and voluntary anal contraction, defines 'sacral sparing' and distinguishes an incomplete injury (AIS B at minimum, C or D if voluntary anal contraction is present) from AIS A (complete)." },
         { tone: "amber", label: "⚠️ Tip", text: "Test light touch and pinprick as two SEPARATE passes over the whole body, not modality-by-modality-per-point — this is both the standard protocol and easier for the patient to track reliably." },
       ],
     },
@@ -603,7 +603,7 @@ export const neuroConditionLibraryData = {
       boxes: [
         { tone: "", label: "👤 Position", text: "Requires the complete ISNCSCI exam (myotomes, dermatomes, and sacral sparing — S4-5 light touch and pinprick, deep anal pressure and voluntary anal contraction) to be finished first." },
         { tone: "blue", label: "🖐️ Technique", text: "Apply the ISNCSCI algorithm: Grade A if no sensory or motor function is preserved in S4-5. Grade B if sensory but not motor function is preserved below the neurological level, including the sacral segments S4-5. Grade C if the injury is motor incomplete (voluntary anal contraction, or motor function more than three levels below the motor level) and fewer than half of the key muscles below the NLI grade ≥3. Grade D if motor incomplete and at least half grade ≥3. Grade E if sensory and motor function are entirely normal." },
-        { tone: "purple", label: "🩺 Special consideration", text: "Sacral sparing (any sensory or motor function at S4-5, including voluntary anal contraction) is the single deciding factor between AIS A (complete) and B (sensory incomplete) — always check it explicitly rather than inferring from limb findings alone." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Sacral sparing (any sensory or motor function at S4-5, including voluntary anal contraction) is the single deciding factor between AIS A (complete) and an incomplete injury (AIS B, C or D) — always check it explicitly rather than inferring from limb findings alone." },
         { tone: "amber", label: "⚠️ Tip", text: "A grade taken in the first 24 hours is less reliable for prognosis than one taken after about 72 hours (when spinal shock has usually passed) — document the timing of grading relative to injury." },
       ],
     },
@@ -915,7 +915,7 @@ export const neuroConditionLibraryData = {
       boxes: [
         { tone: "", label: "👤 Position", text: "Observe the patient's spontaneous behaviour and response to stimuli/interaction across the session, in their usual environment where possible." },
         { tone: "blue", label: "🖐️ Technique", text: "Rate the patient's current level against the 8-stage description: I no response, II generalised non-specific response, III localised response to specific stimuli, IV confused/agitated (high activity, no processing), V confused/inappropriate (can follow simple commands, distractible), VI confused/appropriate (goal-directed with cueing), VII automatic/appropriate (routine tasks fine, poor judgement in novel situations), VIII purposeful/appropriate (independent, may have subtle residual deficits)." },
-        { tone: "purple", label: "🩺 Special consideration", text: "The Rancho level directly guides intervention style — levels IV–V (confused/agitated) need a calm, low-stimulation, structured environment and simple redirection rather than complex instruction or reasoning, since the patient cannot yet process it." },
+        { tone: "purple", label: "🩺 Special consideration", text: "The Rancho level directly guides intervention style — level IV (confused/agitated) and level V (confused/inappropriate) need a calm, low-stimulation, structured environment and simple redirection rather than complex instruction or reasoning, since the patient cannot yet process it." },
         { tone: "amber", label: "⚠️ Tip", text: "Re-rate regularly, not just at admission — patients can and do move between levels (including transiently backward with fatigue/overstimulation) and treatment approach should adapt in real time to the level observed that session." },
       ],
     },
@@ -932,7 +932,7 @@ export const neuroConditionLibraryData = {
     ]},
     interpret: {
       normal: ["N/A — a recovery-stage description, not a normal/abnormal binary"],
-      abnormal: ["Level IV–V → agitation management, environmental modification, and simple structured cueing take priority over complex cognitive-motor training"],
+      abnormal: ["Levels IV–V → agitation management, environmental modification, and simple structured cueing take priority over complex cognitive-motor training"],
       note: "Communicate the Rancho level clearly to family/caregivers — it reframes 'difficult' behaviour (e.g. agitation at level IV) as an expected recovery stage rather than something to be frustrated by, which meaningfully changes how they interact with the patient.",
     },
   },
@@ -1061,7 +1061,7 @@ export const neuroConditionLibraryData = {
         { tone: "", label: "👤 Position", text: "Patient seated, good lighting; ideally use Frenzel goggles or similar if available to remove visual fixation suppression, which can mask peripheral nystagmus." },
         { tone: "blue", label: "🖐️ Technique", text: "Observe the eyes at primary gaze and through the range of horizontal and vertical gaze for spontaneous nystagmus; classify by direction (horizontal, vertical, torsional), whether it changes direction with gaze direction, and whether it's gaze-evoked (only present on eccentric gaze)." },
         { tone: "purple", label: "🩺 Special consideration", text: "Peripheral nystagmus is typically unidirectional (same fast-phase direction regardless of gaze direction) and suppresses with visual fixation. Direction-CHANGING nystagmus (fast phase reverses with gaze direction) is a red flag for a central cause." },
-        { tone: "amber", label: "⚠️ Tip", text: "Removing fixation (Frenzel goggles, or simply having the patient close their eyes briefly then observing immediately on opening) can unmask nystagmus that fixation was suppressing — important not to miss a peripheral finding." },
+        { tone: "amber", label: "⚠️ Tip", text: "Removing fixation (Frenzel goggles or a similar fixation-blocking device) can unmask nystagmus that fixation was suppressing — important not to miss a peripheral finding." },
       ],
     },
     scaleLabel: "Pattern classification",
@@ -1201,7 +1201,7 @@ export const neuroConditionLibraryData = {
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient relaxed, semi-reclined or supine, chest and abdomen both visible." },
         { tone: "blue", label: "🖐️ Technique", text: "Observe the relative movement of chest and abdomen through several natural breath cycles without the patient consciously altering their breathing (announce you're just observing generally, not asking them to breathe differently). Note whether it's normal diaphragmatic, paradoxical (abdomen moves inward on inspiration instead of out), accessory-muscle dominant, shallow, or irregular/ataxic." },
-        { tone: "purple", label: "🩺 Special consideration", text: "Paradoxical (abdominal) breathing — the abdomen sucking IN on inspiration instead of expanding out — suggests diaphragm weakness/paralysis, since the diaphragm normally descends and pushes the abdominal contents out; the accessory muscles are compensating instead." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Paradoxical (abdominal) breathing — the abdomen sucking IN on inspiration instead of expanding out — suggests diaphragm weakness/paralysis, since the diaphragm normally descends and pushes the abdominal contents out; the accessory muscles are compensating instead. This is a different pattern from cervical tetraplegia, where the diaphragm still works but the intercostals do not: the chest wall is drawn IN while the abdomen moves OUT." },
         { tone: "amber", label: "⚠️ Tip", text: "Irregular or 'ataxic' breathing patterns (erratic rate and depth) can reflect brainstem respiratory centre involvement and are a more concerning central finding — differentiate this from simple shallow breathing due to pain or weakness." },
       ],
     },
@@ -1214,7 +1214,7 @@ export const neuroConditionLibraryData = {
     ]},
     interpret: {
       normal: ["Coordinated diaphragmatic breathing, minimal accessory muscle use"],
-      abnormal: ["Paradoxical pattern → diaphragm weakness, correlates with cervical SCI level; consider positioning and respiratory muscle training as tolerated"],
+      abnormal: ["Paradoxical breathing (belly or chest wall drawn in) → diaphragm or intercostal weakness, tracks injury level; consider positioning and respiratory muscle training as tolerated"],
       redFlags: ["New irregular/ataxic pattern → possible brainstem involvement, escalate for urgent medical review"],
       note: "Document pattern findings alongside respiratory rate and SpO2 for a complete respiratory picture — the pattern often explains WHY the rate/effort findings look the way they do.",
     },

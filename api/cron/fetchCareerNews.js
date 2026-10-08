@@ -262,7 +262,7 @@ export default async function handler(req, res) {
     try {
       await fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_ROLE_KEY}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_ROLE_KEY}`, apikey: SERVICE_ROLE_KEY },
         body: JSON.stringify({ broadcast: true, title, body, url: '/news' }),
         signal: AbortSignal.timeout(10000),
       });

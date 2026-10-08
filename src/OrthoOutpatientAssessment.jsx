@@ -1,3 +1,4 @@
+import { DiagnosisSection } from "./clinicalInterpretation.jsx";
 import { withCarePlanSummaryStep } from "./assessmentSteps.js";
 import { AddAssessmentModal } from "./assessmentFrame.jsx";
 import { regionLabelOf, formatPainSection } from "./orthoWizardHelpers.js";
@@ -157,7 +158,7 @@ const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "g
 // specialTests/neuroScreen/kineticChain/cpa/sttt/fma already got, standard
 // on every Outpatient entry (General included) instead of only via
 // "Add assessment" or a condition's own promote list.
-const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation", "palpation", "suggest", "objectiveAI", "rom", "mmt", "jointMobility", "specialTests", "neuroScreen", "limbLength", "kineticChain", "cpa", "sttt", "fma", "functionalAssessment", "outcomeMeasure", "clinicalAssessment", ...CAREPLAN_STEP_IDS, "homeProtocol", "medicalRecords", "review"];
+const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation", "palpation", "suggest", "objectiveAI", "rom", "mmt", "jointMobility", "specialTests", "neuroScreen", "limbLength", "kineticChain", "cpa", "sttt", "fma", "functionalAssessment", "outcomeMeasure", "clinicalAssessment", "diagnosis", ...CAREPLAN_STEP_IDS, "homeProtocol", "medicalRecords", "review"];
 // General Assessment (2026-09-22, Aditi: split "how do you want to start"
 // into General vs Advanced) -- General is now the quick/core OPD set;
 // Advanced keeps the full BASE_IDS list above unchanged. Body Chart isn't
@@ -189,7 +190,7 @@ const OPTIONAL_IDS = ["vitals", "edema", "fascia", "gait", "balance", "activityT
 // The AI-assisted journey's "Summary" stage (5th dot) -- everything after AI
 // Objective Assessment, freely jumpable rather than forced Next-Next-Next
 // (2026-09-16, Aditi: "we can select it from anywhere... it's not stuck").
-const AI_HUB_IDS = ["functionalAssessment", "clinicalAssessment", ...CAREPLAN_STEP_IDS, "homeProtocol", "medicalRecords", "review"];
+const AI_HUB_IDS = ["functionalAssessment", "clinicalAssessment", "diagnosis", ...CAREPLAN_STEP_IDS, "homeProtocol", "medicalRecords", "review"];
 // Demographics(0)/Region(1) already happened pre-wizard for AI entry, so
 // this component's own stages start at Subjective(2); anything in
 // AI_HUB_IDS collapses onto the single "Summary" dot (4).
@@ -207,7 +208,7 @@ function aiStageIndexFor(id) {
 // Summary are already real steps.
 const AI_WIZARD_JUMPABLE = new Set([0, 1, 2, 3, 4]);
 
-const ORDERED_ALL = ["demographics", "subjective", "redFlags", "vitals", "pain", "observation", "palpation", "suggest", "objectiveAI", "edema", "rom", "mmt", "jointMobility", "specialTests", "neuroScreen", "limbLength", "kineticChain", "cpa", "sttt", "fma", "fascia", "gait", "balance", "functionalAssessment", "activityTolerance", "outcomeMeasure", "clinicalAssessment", ...CAREPLAN_STEP_IDS, "techniques", "exercisePrescription", "homeProtocol", "progress", "medicalRecords", "review"];
+const ORDERED_ALL = ["demographics", "subjective", "redFlags", "vitals", "pain", "observation", "palpation", "suggest", "objectiveAI", "edema", "rom", "mmt", "jointMobility", "specialTests", "neuroScreen", "limbLength", "kineticChain", "cpa", "sttt", "fma", "fascia", "gait", "balance", "functionalAssessment", "activityTolerance", "outcomeMeasure", "clinicalAssessment", "diagnosis", ...CAREPLAN_STEP_IDS, "techniques", "exercisePrescription", "homeProtocol", "progress", "medicalRecords", "review"];
 
 // Exported so SpecialtyPatientProfile.jsx's Ortho Assessment tab can render
 // the EXACT same summary the wizard's own Review step uses (same pattern as
@@ -251,6 +252,7 @@ const STEP_META = {
   activityTolerance: { icon: <Icon name="run" />, label: "Activity Tolerance" },
   outcomeMeasure: { icon: <Icon name="chart" />, label: "Outcome Measure" },
   clinicalAssessment: { icon: <Icon name="brain" />, label: "Clinical Assessment" },
+  diagnosis: { icon: <Icon name="stethoscope" />, label: "Diagnosis" },
   carePlanProblems: { icon: <Icon name="puzzle" />, label: "Problem List" },
   carePlanGoals: { icon: <Icon name="target" />, label: "Care Plan Goals" },
   carePlanTreatment: { icon: <Icon name="dumbbell" />, label: "Care Plan Treatment" },
@@ -865,6 +867,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
           {current.id === "activityTolerance" && <ActivityToleranceSection data={data} setData={setData} />}
           {current.id === "outcomeMeasure" && <OrthoOutcomeMeasureFlow data={data} setData={setData} selectedRegions={selectedRegions} regionLabelOf={regionLabelOf} condition={condition} jumpTo={jumpTo} />}
           {current.id === "clinicalAssessment" && <ClinicalAssessmentSection data={data} setData={setData} />}
+          {current.id === "diagnosis" && <DiagnosisSection data={data} setData={setData} kind="ortho" selectedRegions={selectedRegions} legacy={{ section: "clinicalAssessment", keys: { physioDiagnosis: "finalDiagnosis" } }} />}
           {/* CAREPLAN_PHASE_BY_STEP, not CAREPLAN_STEP_IDS -- the latter is
               trimmed to the active default steps (Progress removed,
               2026-09-18), but a record saved before that still has

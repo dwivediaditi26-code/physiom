@@ -1,3 +1,4 @@
+import { DiagnosisSection } from "./clinicalInterpretation.jsx";
 import { withCarePlanSummaryStep } from "./assessmentSteps.js";
 import { AddAssessmentModal } from "./assessmentFrame.jsx";
 import { regionLabelOf, formatPainSection } from "./orthoWizardHelpers.js";
@@ -55,7 +56,7 @@ const FALLBACK_OPTIONAL = ["edema", "neurovascular", "rom", "mmt", "activityTole
 
 const CAREPLAN_STEP_IDS = ["carePlanProblems", "carePlanGoals", "carePlanTreatment"];
 const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "goals", carePlanTreatment: "treatment", carePlanPlan: "plan", carePlanSessions: "sessions", carePlanProgress: "progress" };
-const BASE_IDS = ["caseInfo", "medicalReview", "medicalRecords", "precautions", "vitals", "subjective", "pain", "observation", "functionalMobility", "gait", "impression", ...CAREPLAN_STEP_IDS, "review"];
+const BASE_IDS = ["caseInfo", "medicalReview", "medicalRecords", "precautions", "vitals", "subjective", "pain", "observation", "functionalMobility", "gait", "impression", "diagnosis", ...CAREPLAN_STEP_IDS, "review"];
 const OPTIONAL_IDS = ["edema", "wound", "neurovascular", "neuroScreen", "rom", "mmt", "limbLength", "jointMobility", "balance", "activityTolerance", "outcomeMeasure", "specialTests"];
 
 const ORDERED_ALL = [
@@ -82,6 +83,7 @@ const ORDERED_ALL = [
   "activityTolerance",
   "outcomeMeasure",
   "impression",
+  "diagnosis",
   ...CAREPLAN_STEP_IDS,
   "review",
 ];
@@ -110,6 +112,7 @@ const STEP_META = {
   activityTolerance: { icon: <Icon name="run" />, label: "Activity Tolerance" },
   outcomeMeasure: { icon: <Icon name="chart" />, label: "Outcome Measure" },
   impression: { icon: <Icon name="brain" />, label: "Clinical Impression" },
+  diagnosis: { icon: <Icon name="stethoscope" />, label: "Diagnosis" },
   carePlanProblems: { icon: <Icon name="puzzle" />, label: "Problem List" },
   carePlanGoals: { icon: <Icon name="target" />, label: "Care Plan Goals" },
   carePlanTreatment: { icon: <Icon name="dumbbell" />, label: "Care Plan Treatment" },
@@ -497,6 +500,7 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
           {current.id === "activityTolerance" && <ActivityToleranceSection data={data} setData={setData} />}
           {current.id === "outcomeMeasure" && <OrthoOutcomeMeasureFlow data={data} setData={setData} selectedRegions={selectedRegions} regionLabelOf={regionLabelOf} extraRecommended={PRESSURE_RISK_CONDITIONS.includes(condition) ? SUGGEST_ADL_AND_PRESSURE : SUGGEST_ADL} />}
           {current.id === "impression" && <ImpressionSection data={data} setData={setData} />}
+          {current.id === "diagnosis" && <DiagnosisSection data={data} setData={setData} kind="ortho" selectedRegions={selectedRegions} legacy={{ section: "impression" }} />}
           {CAREPLAN_STEP_IDS.includes(current.id) && (
             <>
               <style>{orthoStyles()}</style>

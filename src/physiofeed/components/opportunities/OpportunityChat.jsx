@@ -7,17 +7,18 @@ import * as db from "../../data/db.js";
 
 const QUICK_PROMPTS = ["Are clinical hours flexible?", "When is the start date?"];
 
-// Instant Apply (2026-09-21, Aditi's brief: "Edit Clinical Profile & CV --
-// one form, two outputs"). Pulls from the real Clinical profile & CV
-// fields (ClinicalCard.jsx / EditClinicalProfileModal.jsx) when a
-// clinician has filled them in, same "real data if it exists, sensible
-// generic fallback if it doesn't" shape as everywhere else in this app.
+// Opening message pre-filled in the composer. Only says what the member's own
+// profile says: their title and skills if they have entered them. It never
+// claims a background the profile doesn't have (it used to fall back to the
+// listing's own tag, e.g. "My background is strong in Sports"), and a guest
+// never gets one at all (see `isGuest` below).
 function openingMessage(opp, profile) {
   const mentorFirst = opp.mentor.name.split(",")[0];
-  const background = (profile?.skills || []).slice(0, 2).join(" and ") || opp.tags?.[0] || "this area";
+  const skills = (profile?.skills || []).slice(0, 2).join(" and ");
   const titlePart = profile?.clinicalTitle ? `${profile.clinicalTitle}, ` : "";
+  const backgroundPart = skills ? ` My background is in ${skills}.` : "";
   const resumePart = profile?.resumeUrl ? " (résumé attached)" : "";
-  return `Hi ${mentorFirst}, I'm ${titlePart}very interested in this ${opp.title}! My background is strong in ${background}.${resumePart}`;
+  return `Hi ${mentorFirst}, I'm ${titlePart}very interested in this ${opp.title}!${backgroundPart}${resumePart}`;
 }
 
 // First-contact composer for an opportunity's poster (2026-09-23, "it
@@ -39,7 +40,9 @@ export default function OpportunityChat({ opp, onBack }) {
   const [error, setError] = useState(null);
   const [checking, setChecking] = useState(true);
 
-  const canMessage = !!opp.creatorId && opp.creatorId !== profile?.id;
+  // A guest only has the shared demo identity -- nothing they send would be theirs.
+  const isGuest = !!profile?.isDemo;
+  const canMessage = !isGuest && !!opp.creatorId && opp.creatorId !== profile?.id;
 
   // If you've already messaged this poster, jump straight to that real
   // thread instead of re-showing the "first contact" composer over it.
@@ -109,7 +112,7 @@ export default function OpportunityChat({ opp, onBack }) {
         <div className="flex-1 flex items-center justify-center text-sm text-slate-400">Loading…</div>
       ) : !canMessage ? (
         <div className="flex-1 flex items-center justify-center text-sm text-slate-400 px-6 text-center">
-          {opp.creatorId ? "You can't message yourself." : "Messaging isn't set up for this listing yet."}
+          {isGuest ? "Sign in or create a free account to message the organiser." : opp.creatorId ? "You can't message yourself." : "Messaging isn't set up for this listing yet."}
         </div>
       ) : (
         <>

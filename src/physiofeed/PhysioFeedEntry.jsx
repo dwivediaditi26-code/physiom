@@ -41,7 +41,14 @@ function JumpBridge({ jumpTo }) {
   const navigate = useNavigate();
   const handled = useRef(null);
   useEffect(() => {
-    if (!jumpTo || !JUMPABLE_TABS.has(jumpTo.pfTab) || handled.current === jumpTo) return;
+    if (!jumpTo || handled.current === jumpTo) return;
+    // A full PhysioFeed path (with its ?query), e.g. from tapping a push notification.
+    if (typeof jumpTo.pfPath === "string" && jumpTo.pfPath.startsWith("/")) {
+      handled.current = jumpTo;
+      navigate(jumpTo.pfPath, { replace: true });
+      return;
+    }
+    if (!JUMPABLE_TABS.has(jumpTo.pfTab)) return;
     handled.current = jumpTo;
     navigate(`/${jumpTo.pfTab}`, { replace: true, state: jumpTo.pfArticleId ? { articleId: jumpTo.pfArticleId } : undefined });
   }, [jumpTo, navigate]);

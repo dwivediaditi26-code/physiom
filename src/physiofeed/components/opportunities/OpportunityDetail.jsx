@@ -3,6 +3,7 @@ import { normalizeLink } from "./FormFields.jsx";
 import { ChevronLeft, MapPin, IndianRupee, Check, Bookmark } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
 import ApplyOpportunityModal from "./ApplyOpportunityModal.jsx";
+import WithdrawButton from "./WithdrawButton.jsx";
 import { TYPE_COLORS } from "../../data/opportunitiesMock.js";
 import LifecycleBanner, { isRegistrationBlocked } from "./StatusBanner.jsx";
 import { trackEvent } from "../../../analytics/trackEvent.js";
@@ -154,6 +155,17 @@ export default function OpportunityDetail({ opp, onBack, onMessage, applied, onA
           </div>
         )}
       </div>
+
+      {applied && !preview && !opp.postedByMe && opp.registrationMethod !== "contact" && (
+        <div className="px-4 pb-24 lg:pb-4">
+          <WithdrawButton
+            oppId={opp.id}
+            label="Withdraw my application"
+            confirmText={`Withdraw your application for "${opp.title}"? The organiser will be told.`}
+            onDone={onApplied}
+          />
+        </div>
+      )}
 
       <div
         ref={actionBarRef}

@@ -75,7 +75,7 @@ export default function AdminAddNewsPage() {
           <CheckCircle2 className="mx-auto text-emerald-500 mb-2" size={36} />
           <h1 className="text-lg font-bold text-slate-900 mb-1">{published.updated ? "News item updated" : "Published to News"}</h1>
           <p className="text-sm text-slate-500 mb-4">
-            {published.updated ? "That link was already in News, so its details were updated." : published.notified ? "Phones with notifications on were notified." : notify ? "Published. The phone notification could not be sent." : "Published without a phone notification."}
+            {published.updated ? "That link was already in News, so its details were updated." : published.notified ? (published.total === 0 ? "Published. No phone has notifications turned on yet, so nobody was notified." : published.total != null ? `Notified ${published.sent} of ${published.total} phone${published.total === 1 ? "" : "s"} with notifications on.` : "Phones with notifications on were notified.") : notify ? "Published. The phone notification could not be sent." : "Published without a phone notification."}
           </p>
           <div className="flex gap-2 justify-center">
             <Link to="/news" className="px-4 py-2 rounded-xl bg-violet-600 text-white text-sm font-bold">See News</Link>

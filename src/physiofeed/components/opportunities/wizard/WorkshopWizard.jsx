@@ -85,9 +85,11 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
   const [earlyBird, setEarlyBird] = useState(!!editingOpp?.earlyBirdFee);
   const [earlyBirdFee, setEarlyBirdFee] = useState(parseAmount(editingOpp?.earlyBirdFee));
   const [earlyBirdDeadline, setEarlyBirdDeadline] = useState(editingOpp?.earlyBirdDeadline || "");
+  const [allowWaitlist, setAllowWaitlist] = useState(!!editingOpp?.allowWaitlist);
+  const [regDeadline, setRegDeadline] = useState(editingOpp?.deadline || "");
   const [hasLimit, setHasLimit] = useState(editingOpp?.maxParticipants != null);
   const [maxParticipants, setMaxParticipants] = useState(editingOpp?.maxParticipants != null ? String(editingOpp.maxParticipants) : "");
-  const [registrationMethod, setRegistrationMethod] = useState(editingOpp?.registrationMethod || "physiofeed");
+  const [registrationMethod, setRegistrationMethod] = useState(editingOpp?.registrationMethod && editingOpp.registrationMethod !== "external" ? editingOpp.registrationMethod : "physiofeed");
   const [registrationUrl, setRegistrationUrl] = useState(editingOpp?.registrationUrl || "");
 
   // Step 6 -- Cover Image
@@ -149,6 +151,8 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
   if (needsInPerson && !city.trim()) missing.push({ step: 1, label: "City" });
   if (needsInPerson && !address.trim()) missing.push({ step: 1, label: "Full address" });
   priceProblems.forEach((label) => missing.push({ step: 4, label }));
+  if (regDeadline && regDeadline < todayIso() && regDeadline !== (editingOpp?.deadline || "")) missing.push({ step: 4, label: "Registration closing date can't be in the past" });
+  if (regDeadline && date && regDeadline > date) missing.push({ step: 4, label: "Registration must close on or before the workshop date" });
   if (registrationMethod === "external" && !normalizeLink(registrationUrl)) missing.push({ step: 4, label: registrationUrl.trim() ? "Registration link must be a web address (https://…)" : "Registration link" });
 
   const stepMissing = missing.filter((m) => m.step === step);
@@ -180,6 +184,8 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
       location: needsInPerson ? (city.trim() || format) : "Online",
       locationType: format,
       date: date || undefined,
+      deadline: regDeadline || undefined,
+      allowWaitlist: hasLimit && allowWaitlist ? true : undefined,
       registrationUrl: registrationMethod === "external" ? normalizeLink(registrationUrl) : "",
       maxParticipants: hasLimit && maxParticipants ? Number(maxParticipants) : undefined,
       org,
@@ -265,6 +271,7 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
     date: dateLabel, time: timeLabel, mode: format, fee: isFree ? "Free" : (fee.trim() ? `₹${formatINR(fee)}` : "₹0"),
     earlyBirdFee: !isFree && earlyBird && earlyBirdFee.trim() ? `₹${formatINR(earlyBirdFee)}` : undefined,
     earlyBirdDeadline: !isFree && earlyBird ? earlyBirdDeadline || undefined : undefined,
+    deadline: regDeadline || undefined, allowWaitlist: hasLimit && allowWaitlist ? true : undefined,
     postedAgo: "Just now", tags: [category],
     instructor, syllabus: outcomes.map((o) => o.trim()).filter(Boolean),
     // Everything the real detail page shows, so the preview is truthful.
@@ -442,6 +449,8 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
                 </>
               )}
 
+              {!isFree && <p className="text-xs text-slate-400 mb-3">PhysioFeed doesn't collect payment. You arrange the fee with each person in the chat.</p>}
+
               <span className="block text-xs font-semibold text-slate-600 mb-1.5 mt-1">Maximum participants</span>
               <div className="flex gap-1.5 mb-3">
                 <PillSelect value={hasLimit} onChange={setHasLimit} options={[false, true]} getKey={(v) => v} getLabel={(v) => v ? "Limited seats" : "No limit"} />
@@ -452,11 +461,26 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
                 </Field>
               )}
 
+              {hasLimit && (
+                <label className="flex items-start gap-2.5 text-sm text-slate-700 mb-3 cursor-pointer">
+                  <input type="checkbox" checked={allowWaitlist} onChange={(e) => setAllowWaitlist(e.target.checked)} className="mt-0.5 w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                  <span>
+                    Keep taking registrations after the seats are full (waiting list)
+                    <span className="block text-xs text-slate-400 mt-0.5">People past the seat limit show as "Waiting list". If someone withdraws, the first person waiting gets the seat automatically (first come, first served). Leave off to stop registrations when full.</span>
+                  </span>
+                </label>
+              )}
+
+              <Field label="Registration closes on (optional)">
+                <input type="date" min={todayIso()} max={date || undefined} value={regDeadline} onChange={(e) => setRegDeadline(e.target.value)} className={inputCls} />
+              </Field>
+              <p className="text-xs text-slate-400 -mt-2 mb-3">Leave empty to keep registrations open until the workshop date. You can extend this later from My Postings.</p>
+
               <span className="block text-xs font-semibold text-slate-600 mb-1.5 mt-1">How should students register? *</span>
               <div className="space-y-2 mb-3">
                 {[
                   { key: "physiofeed", label: "Register on PhysioFeed", hint: "Recommended -- registrations, reminders and a chat with participants, right here." },
-                  { key: "external", label: "External registration link", hint: null },
+                  // "External registration link" is switched off for now (Aditi, 2026-10-04).
                   { key: "contact", label: "Contact organiser", hint: null },
                 ].map((o) => (
                   <label key={o.key} className="flex items-start gap-2.5 text-sm text-slate-700 cursor-pointer border border-slate-200 rounded-xl px-3.5 py-2.5">
@@ -596,7 +620,7 @@ function CoverImageStep({ preview, onPick, onClear }) {
       <label className="block w-full border-2 border-dashed border-indigo-200 bg-indigo-50/40 rounded-xl p-5 text-center cursor-pointer hover:bg-indigo-50 transition-colors">
         <ImagePlus size={22} className="mx-auto mb-1.5" color="#4F46E5" />
         <p className="text-xs font-semibold text-slate-700">Add cover image</p>
-        <p className="text-[11px] text-slate-400 mt-0.5 mb-2.5">Recommended: 1200 × 630 · PNG, JPG up to 5MB</p>
+        <p className="text-[11px] text-slate-400 mt-0.5 mb-2.5">Recommended: 1200 × 630 · PNG, JPG up to 10MB</p>
         <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 bg-white border border-indigo-200 rounded-lg px-3 py-1.5">
           <Folder size={13} /> Browse File
         </span>

@@ -22,12 +22,11 @@ describe("Learn tab — Study mode", () => {
     fireEvent.click(screen.getByText("Practical Skills"));
     expect(screen.getByRole("heading", { name: "Practical Skills" })).toBeTruthy();
 
-    // Every item with real per-item data (palpation, ROM, MMT, special,
-    // neuro, outcome, cardio, functional movement, kinetic chain, CPA) gets
-    // its own "Study" pill -- 10 in total. Tap ROM's.
-    expect(screen.getAllByRole("button", { name: /^Study$/ }).length).toBe(10);
-    const romRow = screen.getByText("ROM").closest("button").parentElement;
-    fireEvent.click(within(romRow).getByRole("button", { name: /^Study$/ }));
+    // Every item with real per-item data is a grid card (no separate "Study" pill any more):
+    // 9 study cards for an ordinary user (Palpation is admin-only). Tap ROM's card.
+    expect(screen.queryAllByRole("button", { name: /^Study$/ }).length).toBe(0);
+    expect(document.querySelectorAll('[data-testid^="learn-card-"]').length).toBe(10); // 9 study cards + Exercise Prescription
+    fireEvent.click(screen.getByTestId("learn-card-rom"));
 
     // Grid overview: real ROM region pills + square thumbnails, each
     // exposing an accessible "Open <name>" label. Tapping the card never

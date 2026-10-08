@@ -1,3 +1,4 @@
+import { DiagnosisSection } from "./clinicalInterpretation.jsx";
 import { withCarePlanSummaryStep } from "./assessmentSteps.js";
 import { AddAssessmentModal } from "./assessmentFrame.jsx";
 import { regionLabelOf, formatPainSection } from "./orthoWizardHelpers.js";
@@ -83,7 +84,7 @@ const GENERIC_INCISION_TYPES = ["Anterior", "Posterior", "Medial", "Lateral", "A
 const CAREPLAN_STEP_IDS = ["carePlanProblems", "carePlanGoals", "carePlanTreatment"];
 const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "goals", carePlanTreatment: "treatment", carePlanPlan: "plan", carePlanSessions: "sessions", carePlanProgress: "progress" };
 /* Always present for every post-op patient, regardless of surgery type. */
-const BASE_IDS = ["caseInfo", "surgicalReview", "medicalRecords", "vitals", "pain", "observation", "surgicalSite", "rom", "mmt", "functionalMobility", "gait", "balance", "activityTolerance", "outcomeMeasure", "impression", ...CAREPLAN_STEP_IDS, "review"];
+const BASE_IDS = ["caseInfo", "surgicalReview", "medicalRecords", "vitals", "pain", "observation", "surgicalSite", "rom", "mmt", "functionalMobility", "gait", "balance", "activityTolerance", "outcomeMeasure", "impression", "diagnosis", ...CAREPLAN_STEP_IDS, "review"];
 /* Only added via "+ Add Assessment" unless a condition promotes them. */
 const OPTIONAL_IDS = ["jointMobility", "specialTests", "neuroScreen", "residualLimb", "prosthesis"];
 
@@ -108,6 +109,7 @@ const ORDERED_ALL = [
   "activityTolerance",
   "outcomeMeasure",
   "impression",
+  "diagnosis",
   ...CAREPLAN_STEP_IDS,
   "review",
 ];
@@ -133,6 +135,7 @@ const STEP_META = {
   activityTolerance: { icon: <Icon name="run" />, label: "Activity Tolerance" },
   outcomeMeasure: { icon: <Icon name="chart" />, label: "Outcome Measure" },
   impression: { icon: <Icon name="brain" />, label: "Clinical Impression" },
+  diagnosis: { icon: <Icon name="stethoscope" />, label: "Diagnosis" },
   carePlanProblems: { icon: <Icon name="puzzle" />, label: "Problem List" },
   carePlanGoals: { icon: <Icon name="target" />, label: "Care Plan Goals" },
   carePlanTreatment: { icon: <Icon name="dumbbell" />, label: "Care Plan Treatment" },
@@ -481,6 +484,7 @@ export default function OrthoPostOpAssessment({ selectedRegions, condition, cust
           {current.id === "activityTolerance" && <ActivityToleranceSection data={data} setData={setData} />}
           {current.id === "outcomeMeasure" && <OrthoOutcomeMeasureFlow data={data} setData={setData} selectedRegions={selectedRegions} regionLabelOf={regionLabelOf} />}
           {current.id === "impression" && <ImpressionSection data={data} setData={setData} />}
+          {current.id === "diagnosis" && <DiagnosisSection data={data} setData={setData} kind="ortho" selectedRegions={selectedRegions} legacy={{ section: "impression" }} />}
           {CAREPLAN_STEP_IDS.includes(current.id) && (
             <>
               <style>{orthoStyles()}</style>

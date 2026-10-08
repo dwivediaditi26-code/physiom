@@ -71,7 +71,7 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit, ed
   const [description, setDescription] = useState(editingOpp?.description || "");
   const [location, setLocation] = useState(editingOpp?.location || "");
   const [deadline, setDeadline] = useState(editingOpp?.deadline || "");
-  const [registrationMethod, setRegistrationMethod] = useState(editingOpp?.registrationMethod || (type === "collaboration" ? "contact" : "physiofeed"));
+  const [registrationMethod, setRegistrationMethod] = useState(editingOpp?.registrationMethod && editingOpp.registrationMethod !== "external" ? editingOpp.registrationMethod : (type === "collaboration" ? "contact" : "physiofeed"));
   const [registrationUrl, setRegistrationUrl] = useState(editingOpp?.registrationUrl || "");
   const [requirements, setRequirements] = useState(editingOpp?.requirements?.length ? editingOpp.requirements : [""]);
 
@@ -386,7 +386,8 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit, ed
               <div className="space-y-2 mb-1">
                 {[
                   { key: "physiofeed", label: type === "collaboration" ? "Connect on PhysioFeed" : "Apply on PhysioFeed" },
-                  { key: "external", label: "External link" },
+                  // "External link" is switched off for now (Aditi, 2026-10-04): PhysioFeed
+                  // can't see who used it. The form code below stays so it can come back.
                   { key: "contact", label: "Contact organiser" },
                 ].map((o) => (
                   <label key={o.key} className="flex items-center gap-2.5 text-sm text-slate-700 cursor-pointer border border-slate-200 rounded-xl px-3.5 py-2.5">

@@ -1296,13 +1296,13 @@ const ROM_DATA={
      capsular:"Rotation most limited in atlantoaxial OA (C1/C2)",
      adl:"Checking blind spot driving, looking sideways",
      pathology:"C1/2 OA: rotation limited bilaterally. Disc: often asymmetric + painful arc",
-     redflag:"<30° rotation = atlantoaxial instability or end-stage OA. VBI symptoms: dizziness, nystagmus, diplopia"},
+     redflag:"Marked rotation loss (<30°) = upper cervical OA or severe restriction; in RA or after trauma with neurological signs suspect atlantoaxial instability — stop and refer. VBI symptoms: dizziness, nystagmus, diplopia"},
     {id:"rom_crotr",mv:"Rotation R",bilateral:false,normal:60,unit:"°",plane:"Transverse",axis:"Vertical",
      start:"Same as rotation L",gonio:"Same method",
      muscles:"Same contralateral pattern as rotation L",
      endfeel:{normal:"Firm",abnormal:"Same as rotation L"},
      compensation:"Trunk rotation, chin elevation",
-     capsular:"RA: atlantoaxial instability — bilateral rotation severely limited",
+     capsular:"RA: atlantoaxial instability is possible — screen carefully (Sharp-Purser) and do not force rotation",
      adl:"Same as rotation L",
      pathology:"Unilateral loss: facet OA, unilateral disc; Bilateral equal loss: C1/2",
      redflag:"RA patient: odontoid fracture risk — <30° rotation → X-ray"},
@@ -1398,7 +1398,7 @@ const ROM_DATA={
      muscles:"Bilateral lateral pterygoid, digastric, mylohyoid (opening); masseter, temporalis, medial pterygoid (close)",
      endfeel:{normal:"Firm (muscle/capsule at end range)",abnormal:"Springy=anterior disc displacement with reduction (click); Hard=bony block/closed lock; Empty=acute inflammation"},
      compensation:"Forward head posture to gain opening, jaw deviation (note deviation direction)",
-     capsular:"TMJ capsular: limitation in opening=protrusion=contralateral deviation (ipsilateral condyle restriction)",
+     capsular:"TMJ capsular pattern: limited mouth opening with deviation toward the restricted (affected) side; contralateral lateral excursion is also reduced",
      adl:"Eating, yawning, talking, dental treatment",
      pathology:"<30mm = significant trismus; Clicking with opening: disc displacement with reduction; No click + limited: disc displacement without reduction (closed lock)",
      redflag:"Sudden inability to open after locking = closed lock — urgent referral. Trismus + fever = infection"},
@@ -1459,7 +1459,7 @@ const ROM_DATA={
      capsular:"ER most limited in GH capsular pattern (frozen shoulder) — key diagnostic finding",
      adl:"Combing hair, overhead reach, throwing wind-up",
      pathology:"ER loss primary sign of GH capsular restriction. ER loss at 90° = posterior capsule tightness → impingement",
-     redflag:"ER lag sign (passive > active by >5°) = infraspinatus tear. Profound ER weakness = axillary nerve injury"},
+     redflag:"ER lag sign (passive > active by >5°) = infraspinatus tear. Profound ER weakness with infraspinatus wasting = suprascapular nerve injury (axillary nerve injury shows as deltoid weakness and wasting)"},
     {id:"rom_sir",mv:"IR",bilateral:true,normal:70,unit:"°",plane:"Transverse",axis:"Vertical",
      start:"Supine, shoulder 0° abduction, elbow 90°; assess thumb-to-back (functional IR) = N: T8–T10 level",gonio:"Axis: olecranon; Fixed: vertical; Moving: ulna",
      muscles:"Subscapularis, anterior deltoid, teres major, pec major, latissimus",
@@ -1503,7 +1503,7 @@ const ROM_DATA={
      adl:"Pushing, pressing, reaching far, overhead work",
      pathology:"Extension loss: OA, posterior impingement, loose body, flexion contracture post-fracture; Hyperextension: laxity/UCL injury",
      redflag:"Extension loss after trauma = fracture (radial head, coronoid). Hyperextension = posterior dislocation risk"},
-    {id:"rom_esup",mv:"Supination",bilateral:true,normal:90,unit:"°",plane:"Transverse",axis:"Longitudinal",
+    {id:"rom_esup",mv:"Supination",bilateral:true,normal:80,unit:"°",plane:"Transverse",axis:"Longitudinal",
      start:"Elbow 90° flexion, arm at side (eliminates shoulder rotation compensation)",gonio:"Axis: third finger; Fixed: parallel to humerus; Moving: dorsal forearm/pencil held in hand",
      muscles:"Biceps brachii (primary), supinator",
      endfeel:{normal:"Firm (interosseous membrane, pronator teres, oblique cord)",abnormal:"Hard=radial head OA/DRUJ arthritis; Springy=ligamentous"},
@@ -1511,7 +1511,7 @@ const ROM_DATA={
      adl:"Receiving change, carrying soup bowl, turning door handle (external knob), hammering upward blow",
      pathology:"Limited supination: radial head fracture/OA, DRUJ arthritis, interosseous membrane injury",
      redflag:"Supination pain + lateral elbow = radial head fracture post-fall. DRUJ dislocation"},
-    {id:"rom_epro",mv:"Pronation",bilateral:true,normal:90,unit:"°",plane:"Transverse",axis:"Longitudinal",
+    {id:"rom_epro",mv:"Pronation",bilateral:true,normal:80,unit:"°",plane:"Transverse",axis:"Longitudinal",
      start:"Elbow 90° flexion, arm at side",gonio:"Same as supination",
      muscles:"Pronator teres, pronator quadratus",
      endfeel:{normal:"Firm (interosseous membrane + supinator stretch)",abnormal:"Hard=DRUJ OA; Empty=acute fracture"},
@@ -1563,6 +1563,18 @@ const ROM_DATA={
      adl:"Gripping, keyboard, writing, pinching",
      pathology:"Limited MCP flex: Dupuytren's contracture, flexor tenosynovitis, RA/OA, post-fracture",
      redflag:"Sudden triggering = trigger finger (stenosing tenosynovitis). RA: MCPs swollen bilaterally = synovitis"},
+    {id:"rom_mcpext",mv:"MCP Extension",bilateral:true,normal:45,unit:"°",plane:"Sagittal",axis:"Frontal",
+     start:"Wrist neutral, MCP in 0°, assess each finger MCP individually",gonio:"Axis: dorsal MCP joint; Fixed: metacarpal shaft; Moving: proximal phalanx",
+     muscles:"Extensor digitorum, extensor indicis (index), extensor digiti minimi (little)",
+     endfeel:{normal:"Firm (volar plate + palmar capsule)"},
+     adl:"Opening the hand, releasing a grip, typing",
+     pathology:"Limited MCP extension: Dupuytren's contracture, volar plate contracture, post-immobilisation stiffness. MCP hyperextension with IP flexion = claw deformity (ulnar/median nerve palsy)"},
+    {id:"rom_mcpabd",mv:"MCP Abduction / Adduction",bilateral:true,normal:null,unit:"°",plane:"Frontal",axis:"Sagittal",
+     start:"Hand flat on a table, fingers in neutral, assess each finger individually",gonio:"Axis: dorsal MCP joint; Fixed: metacarpal shaft; Moving: proximal phalanx",
+     muscles:"Dorsal interossei (abduction), palmar interossei (adduction)",
+     endfeel:{normal:"Firm (collateral ligaments + web space)"},
+     adl:"Spreading the fingers, gripping large objects",
+     pathology:"Limited by interosseous tightness, post-injury stiffness, RA with ulnar drift"},
     {id:"rom_pip",mv:"PIP Flexion",bilateral:true,normal:100,unit:"°",plane:"Sagittal",axis:"Frontal",
      start:"MCP neutral, assess each PIP",gonio:"Axis: lateral PIP; Fixed: proximal phalanx; Moving: middle phalanx",
      muscles:"FDS (primary PIP flexor)",
@@ -1571,6 +1583,12 @@ const ROM_DATA={
      adl:"All grip functions",
      pathology:"PIP limited: Boutonnière deformity (RA/trauma), volar plate injury, fracture, post-immobilisation contracture",
      redflag:"PIP swelling after injury = volar plate avulsion (jammed finger). Boutonnière = PIP flex + DIP ext deformity"},
+    {id:"rom_pipext",mv:"PIP Extension",bilateral:true,normal:0,unit:"°",plane:"Sagittal",axis:"Frontal",
+     start:"MCP neutral, assess each PIP individually",gonio:"Axis: lateral PIP; Fixed: proximal phalanx; Moving: middle phalanx",
+     muscles:"Extensor digitorum (central slip), interossei, lumbricals",
+     endfeel:{normal:"Firm (volar plate)"},
+     adl:"Straightening the finger, releasing a grip",
+     pathology:"Loss of PIP extension: boutonnière deformity (central slip injury), volar plate contracture, Dupuytren's contracture. PIP hyperextension: swan-neck deformity (volar plate laxity, RA)"},
     {id:"rom_dip",mv:"DIP Flexion",bilateral:true,normal:90,unit:"°",plane:"Sagittal",axis:"Frontal",
      start:"PIP in extension; assess DIP flex/ext",gonio:"Axis: lateral DIP; Fixed: middle phalanx; Moving: distal phalanx",
      muscles:"FDP (sole DIP flexor)",
@@ -1579,6 +1597,56 @@ const ROM_DATA={
      adl:"Fine pinch, typing, intricate hand work",
      pathology:"DIP extension loss: mallet finger (extensor digitorum avulsion). DIP OA: Heberden's nodes",
      redflag:"Mallet finger: DIP rests in flex, cannot actively extend = extensor avulsion — splint 6 weeks"},
+    {id:"rom_dipext",mv:"DIP Extension",bilateral:true,normal:null,unit:"°",plane:"Sagittal",axis:"Frontal",
+     start:"PIP neutral, assess each DIP individually",gonio:"Axis: lateral DIP; Fixed: middle phalanx; Moving: distal phalanx",
+     muscles:"Extensor digitorum (terminal slip), lumbricals, interossei",
+     endfeel:{normal:"Firm (volar plate)"},
+     adl:"Fine pinch, typing",
+     pathology:"Extensor lag or loss of DIP extension: mallet finger (terminal extensor tendon injury)"},
+    {id:"rom_thcmcf",mv:"Thumb CMC Flexion",bilateral:true,normal:15,unit:"°",plane:"",axis:"",
+     start:"Forearm supinated, thumb relaxed alongside the index finger",gonio:"Axis: over the palmar aspect of the 1st CMC joint; Fixed: radius; Moving: 1st metacarpal",
+     muscles:"Flexor pollicis brevis, opponens pollicis",
+     endfeel:{normal:"Firm (CMC joint capsule)"},
+     adl:"Pinching, gripping",
+     pathology:"1st CMC osteoarthritis (common in women over 50): painful, limited thumb motion at the base of the thumb"},
+    {id:"rom_thcmce",mv:"Thumb CMC Extension",bilateral:true,normal:20,unit:"°",plane:"",axis:"",
+     start:"Forearm in neutral or supinated, thumb relaxed alongside the index finger",gonio:"Axis: over the palmar aspect of the 1st CMC joint; Fixed: radius; Moving: 1st metacarpal",
+     muscles:"Abductor pollicis longus, extensor pollicis brevis",
+     endfeel:{normal:"Firm (CMC joint capsule)"},
+     adl:"Opening the hand, grasping large objects",
+     pathology:"1st CMC osteoarthritis; de Quervain's tenosynovitis (painful thumb extension at the radial wrist)"},
+    {id:"rom_thabdm",mv:"Thumb Palmar Abduction",bilateral:true,normal:70,unit:"°",plane:"Frontal",axis:"AP",
+     start:"Wrist neutral, thumb alongside index; palmar abduction (out of palm plane)",gonio:"Axis: 1st MCP; Fixed: 1st metacarpal; Moving: proximal phalanx",
+     muscles:"APB, APL",
+     endfeel:{normal:"Firm (adductor pollicis + 1st dorsal interosseous)",abnormal:"Hard=1st CMC OA; Springy=UCL"},
+     compensation:"Wrist radial deviation",capsular:"1st CMC: abduction + extension restriction in OA",
+     adl:"Holding large objects, typing space bar, jar opening",
+     pathology:"de Quervain's: APL/EPB tenosynovitis — painful abduction; Limited: CMC OA",
+     redflag:"UCL injury (Skier's thumb): valgus stress test at MCP. Stener lesion = surgical"},
+    {id:"rom_thradabd",mv:"Thumb Radial Abduction",bilateral:true,normal:null,unit:"°",plane:"",axis:"",
+     start:"Hand flat on a table, thumb alongside the index finger",gonio:"Measure the angle between the 1st and 2nd metacarpals at the 1st CMC joint",
+     muscles:"Abductor pollicis longus, extensor pollicis brevis",
+     endfeel:{normal:"Firm (first web space + adductor pollicis)"},
+     adl:"Grasping large objects, opening jars",
+     pathology:"Limited first web space: 1st CMC osteoarthritis, post-injury or post-burn contracture"},
+    {id:"rom_thmcpf",mv:"Thumb MCP Flexion",bilateral:true,normal:50,unit:"°",plane:"",axis:"",
+     start:"Forearm supinated, 1st CMC in neutral",gonio:"Axis: dorsal 1st MCP joint; Fixed: 1st metacarpal; Moving: proximal phalanx of the thumb",
+     muscles:"Flexor pollicis brevis, flexor pollicis longus",
+     endfeel:{normal:"Firm (collateral ligaments + joint capsule)"},
+     adl:"Pinching, gripping, writing",
+     pathology:"Limited or painful MCP flexion: ulnar collateral ligament injury (skier's thumb), OA, post-fracture stiffness"},
+    {id:"rom_thipf",mv:"Thumb IP Flexion",bilateral:true,normal:80,unit:"°",plane:"",axis:"",
+     start:"Forearm supinated, thumb MCP in neutral",gonio:"Axis: dorsal IP joint; Fixed: proximal phalanx; Moving: distal phalanx of the thumb",
+     muscles:"Flexor pollicis longus",
+     endfeel:{normal:"Firm (joint capsule); soft in some people (pulp contact)"},
+     adl:"Pinching, buttoning, writing",
+     pathology:"Loss of active IP flexion with passive range present: flexor pollicis longus rupture or anterior interosseous nerve palsy"},
+    {id:"rom_thipe",mv:"Thumb IP Extension",bilateral:true,normal:20,unit:"°",plane:"",axis:"",
+     start:"Forearm supinated, thumb MCP in neutral",gonio:"Axis: dorsal IP joint; Fixed: proximal phalanx; Moving: distal phalanx of the thumb",
+     muscles:"Extensor pollicis longus",
+     endfeel:{normal:"Firm (volar plate)"},
+     adl:"Pinching, opening the hand",
+     pathology:"Loss of active IP extension with passive range present: extensor pollicis longus rupture (for example after a distal radius fracture)"},
     {id:"rom_thopp",mv:"Thumb Opposition",bilateral:true,normal:null,unit:"",plane:"Multi",axis:"Multi",
      start:"Assess little finger pad contact with thumb pad",gonio:"Kapandji index (0–10 scale): 0=thumb cannot reach index; 10=full opposition past little finger base",
      muscles:"Opponens pollicis, FPB, APB, FPL",
@@ -1587,14 +1655,12 @@ const ROM_DATA={
      adl:"Pinching, writing, buttoning, feeding, key grip",
      pathology:"CMC OA (common in women >50): adduction/extension limited → pain base thumb. CTS: APB weakness → opposition weakness",
      redflag:"CMC OA grading: I (ligamentous laxity), II–IV (progressive narrowing). Grind test positive"},
-    {id:"rom_thabdm",mv:"Thumb Abd/Ext",bilateral:true,normal:70,unit:"°",plane:"Frontal",axis:"AP",
-     start:"Wrist neutral, thumb alongside index; palmar abduction (out of palm plane)",gonio:"Axis: 1st MCP; Fixed: 1st metacarpal; Moving: proximal phalanx",
-     muscles:"APB, APL (abduction); EPL, EPB (extension)",
-     endfeel:{normal:"Firm (adductor pollicis + 1st dorsal interosseous)",abnormal:"Hard=1st CMC OA; Springy=UCL"},
-     compensation:"Wrist radial deviation",capsular:"1st CMC: abduction + extension restriction in OA",
-     adl:"Holding large objects, typing space bar, jar opening",
-     pathology:"de Quervain's: APL/EPB tenosynovitis — painful abduction; Limited: CMC OA",
-     redflag:"UCL injury (Skier's thumb): valgus stress test at MCP. Stener lesion = surgical"},
+    {id:"rom_fistcl",mv:"Fingertip-to-Palm Distance",bilateral:true,normal:0,unit:" cm",plane:"Multi",axis:"Multi",
+     start:"Hand open, then close all fingers as far as possible into a fist",gonio:"Ruler: measure from the fingertip pulp to the distal palmar crease, for each finger; 0 cm = the fingertip touches the palm",
+     muscles:"Flexor digitorum superficialis and profundus, lumbricals, interossei",
+     endfeel:{normal:"Firm or soft (tissue contact)"},
+     adl:"Gripping, holding tools, making a fist",
+     pathology:"A distance above 0 shows lost composite finger flexion: flexor tendon adhesions, joint stiffness, Dupuytren's contracture, post-fracture or post-immobilisation stiffness"},
   ],
   "Hip":[
     {id:"rom_hflex",mv:"Flexion",bilateral:true,normal:120,unit:"°",plane:"Sagittal",axis:"Frontal",
@@ -1631,7 +1697,7 @@ const ROM_DATA={
      compensation:"Contralateral pelvis drop, trunk lean ipsilateral",capsular:"Less restricted than abd in OA",
      adl:"Crossing legs, horseback riding",
      pathology:"Painful adduction: adductor strain, osteitis pubis, sports hernia",
-     redflag:"Adductor squeeze test <18cmHg = groin strain. Groin pain in child/adolescent = SUFE — urgent X-ray"},
+     redflag:"Adductor squeeze test: pain, or reduced squeeze strength compared with the other side, = groin strain. Groin pain in child/adolescent = SUFE — urgent X-ray"},
     {id:"rom_her",mv:"ER",bilateral:true,normal:45,unit:"°",plane:"Transverse",axis:"Vertical",
      start:"Supine, hip + knee 90° (seated) OR prone, knee 90° (pelvis stabilised)",gonio:"Axis: knee (midpoint); Fixed: vertical; Moving: distal fibula/tibia (pendulum method)",
      muscles:"Piriformis, obturator internus/externus, gemelli, gluteus maximus (posterior fibers)",
@@ -1639,7 +1705,7 @@ const ROM_DATA={
      compensation:"Lateral pelvic tilt, lumbar rotation",capsular:"Hip OA: IR more limited than ER (early); Both limited end-stage",
      adl:"Cross-legged sitting, walking toe-out gait, external rotation in sport",
      pathology:"Piriformis syndrome: painful ER + sciatic symptoms; Hip OA: ER preserved longer than IR",
-     redflag:"Bilateral ER loss in child = SUFE. Painful ER in trauma = posterior hip dislocation"},
+     redflag:"Loss of hip rotation in a child with groin or knee pain — suspect SUFE or Perthes (SUFE classically loses internal rotation) and refer. After high-energy trauma: posterior dislocation = shortened, adducted, internally rotated; anterior dislocation = abducted, externally rotated"},
     {id:"rom_hir",mv:"IR",bilateral:true,normal:45,unit:"°",plane:"Transverse",axis:"Vertical",
      start:"Prone knee 90° (most reliable); or supine hip 90°",gonio:"Same pendulum method as ER",
      muscles:"Gluteus medius (anterior), TFL, adductor longus",
@@ -1685,7 +1751,7 @@ const ROM_DATA={
      compensation:"Hip IR, trunk lean",capsular:"Plantarflexion less affected than DF in ankle OA",
      adl:"Heel raise, ballet, push-off in walking, cycling",
      pathology:"Limited PF: anterior impingement syndrome, Achilles calcification, anterior capsule adhesion",
-     redflag:"Sudden PF loss after push-off = Achilles rupture (Thompson test negative)"},
+     redflag:"Sudden PF loss after push-off = Achilles rupture (Thompson test positive — no plantarflexion on calf squeeze)"},
     {id:"rom_ainv",mv:"Inversion",bilateral:true,normal:35,unit:"°",plane:"Frontal",axis:"AP",
      start:"Seated, ankle in plantar flex (tests subtalar); assess talar tilt",gonio:"Axis: posterior calcaneus; Fixed: tibia shaft; Moving: posterior calcaneus",
      muscles:"Tibialis posterior, FHL, FDL, tibialis anterior",
@@ -1696,7 +1762,7 @@ const ROM_DATA={
      redflag:">35° inversion + pain + swelling post-sprain = grade III ATFL tear — anterior draw test. Ottawa rules: X-ray"},
     {id:"rom_aev",mv:"Eversion",bilateral:true,normal:15,unit:"°",plane:"Frontal",axis:"AP",
      start:"Seated, ankle neutral",gonio:"Axis: posterior calcaneus; Fixed: tibia; Moving: posterior calcaneus",
-     muscles:"Peroneus longus/brevis, peroneus tertius, EDB",
+     muscles:"Peroneus longus/brevis, peroneus tertius",
      endfeel:{normal:"Firm (medial deltoid ligament + tibialis posterior)",abnormal:"Hard=coalition; Springy=deltoid laxity"},
      compensation:"Tibial ER, knee ext",capsular:"Eversion less commonly restricted than inversion",
      adl:"Walking on uneven ground (medial stability)",
@@ -1705,7 +1771,7 @@ const ROM_DATA={
   ],
   "Foot":[
     {id:"rom_1mtpf",mv:"1st MTP Extension",bilateral:true,normal:70,unit:"°",plane:"Sagittal",axis:"Frontal",
-     start:"Standing (functional) or supine; windlass test: active hallux extension",gonio:"Axis: 1st MTP joint; Fixed: 1st metatarsal; Moving: proximal phalanx plantar surface",
+     start:"Standing (functional) or supine; windlass test: passive hallux extension (weight-bearing)",gonio:"Axis: 1st MTP joint; Fixed: 1st metatarsal; Moving: proximal phalanx plantar surface",
      muscles:"EHL (active); passive: plantar fascia (windlass mechanism)",
      endfeel:{normal:"Firm (plantar plate + FHL + plantar fascia windlass)",abnormal:"Hard=hallux rigidus (OA); Springy=sesamoiditis; Empty=fracture"},
      compensation:"Supination of forefoot, external rotation of limb, early heel rise (antalgic gait)",
@@ -1728,7 +1794,7 @@ const ROM_DATA={
      compensation:"Hip and knee extension",capsular:"Lesser MTP OA: variable restriction",
      adl:"Walking push-off, running",
      pathology:"Limited/painful MTP ext: Morton's neuroma (not joint), metatarsalgia, stress fracture, plantar plate injury",
-     redflag:"2nd MTP dorsal dislocation (Lisfranc injury): severe pain + limited ROM + plantar ecchymosis"},
+     redflag:"Midfoot (Lisfranc) injury: severe midfoot pain, inability to weight-bear, plantar ecchymosis — image and refer. (A dorsal 2nd MTP dislocation is a separate injury.)"},
   ],
 };
 
@@ -1809,7 +1875,7 @@ const MMT_DATA={
     {id:"mmt_subscap",muscle:"Subscapularis",action:"Shoulder IR",nerve:"Upper + lower subscapular nerves",root:"C5–C6",origin:"Subscapular fossa",insertion:"Lesser tuberosity",
      patient:"Prone, arm over edge, elbow 90°",therapist:"Distal forearm",resistance:"Into ER (upward)",gravElim:"Supine",palpation:"Axilla — difficult; use lift-off + belly press tests",
      compensation:"Trunk rotation, shoulder protraction",substitution:"Pec major, teres major, anterior delt",
-     functional:"Primary IR and anterior stabiliser. Tear → ER lag + anterior instability",chain:"Weak subscap → anterior instability → recurrent dislocation risk"},
+     functional:"Primary IR and anterior stabiliser. Tear → IR lag (lift-off and belly-press positive), increased passive ER, anterior instability",chain:"Weak subscap → anterior instability → recurrent dislocation risk"},
     {id:"mmt_tmin",muscle:"Teres Minor",action:"Shoulder ER + GH compression",nerve:"Axillary nerve",root:"C5–C6",origin:"Lateral border scapula (upper 2/3)",insertion:"Greater tuberosity (inferior facet)",
      patient:"Seated or supine, elbow flexed 90°, humerus ER",therapist:"Posterior distal forearm; stabilise elbow",resistance:"Into IR",gravElim:"N/A",palpation:"Posterior axillary fold lateral to infraspinatus — below scapular spine",
      compensation:"Same as infraspinatus",substitution:"Infraspinatus",
@@ -1941,7 +2007,7 @@ const MMT_DATA={
   ],
   "Spine & Core":[
     {id:"mmt_rflex",muscle:"Rectus Abdominis",action:"Trunk flexion",nerve:"T5–T12 anterior rami",root:"T5–T12",origin:"Pubic crest + symphysis",insertion:"Xiphoid + costal cartilages 5–7",
-     patient:"Supine, knees flexed",therapist:"Watch trunk curl",resistance:"Grade 5: arms crossed + curl off table; Grade 4: arms forward; Grade 3: arms at head; Grade 2: partial curl; Grade 1: palpate",gravElim:"N/A",palpation:"Anterior abdomen between linea alba",
+     patient:"Supine, knees flexed",therapist:"Watch trunk curl",resistance:"Grade 5: hands behind head + curl up (scapulae clear); Grade 4: arms crossed on chest; Grade 3: arms extended forward; Grade 2: head and shoulders lift only; Grade 1: palpable contraction",gravElim:"N/A",palpation:"Anterior abdomen between linea alba",
      compensation:"Hip flexors pull pelvis — watch lumbar arch",substitution:"Hip flexors (flex trunk weakly via pelvis)",
      functional:"Diastasis recti: linea alba separation — palpate gap during crunch",chain:"Weak rectus → posterior pelvic tilt deficit → LBP pattern"},
     {id:"mmt_oblique",muscle:"External + Internal Obliques",action:"Trunk rotation + lateral flex",nerve:"T6–L1 anterior rami",root:"T6–L1",origin:"Ribs 5–12 (EO); iliac crest + inguinal lig (IO)",insertion:"Linea alba + iliac crest",
@@ -1949,9 +2015,9 @@ const MMT_DATA={
      compensation:"Trunk extension, hip flexors",substitution:"RA (flexion only)",
      functional:"Core rotation power. Weak obliques → poor rotational control → disc injury",chain:"Weak obliques + tight hip flexors → anterior pelvic tilt → LBP"},
     {id:"mmt_ta",muscle:"Transversus Abdominis",action:"Intra-abdominal pressure + lumbar corset",nerve:"T6–L1 anterior rami",root:"T6–L1",origin:"Lateral inguinal lig + iliac crest + thoracolumbar fascia + costal cartilages 7–12",insertion:"Linea alba + pubic crest via conjoint tendon",
-     patient:"Crook-lying; draw-in manoeuvre",therapist:"Ultrasound preferred; or RTPU method — palpate just medial to ASIS",resistance:"Not a standard MMT — assess via draw-in / CCFT / ultrasound",gravElim:"N/A",palpation:"2cm medial + inferior to ASIS — feel firm contraction during draw-in without OI activation",
+     patient:"Crook-lying; draw-in manoeuvre",therapist:"Ultrasound preferred; or RTPU method — palpate just medial to ASIS",resistance:"Not a standard MMT — assess via draw-in with pressure biofeedback (prone, 70 mmHg baseline) or ultrasound",gravElim:"N/A",palpation:"2cm medial + inferior to ASIS — feel firm contraction during draw-in without OI activation",
      compensation:"Breath holding, OI/EO dominant contraction",substitution:"External oblique (sucking in belly)",
-     functional:"Inhibited in ALL chronic LBP. Must activate BEFORE limb movement (feed-forward). Assessed via CCFT and real-time US",chain:"Weak TA → loss of lumbar segmental control → disc, facet, SIJ injury"},
+     functional:"Often inhibited in chronic LBP. Normally activates BEFORE limb movement (feed-forward). Assessed via pressure biofeedback and real-time US",chain:"Weak TA → loss of lumbar segmental control → disc, facet, SIJ injury"},
     {id:"mmt_multif",muscle:"Multifidus",action:"Lumbar segmental extension + rotation control",nerve:"Medial branch of posterior rami",root:"L1–S3",origin:"Posterior sacrum + mammillary processes L1–L5",insertion:"Spinous processes 2–4 levels above",
      patient:"Prone",therapist:"Palpate adjacent to spinous process; ask for isolated 'swelling' contraction",resistance:"Prone leg lift with multifidus palpation at target segment",gravElim:"N/A",palpation:"1–2cm lateral to spinous process — bimanual fingertip palpation; compare segmental bulk",
      compensation:"Global extensor contraction",substitution:"Erector spinae (extension without segmental control)",
@@ -1989,7 +2055,7 @@ const MMT_DATA={
     {id:"mmt_adduc",muscle:"Hip Adductors (Longus/Brevis/Magnus/Gracilis/Pectineus)",action:"Hip adduction",nerve:"Obturator nerve (+ femoral for pectineus)",root:"L2–L4",origin:"Pubic rami + ischial tuberosity (magnus)",insertion:"Linea aspera + adductor tubercle (magnus) + medial tibia (gracilis)",
      patient:"Sidelying, test leg on bottom; top leg supported",therapist:"Medial distal thigh",resistance:"Into abduction",gravElim:"Supine — squeeze legs against resistance",palpation:"Medial thigh — longus most anterior; palpate proximal medial thigh",
      compensation:"Hip flexion, trunk lean",substitution:"Gracilis (also flexes knee)",
-     functional:"Groin strain = adductor longus usually. Adductor squeeze test <1.0kg = groin strain risk. Sports hernia cluster",chain:"Weak adductors → poor medial knee control → valgus → ACL risk"},
+     functional:"Groin strain = adductor longus usually. Adductor squeeze test: pain, or reduced squeeze strength compared with the other side, suggests groin strain. Sports hernia cluster",chain:"Weak adductors → poor medial knee control → valgus → ACL risk"},
     {id:"mmt_hamstr",muscle:"Hamstrings (Biceps Femoris + Semitendinosus + Semimembranosus)",action:"Knee flexion + hip extension",nerve:"Sciatic nerve (tibial division for semi; common peroneal for BF short head)",root:"L5–S2",origin:"Ischial tuberosity (long) + linea aspera BF (short)",insertion:"Fibula head (BF) + medial tibia (semi)",
      patient:"Prone, knee 90°",therapist:"Distal lower leg",resistance:"Into knee extension",gravElim:"Sidelying",palpation:"Posterior thigh — BF lateral, semiT + semiM medial; palpate at 90° flex",
      compensation:"Hip ER/IR for BF vs semi isolation",substitution:"Gastrocnemius (knee flex at end range)",
@@ -2005,7 +2071,7 @@ const MMT_DATA={
   ],
   "Knee":[
     {id:"mmt_quad",muscle:"Quadriceps (Vastus Medialis/Lateralis/Intermedius)",action:"Knee extension",nerve:"Femoral nerve",root:"L2–L4",origin:"Anterior femur",insertion:"Tibial tuberosity via patellar tendon",
-     patient:"Seated, lower leg hanging",therapist:"Anterior distal lower leg",resistance:"Into knee flexion",gravElim:"Sidelying",palpation:"VMO: medial patella — last 10–15° extension. VL: lateral thigh. VI: deep central",
+     patient:"Seated, lower leg hanging",therapist:"Anterior distal lower leg",resistance:"Into knee flexion",gravElim:"Sidelying",palpation:"VMO: medial patella — often palpated in the last 10–15° of extension (whether the VMO can be activated selectively is debated). VL: lateral thigh. VI: deep central",
      compensation:"Trunk extension, hip hike",substitution:"None effective",
      functional:"VMO:VL ratio key for patellar tracking. Atrophy post ACL/knee injury. L3/L4 myotome",chain:"Weak VMO → lateral patella tilt → PFPS → chondromalacia"},
     {id:"mmt_gastroc",muscle:"Gastrocnemius",action:"Ankle PF + knee flexion",nerve:"Tibial nerve",root:"S1–S2",origin:"Medial + lateral femoral condyles",insertion:"Calcaneus via Achilles tendon",
@@ -2267,8 +2333,8 @@ const SPECIAL_TESTS_DATA = {
       },
       { id:"st_alar", label:"Alar Ligament Test", structure:"Alar ligament / C1-C2 stability",
         sensitivity:"50%", specificity:"75%",
-        positive:"C2 rotates with head rotation (ligament lax)",
-        negative:"C2 fixed during head rotation",
+        positive:"C2 does not move, or moves late, with side-flexion (ligament laxity). Test reliability is limited — interpret with the rest of the examination",
+        negative:"C2 moves immediately with side-flexion (alar ligament intact)",
         how:"Patient seated, head neutral. Therapist palpates C2 spinous process bilaterally. Ask patient to side-flex head. NORMAL: C2 should immediately move toward the side of side-flexion (tight alar ligament moves it). POSITIVE (LAXITY): C2 does not move, or head can side-flex extensively without C2 movement.",
         options:["Negative — normal C2 movement","Positive left — alar laxity (left)","Positive right — alar laxity (right)","Bilateral — bilateral alar laxity"],
       },
@@ -2602,7 +2668,7 @@ const SPECIAL_TESTS_DATA = {
         sensitivity:"69%", specificity:"69%",
         positive:"SI joint pain with compression",
         negative:"No SI symptoms",
-        how:"Patient in SIDE LYING. Apply DOWNWARD COMPRESSION over iliac crest (compresses SI joint from above). Positive = SI joint pain. Combine with distraction and other SI tests — 3+ positive = 91% specific for SIJ.",
+        how:"Patient in SIDE LYING. Apply DOWNWARD COMPRESSION over iliac crest (compresses SI joint from above). Positive = SI joint pain. Combine with distraction and other SI tests — 3 or more positive tests = about 91% sensitive and 78% specific for SIJ pain.",
         options:["Negative","Positive — SI joint pain"],
       },
       { id:"st_gaenslen", label:"Gaenslen's Test", structure:"SIJ — extension loading",
@@ -2830,7 +2896,7 @@ const SPECIAL_TESTS_DATA = {
         sensitivity:"69–89%", specificity:"97%",
         positive:"Medial or lateral joint pain/catching with rotation",
         negative:"No symptoms",
-        how:"Patient stands on ONE leg, knee at 20° FLEXION (most sensitive angle). Rotate torso internally and externally 3 times while maintaining balance. Positive = MEDIAL or LATERAL joint line pain or clicking. Most accurate meniscal test — simulates physiological weight-bearing.",
+        how:"Patient stands on ONE leg, knee at 20° FLEXION (most sensitive angle). Rotate torso internally and externally 3 times while maintaining balance. Positive = MEDIAL or LATERAL joint line pain or clicking. Reported as one of the more accurate meniscal tests in the original studies (later studies found lower accuracy); it loads the knee in weight-bearing.",
         options:["Negative","Positive — medial joint line pain (medial meniscus)","Positive — lateral joint line pain (lateral meniscus)"],
       },
       { id:"st_clarkes", label:"Clarke's Sign", structure:"Patellofemoral joint",
@@ -2904,10 +2970,10 @@ const SPECIAL_TESTS_DATA = {
       },
       { id:"st_navicular_drop", label:"Navicular Drop Test", structure:"Medial arch collapse / tibialis posterior",
         sensitivity:"High for arch collapse", specificity:"Moderate",
-        positive:"Navicular drop > 10mm",
-        negative:"< 6mm navicular drop",
-        how:"Mark NAVICULAR TUBEROSITY with pen marker while patient seated (non-weight-bearing). Mark height from floor. Then patient STANDS (weight-bearing). Measure new navicular height. NAVICULAR DROP = difference between non-WB and WB heights. Normal: < 6mm. Mild: 6–10mm. Significant: > 10mm. > 10mm = tibialis posterior insufficiency / medial arch collapse.",
-        options:["Normal (< 6mm drop)","Mild collapse (6–10mm)","Significant collapse (> 10mm — tib post insufficiency)"],
+        positive:"Navicular drop > 15mm",
+        negative:"< 10mm navicular drop",
+        how:"Mark NAVICULAR TUBEROSITY with pen marker while patient seated (non-weight-bearing). Mark height from floor. Then patient STANDS (weight-bearing). Measure new navicular height. NAVICULAR DROP = difference between non-WB and WB heights. Normal: < 10mm. Borderline: 10–15mm. Significant: > 15mm (suggests tibialis posterior insufficiency / medial arch collapse).",
+        options:["Normal (< 10mm drop)","Borderline collapse (10–15mm)","Significant collapse (> 15mm — tib post insufficiency)"],
       },
       { id:"st_tinel_ankle", label:"Tinel's Sign — Ankle", structure:"Posterior tibial nerve (tarsal tunnel)",
         sensitivity:"58%", specificity:"86%",
@@ -2937,24 +3003,24 @@ const SPECIAL_TESTS_DATA = {
         options:["Negative — no symptom change with neck extension","Positive — left (symptoms reproduced + ease with neck ext)","Positive — right","Bilateral positive — central sensitisation suspected"],
       },
       { id:"st_ultt1", label:"ULTT1 — Median Nerve", structure:"Median nerve tension",
-        sensitivity:"75%", specificity:"74%",
+        sensitivity:"Varies by study", specificity:"Varies by study",
         positive:"Symptom reproduction in median distribution",
         negative:"No arm symptoms",
-        how:"Patient supine. Sequence: (1) Scapular depression, (2) Shoulder abduction 110°, (3) Wrist + finger extension, (4) Forearm supination, (5) Elbow extension, (6) Cervical side flexion AWAY. Sensitise with shoulder IR. Positive = arm symptoms reproduced (median distribution — thumb/index/middle). Release tension to confirm (symptom change).",
+        how:"Patient supine. Sequence: (1) Scapular depression, (2) Shoulder abduction 110°, (3) Wrist + finger extension, (4) Forearm supination, (5) Shoulder external rotation, (6) Elbow extension, (7) Cervical side flexion AWAY (sensitises); side flexion TOWARD the test arm releases tension. Positive = arm symptoms reproduced (median distribution — thumb/index/middle). Release tension to confirm (symptom change).",
         options:["Negative","Positive left — median nerve sensitised","Positive right — median nerve sensitised","Bilateral positive"],
       },
       { id:"st_ultt2", label:"ULTT2 — Radial Nerve", structure:"Radial nerve tension",
-        sensitivity:"72%", specificity:"74%",
+        sensitivity:"Varies by study", specificity:"Varies by study",
         positive:"Lateral forearm or dorsal hand symptoms",
         negative:"No radial distribution symptoms",
         how:"Patient supine. Sequence: (1) Scapular depression, (2) Shoulder abduction 40°, (3) Elbow extension, (4) Forearm pronation, (5) Wrist + finger flexion (radial nerve on tension), (6) Shoulder IR. Positive = symptoms in RADIAL distribution (lateral forearm, dorsum hand, thumb). Lateral epicondylalgia often has positive ULTT2.",
         options:["Negative","Positive left — radial nerve sensitised","Positive right — radial nerve sensitised"],
       },
       { id:"st_ultt3", label:"ULTT3 — Ulnar Nerve", structure:"Ulnar nerve tension",
-        sensitivity:"75%", specificity:"74%",
+        sensitivity:"Varies by study", specificity:"Varies by study",
         positive:"Ring/little finger and medial forearm symptoms",
         negative:"No ulnar distribution symptoms",
-        how:"Patient supine. Sequence: (1) Scapular depression, (2) Shoulder abduction 90°, (3) Wrist + finger extension (ulnar side), (4) Forearm supination, (5) Elbow FLEXION (ulnar nerve stretched at cubital tunnel), (6) Cervical side flexion AWAY. Positive = ring/little finger tingling or medial forearm symptoms.",
+        how:"Patient supine. Sequence: (1) Scapular depression, (2) Shoulder abduction 90°, (3) Wrist + finger extension (ulnar side), (4) Forearm PRONATION, (5) Shoulder external rotation, (6) Elbow FLEXION (ulnar nerve stretched at cubital tunnel), (7) Cervical side flexion AWAY. Positive = ring/little finger tingling or medial forearm symptoms.",
         options:["Negative","Positive left — ulnar nerve sensitised","Positive right — ulnar nerve sensitised"],
       },
       { id:"st_femoral_nerve_stretch", label:"Femoral Nerve Stretch Test (FNST)", structure:"Femoral nerve — L2/L3/L4",
@@ -3002,7 +3068,7 @@ const SPECIAL_TESTS_DATA = {
         sensitivity:"High for chronic ankle instability", specificity:"High",
         positive:"Asymmetry > 4cm in any direction vs contralateral",
         negative:"< 4cm asymmetry in all directions",
-        how:"Patient stands on one leg at centre of star. Reach free leg in 3 directions: ANTERIOR, POSTEROMEDIAL, POSTEROLATERAL. Measure distance (cm) from centre to reach point. Normalise to leg length. > 4cm asymmetry in posteromedial reach = high injury risk (ankle instability and ACL risk predictor).",
+        how:"Patient stands on one leg at centre of star. Reach free leg in 3 directions: ANTERIOR, POSTEROMEDIAL, POSTEROLATERAL. Measure distance (cm) from centre to reach point. Normalise to leg length. > 4cm asymmetry in the ANTERIOR reach (or a composite score below about 94% of leg length) = increased lower-limb injury risk (ankle instability and ACL risk predictor).",
         options:["Normal — < 4cm asymmetry all directions","Anterior deficit (> 4cm)","Posteromedial deficit (> 4cm) — highest injury predictor","Posterolateral deficit (> 4cm)","Multiple direction deficits"],
       },
       { id:"st_functional_hop", label:"Single Leg Hop Tests (4-Test Battery)", structure:"Lower limb power, symmetry, confidence",
@@ -3043,12 +3109,12 @@ const CYRIAX_REGIONS_DATA = {
     anatomy:"C1–C7 vertebrae. Inert structures: facet joint capsules, intervertebral discs, anterior/posterior longitudinal ligaments, alar/transverse ligaments (C1–C2), supraspinous/interspinous ligaments. Contractile: deep cervical flexors, sternocleidomastoid, scalenes, semispinalis, splenius, suboccipitals, trapezius.",
     capsularPattern:"All movements equally limited (side-flex > rotation > flex/ext). May be asymmetric in facet pathology.",
     activeROM:[
-      { id:"cx_a_flex", label:"Flexion", normal:"80°", how:"Patient seated. Chin moves toward chest. Normal = chin-to-chest or ~80°. Note: pain on initiation vs end range. Painful arc (mid-range pain then eases) = disc." },
-      { id:"cx_a_ext", label:"Extension", normal:"70°", how:"Look toward ceiling. Normal = 70°. Pain on extension = facet, posterior disc, foraminal stenosis." },
+      { id:"cx_a_flex", label:"Flexion", normal:"45°", how:"Patient seated. Chin moves toward chest. Normal = about 45–50° (chin close to the chest). Note: pain on initiation vs end range. Painful arc (mid-range pain then eases) = disc." },
+      { id:"cx_a_ext", label:"Extension", normal:"45°", how:"Look toward ceiling. Normal = 45°. Pain on extension = facet, posterior disc, foraminal stenosis." },
       { id:"cx_a_sfl", label:"Side Flex Left", normal:"45°", how:"Ear toward shoulder WITHOUT shoulder elevation. Normal = 45°. Limitation ipsilateral = disc, facet, scalene." },
       { id:"cx_a_sfr", label:"Side Flex Right", normal:"45°", how:"Ear toward right shoulder. Compare bilaterally. Asymmetry = unilateral lesion." },
-      { id:"cx_a_rotl", label:"Rotation Left", normal:"80°", how:"Rotate chin toward left shoulder. Normal = 80°. Test specifically at full flex (FRT) to isolate C1/C2." },
-      { id:"cx_a_rotr", label:"Rotation Right", normal:"80°", how:"Rotate chin toward right shoulder. If restricted only in rotation = upper cervical (C1/C2) pathology." },
+      { id:"cx_a_rotl", label:"Rotation Left", normal:"60°", how:"Rotate chin toward left shoulder. Normal = 60°. Test specifically at full flex (FRT) to isolate C1/C2." },
+      { id:"cx_a_rotr", label:"Rotation Right", normal:"60°", how:"Rotate chin toward right shoulder. If restricted only in rotation = upper cervical (C1/C2) pathology." },
     ],
     passiveROM:[
       { id:"cx_p_flex", label:"Passive Flexion", how:"Support head with both hands. Gently flex — feel for resistance and end-feel. Overpressure at end range. Compare active vs passive range.", endfeel_options:["Normal/Capsular","Muscle Spasm","Empty (No End-Feel)","Hard (Osteophyte)"] },
@@ -3118,8 +3184,8 @@ const CYRIAX_REGIONS_DATA = {
     activeROM:[
       { id:"el_a_flex", label:"Flexion", normal:"145°", how:"Bend elbow from full extension. Normal = 145°. Note pain at: initiation (posterior impingement), mid-range, end range (anterior impingement). Restriction = OA, contracture, effusion." },
       { id:"el_a_ext", label:"Extension", normal:"0°", how:"Full extension from flexion. Hyperextension normal in females (-5 to -10°). Loss of full extension = earliest sign of elbow OA or effusion (capsular pattern)." },
-      { id:"el_a_pro", label:"Pronation", normal:"85°", how:"Elbow 90°, thumb up start. Rotate palm DOWN. Normal = 85°. Limited = radioulnar joint, pronator teres lesion." },
-      { id:"el_a_sup", label:"Supination", normal:"90°", how:"Rotate palm UP from neutral. Normal = 90°. Limited = biceps, supinator, radioulnar joint." },
+      { id:"el_a_pro", label:"Pronation", normal:"80°", how:"Elbow 90°, thumb up start. Rotate palm DOWN. Normal = 80°. Limited = radioulnar joint, pronator teres lesion." },
+      { id:"el_a_sup", label:"Supination", normal:"80°", how:"Rotate palm UP from neutral. Normal = 80°. Limited = biceps, supinator, radioulnar joint." },
     ],
     passiveROM:[
       { id:"el_p_flex", label:"Passive Flexion", how:"Passively flex elbow to end-feel. Tissue approximation (forearm to biceps) = normal. Premature capsular end-feel = OA/capsulitis.", endfeel_options:["Tissue Approximation (normal)","Capsular/Leathery","Muscle Spasm","Springy/Rebound","Hard (Bone-to-Bone)"] },
@@ -3181,11 +3247,11 @@ const CYRIAX_REGIONS_DATA = {
     anatomy:"L1–L5 vertebrae. Inert: disc (nucleus pulposus, annulus fibrosus), facet joint capsules, ALL, PLL, ligamentum flavum, interspinous/supraspinous ligaments, SIJ. Contractile: erector spinae, multifidus, QL, psoas, abdominals, gluteals (indirect).",
     capsularPattern:"Side-flex equally limited both ways, Extension > Flexion. Severe: all movements limited = OA / spondylosis.",
     activeROM:[
-      { id:"lu_a_flex", label:"Flexion", normal:"90°", how:"Patient stands. Bends forward. OBSERVE: where does movement initiate — hip or lumbar? Lateral trunk shift? Normal = sequential lumbar flexion + hip flexion. Painful arc mid-range = disc. Restriction = disc, facet, or muscle. Measure with Schober test (mark L5 and 10cm above — normal = ≥5cm increase)." },
-      { id:"lu_a_ext", label:"Extension", normal:"30°", how:"Extend lumbar spine. Support at ASIS. Pain = facet loading, spondylolysis, spinal stenosis. Relieves = disc herniation (posteriorly). Compare McKenzie assessment direction of preference." },
-      { id:"lu_a_sfl", label:"Side Flex Left", normal:"40°", how:"Slide hand down lateral thigh. Normal = 40°. Restriction + ipsilateral pain = facet, lateral disc. Restriction + contralateral pain = disc herniation (nerve root tension)." },
-      { id:"lu_a_sfr", label:"Side Flex Right", normal:"40°", how:"As above to right. Compare sides — asymmetry = unilateral lesion." },
-      { id:"lu_a_rotl", label:"Rotation Left (standing)", normal:"45°", how:"Hands on hips. Rotate trunk. Limited rotation = facet, disc, thoracolumbar restriction. Assess thoracic contribution." },
+      { id:"lu_a_flex", label:"Flexion", normal:"60°", how:"Patient stands. Bends forward. OBSERVE: where does movement initiate — hip or lumbar? Lateral trunk shift? Normal = sequential lumbar flexion + hip flexion. Painful arc mid-range = disc. Restriction = disc, facet, or muscle. Measure with Schober test (mark L5 and 10cm above — normal = ≥5cm increase)." },
+      { id:"lu_a_ext", label:"Extension", normal:"25°", how:"Extend lumbar spine. Support at ASIS. Pain = facet loading, spondylolysis, spinal stenosis. Relieves = disc herniation (posteriorly). Compare McKenzie assessment direction of preference." },
+      { id:"lu_a_sfl", label:"Side Flex Left", normal:"25°", how:"Slide hand down lateral thigh. Normal = 25°. Restriction + ipsilateral pain = facet, lateral disc. Restriction + contralateral pain = disc herniation (nerve root tension)." },
+      { id:"lu_a_sfr", label:"Side Flex Right", normal:"25°", how:"As above to right. Compare sides — asymmetry = unilateral lesion." },
+      { id:"lu_a_rotl", label:"Rotation Left (standing)", normal:"45°", how:"Hands on hips. Rotate trunk (whole-trunk rotation of about 45° includes the thoracic spine; the lumbar spine alone contributes only about 5°). Limited rotation = facet, disc, thoracolumbar restriction. Assess thoracic contribution." },
       { id:"lu_a_rotr", label:"Rotation Right", normal:"45°", how:"As above to right. Asymmetric = ipsilateral facet or disc." },
     ],
     passiveROM:[
@@ -3217,7 +3283,7 @@ const CYRIAX_REGIONS_DATA = {
     capsularPattern:"IR most limited = Flexion = Abduction. In advanced OA: all severely restricted.",
     activeROM:[
       { id:"hip_a_flex", label:"Flexion", normal:"120°", how:"Supine. Bring knee to chest. Normal = 120–130°. Restriction = capsulitis, OA, psoas tightness. Pain anterior = FAI, labral." },
-      { id:"hip_a_ext", label:"Extension", normal:"30°", how:"Prone or standing (Thomas test reference position). Hip extension. Tight = iliopsoas. Measure with Thomas test for accurate reading." },
+      { id:"hip_a_ext", label:"Extension", normal:"20°", how:"Prone or standing (Thomas test reference position). Hip extension. Tight = iliopsoas. Measure with Thomas test for accurate reading." },
       { id:"hip_a_abd", label:"Abduction", normal:"45°", how:"Supine. Stabilise pelvis. Abduct leg. Normal = 45°. Restriction = adductor tightness, hip OA (capsular). Pain = IT band, greater trochanter." },
       { id:"hip_a_add", label:"Adduction", normal:"30°", how:"Leg crosses midline. Pain = adductor strain, medial groin. Restriction = LL fascial, hip capsule." },
       { id:"hip_a_er", label:"External Rotation", normal:"45°", how:"Prone, knee bent 90°. Foot falls inward (ER). Normal = 45°. Restriction = posterior capsule, piriformis tight." },
@@ -3233,9 +3299,9 @@ const CYRIAX_REGIONS_DATA = {
       { id:"hip_r_flex", label:"Resisted Hip Flexion", muscle:"Iliopsoas (primary)", how:"Supine, hip 90°. Resist flexion. Pain anterior hip = iliopsoas lesion. Weakness = L2/3 radiculopathy. Combine with FABER for differentiation." },
       { id:"hip_r_ext", label:"Resisted Hip Extension", muscle:"Gluteus maximus / hamstrings", how:"Prone. Resist hip extension knee bent (isolates glute max) then knee extended (adds hamstrings). Observe FIRING ORDER — glute should fire first." },
       { id:"hip_r_abd", label:"Resisted Abduction", muscle:"Gluteus medius / TFL", how:"Sidelying. Resist abduction. Painful + weak = glute med lesion or trochanteric bursitis. Painless + weak = L4 root or nerve injury. Observe for TFL compensation." },
-      { id:"hip_r_add", label:"Resisted Adduction", muscle:"Adductor group (longus, brevis, magnus)", how:"Supine. Resist adduction with knees straight. Pain medial groin = adductor lesion (origin at pubic ramus). Groin strain = strong painful. Complete rupture = weak painful." },
-      { id:"hip_r_er", label:"Resisted ER", muscle:"Piriformis / obturators / gemellus", how:"Prone, knee 90°. Resist ER (push foot medially). Pain deep buttock = piriformis lesion. Compare bilaterally." },
-      { id:"hip_r_ir", label:"Resisted IR", muscle:"TFL / anterior glute med", how:"Prone, knee 90°. Resist IR (push foot laterally). Less commonly isolated clinically. Weakness = L5 or sciatic nerve." },
+      { id:"hip_r_add", label:"Resisted Adduction", muscle:"Adductor group (longus, brevis, magnus)", how:"Supine. Resist adduction with knees straight. Pain medial groin = adductor lesion (origin at pubic ramus). Groin strain = strong painful. Complete rupture = weak painless; weak and painful = serious lesion (e.g. fracture) — investigate." },
+      { id:"hip_r_er", label:"Resisted ER", muscle:"Piriformis / obturators / gemellus", how:"Prone, knee 90°. Resist ER (therapist pushes the foot laterally, against the patient's medial swing). Pain deep buttock = piriformis lesion. Compare bilaterally." },
+      { id:"hip_r_ir", label:"Resisted IR", muscle:"TFL / anterior glute med", how:"Prone, knee 90°. Resist IR (therapist pushes the foot medially, against the patient's lateral swing). Less commonly isolated clinically. Weakness = L5 or sciatic nerve." },
     ],
     jointPlay:[
       { id:"hip_jp_long", label:"Longitudinal Traction", how:"Patient supine. Grip distal thigh. Apply sustained traction along femoral shaft toward foot. Relief of pain = intra-articular (OA, capsular). Guides traction and mobilisation treatment." },
@@ -3289,9 +3355,9 @@ const CYRIAX_REGIONS_DATA = {
       { id:"ank_a_1mtp", label:"1st MTP Extension", normal:"60–70°", how:"Extend great toe passively. Normal = 60–70° DF. Restriction = hallux rigidus (1st MTP OA) or hallux limitus. Critical for gait push-off and SBL function." },
     ],
     passiveROM:[
-      { id:"ank_p_df", label:"Passive DF", how:"Compare passive vs active DF. More than active = contractile limitation (gastroc). Same = joint capsule or bony block. Test with knee bent (isolates subtalar, removes gastroc) vs extended (adds gastroc).", endfeel_options:["Capsular/Leathery (normal)","Hard (Bone-to-Bone — OA or impingement)","Muscle Spasm","Springy/Rebound","Empty (No End-Feel)"] },
+      { id:"ank_p_df", label:"Passive DF", how:"Compare passive vs active DF. More than active = contractile limitation (gastroc). Same = joint capsule or bony block. Test with knee bent (slackens the gastrocnemius, so it tests the ankle joint and soleus) vs extended (adds gastrocnemius).", endfeel_options:["Capsular/Leathery (normal)","Hard (Bone-to-Bone — OA or impingement)","Muscle Spasm","Springy/Rebound","Empty (No End-Feel)"] },
       { id:"ank_p_inv", label:"Passive Inversion (STJ)", how:"Stabilise talus. Invert calcaneus. Tests ATFL and STJ motion. Compare to contralateral. Assess range AND quality of end-feel.", endfeel_options:["Normal/Capsular","Muscle Spasm","Hard","Springy/Rebound"] },
-      { id:"ank_p_plantar_fascia", label:"Passive Plantar Fascia Assessment", how:"Flex toes and ankle into dorsiflexion simultaneously (windlass mechanism). Palpate plantar fascia from calcaneal origin to metatarsal heads. Note: tissue tension, tenderness, thickness (Doppler comparison).", endfeel_options:["Normal tension and mobility","Restricted — taut band","Tender — fasciopathy","Thick / nodular — fibrosis"] },
+      { id:"ank_p_plantar_fascia", label:"Passive Plantar Fascia Assessment", how:"Passively extend the great toe with the ankle in dorsiflexion (windlass mechanism). Palpate plantar fascia from calcaneal origin to metatarsal heads. Note: tissue tension, tenderness, thickness (Doppler comparison).", endfeel_options:["Normal tension and mobility","Restricted — taut band","Tender — fasciopathy","Thick / nodular — fibrosis"] },
     ],
     resistedTests:[
       { id:"ank_r_df", label:"Resisted Dorsiflexion", muscle:"Tibialis anterior", how:"Resist ankle DF + inversion. Pain anterior shin = tibialis anterior tendinopathy. Weakness = L4 radiculopathy (foot drop risk)." },
@@ -4120,7 +4186,7 @@ UNIV_S.hypermobility = {
 const NKT_REGIONS = {
   cervical:{
     label:"Cervical / Head & Neck", color:"#00e5ff",
-    intro:"The cervical CPA assessment identifies which muscles the Motor Control Centre (MCC) has inhibited in the neck and head region, and which synergists are compensating. Common compensation: DNF inhibited → SCM/scalenes overactive → forward head posture, headache, TMJ.",
+    intro:"The cervical CPA assessment identifies which muscles the Motor Control Centre (MCC) has inhibited in the neck and head region, and which synergists are compensating. Common compensation: DNF inhibited → SCM/scalenes overactive → forward head posture, headache, TMJ. Note: CPA is a method-based approach (including therapy localization) with limited published evidence — use it alongside standard clinical assessment.",
     tests:[
       {
         id:"nkt_dnf", label:"Deep Neck Flexors (DNF)", muscle:"Longus colli / Longus capitis",
@@ -4131,7 +4197,7 @@ const NKT_REGIONS = {
           { val:"Inhibited", color:"#ff4d6d", meaning:"DNF cannot maintain pressure targets. SCM fires early and dominates. MCC has turned off DNF — forward head is maintained by SCM/scalenes. TREAT: release SCM/scalenes → activate DNF immediately." },
           { val:"Overactive", color:"#ffb300", meaning:"Rare. DNF may be overworking due to inhibition elsewhere (e.g. longus colli compensating for atlas instability). Presents as anterior neck pain with no relief from flexion." },
         ],
-        treatment:"Release: SCM (pressure/massage) + scalenes (SMR). Activate: chin nod 10 reps × 3 sets. Home: tongue to roof of mouth posture drill. Reprogram MCC within 30 seconds of release.",
+        treatment:"Release: SCM (pressure/massage) + scalenes (SMR). Activate: chin nod 10 reps × 3 sets. Home: tongue to roof of mouth posture drill. Retest within about 30 seconds of the release (method guidance).",
       },
       {
         id:"nkt_scm", label:"Sternocleidomastoid (SCM)", muscle:"SCM",
@@ -4215,7 +4281,7 @@ const NKT_REGIONS = {
 
   shoulder:{
     label:"Shoulder & Scapula", color:"#7f5af0",
-    intro:"Shoulder CPA identifies which rotator cuff and scapular muscles are inhibited, and which are compensating. Classic patterns: lower trap inhibited → upper trap overactive | serratus inhibited → pec minor overactive | RC inhibited → biceps/pec major overactive.",
+    intro:"Shoulder CPA identifies which rotator cuff and scapular muscles are inhibited, and which are compensating. Classic patterns: lower trap inhibited → upper trap overactive | serratus inhibited → pec minor overactive | RC inhibited → biceps/pec major overactive. Note: CPA is a method-based approach (including therapy localization) with limited published evidence — use it alongside standard clinical assessment.",
     tests:[
       {
         id:"nkt_lower_trap", label:"Lower Trapezius", muscle:"Lower trapezius",
@@ -4320,7 +4386,7 @@ const NKT_REGIONS = {
 
   core:{
     label:"Core & Lumbar", color:"#00c97a",
-    intro:"Core CPA identifies which deep stabilisers the MCC has inhibited following injury, poor posture, or prolonged sitting. Classic patterns: TA inhibited → erector spinae overactive | multifidus inhibited → superficial back muscles compensate | diaphragm inhibited → accessory breathers (scalenes, SCM) overactive.",
+    intro:"Core CPA identifies which deep stabilisers the MCC has inhibited following injury, poor posture, or prolonged sitting. Classic patterns: TA inhibited → erector spinae overactive | multifidus inhibited → superficial back muscles compensate | diaphragm inhibited → accessory breathers (scalenes, SCM) overactive. Note: CPA is a method-based approach (including therapy localization) with limited published evidence — use it alongside standard clinical assessment.",
     tests:[
       {
         id:"nkt_ta", label:"Transversus Abdominis (TA)", muscle:"Transversus abdominis",
@@ -4418,7 +4484,7 @@ const NKT_REGIONS = {
 
   hip:{
     label:"Hip & Pelvis", color:"#f97316",
-    intro:"Hip CPA identifies gluteal inhibition and compensation patterns. The most common global pattern: gluteus maximus inhibited → hamstrings and QL overactive → chronic LBP and hamstring strains. Gluteus medius inhibited → TFL and piriformis overactive → IT band, lateral hip pain, and Trendelenburg gait.",
+    intro:"Hip CPA identifies gluteal inhibition and compensation patterns. The most common global pattern: gluteus maximus inhibited → hamstrings and QL overactive → chronic LBP and hamstring strains. Gluteus medius inhibited → TFL and piriformis overactive → IT band, lateral hip pain, and Trendelenburg gait. Note: CPA is a method-based approach (including therapy localization) with limited published evidence — use it alongside standard clinical assessment.",
     tests:[
       {
         id:"nkt_gmax", label:"Gluteus Maximus", muscle:"Gluteus maximus",
@@ -4447,7 +4513,7 @@ const NKT_REGIONS = {
       {
         id:"nkt_piriformis", label:"Piriformis", muscle:"Piriformis",
         compensator:"When overactive: compensating for inhibited glute med or glute max",
-        how:"Patient prone or sidelying. Palpate piriformis (deep buttock, between PSIS and greater trochanter). If tender to palpation = active trigger points. Test: hip ER in prone — piriformis should contribute but not dominate. Overactivity test: flex hip 60° (piriformis becomes IR when hip flexed) and apply ER resistance — if this reproduces buttock pain = piriformis overactive. FAIR test: patient sidelying, affected side up, hip 60° flex, knee 90° — apply adduction + IR force. Positive = buttock pain. Therapy localization: touch piriformis → re-test glute med or glute max.",
+        how:"Patient prone or sidelying. Palpate piriformis (deep buttock, between PSIS and greater trochanter). If tender to palpation = active trigger points. Test: hip ER in prone — piriformis should contribute but not dominate. Overactivity test: flex hip 60° (piriformis acts as an external rotator until about 90° of hip flexion, then as an internal rotator) and apply ER resistance — if this reproduces buttock pain = piriformis overactive. FAIR test: patient sidelying, affected side up, hip 60° flex, knee 90° — apply adduction + IR force. Positive = buttock pain. Therapy localization: touch piriformis → re-test glute med or glute max.",
         options:[
           { val:"Normal tone", color:"#00c97a", meaning:"Piriformis contributes to ER appropriately. Not tender on palpation. No sciatic symptoms. Activates with hip ER without dominating the movement pattern." },
           { val:"Overactive — glute med compensation", color:"#ffb300", meaning:"Piriformis compensating for inhibited glute med. Deep buttock pain and lateral hip aching. Piriformis tender on palpation. Often causes pseudo-sciatica. TREAT: release piriformis → activate glute med." },
@@ -4459,7 +4525,7 @@ const NKT_REGIONS = {
       {
         id:"nkt_hip_flex_fo", label:"Hip Extension Firing Order", muscle:"Glute max + Hamstrings + QL + Erectors",
         compensator:"N/A — tests firing sequence",
-        how:"Patient prone. Both hands palpating: one on glute max, one on hamstring (or QL or erector). Ask for hip extension slowly from neutral. Count which fires first. Repeat 3 times for reliability. Normal sequence: Glute max fires first → ipsilateral hamstring → contralateral erector → ipsilateral erector. Any deviation = abnormal motor pattern. Also test in single-leg bridge: which fires to lift pelvis?",
+        how:"Patient prone. Both hands palpating: one on glute max, one on hamstring (or QL or erector). Ask for hip extension slowly from neutral. Count which fires first. Repeat 3 times for reliability. Sequence expected in this method: glute max → ipsilateral hamstring → contralateral erector → ipsilateral erector (Janda's classic description lists the hamstring first and studies show the order varies between people, so treat it as a guide). Any deviation = abnormal motor pattern. Also test in single-leg bridge: which fires to lift pelvis?",
         options:[
           { val:"Normal — Glute max fires first", color:"#00c97a", meaning:"Correct motor program. Gluteus maximus initiates hip extension before hamstrings or spinal extensors. MCC has correct motor sequence stored. Low injury risk for hamstrings and lumbar spine." },
           { val:"Abnormal — Hamstring fires first", color:"#ffb300", meaning:"Hamstring dominant hip extension. Glute max delayed or absent. Lumbar spine overloaded. Patient has hamstring strains and LBP. TREAT: release hamstrings → activate glute max → retrain hip extension pattern." },
@@ -4473,12 +4539,12 @@ const NKT_REGIONS = {
 
   knee:{
     label:"Knee & Thigh", color:"#00c97a",
-    intro:"Knee CPA focuses on the VMO vs VL relationship, hamstring-glute co-activation balance, and popliteus as a forgotten stabiliser. Common patterns: VMO inhibited → VL overactive → PFPS | hamstrings overactive (compensating for glute max) → posterior knee pain.",
+    intro:"Knee CPA focuses on the VMO vs VL relationship, hamstring-glute co-activation balance, and popliteus as a forgotten stabiliser. Common patterns: VMO inhibited → VL overactive → PFPS | hamstrings overactive (compensating for glute max) → posterior knee pain. Note: CPA is a method-based approach (including therapy localization) with limited published evidence — use it alongside standard clinical assessment.",
     tests:[
       {
         id:"nkt_vmo", label:"Vastus Medialis Oblique (VMO)", muscle:"VMO",
         compensator:"When inhibited: VL (vastus lateralis) overactive → patellar maltracking",
-        how:"Patient seated, knee at 30°. Palpate VMO (teardrop shape at medial lower thigh) and VL (lateral thigh) simultaneously. Ask patient to straighten knee slowly. Normal: VMO fires simultaneously or slightly before VL at final 30° of extension. POSITIVE INHIBITION: VL fires first and dominates throughout — VMO barely activates. Also test: terminal knee extension (TKE) — last 10° should activate VMO strongly. If VMO absent = inhibited.",
+        how:"Patient seated, knee at 30°. Palpate VMO (teardrop shape at medial lower thigh) and VL (lateral thigh) simultaneously. Ask patient to straighten knee slowly. Expected in this method: VMO fires at about the same time as VL (or slightly before) in the final 30° of extension — research on selective VMO timing is mixed, so use this as a guide only. POSITIVE INHIBITION: VL fires first and dominates throughout — VMO barely activates. Also test: terminal knee extension (TKE) — last 10° should activate VMO strongly. If VMO absent = inhibited.",
         options:[
           { val:"VMO facilitated — fires with VL", color:"#00c97a", meaning:"VMO activates with equal or slightly greater force than VL at terminal extension. Patella tracks medially within trochlear groove. No PFPS symptoms with squatting or stairs." },
           { val:"VMO inhibited — VL dominant", color:"#ffb300", meaning:"VL fires before and more strongly than VMO. Patella tracks laterally. Patient has anterior knee pain on stairs, squatting, sitting. IT band and lateral retinaculum tight. TREAT: release VL + IT band → activate VMO (terminal knee extension)." },
@@ -4544,7 +4610,7 @@ const NKT_REGIONS = {
 
   ankle:{
     label:"Ankle & Foot", color:"#ffb300",
-    intro:"Ankle CPA identifies compensation between tibialis anterior/posterior and the peroneals, and the effect of limited dorsiflexion on the kinetic chain. Classic pattern: tibialis anterior inhibited → peroneals overactive → ankle instability. Tibialis posterior inhibited → peroneals + gastroc overactive → progressive flatfoot.",
+    intro:"Ankle CPA identifies compensation between tibialis anterior/posterior and the peroneals, and the effect of limited dorsiflexion on the kinetic chain. Classic pattern: tibialis anterior inhibited → peroneals overactive → ankle instability. Tibialis posterior inhibited → peroneals + gastroc overactive → progressive flatfoot. Note: CPA is a method-based approach (including therapy localization) with limited published evidence — use it alongside standard clinical assessment.",
     tests:[
       {
         id:"nkt_tib_ant", label:"Tibialis Anterior", muscle:"Tibialis anterior",
@@ -4561,9 +4627,9 @@ const NKT_REGIONS = {
       {
         id:"nkt_tib_post", label:"Tibialis Posterior", muscle:"Tibialis posterior",
         compensator:"When inhibited: peroneals overactive, foot pronates progressively",
-        how:"Patient seated. Plantarflex and invert foot against resistance (plantar inversion isolates tib posterior). Palpate behind medial malleolus. POSITIVE INHIBITION: weak inversion in plantar flexion, or foot cannot resist eversion. Navicular drop test: mark navicular tuberosity in sitting, then standing — drop >10mm = tib post inhibition (arch collapse). Therapy localization: touch peroneals → re-test tib post.",
+        how:"Patient seated. Plantarflex and invert foot against resistance (plantar inversion isolates tib posterior). Palpate behind medial malleolus. POSITIVE INHIBITION: weak inversion in plantar flexion, or foot cannot resist eversion. Navicular drop test: mark navicular tuberosity in sitting, then standing — drop >10mm (borderline) or >15mm (marked) = tib post inhibition (arch collapse). Therapy localization: touch peroneals → re-test tib post.",
         options:[
-          { val:"Normal — arch maintained", color:"#00c97a", meaning:"Tibialis posterior supports medial arch. Navicular drop <6mm. Strong plantar inversion resistance. No progressive flatfoot. Arch maintained in single-leg stance." },
+          { val:"Normal — arch maintained", color:"#00c97a", meaning:"Tibialis posterior supports medial arch. Navicular drop <10mm. Strong plantar inversion resistance. No progressive flatfoot. Arch maintained in single-leg stance." },
           { val:"Inhibited — medial arch collapse", color:"#ffb300", meaning:"Tib post weakened. Medial arch collapses. Navicular drop 6–10mm. Early stage adult-acquired flatfoot. Pronation chain activates: tibial IR, knee valgus, anterior pelvic tilt. TREAT: release peroneals → activate tib post (heel raises in inversion)." },
           { val:"Inhibited — progressive flatfoot", color:"#ff4d6d", meaning:"Tib post significantly inhibited or partially ruptured. Navicular drop >10mm. 'Too many toes' sign (>2 toes visible behind heel from behind). Pain medial ankle. Refer for ultrasound/MRI. CPA: release peroneals → activate tib post + intrinsics." },
           { val:"Severely inhibited — tib post dysfunction", color:"#7f5af0", meaning:"Posterior tibial tendon dysfunction. Cannot perform single-leg heel raise. Progressive collapse of medial arch. Refer to orthopaedic/podiatry. Conservative: orthotics + aggressive tib post strengthening + peroneal release." },
@@ -4604,9 +4670,9 @@ const NKT_REGIONS = {
       },
       { id:"nkt_foot_intrinsics", label:"Foot Intrinsic Muscles", muscle:"Lumbricals / Interossei / Abductor hallucis",
         compensator:"When inhibited: plantar fascia and extrinsic toe flexors overloaded",
-        how:"Patient seated or standing. Test: ask patient to perform 'short foot exercise' — shorten foot without curling toes (activate intrinsics only). Positive inhibition: patient curls toes (extrinsic flexors compensate) or cannot shorten foot at all. Observe navicular position — if drops >6mm in standing vs seated = intrinsics insufficient. Palpate abductor hallucis (medial arch) — should be palpable and firm in single-leg stance. Therapy localization: touch plantar fascia → re-test intrinsic activation.",
+        how:"Patient seated or standing. Test: ask patient to perform 'short foot exercise' — shorten foot without curling toes (activate intrinsics only). Positive inhibition: patient curls toes (extrinsic flexors compensate) or cannot shorten foot at all. Observe navicular position — if it drops >10mm in standing vs seated = intrinsics insufficient. Palpate abductor hallucis (medial arch) — should be palpable and firm in single-leg stance. Therapy localization: touch plantar fascia → re-test intrinsic activation.",
         options:[
-          { val:"Normal — short foot achievable", color:"#00c97a", meaning:"Can perform short foot without toe curling. Abductor hallucis palpable and active. Navicular drop <6mm. Arch stable during single-leg stance. Normal toe splaying on ground contact." },
+          { val:"Normal — short foot achievable", color:"#00c97a", meaning:"Can perform short foot without toe curling. Abductor hallucis palpable and active. Navicular drop <10mm. Arch stable during single-leg stance. Normal toe splaying on ground contact." },
           { val:"Inhibited — arch collapse", color:"#ff4d6d", meaning:"Cannot perform short foot. Toes curl instead. Arch collapses in single-leg stance. Plantar fascia and extrinsic toe flexors overloaded. Pronation cascade up kinetic chain. TREAT: release plantar fascia → activate short foot + abductor hallucis." },
           { val:"Inhibited — bunion / hallux valgus", color:"#ffb300", meaning:"Abductor hallucis inhibited — hallux adducts toward 2nd toe. Bunion forming or established. Intrinsics too weak to maintain medial column alignment. Short foot exercise priority. Consider orthotic support." },
         ],
@@ -4617,7 +4683,7 @@ const NKT_REGIONS = {
 
   upper_limb:{
     label:"Elbow, Wrist & Hand", color:"#e879f9",
-    intro:"Upper limb CPA identifies motor control dysfunction from elbow to hand. Common patterns: wrist extensor inhibition → wrist flexors overactive (lateral epicondylalgia), biceps overactive compensating for RC inhibition, grip weakness from cervical radiculopathy or motor control inhibition. Per CPA: the elbow and wrist are frequently affected by DISTANT inhibition (cervical, shoulder).",
+    intro:"Upper limb CPA identifies motor control dysfunction from elbow to hand. Common patterns: wrist extensor inhibition → wrist flexors overactive (lateral epicondylalgia), biceps overactive compensating for RC inhibition, grip weakness from cervical radiculopathy or motor control inhibition. Per CPA: the elbow and wrist are frequently affected by DISTANT inhibition (cervical, shoulder). Note: CPA is a method-based approach (including therapy localization) with limited published evidence — use it alongside standard clinical assessment.",
     tests:[
       { id:"nkt_biceps", label:"Biceps Brachii", muscle:"Biceps brachii (long + short head)",
         compensator:"When overactive: compensating for inhibited RC (supraspinatus/subscapularis)",
@@ -4671,7 +4737,7 @@ const NKT_REGIONS = {
       },
       { id:"nkt_grip", label:"Grip / Hand Intrinsics", muscle:"FDP / FDS / Lumbricals / Interossei",
         compensator:"When inhibited: extrinsic forearm flexors overactive — carpal tunnel risk",
-        how:"Patient seated. Use hand dynamometer or clinician resistance for grip strength. Normal: dominant 35–45 kg, non-dominant 30–40 kg. Test intrinsics: ask patient to flex MCP joints while keeping IP joints extended (lumbrical action). If IPs flex instead = lumbricals inhibited, extrinsic flexors dominate. Therapy localization: touch forearm flexors (FDP/FDS) → re-test intrinsic grip.",
+        how:"Patient seated. Use hand dynamometer or clinician resistance for grip strength. Compare with the other hand and with age- and sex-matched norms (adult men are typically about 40–55 kg and adult women about 25–35 kg). Test intrinsics: ask patient to flex MCP joints while keeping IP joints extended (lumbrical action). If IPs flex instead = lumbricals inhibited, extrinsic flexors dominate. Therapy localization: touch forearm flexors (FDP/FDS) → re-test intrinsic grip.",
         options:[
           { val:"Normal grip strength", color:"#00c97a", meaning:"Normal grip for age/sex. Intrinsics and extrinsics balanced. No hand fatigue with sustained tasks. Normal MCP flexion with IP extension (lumbrical action)." },
           { val:"Inhibited — neurological cause", color:"#ff4d6d", meaning:"Grip weak + dermatomal changes. C8/T1 radiculopathy (ring + little finger weakness) or median nerve (thumb + index). Cubital tunnel or carpal tunnel. Neurological referral + neural mobilisation." },
@@ -4700,19 +4766,19 @@ const KC_REGIONS = {
           { val:"Severely restricted — <4cm / <10°", color:"#ff4d6d", meaning:"Severe DF restriction. Patient cannot squat without major heel rise. Cannot walk up stairs without trunk compensation. Cascade of dysfunction through entire kinetic chain. May indicate posterior ankle impingement, OA, or old fracture. Talocrural joint mobilisation (Grade III–IV) + intensive soft tissue work essential." },
         ],
         treatment:"Mobilise: talocrural joint (posterior glide of talus, Grade III–IV). Soft tissue: gastroc SMR + soleus SMR + posterior capsule stretch. Exercise: wall lunge drill × 3 min daily, eccentric heel drops, single-leg squat with DF focus. Kinetic chain: once DF improved, reassess knee alignment and foot pronation — they should self-correct.",
-        chainEffect:"Restricted ankle DF → heel rises early → foot pronates → tibia internally rotates → knee collapses into valgus → hip internally rotates → femur adducts → pelvis anteriorly tilts → lumbar extends. ONE restriction drives the entire chain.",
+        chainEffect:"Restricted ankle DF → heel rises early → foot pronates → tibia internally rotates → knee collapses into valgus → hip internally rotates → femur adducts → pelvis anteriorly tilts → lumbar extends. A restriction at the ankle can load every joint above it.",
       },
       {
         id:"kc_subtalar", label:"Subtalar Joint Mobility — Inversion / Eversion",
         role:"MOBILITY TEST", joint:"Subtalar joint",
-        how:"Patient prone or supine. Grasp calcaneus. Move calcaneus into inversion and eversion independently of talocrural joint. Normal: inversion 20°, eversion 10°. Compare sides. Also assess in weight-bearing: observe navicular drop (mark navicular sitting → standing; normal drop <6mm). Rigid subtalar = poor shock absorption. Hypermobile = excessive pronation.",
+        how:"Patient prone or supine. Grasp calcaneus. Move calcaneus into inversion and eversion independently of talocrural joint. Normal: inversion about 35°, eversion about 15° (combined foot motion). Compare sides. Also assess in weight-bearing: observe navicular drop (mark navicular sitting → standing; normal drop <10mm). Rigid subtalar = poor shock absorption. Hypermobile = excessive pronation.",
         options:[
-          { val:"Normal — inversion 20° / eversion 10°", color:"#00c97a", meaning:"Subtalar joint mobile and stable. Normal shock absorption. Navicular drop <6mm. Arch height maintained in single-leg stance. No excessive pronation or supination during gait." },
+          { val:"Normal — inversion 20° / eversion 10°", color:"#00c97a", meaning:"Subtalar joint mobile and stable. Normal shock absorption. Navicular drop <10mm. Arch height maintained in single-leg stance. No excessive pronation or supination during gait." },
           { val:"Hypomobile — rigid foot", color:"#ffb300", meaning:"Subtalar restricted in both planes. Rigid foot cannot absorb shock — loads transfer to Achilles, plantar fascia, and shin. Patient may have OA, tarsal coalition, or post-fracture stiffness. Poor shock absorption = stress injuries. Mobilise subtalar joint with inversion-eversion glides." },
           { val:"Hypermobile — excessive pronation", color:"#ff4d6d", meaning:"Subtalar excessively mobile — navicular drop >10mm. Medial arch collapses. Tibialis posterior failing to control pronation (inhibited per CPA). Pronation cascade drives tibial IR → knee valgus → hip IR. Strengthen tib posterior + arch intrinsics. Orthotics if severe." },
           { val:"Asymmetric — significant L vs R difference", color:"#7f5af0", meaning:"Side-to-side difference >5° = significant asymmetry in kinetic chain input. The more restricted side will drive ipsilateral compensations. The hypermobile side will drive contralateral trunk compensations. Address the restricted side first." },
         ],
-        treatment:"Hypomobile: subtalar mobilisation (inversion-eversion glides, Grade III). Hypermobile: tibialis posterior + FHL + intrinsic foot muscle strengthening, short foot exercise. Orthotics: semi-rigid if navicular drop >10mm. Reassess tib post CPA — almost always inhibited in hypermobile foot.",
+        treatment:"Hypomobile: subtalar mobilisation (inversion-eversion glides, Grade III). Hypermobile: tibialis posterior + FHL + intrinsic foot muscle strengthening, short foot exercise. Orthotics: semi-rigid if navicular drop >15mm. Reassess tib post CPA — almost always inhibited in hypermobile foot.",
         chainEffect:"Rigid foot → poor shock absorption → Achilles overload, shin splints, plantar fasciitis. Hypermobile foot → tibial IR → knee valgus → hip adduction → SI joint asymmetry.",
       },
       {
@@ -4733,7 +4799,7 @@ const KC_REGIONS = {
 
   knee:{
     label:"Knee", color:"#ff4d6d", role:"STABILITY",
-    intro:"The knee is a STABILITY joint — its job is to transmit force between the mobile ankle and mobile hip without excessive motion. Knee pain is almost always a symptom of failure elsewhere in the kinetic chain — usually restricted ankle dorsiflexion below or restricted hip mobility above. TREAT the cause, not the knee.",
+    intro:"The knee is a STABILITY joint — its job is to transmit force between the mobile ankle and mobile hip without excessive motion. Knee pain is often influenced by what happens elsewhere in the kinetic chain — commonly restricted ankle dorsiflexion below or restricted hip mobility above. Look for the contributing cause as well as treating the knee.",
     tests:[
       {
         id:"kc_knee_stability", label:"Knee Valgus Stress Test — Kinetic Chain",
@@ -4779,12 +4845,12 @@ const KC_REGIONS = {
 
   hip:{
     label:"Hip", color:"#00c97a", role:"MOBILITY",
-    intro:"The hip is a MOBILITY joint — it needs adequate flexion, extension, internal rotation, external rotation, and abduction to transfer force between the lumbar spine and lower limb. Hip restriction is the MOST COMMON driver of lumbar spine pathology. Limited hip IR is the single most predictive finding for future LBP.",
+    intro:"The hip is a MOBILITY joint — it needs adequate flexion, extension, internal rotation, external rotation, and abduction to transfer force between the lumbar spine and lower limb. Hip restriction is commonly found alongside lumbar spine problems, and reduced hip internal rotation has been associated with low back pain, although a causal link is not proven.",
     tests:[
       {
         id:"kc_hip_ir_mob", label:"Hip Internal Rotation Mobility",
         role:"MOBILITY TEST", joint:"Hip",
-        how:"Patient prone, hips neutral, knees bent 90°. Allow both feet to fall outward (measuring hip IR). Normal: 40–45°. Also test: seated hip IR — patient seated on table, rotate lower leg outward (hip IR). Compare sides. Clinical significance: >18° side-to-side asymmetry = significant (GIRD equivalent at hip). Hip IR <35° = high LBP risk.",
+        how:"Patient prone, hips neutral, knees bent 90°. Allow both feet to fall outward (measuring hip IR). Normal: 40–45°. Also test: seated hip IR — patient seated on table, rotate lower leg outward (hip IR). Compare sides. Clinical significance: a marked side-to-side difference (for example more than about 18°) or hip IR below about 35° is a prompt to look further; these cut-offs are clinical rules of thumb, not validated thresholds.",
         options:[
           { val:"Normal — 40–45° bilateral symmetric", color:"#00c97a", meaning:"Adequate hip IR for all functional tasks including running, cutting, squatting. Posterior hip capsule mobile. No compensation patterns driven by hip IR restriction. Lumbar spine not being forced to rotate to compensate." },
           { val:"Mildly restricted — 30–39°", color:"#ffb300", meaning:"Mild hip IR restriction. Patient compensates with increased lumbar rotation during activities requiring hip IR (e.g. walking, golf swing). Posterior capsule and external rotators (piriformis, gemellus) mildly tight. Begin posterior capsule stretching and hip ER SMR." },
@@ -4810,7 +4876,7 @@ const KC_REGIONS = {
       {
         id:"kc_hip_er_mob", label:"Hip External Rotation Mobility",
         role:"MOBILITY TEST", joint:"Hip",
-        how:"Patient prone, knee bent 90°. Measure how far lower leg moves toward midline (hip ER). Normal: 40–45°. Also test in seated: patient seated, cross ankle over opposite knee (figure-4 position) and observe how far knee drops toward table. Compare sides. Note: piriformis becomes IR when hip flexed >60° — test position changes the muscle tested.",
+        how:"Patient prone, knee bent 90°. Measure how far lower leg moves toward midline (hip ER). Normal: 40–45°. Also test in seated: patient seated, cross ankle over opposite knee (figure-4 position) and observe how far knee drops toward table. Compare sides. Note: piriformis becomes an internal rotator when hip flexed beyond about 90° — test position changes the muscle tested.",
         options:[
           { val:"Normal — 40–45° bilateral symmetric", color:"#00c97a", meaning:"Adequate hip ER for normal gait, sports, and hip dissociation. Deep gluteal muscles (piriformis, obturators, gemellus) at normal length. No lateral hip impingement. Figure-4 test: knee drops to table or near. SI joint not being stressed by ER restriction." },
           { val:"Restricted — tight external rotators", color:"#ffb300", meaning:"Hip ER < 35°. Deep external rotators tight — piriformis, obturators, quadratus femoris. Patient may have FABER test limitation. May restrict stride length during running. Prone figure-4 position limited. Stretch: lying figure-4, seated hip ER stretch." },
@@ -4856,7 +4922,7 @@ const KC_REGIONS = {
       {
         id:"kc_lumbar_flexion_ctrl", label:"Lumbar Flexion Control — Waiter's Bow Test",
         role:"STABILITY TEST", joint:"Lumbar spine",
-        how:"Patient standing. Ask to bow forward as if greeting someone — maintain lordosis while hinging forward at hips (hip hinge). Normal: lumbar maintains neutral curve while hips flex. ABNORMAL: lumbar flexes immediately and hips stay still (lumbar flexion dominant pattern). Also test: ask patient to touch toes — observe where movement occurs first. Place fingers on PSIS and ASIS — ASIS should move posteriorly as hip flexes.",
+        how:"Patient standing. Ask to bow forward as if greeting someone — maintain lordosis while hinging forward at hips (hip hinge). Normal: lumbar maintains neutral curve while hips flex. ABNORMAL: lumbar flexes immediately and hips stay still (lumbar flexion dominant pattern). Also test: ask patient to touch toes — observe where movement occurs first. Place fingers on PSIS and ASIS — the pelvis should tilt forward as the hips flex (ASIS moves anteriorly and inferiorly) while the lumbar curve stays neutral.",
         options:[
           { val:"Normal — hip hinge dominant", color:"#00c97a", meaning:"Patient hinges from hip with lumbar maintained in neutral. PSIS moves as hips flex. Waiter's bow clean. Normal hip-dominant forward bending. Lumbar discs not excessively loaded during forward bending tasks. Correct deadlift/lifting mechanics." },
           { val:"Lumbar flexion dominant — mild", color:"#ffb300", meaning:"Lumbar flexes before or simultaneously with hip flexion. Mild pattern. Patient has increased disc loading with forward bending. Often has flexion-pattern LBP. Hip flexors and hamstrings may be tight (restricting hip hinge). Begin hip hinge retraining." },
@@ -4869,7 +4935,7 @@ const KC_REGIONS = {
       {
         id:"kc_lumbar_rotation_ctrl", label:"Lumbar Rotation Control Test",
         role:"STABILITY TEST", joint:"Lumbar spine",
-        how:"Patient seated on plinth, feet flat (removes hip/ankle from equation). Ask to rotate trunk left and right — observe where rotation occurs. Normal: majority of rotation from thoracic spine (45° each side). Lumbar contribution: <13° total. POSITIVE = lumbar rotates excessively and thoracic barely moves. Also: seated rotation with arms folded — compare to hands on head (adds thoracic load). Quadruped rotation test: on hands and knees, rotate trunk — lumbar should not flex/extend.",
+        how:"Patient seated on plinth, feet flat (removes hip/ankle from equation). Ask to rotate trunk left and right — observe where rotation occurs. Normal: majority of rotation from thoracic spine (about 35° each side). Lumbar contribution: <13° total. POSITIVE = lumbar rotates excessively and thoracic barely moves. Also: seated rotation with arms folded — compare to hands on head (adds thoracic load). Quadruped rotation test: on hands and knees, rotate trunk — lumbar should not flex/extend.",
         options:[
           { val:"Normal — thoracic dominant rotation", color:"#00c97a", meaning:"Thoracic spine contributes majority of rotation (>45° each side). Lumbar minimally rotates (<5° per side). Ribs and thoracic facets mobile. Thoracic rotation does not increase lumbar disc shear forces. Normal rotational mechanics for golf, tennis, running." },
           { val:"Thoracic stiff — lumbar compensating rotation", color:"#ffb300", meaning:"Thoracic rotation <30° and lumbar overrotates to compensate. Disc at L4/5 or L5/S1 subjected to rotational shear forces. LBP with rotation (golf swing, getting in/out of car). Thoracic mobilisation priority: rotational manipulation, foam roller rotation drill." },
@@ -4884,12 +4950,12 @@ const KC_REGIONS = {
 
   thoracic:{
     label:"Thoracic Spine", color:"#00e5ff", role:"MOBILITY",
-    intro:"The thoracic spine is a MOBILITY region — it needs 45° of rotation each way and adequate extension to allow the shoulder and cervical spine to function properly. Thoracic stiffness is arguably the MOST OVERLOOKED cause of neck pain, shoulder impingement, and LBP. Mobilising the thoracic spine often immediately improves shoulder and cervical symptoms.",
+    intro:"The thoracic spine is a MOBILITY region — it needs about 35° of rotation each way and adequate extension to allow the shoulder and cervical spine to function properly. Thoracic stiffness is an often overlooked contributor to neck pain, shoulder impingement, and LBP. Mobilising the thoracic spine often immediately improves shoulder and cervical symptoms.",
     tests:[
       {
         id:"kc_thoracic_rotation", label:"Thoracic Rotation Mobility",
         role:"MOBILITY TEST", joint:"Thoracic spine",
-        how:"Patient seated on chair (eliminates hip contribution). Ask to rotate trunk fully left and right — arms folded across chest. Normal: 45° each side (90° total). Goniometer: axis at top of head, stationary arm pointing forward, moving arm following nose direction. Also test: supine rotation test — patient supine, knees bent to 90°, drop both knees to one side (normal: legs rest on table). Compare sides.",
+        how:"Patient seated on chair (eliminates hip contribution). Ask to rotate trunk fully left and right — arms folded across chest. Normal: about 35° each side (70° total). Goniometer: axis at top of head, stationary arm pointing forward, moving arm following nose direction. Also test: supine rotation test — patient supine, knees bent to 90°, drop both knees to one side (normal: legs rest on table). Compare sides.",
         options:[
           { val:"Normal — 45°+ bilateral, symmetric", color:"#00c97a", meaning:"Full thoracic rotation available. Normal T-spine mechanics. No forced lumbar compensation. Shoulder internal rotation and cervical rotation will both be adequate as thoracic is contributing its full share. No rib stiffness." },
           { val:"Mildly restricted — 35–44° one or both", color:"#ffb300", meaning:"Mild thoracic rotation restriction. Some lumbar compensation occurring. Patient notices stiffness getting in/out of car, looking over shoulder while driving. Early cervical and lumbar overload. Begin foam roller rotation + thoracic manipulation." },
@@ -4976,12 +5042,12 @@ const KC_REGIONS = {
 
   cervical:{
     label:"Cervical Spine", color:"#ff6b35", role:"MOBILITY",
-    intro:"The cervical spine is a MOBILITY region — it needs 80° of rotation, 80° flexion, 70° extension, and 45° side-flexion for normal function. The upper cervical spine (C0–C2) provides 50% of all cervical rotation. The lower cervical (C3–C7) is primarily flexion/extension. Cervical dysfunction is almost always secondary to thoracic stiffness below and postural control deficit from DNF inhibition.",
+    intro:"The cervical spine is a MOBILITY region — it needs about 60° of rotation, 45° flexion, 45° extension, and 45° side-flexion for normal function. The upper cervical spine (C0–C2) provides 50% of all cervical rotation. The lower cervical (C3–C7) is primarily flexion/extension. Cervical dysfunction is often related to thoracic stiffness below and to postural control deficits such as DNF inhibition.",
     tests:[
       {
         id:"kc_cervical_rot_mob", label:"Cervical Rotation Mobility",
         role:"MOBILITY TEST", joint:"Cervical spine",
-        how:"Patient seated, shoulders level. Rotate head fully left and right. Normal: 80° each side. Measure with goniometer (stationary arm top of head, moving arm follows nose). Differentiating upper vs lower cervical contribution: Flexion-Rotation Test (FRT) for C1/C2 specifically — patient fully flexes cervical spine (chin to chest), then rotates maximally. Normal FRT: 40–45° each side. <32° = positive = C1/C2 hypomobility. This eliminates contribution from lower cervical.",
+        how:"Patient seated, shoulders level. Rotate head fully left and right. Normal: about 60° each side. Measure with goniometer (stationary arm top of head, moving arm follows nose). Differentiating upper vs lower cervical contribution: Flexion-Rotation Test (FRT) for C1/C2 specifically — patient fully flexes cervical spine (chin to chest), then rotates maximally. Normal FRT: 40–45° each side. <32° = positive = C1/C2 hypomobility. This eliminates contribution from lower cervical.",
         options:[
           { val:"Normal — 80° bilateral, FRT 40°+ each side", color:"#00c97a", meaning:"Full cervical rotation from both upper (C1/C2) and lower (C3–C7) cervical spine. No restriction. Normal driving vision, sport rotation, and head turning. Cervical facet joints and disc all contributing appropriately. No cervicogenic headache from rotation restriction." },
           { val:"Restricted — C1/C2 dominant (FRT positive)", color:"#ffb300", meaning:"Total rotation restricted and FRT <32° = upper cervical (C1/C2) restriction. Most common cause of cervicogenic headache and unilateral base-of-skull pain. Suboccipital muscles overactive. Upper cervical mobilisation (C1/C2 rotation and side-flex) + suboccipital release are treatment." },
@@ -4989,12 +5055,12 @@ const KC_REGIONS = {
           { val:"Severely restricted bilateral — consider serious pathology", color:"#ff4d6d", meaning:"Both rotations severely restricted (especially if recent onset, no mechanism, or in older patient). Consider: RA (atlantoaxial instability — Sharp-Purser test FIRST), cervical myelopathy (Babinski/reflexes), infection, tumour. Urgent imaging if no mechanism. Do NOT manipulate until serious pathology ruled out." },
         ],
         treatment:"C1/C2: specific C1/C2 rotation manipulation or HVT (cervicogenic headache protocol). Suboccipital release + DNF activation. Lower cervical: segmental mobilisation at restricted level. Thoracic: always treat thoracic rotation restriction first as it directly improves cervical rotation. Home: cervical rotation active ROM × 10 reps each side daily.",
-        chainEffect:"Restricted cervical rotation → patient rotates thoracic more → thoracic overload. Restricted cervical → SCM overworks → cervicogenic headache. DNF inhibition (CPA) is root cause in most cases.",
+        chainEffect:"Restricted cervical rotation → patient rotates thoracic more → thoracic overload. Restricted cervical → SCM overworks → cervicogenic headache. DNF inhibition (CPA) is a common contributing factor.",
       },
       {
         id:"kc_cervical_flex_ext", label:"Cervical Flexion / Extension Mobility",
         role:"MOBILITY TEST", joint:"Cervical spine",
-        how:"Patient seated. Flexion: chin-to-chest — normal = chin touches chest or ~80°. Extension: look to ceiling — normal = 70°. Measure with goniometer or inclinometer. Chin-to-chest test: failure to achieve = upper cervical restriction OR DNF weakness. Chin poke during extension (lower cervical extends, upper cervical flexes simultaneously) = forward head posture compensation. Observe quality: is movement smooth or jerky? Stiff segments produce jerky motion.",
+        how:"Patient seated. Flexion: chin-to-chest — normal = about 45–50° (chin close to the chest). Extension: look to ceiling — normal = about 45°. Measure with goniometer or inclinometer. Chin-to-chest test: failure to achieve = upper cervical restriction OR DNF weakness. Chin poke during extension (lower cervical extends, upper cervical flexes simultaneously) = forward head posture compensation. Observe quality: is movement smooth or jerky? Stiff segments produce jerky motion.",
         options:[
           { val:"Full range, smooth — flexion 80°, extension 70°", color:"#00c97a", meaning:"Full cervical flexion and extension. All segments contributing. Smooth arc of movement without jerky steps. DNF able to guide flexion without chin poke. No segment-specific stiffness. Normal disc and facet joint mechanics." },
           { val:"Flexion restricted — upper cervical or DNF weakness", color:"#ffb300", meaning:"Cannot flex fully (chin more than 2 finger-widths from chest). May be upper cervical (C0–C2) capsule restriction OR DNF too weak to guide forward head in flexion. Patient uses chin poke to start flexion. Assess DNF (CCFT) — if weak, activate. If joint restricted, mobilise. Distinguish by palpating joints during motion." },

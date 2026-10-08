@@ -14,7 +14,7 @@ import { humanizeKey as humanize } from "./medicalAbbreviations.js";
 const SECTION_ICONS = {
   safety: "🚨", subjective: "🗣️", chart: "🗂️", cognition: "🧠", cranial: "👁️",
   sensory: "🖐️", motor: "💪", tone: "⚡", coordination: "🎯", balance: "⚖️",
-  gait: "🚶", functional: "🛏️", outcomes: "📊", interpretation: "🧠",
+  gait: "🚶", functional: "🛏️", outcomes: "📊", interpretation: "🧠", diagnosis: "🩺",
   precautions: "⚠️", vitals: "❤️", cardiovascular: "🫀", respiratory: "🫁",
   exercise: "🚶", exerciseTolerance: "🚶",
 };

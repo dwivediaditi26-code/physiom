@@ -1,6 +1,6 @@
 // kineticChainPhotos.test.jsx
-// Each Kinetic Chain test has 4 reference-photo slots, uploadable inside the
-// app, and the same 4 photos must appear in the Kinetic Chain step, its info
+// Each Kinetic Chain test has 3 reference-photo slots, uploadable inside the
+// app, and the same 3 photos must appear in the Kinetic Chain step, its info
 // card, the AI Ortho (Objective) screen's info card and Learn. They all take
 // their ids from kcImages.js, so these tests pin that down and check that an
 // upload goes to the slot that was tapped. The Cloudinary service is mocked:
@@ -29,9 +29,9 @@ const firstTest = KC_REGIONS[firstRegionKey].tests[0];
 beforeEach(() => { vi.clearAllMocks(); window.alert = vi.fn(); });
 
 describe("kcImageIds", () => {
-  it("gives 4 slots, keeping the already-uploaded bare id as slot 1", () => {
-    expect(KC_IMAGE_SLOTS).toBe(4);
-    expect(kcImageIds("kc_ankle_df")).toEqual(["kc_ankle_df", "kc_ankle_df_2", "kc_ankle_df_3", "kc_ankle_df_4"]);
+  it("gives 3 slots, keeping the already-uploaded bare id as slot 1", () => {
+    expect(KC_IMAGE_SLOTS).toBe(3);
+    expect(kcImageIds("kc_ankle_df")).toEqual(["kc_ankle_df", "kc_ankle_df_2", "kc_ankle_df_3"]);
   });
 
   it("never gives two different tests the same slot id", () => {
@@ -43,7 +43,36 @@ describe("kcImageIds", () => {
 describe("PhotoSlots", () => {
   it("shows one slot per id", () => {
     render(<PhotoSlots ids={kcImageIds("kc_x")} />);
-    for (let n = 1; n <= 4; n++) expect(screen.getByTestId(`photo-slot-${n}`)).toBeTruthy();
+    for (let n = 1; n <= 3; n++) expect(screen.getByTestId(`photo-slot-${n}`)).toBeTruthy();
+  });
+
+  it("is a swipe gallery (one slide per photo, scroll-snap) that the phone grid-collapse CSS cannot stack", () => {
+    // utils.jsx turns any inline style containing "repeat(4," / "1fr 1fr" into a
+    // single column on phones -- that made 4 huge stacked tiles. Slides sit side
+    // by side in a horizontal scroll-snap track instead (like the Cardio/Neuro cards).
+    render(<PhotoSlots ids={kcImageIds("kc_x")} />);
+    const track = screen.getByTestId("photo-slots-track");
+    const style = track.getAttribute("style");
+    expect(style).toContain("scroll-snap-type: x mandatory");
+    expect(style).not.toMatch(/repeat\(|1fr 1fr|grid/);
+    expect(track.children.length).toBe(3);
+  });
+
+  it("shows a dot per photo, and tapping a dot moves to that photo", () => {
+    render(<PhotoSlots ids={kcImageIds("kc_x")} />);
+    const dots = [1, 2, 3].map((n) => screen.getByLabelText(`Show photo ${n} of 3`));
+    expect(dots[0].getAttribute("aria-current")).toBe("true");
+    fireEvent.click(dots[2]);
+    expect(dots[2].getAttribute("aria-current")).toBe("true");
+    expect(dots[0].getAttribute("aria-current")).toBeNull();
+  });
+
+  it("has a camera button on a photo that replaces it in the same slot", async () => {
+    render(<PhotoSlots ids={kcImageIds("kc_x")} />);
+    fireEvent.click(screen.getByLabelText("Replace photo 2"));
+    const file = new File([new Uint8Array(10)], "p.jpg", { type: "image/jpeg" });
+    fireEvent.change(screen.getByTestId("photo-slots-input"), { target: { files: [file] } });
+    await waitFor(() => expect(uploadImage).toHaveBeenCalledWith(file, "kc_x_2"));
   });
 
   it("uploads to the id of the empty slot that was tapped, then shows the photo", async () => {
@@ -74,7 +103,7 @@ describe("PhotoSlots", () => {
   it("opens an uploaded photo full size, where it can be replaced in the same slot", async () => {
     render(<PhotoSlots ids={kcImageIds("kc_x")} />);
     fireEvent.click(screen.getByLabelText("View photo 2"));
-    expect(screen.getByText("Photo 2 of 4")).toBeTruthy();
+    expect(screen.getByText("Photo 2 of 3")).toBeTruthy();
     fireEvent.click(screen.getByText(/Replace photo/));
     const file = new File([new Uint8Array(10)], "p.jpg", { type: "image/jpeg" });
     fireEvent.change(screen.getByTestId("photo-slots-input"), { target: { files: [file] } });
@@ -82,8 +111,8 @@ describe("PhotoSlots", () => {
   });
 });
 
-describe("the same 4 photos show everywhere", () => {
-  it("the kinetic chain info card item carries the 4 ids", () => {
+describe("the same 3 photos show everywhere", () => {
+  it("the kinetic chain info card item carries the 3 ids", () => {
     expect(kcRichItem(firstTest).images).toEqual(kcImageIds(firstTest.id));
     expect(kcRichItem(firstTest).image).toBe(firstTest.id);
   });
@@ -91,19 +120,19 @@ describe("the same 4 photos show everywhere", () => {
   it("the info card sheet shows 4 slots", () => {
     render(<InfoButton title={firstTest.label} richItem={kcRichItem(firstTest)} />);
     fireEvent.click(screen.getByRole("button", { name: /ⓘ/ }));
-    for (let n = 1; n <= 4; n++) expect(screen.getByTestId(`photo-slot-${n}`)).toBeTruthy();
+    for (let n = 1; n <= 3; n++) expect(screen.getByTestId(`photo-slot-${n}`)).toBeTruthy();
   });
 
   it("the Kinetic Chain step shows 4 slots for the opened test", () => {
     render(<KineticChainSection data={{}} setData={() => {}} />);
     fireEvent.click(screen.getByText(firstTest.label));
-    for (let n = 1; n <= 4; n++) expect(screen.getByTestId(`photo-slot-${n}`)).toBeTruthy();
+    for (let n = 1; n <= 3; n++) expect(screen.getByTestId(`photo-slot-${n}`)).toBeTruthy();
   });
 
-  it("Learn's detail view pages through the same 4 photos", () => {
+  it("Learn's detail view pages through the same 3 photos", () => {
     render(<KineticStudy onBack={() => {}} />);
     fireEvent.click(screen.getAllByText(firstTest.label)[0]);
-    expect(screen.getByLabelText("Photo 1 of 4")).toBeTruthy();
-    expect(screen.getByLabelText("Photo 4 of 4")).toBeTruthy();
+    expect(screen.getByLabelText("Photo 1 of 3")).toBeTruthy();
+    expect(screen.getByLabelText("Photo 3 of 3")).toBeTruthy();
   });
 });

@@ -6,6 +6,7 @@ let profilePromise = null;
 vi.mock("../physiofeed/data/db.js", () => ({
   getProfile: () => profilePromise || Promise.resolve({ name: "Poster Person", initials: "PP", gradient: "violet" }),
   uploadOpportunityCoverImage: vi.fn(),
+  getSeatsTaken: () => Promise.resolve(null),
 }));
 vi.mock("../analytics/trackEvent.js", () => ({ trackEvent: vi.fn() }));
 
@@ -320,5 +321,67 @@ describe("Title length", () => {
     render(<ApplicationOpportunityForm type="job" onClose={() => {}} onSubmit={vi.fn()} />);
     await profileLoaded();
     expect(screen.getByPlaceholderText("e.g. Junior Physiotherapist").maxLength).toBe(120);
+  });
+});
+
+describe("External link switched off; waiting list and registration closing date", () => {
+  beforeEach(() => { profilePromise = null; });
+
+  it("offers no 'External link' choice on the job, internship, collaboration or workshop forms", async () => {
+    for (const type of ["job", "internship", "collaboration"]) {
+      const { unmount } = render(<ApplicationOpportunityForm type={type} onClose={() => {}} onSubmit={vi.fn()} />);
+      await profileLoaded();
+      expect(screen.queryByText(/External link/i)).toBeNull();
+      expect(screen.getByText(/Contact organiser/)).toBeTruthy();
+      unmount();
+    }
+  });
+
+  it("an old listing saved with an external link opens on PhysioFeed registration instead", async () => {
+    render(<ApplicationOpportunityForm type="job" editingOpp={{ id: "9", title: "Old", org: "O", description: "d", registrationMethod: "external", registrationUrl: "https://x.com", lifecycleStatus: "published" }} onClose={() => {}} onSubmit={vi.fn()} />);
+    await profileLoaded();
+    const radios = [...document.querySelectorAll("input[name=regMethod]")];
+    expect(radios.find((r) => r.checked)).toBe(radios[0]);
+  });
+
+  it("workshop: waiting-list box appears with limited seats and is saved with the registration closing date", async () => {
+    const onSubmit = vi.fn(() => Promise.resolve());
+    render(<WorkshopWizard onClose={() => {}} onSubmit={onSubmit} />);
+    await profileLoaded();
+    type(screen.getByPlaceholderText("e.g. Clinical Taping Fundamentals"), "Taping");
+    type(screen.getByPlaceholderText(/Tell students/), "About taping");
+    const next = () => fireEvent.click(screen.getByRole("button", { name: /Next/ }));
+    next();
+    type(document.querySelector("input[type=date]"), "2099-11-20");
+    const [start, end] = document.querySelectorAll("input[type=time]");
+    type(start, "10:00"); type(end, "12:00");
+    next(); next(); next();
+    expect(screen.queryByText(/waiting list/i)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Limited seats" }));
+    type(screen.getByPlaceholderText("50"), "30");
+    fireEvent.click(screen.getByLabelText(/Keep taking registrations after the seats are full/));
+    const dates = document.querySelectorAll("input[type=date]");
+    type(dates[dates.length - 1], "2099-11-10");
+    next(); next();
+    fireEvent.click(screen.getByRole("button", { name: /Publish Workshop/ }));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+    expect(onSubmit.mock.calls[0][0]).toMatchObject({ maxParticipants: 30, allowWaitlist: true, deadline: "2099-11-10" });
+  });
+
+  it("workshop: registration must close on or before the workshop date", async () => {
+    render(<WorkshopWizard onClose={() => {}} onSubmit={vi.fn()} />);
+    await profileLoaded();
+    type(screen.getByPlaceholderText("e.g. Clinical Taping Fundamentals"), "Taping");
+    type(screen.getByPlaceholderText(/Tell students/), "About taping");
+    const next = () => fireEvent.click(screen.getByRole("button", { name: /Next/ }));
+    next();
+    type(document.querySelector("input[type=date]"), "2099-11-20");
+    const [start, end] = document.querySelectorAll("input[type=time]");
+    type(start, "10:00"); type(end, "12:00");
+    next(); next(); next();
+    const dates = document.querySelectorAll("input[type=date]");
+    type(dates[dates.length - 1], "2099-12-01");
+    expect(screen.getByText(/Registration must close on or before the workshop date/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Next/ }).disabled).toBe(true);
   });
 });

@@ -39,13 +39,13 @@ describe("ConditionObjectiveAssessment — Cervical", () => {
   it("shows condition content straight away -- no Suggest button to tap first", () => {
     render(<Harness initialData={{}} selectedRegions={[{ id: "cervical", label: "Cervical" }]} />);
     expect(screen.queryByRole("button", { name: /Suggest probable objective assessment/ })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^C01/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Mechanical \/ Non-Specific Neck Pain/ })).toBeInTheDocument();
   });
 
   it("renders condition tabs, defaults to C01, and shows the Cervical ROM grid", () => {
     render(<Harness initialData={{}} selectedRegions={[{ id: "cervical", label: "Cervical" }]} />);
-    expect(screen.getByRole("button", { name: /^C01/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^C04 Cervicogenic Headache/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Mechanical \/ Non-Specific Neck Pain/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Cervicogenic Headache/ })).toBeInTheDocument();
     openTopic("ROM");
     expect(screen.getByText("Cervical ROM")).toBeInTheDocument();
   });
@@ -53,11 +53,13 @@ describe("ConditionObjectiveAssessment — Cervical", () => {
   it("marking an Observation finding persists and switching condition tabs swaps the content", () => {
     render(<Harness initialData={{}} selectedRegions={[{ id: "cervical", label: "Cervical" }]} />);
     openTopic("Observation");
-    const card = screen.getByRole("button", { name: /Localised guarding/ });
-    expect(within(card).getByText("Unmarked")).toBeInTheDocument();
-    fireEvent.click(card);
-    expect(within(screen.getByRole("button", { name: /Localised guarding/ })).getByText("Positive")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /C04 Cervicogenic Headache/i }));
+    // The finding card is the label plus a "Positive" button (it shows
+    // "✓ Positive" once marked) and a "What to observe" button.
+    const positiveBtn = () => within(screen.getByText("Localised guarding").parentElement).getByRole("button", { name: /Positive/ });
+    expect(positiveBtn()).toHaveTextContent(/^Positive$/);
+    fireEvent.click(positiveBtn());
+    expect(positiveBtn()).toHaveTextContent("✓ Positive");
+    fireEvent.click(screen.getByRole("button", { name: /Cervicogenic Headache/ }));
     openTopic("Observation");
     expect(screen.queryByText("Localised guarding")).not.toBeInTheDocument();
   });
@@ -128,7 +130,7 @@ describe("ConditionObjectiveAssessment — Cervical", () => {
 describe("ConditionObjectiveAssessment — Thoracic", () => {
   it("resolves the Thoracic region, shows real condition names, and the Thoracic ROM grid", () => {
     render(<Harness initialData={{}} selectedRegions={[{ id: "thoracic", label: "Thoracic" }]} />);
-    expect(screen.getByRole("button", { name: /^T01/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Thoracic Facet/ })).toBeInTheDocument();
     openTopic("Observation");
     expect(screen.getByText("Localised paraspinal guarding")).toBeInTheDocument();
     openTopic("ROM");
@@ -146,7 +148,7 @@ describe("ConditionObjectiveAssessment — Thoracic", () => {
 describe("ConditionObjectiveAssessment — Lumbar", () => {
   it("resolves from lumbar/sacrum/pelvis region ids and shows the Lumbar ROM grid", () => {
     render(<Harness initialData={{}} selectedRegions={[{ id: "sacrum", label: "Sacrum" }]} />);
-    expect(screen.getByRole("button", { name: /^L01/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Mechanical \/ Non-Specific Low Back Pain/ })).toBeInTheDocument();
     openTopic("Observation");
     expect(screen.getByText("Muscle guarding")).toBeInTheDocument();
     openTopic("ROM");
@@ -157,7 +159,7 @@ describe("ConditionObjectiveAssessment — Lumbar", () => {
 describe("ConditionObjectiveAssessment — Shoulder", () => {
   it("resolves the Shoulder region and bridges the engine's SH0x id to the library's S0x content", () => {
     render(<Harness initialData={{}} selectedRegions={[{ id: "shoulder", label: "Shoulder" }]} />);
-    expect(screen.getByRole("button", { name: /^S01/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Subacromial Pain Syndrome/ })).toBeInTheDocument();
     // Proves the SH0x -> S0x name-bridge actually resolved real content,
     // not a blank/default condition.
     openTopic("Observation");
@@ -172,7 +174,7 @@ describe("ConditionObjectiveAssessment — Shoulder", () => {
 describe("ConditionObjectiveAssessment — Hip", () => {
   it("resolves the Hip region and shows its own Hip ROM grid and special tests", () => {
     render(<Harness initialData={{}} selectedRegions={[{ id: "hip", label: "Hip" }]} />);
-    expect(screen.getByRole("button", { name: /^H01/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Femoroacetabular Impingement/ })).toBeInTheDocument();
     openTopic("ROM");
     expect(screen.queryByText("Cervical ROM")).not.toBeInTheDocument();
     expect(screen.getByText("Hip ROM")).toBeInTheDocument();
@@ -183,7 +185,7 @@ describe("ConditionObjectiveAssessment — Hip", () => {
 
   it("kinetic-chain-not-applicable condition (adductor-related groin pain) shows the greyed note with no chips", () => {
     render(<Harness initialData={{}} selectedRegions={[{ id: "hip", label: "Hip" }]} />);
-    fireEvent.click(screen.getByRole("button", { name: /H05/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Adductor-Related Groin Pain/ }));
     openTopic("Kinetic chain");
     // Collapsed by default when not applicable -- tap its header to open.
     fireEvent.click(screen.getAllByText("Kinetic Chain").at(-1));
@@ -195,7 +197,7 @@ describe("ConditionObjectiveAssessment — Hip", () => {
 describe("ConditionObjectiveAssessment — Knee", () => {
   it("resolves the Knee region from selectedRegions and shows the Knee ROM grid", () => {
     render(<Harness initialData={{}} selectedRegions={[{ id: "knee", label: "Knee" }]} />);
-    expect(screen.getByRole("button", { name: /^K01/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /ACL Tear/ })).toBeInTheDocument();
     openTopic("Special tests");
     expect(screen.getAllByText("Lachman's test").length).toBeGreaterThan(0);
     openTopic("ROM");
@@ -206,7 +208,7 @@ describe("ConditionObjectiveAssessment — Knee", () => {
 describe("ConditionObjectiveAssessment — Ankle/Foot", () => {
   it("resolves from either the ankle or the foot region id and shows the Ankle ROM grid", () => {
     render(<Harness initialData={{}} selectedRegions={[{ id: "foot", label: "Foot / Toes" }]} />);
-    expect(screen.getByRole("button", { name: /^AF01/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Lateral Ankle Sprain/ })).toBeInTheDocument();
     openTopic("ROM");
     expect(screen.getByText("Ankle ROM")).toBeInTheDocument();
     expect(screen.getByText("Dorsiflexion")).toBeInTheDocument();
@@ -216,17 +218,17 @@ describe("ConditionObjectiveAssessment — Ankle/Foot", () => {
 describe("ConditionObjectiveAssessment — Elbow/Wrist/Hand", () => {
   it("resolves from elbow/forearm/wrist/hand region ids, bridges the engine's EL/WR/HD ids to the library's E/W/H ids, and shows the combined ROM grid", () => {
     render(<Harness initialData={{}} selectedRegions={[{ id: "elbow", label: "Elbow" }]} />);
-    expect(screen.getByRole("button", { name: /^E01/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Lateral Epicondylalgia/ })).toBeInTheDocument();
     openTopic("Special tests");
     expect(screen.getByText("Cozen's Test")).toBeInTheDocument();
     openTopic("ROM");
-    expect(screen.getByText("Elbow / Wrist ROM")).toBeInTheDocument();
+    expect(screen.getByText("Elbow / Wrist / Hand ROM")).toBeInTheDocument();
     expect(screen.getByText("Supination")).toBeInTheDocument();
   });
 
   it("shows the fracture safety caveat (naText) on STTT for the suspected-scaphoid-fracture condition", () => {
     render(<Harness initialData={{}} selectedRegions={[{ id: "wrist", label: "Wrist" }]} />);
-    fireEvent.click(screen.getByRole("button", { name: /^W07/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Scaphoid Fracture \(Suspected\)/ }));
     openTopic("STTT / Cyriax");
     expect(screen.getByText(/Do NOT resisted-test.*scaphoid/)).toBeInTheDocument();
   });

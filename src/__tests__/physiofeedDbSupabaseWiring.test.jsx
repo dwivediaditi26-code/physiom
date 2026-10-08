@@ -504,6 +504,14 @@ describe("PhysioFeed db.js Supabase wiring", () => {
     expect(url).toMatch(/^https:\/\/fake\.test\/storage\/post-images\/u-me\//);
   });
 
+  it("uploadOpportunityCoverImage() checks a workshop cover's type and size before uploading (it used to store the original)", async () => {
+    currentUser = { id: "u-me" };
+    await expect(db.uploadOpportunityCoverImage(new File(["x"], "notes.pdf", { type: "application/pdf" }))).rejects.toThrow(/not an image/i);
+    const big = new File(["x"], "huge.jpg", { type: "image/jpeg" });
+    Object.defineProperty(big, "size", { value: 11 * 1024 * 1024 });
+    await expect(db.uploadOpportunityCoverImage(big)).rejects.toThrow(/under 10MB/);
+  });
+
   it("uploadPostVideo() propagates a real Storage error instead of silently swallowing it", async () => {
     currentUser = { id: "u-me" };
     storageUploadError = { message: "The resource already exists" };

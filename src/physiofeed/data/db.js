@@ -28,6 +28,8 @@ import { supabase, authHeader } from "../../supabase.js";
 import { apiUrl } from "../../apiUrl.js";
 import { initialsOf } from "../components/shared/constants.js";
 import { trackEvent } from "../../analytics/trackEvent.js";
+import { putMedia } from "./mediaStorage.js";
+import { validateImageFile, compressImage } from "../lib/media.js";
 
 let _posts = INITIAL_POSTS.map((p) => ({ ...p }));
 let _people = PEOPLE.map((p) => ({ ...p }));
@@ -465,11 +467,8 @@ export async function votePoll(postId, optionIndex) {
 // pretending an upload worked when it didn't.
 
 async function uploadToBucket(bucket, uid, fileOrBlob, ext) {
-  const path = `${uid}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
-  const { error } = await supabase.storage.from(bucket).upload(path, fileOrBlob, { contentType: fileOrBlob.type, upsert: false });
-  if (error) throw error;
-  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-  return data.publicUrl;
+  // All storage I/O lives in mediaStorage.js (one place to change when the store changes).
+  return putMedia({ bucket, uid, file: fileOrBlob, ext });
 }
 
 export async function uploadPostImage(blob) {
@@ -528,6 +527,13 @@ export async function uploadResume(file) {
 export async function uploadOpportunityCoverImage(blob) {
   const uid = await currentUserId();
   if (!uid) throw new Error("Sign in to upload a cover image.");
+  // The screen said "up to 5MB" but nothing checked it and the original phone photo was stored
+  // as it was. Check the type and size, then shrink it like every other photo.
+  if (blob instanceof File) {
+    const problem = validateImageFile(blob);
+    if (problem) throw new Error(problem);
+    blob = await compressImage(blob);
+  }
   return uploadToBucket("opportunity-covers", uid, blob, "jpg");
 }
 
@@ -1696,8 +1702,8 @@ export async function getNotifications() {
       .eq("user_id", uid)
       .order("created_at", { ascending: false });
     if (error) throw error;
-    return (data || []).map((n) => ({
-      id: String(n.id), iconName: n.icon_name, text: n.text, time: timeAgo(n.created_at), tone: n.tone, read: n.read,
+    const real = (data || []).map((n) => ({
+      id: String(n.id), iconName: n.icon_name, text: n.text, time: timeAgo(n.created_at), ts: Date.parse(n.created_at) || 0, tone: n.tone, read: n.read,
       link: n.kind === "message" || n.kind === "message_request" || n.kind === "message_request_accepted"
             ? (n.actor_id ? `/messages?with=${n.actor_id}` : null)
           : n.kind === "like" || n.kind === "comment" ? (n.post_id ? `/post/${n.post_id}` : n.actor_id ? `/profile/${n.actor_id}` : null)
@@ -1726,14 +1732,92 @@ export async function getNotifications() {
           : (n.kind === "opportunity_cancelled" || n.kind === "opportunity_closed" || n.kind === "opportunity_updated") && n.entity_id ? `/explore?opp=${n.entity_id}`
           : n.kind === "workshop_registered" ? "/explore?view=applications"
           : null,
+      _entityId: n.kind === "connection_request" ? String(n.entity_id ?? "") : null,
     }));
+    const extra = await appSideBellItems(uid, real);
+    return [...real, ...extra].sort((a, b) => b.ts - a.ts).map(({ _entityId, ...n }) => n);
   } catch (e) {
     console.error("getNotifications(): falling back to demo notifications --", e?.message || e);
     return demoOrEmpty(NOTIFICATIONS);
   }
 }
 
+// Bell items built on the app side (2026-10-05, Aditi: "notification of new
+// news addition is not showing ... someone wants to connect also not
+// showing"). Both used to depend on something outside the app working: a
+// database trigger for connection requests, and a phone push for News. If
+// either wasn't set up the bell stayed empty. These come straight from the
+// data the app can already read -- people waiting to connect with you
+// (connections table) and items added to News in the last 3 days
+// (career_news) -- so the bell is right whether or not the server side is.
+// What you've already opened is remembered on this device only.
+const BELL_SEEN_KEY = (uid) => `pm_bell_seen_v1:${uid}`;
+const NEWS_WINDOW_MS = 3 * 24 * 60 * 60 * 1000;
+function readBellSeen(uid) {
+  try {
+    const v = JSON.parse(localStorage.getItem(BELL_SEEN_KEY(uid)) || "{}");
+    return { ids: Array.isArray(v.ids) ? v.ids : [], newsAt: typeof v.newsAt === "number" ? v.newsAt : 0 };
+  } catch { return { ids: [], newsAt: 0 }; }
+}
+function writeBellSeen(uid, seen) {
+  try { localStorage.setItem(BELL_SEEN_KEY(uid), JSON.stringify({ ids: seen.ids.slice(-200), newsAt: seen.newsAt })); } catch { /* storage blocked -- the item just stays unread */ }
+}
+
+async function appSideBellItems(uid, realRows) {
+  const seen = readBellSeen(uid);
+  const out = [];
+  try {
+    // Someone waiting to connect with you. Skipped when the server trigger
+    // already wrote its own notification for the same request.
+    const requests = await getConnectionRequests();
+    const covered = new Set(realRows.map((n) => n._entityId).filter(Boolean));
+    for (const r of requests) {
+      if (covered.has(String(r.id))) continue;
+      const id = `conn:${r.id}`;
+      out.push({
+        id, iconName: "UserPlus", tone: "text-blue-500", link: "/people",
+        text: `${r.name} wants to connect with you`,
+        time: timeAgo(r.createdAt), ts: Date.parse(r.createdAt) || 0, read: seen.ids.includes(id),
+      });
+    }
+  } catch (e) { console.error("bell: connection requests --", e?.message || e); }
+  try {
+    const since = new Date(Date.now() - NEWS_WINDOW_MS).toISOString();
+    const { data, error } = await supabase
+      .from("career_news")
+      .select("id, title, created_at")
+      .eq("status", "active")
+      .gte("created_at", since)
+      .order("created_at", { ascending: false })
+      .limit(30);
+    if (error) throw error;
+    const items = (data || []).filter((r) => Date.parse(r.created_at));
+    if (items.length) {
+      const latest = items[0];
+      const latestTs = Date.parse(latest.created_at);
+      const unseen = items.filter((r) => Date.parse(r.created_at) > seen.newsAt).length;
+      out.push({
+        id: `news:${latestTs}`, iconName: "Newspaper", tone: "text-violet-600", link: "/news",
+        text: unseen > 1 ? `${unseen} new items in News — latest: ${latest.title}` : `New in News: ${latest.title}`,
+        time: timeAgo(latest.created_at), ts: latestTs, read: unseen === 0,
+      });
+    }
+  } catch (e) { console.error("bell: news --", e?.message || e); }
+  return out;
+}
+
 export async function markNotificationRead(id) {
+  // App-side items (see appSideBellItems) are remembered on this device.
+  if (typeof id === "string" && (id.startsWith("conn:") || id.startsWith("news:"))) {
+    const uid = await currentUserId();
+    if (uid) {
+      const seen = readBellSeen(uid);
+      if (id.startsWith("news:")) seen.newsAt = Math.max(seen.newsAt, Number(id.slice(5)) || 0);
+      else if (!seen.ids.includes(id)) seen.ids.push(id);
+      writeBellSeen(uid, seen);
+    }
+    return getNotifications();
+  }
   try {
     const uid = await currentUserId();
     if (!uid) throw new Error("not signed in");
@@ -2439,6 +2523,42 @@ export async function closeOpportunity(oppId) {
   if (error) throw error;
 }
 
+// "Extend" from My Postings: give people more time (and, for a workshop, a
+// later date or more seats) without opening the whole edit form. Only the
+// fields passed are changed. A closed listing is reopened by extending it --
+// that is what extending means -- and an expired one becomes live again
+// simply because its dates now lie ahead. Creator-only via RLS.
+export async function extendOpportunity(oppId, { deadline, eventDate, maxParticipants } = {}) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to manage your listings.");
+  const row = { updated_at: SERVER_NOW };
+  if (deadline !== undefined) row.deadline = deadline || null;
+  if (eventDate !== undefined) row.event_date = eventDate || null;
+  if (maxParticipants !== undefined) row.max_participants = maxParticipants || null;
+  const { data: cur, error: curErr } = await supabase.from("opportunities").select("status").eq("id", oppId).single();
+  if (curErr) throw curErr;
+  if (cur.status === "closed") { row.status = "published"; row.closed_at = null; }
+  const { data, error } = await supabase.from("opportunities").update(row).eq("id", oppId).select("*").single();
+  if (error) throw error;
+  invalidateSearchCorpus();
+  return rowToOpportunity(data, uid, 0);
+}
+
+// How many registrations a listing already has -- everyone's, not just the
+// ones this user may see. The count is a SECURITY DEFINER database function
+// (fix_applications_insert_recursion.sql) that returns only a number.
+// null when it can't be read, so callers never guess "full" or "free".
+export async function getSeatsTaken(oppId) {
+  try {
+    const { data, error } = await supabase.rpc("application_count", { p_opportunity_id: Number(oppId) });
+    if (error) throw error;
+    return typeof data === "number" ? data : Number(data);
+  } catch (e) {
+    console.error("getSeatsTaken(): --", e?.message || e);
+    return null;
+  }
+}
+
 export async function reopenOpportunity(oppId) {
   const uid = await currentUserId();
   if (!uid) throw new Error("Sign in to manage your listings.");
@@ -2631,6 +2751,9 @@ export async function applyToOpportunity(oppId, { coverNote = "", resumeUrl = ""
   // Postgres error code.
   if (error) {
     if (error.code === "23505") throw new Error("You've already applied to this.");
+    // The insert rule only lets a row in while the listing is live, before
+    // its dates, and (unless the poster allows a waiting list) under the seat limit.
+    if (error.code === "42501") throw new Error("Registrations are closed for this listing, or its seats are full.");
     throw error;
   }
   trackEvent("opportunity_application_submitted", { entityType: "opportunity", entityId: oppId });
@@ -2670,6 +2793,33 @@ export async function registerForWorkshop(oppId, { creatorId, title } = {}) {
     } catch (e) {
       console.error("registerForWorkshop(): registered, but couldn't open the chat thread --", e?.message || e);
     }
+  }
+}
+
+// Take back your own application/registration (applications_delete_own).
+// The database tells the organiser, and on a workshop with a waiting list
+// moves the first waiting person into the freed seat
+// (add_withdraw_and_waiting_list_status.sql).
+export async function withdrawApplication(oppId) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in first.");
+  const { data, error } = await supabase
+    .from("applications").delete().eq("opportunity_id", oppId).eq("applicant_id", uid).select("id");
+  if (error) throw error;
+  if (!data?.length) throw new Error("Couldn't find your application to withdraw.");
+  trackEvent("opportunity_application_withdrawn", { entityType: "opportunity", entityId: oppId });
+}
+
+// Is MY registration past the seat limit? false when unknown, so nobody is
+// wrongly told they are waiting.
+export async function isOnWaitingList(oppId) {
+  try {
+    const { data, error } = await supabase.rpc("is_on_waiting_list", { p_opportunity_id: Number(oppId) });
+    if (error) throw error;
+    return data === true;
+  } catch (e) {
+    console.error("isOnWaitingList(): --", e?.message || e);
+    return false;
   }
 }
 
@@ -2732,6 +2882,7 @@ export async function getApplicantsForOpportunity(oppId) {
         status: APP_STATUS_TO_UI[a.status] || "new",
         rawStatus: a.status,
         appliedAgo: agoLabel(a.created_at),
+        appliedAt: a.created_at,
       };
     });
   } catch (e) {

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ChevronLeft, Calendar, Clock, Video, Check, X, Maximize2 } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
 import * as db from "../../data/db.js";
+import WithdrawButton from "./WithdrawButton.jsx";
 import LifecycleBanner, { isRegistrationBlocked } from "./StatusBanner.jsx";
 import { formatEventDate, normalizeLink, earlyBirdActive } from "./FormFields.jsx";
 import { trackEvent } from "../../../analytics/trackEvent.js";
@@ -22,6 +23,26 @@ export default function WorkshopDetail({ opp, onBack, registered, onRegistered, 
   const [error, setError] = useState(null);
   const [zoom, setZoom] = useState(false);
   const blocked = isRegistrationBlocked(opp);
+  // How many seats are taken (everyone's registrations, via a database
+  // function -- a student can't read other people's rows). null = unknown,
+  // in which case nothing is ever shown as "full".
+  const [seatsTaken, setSeatsTaken] = useState(null);
+  useEffect(() => {
+    if (preview || !opp.maxParticipants || opp.postedByMe) return;
+    let cancelled = false;
+    db.getSeatsTaken(opp.id).then((n) => { if (!cancelled) setSeatsTaken(n); });
+    return () => { cancelled = true; };
+  }, [opp.id, opp.maxParticipants, opp.postedByMe, preview, registered]);
+  // Am I past the seat limit? Only asked once I've registered.
+  const [onWaitingList, setOnWaitingList] = useState(false);
+  useEffect(() => {
+    if (preview || !registered || !opp.maxParticipants) { setOnWaitingList(false); return; }
+    let cancelled = false;
+    db.isOnWaitingList(opp.id).then((v) => { if (!cancelled) setOnWaitingList(v); });
+    return () => { cancelled = true; };
+  }, [opp.id, opp.maxParticipants, registered, preview]);
+  const full = !!opp.maxParticipants && seatsTaken != null && seatsTaken >= opp.maxParticipants;
+  const waitlistOpen = full && !!opp.allowWaitlist;
 
   useEffect(() => {
     trackEvent("opportunity_viewed", { entityType: "opportunity", entityId: opp.id, properties: { type: "workshop" } });
@@ -126,7 +147,10 @@ export default function WorkshopDetail({ opp, onBack, registered, onRegistered, 
             {opp.maxParticipants && (
               <div className="flex-1 min-w-[140px] bg-slate-50 rounded-xl px-3 py-2.5">
                 <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Seats</p>
-                <p className="text-sm font-semibold text-slate-900 mt-0.5">Limited to {opp.maxParticipants}</p>
+                <p className="text-sm font-semibold text-slate-900 mt-0.5">
+                  Limited to {opp.maxParticipants}
+                  {seatsTaken != null && (full ? (opp.allowWaitlist ? " · full, waiting list open" : " · full") : ` · ${opp.maxParticipants - seatsTaken} left`)}
+                </p>
               </div>
             )}
             {(opp.venue || opp.city || opp.address) && opp.mode !== "Online" && (
@@ -200,24 +224,47 @@ export default function WorkshopDetail({ opp, onBack, registered, onRegistered, 
             >
               Contact Organiser
             </button>
+          ) : full && !registered && !waitlistOpen ? (
+            <span className="pf-font-head text-xs font-semibold text-slate-400 bg-slate-50 rounded-xl px-4 py-3">Seats are full</span>
           ) : (
             <button
               type="button"
               onClick={register}
               disabled={registered || busy}
-              className={`pf-font-head flex items-center justify-center gap-1.5 text-sm font-bold rounded-xl px-6 py-3 shadow-sm transition ${registered ? "bg-emerald-50 text-emerald-700" : "text-white bg-[#FF5FA2] active:scale-[0.98] disabled:opacity-60"}`}
+              className={`pf-font-head flex items-center justify-center gap-1.5 text-sm font-bold rounded-xl px-6 py-3 shadow-sm transition ${registered ? (onWaitingList ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700") : "text-white bg-[#FF5FA2] active:scale-[0.98] disabled:opacity-60"}`}
             >
-              {registered ? <><Check size={16} /> Registered</> : busy ? "Registering…" : "Register Now"}
+              {registered ? <><Check size={16} /> {onWaitingList ? "On the waiting list" : "Registered"}</> : busy ? "Registering…" : waitlistOpen ? "Join Waiting List" : "Register Now"}
             </button>
           )}
         </div>
+        {waitlistOpen && !registered && !blocked && (
+          <p className="text-[11px] text-slate-400 mt-2">All seats are taken. You can still send a request — you'll be on the waiting list and the organiser will tell you if a place opens up.</p>
+        )}
+        {opp.deadline && !blocked && (
+          <p className="text-[11px] text-slate-400 mt-2">Registration closes on {formatEventDate(opp.deadline)}.</p>
+        )}
         {opp.registrationMethod === "external" && (
           <p className="text-[11px] text-slate-400 mt-2">You'll be redirected to the organiser's registration and payment page.</p>
         )}
         {registered && opp.registrationMethod !== "external" && opp.registrationMethod !== "contact" && (
           <p className="text-[11px] text-slate-400 mt-2">
-            The organiser has your request and a chat thread is open — they'll confirm the details there.
+            {onWaitingList
+              ? "All seats are taken, so you're on the waiting list. If someone withdraws, you move up and we'll tell you."
+              : "The organiser has your request and a chat thread is open — they'll confirm the details there."}
           </p>
+        )}
+        {registered && !preview && !opp.postedByMe && opp.registrationMethod !== "external" && opp.registrationMethod !== "contact" && (
+          <div className="mt-3">
+            <WithdrawButton
+              oppId={opp.id}
+              label="Withdraw my registration"
+              confirmText={`Withdraw your registration for "${opp.title}"? The organiser will be told and your seat goes to the next person.`}
+              onDone={onRegistered}
+            />
+          </div>
+        )}
+        {opp.fee && opp.fee !== "Free" && !blocked && (
+          <p className="text-[11px] text-slate-400 mt-2">PhysioFeed doesn't take payment. The organiser will arrange the fee with you in the chat.</p>
         )}
       </div>
     </div>

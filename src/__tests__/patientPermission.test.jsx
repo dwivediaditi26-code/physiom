@@ -11,7 +11,7 @@ vi.mock("../supabase.js", () => import("../__mocks__/supabase.js"));
 
 import { supabase } from "../supabase.js";
 import { PatientPermissionCheck, PatientPermissionModal, PERMISSION_LABEL } from "../PatientPermission.jsx";
-import { renderLoggedIn, openClinical, openSpecialtyStep, tickPatientPermission } from "./clinicalFlow.js";
+import { renderLoggedIn, openClinical, openSpecialtyStep } from "./clinicalFlow.js";
 
 beforeEach(() => {
   localStorage.clear();
@@ -62,23 +62,10 @@ describe("PatientPermissionModal (the AI Assessment start)", () => {
 });
 
 describe("New patient form (signed in)", () => {
-  it("the first time, shows the permission tick and will not continue without it", async () => {
+  it("never asks for the permission tick: that promise is part of the sign-up agreement", async () => {
     await renderLoggedIn();
     await openClinical();
     const modal = await openSpecialtyStep("Test Patient");
-    fireEvent.click(modal.getByText("Ortho"));
-    const next = modal.getByText("Next →").closest("button");
-    expect(next.disabled).toBe(true);
-    tickPatientPermission(modal);
-    expect(next.disabled).toBe(false);
-    expect(screen.queryByTestId("patient-permission-reminder")).toBeNull();
-  }, 30000);
-
-  it("once confirmed, it is not asked again: a quiet reminder replaces the tick", async () => {
-    localStorage.setItem("pm_perm_ack_test-user-123", "2026-10-03T10:00:00.000Z");
-    await renderLoggedIn();
-    await openClinical();
-    const modal = await openSpecialtyStep("Second Patient");
     fireEvent.click(modal.getByText("Ortho"));
     expect(modal.queryByRole("checkbox", { name: /each patient's permission/i })).toBeNull();
     expect(modal.getByTestId("patient-permission-reminder")).toBeTruthy();

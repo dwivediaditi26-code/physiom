@@ -377,14 +377,29 @@ export default function MessagesPage() {
       node.style.height = `${Math.max(280, window.innerHeight - top - bottom - 10)}px`;
     };
     fit();
+    // The on-screen keyboard (iPhone) shrinks the viewport while you type;
+    // the card measured itself then and stayed small after the keyboard
+    // closed, leaving a big empty gap under the chat (Aditi, 2026-10-04:
+    // "its not scrolling after messaging"). Phones announce keyboard
+    // open/close through visualViewport (and focusout), not always through
+    // window "resize", so re-measure on all of them, and after a short wait
+    // because the viewport keeps changing while the keyboard animates.
+    const vv = window.visualViewport;
+    const refitSoon = () => { fit(); setTimeout(fit, 120); setTimeout(fit, 400); };
     window.addEventListener("resize", fit);
+    window.addEventListener("orientationchange", refitSoon);
+    document.addEventListener("focusout", refitSoon);
+    vv?.addEventListener("resize", refitSoon);
     const id = setTimeout(fit, 250); // banners settling in above it
     return () => {
       window.removeEventListener("resize", fit);
+      window.removeEventListener("orientationchange", refitSoon);
+      document.removeEventListener("focusout", refitSoon);
+      vv?.removeEventListener("resize", refitSoon);
       clearTimeout(id);
       if (el) el.style.height = "";
     };
-  }, [withId, error, loadingThread, loadingList, listQuery, tab]);
+  }, [withId, error, loadingThread, loadingList, listQuery, tab, thread.length]);
 
   const openConversation = (userId) => setSearchParams({ with: userId });
   const backToList = () => setSearchParams({});

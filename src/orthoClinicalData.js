@@ -11,7 +11,13 @@ import { REGION_LABEL } from "./orthoRegionLibrary.js";
 
 export { ROM_DATA, MMT_DATA, RESTRICTION_GRADE, MMT_GRADES, MMT_GRADE_OPTIONS, SPECIAL_TESTS_DATA };
 
-export const ROM_REGION_KEYS = Object.keys(ROM_DATA);
+// Thoracic, Lumbar and TMJ go after every limb region (Aditi, 2026-10-06);
+// the data keys themselves are unchanged, only the tab order.
+const ROM_LAST = ["Thoracic", "Lumbar", "TMJ"];
+export const ROM_REGION_KEYS = [
+  ...Object.keys(ROM_DATA).filter((k) => !ROM_LAST.includes(k)),
+  ...ROM_LAST.filter((k) => k in ROM_DATA),
+];
 export const MMT_REGION_KEYS = Object.keys(MMT_DATA);
 export const SPECIAL_TEST_REGION_KEYS = Object.keys(SPECIAL_TESTS_DATA);
 

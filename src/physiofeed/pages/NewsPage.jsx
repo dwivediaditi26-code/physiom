@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import CareerNewsBoard from "../components/news/CareerNewsBoard.jsx";
 import { useAppData } from "../context/AppDataContext.jsx";
@@ -8,7 +9,12 @@ import { useAppData } from "../context/AppDataContext.jsx";
 // sub-tab inside ExplorePage into its own route/nav entry, see
 // constants.js's PRO_NAV and Header.jsx's NAV_ITEMS).
 export default function NewsPage() {
-  const { profile } = useAppData();
+  const { profile, notifications, markNotificationRead } = useAppData();
+  // Opening News counts as seeing the "new in News" bell item.
+  const unseenNews = notifications.find((n) => String(n.id).startsWith("news:") && !n.read);
+  useEffect(() => {
+    if (unseenNews) markNotificationRead(unseenNews.id);
+  }, [unseenNews?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <main className="flex-1 min-w-0">
       <div className="mb-5">

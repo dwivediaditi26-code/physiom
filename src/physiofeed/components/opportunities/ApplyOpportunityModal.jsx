@@ -50,6 +50,12 @@ export default function ApplyOpportunityModal({ opp, onClose, onApplied }) {
     return () => clearTimeout(t);
   }, [sent, onApplied]);
 
+  // A guest is shown the shared demo identity, which must never be presented
+  // as "your profile" -- tell them to sign in instead. A signed-in member
+  // with no name yet would send the organiser a blank card, so they add it first.
+  const isGuest = !!profile?.isDemo;
+  const needsName = !isGuest && !(profile?.name || "").trim();
+
   const posterName = opp.mentor?.name?.split(",")[0].replace("Dr. ", "") || opp.org;
 
   // Portaled to document.body (2026-09-22) so this always mounts as a
@@ -65,6 +71,15 @@ export default function ApplyOpportunityModal({ opp, onClose, onApplied }) {
           <button type="button" onClick={onClose} aria-label="Close" className="p-1.5 rounded-lg hover:bg-slate-50 text-slate-400"><X size={18} /></button>
         </div>
 
+        {isGuest ? (
+          <div className="px-5 pb-8">
+            <p className="text-sm font-bold text-slate-900 leading-snug mb-1">{opp.title}</p>
+            <p className="text-xs text-slate-500 mb-4">{opp.orgShort || opp.org}</p>
+            <p className="text-sm text-slate-700 bg-slate-50 rounded-xl px-4 py-3.5 leading-relaxed">
+              Sign in or create a free account to apply. Your profile is what the organiser sees, so you need one first.
+            </p>
+          </div>
+        ) : (
         <div className="px-5 pb-8">
           <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400 mb-1">Applying for</p>
           <p className="text-sm font-bold text-slate-900 leading-snug">{opp.title}</p>
@@ -90,16 +105,18 @@ export default function ApplyOpportunityModal({ opp, onClose, onApplied }) {
             <p className="text-xs text-slate-500 flex items-center gap-1.5 mb-5"><Phone size={12} className="text-slate-400" />Contact shared: {profile.phone}</p>
           )}
 
+          {needsName && <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2 mb-3">Add your name in Profile first, so the organiser knows who is applying.</p>}
           {error && <p className="text-xs text-rose-600 mb-2">{error}</p>}
           <button
             type="button"
             onClick={submit}
-            disabled={sent || busy}
+            disabled={sent || busy || needsName}
             className={`w-full flex items-center justify-center gap-1.5 text-sm font-bold rounded-xl py-3 transition ${sent ? "bg-emerald-50 text-emerald-700" : "text-white bg-gradient-to-r from-indigo-600 to-violet-600 shadow-md active:scale-[0.98] disabled:opacity-60"}`}
           >
             {sent ? <><Check size={16} /> Application sent to {posterName}!</> : busy ? "Sending…" : "Confirm & submit application 🚀"}
           </button>
         </div>
+        )}
       </div>
     </div>,
     document.body

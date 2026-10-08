@@ -40,7 +40,7 @@ export default function TabbedDetail({ badge, title, subtitle, media, learn, tec
         {tab === "Quiz" && <QuizTab key={id || title} quiz={quiz} onReview={() => setTab("Learn")}/>}
       </div>
 
-      {next && <NextButton label={next.label} onClick={next.onClick} theme={theme}/>}
+      {next && tab !== "Quiz" && <NextButton label={next.label} onClick={next.onClick} theme={theme}/>}
     </div>
   );
 }

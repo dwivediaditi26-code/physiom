@@ -91,5 +91,7 @@ describe("Clinical landing page redesign", () => {
     openSubTab("Patients");
     const panel = within(await screen.findByTestId("clinical-panel"));
     expect(panel.getByText("Ortho Patient")).toBeInTheDocument();
-  });
+    // Walks a whole assessment, so give it more than vitest's 5s default --
+    // it timed out when the full suite ran in parallel on a busy machine.
+  }, 20000);
 });

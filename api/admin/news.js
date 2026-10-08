@@ -157,20 +157,27 @@ async function publish(req, res, admin) {
   if (error) return res.status(500).json({ error: error.message });
 
   let notified = false;
+  let sent = null;
+  let total = null;
   if (!existing && b.notify !== false) {
     try {
       const push = await fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_ROLE_KEY}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_ROLE_KEY}`, apikey: SERVICE_ROLE_KEY },
         body: JSON.stringify({ broadcast: true, title: title.slice(0, 80), body: source_name, url: '/news' }),
         signal: AbortSignal.timeout(10000),
       });
       notified = push.ok;
+      if (push.ok) {
+        let out = null;
+        try { out = await push.json(); } catch { /* body is only used for the device count */ }
+        if (out && typeof out.sent === 'number') { sent = out.sent; total = Number(out.total) || 0; }
+      }
     } catch (e) {
       console.error('admin/news: push broadcast failed', e.message);
     }
   }
-  return res.status(200).json({ ok: true, updated: !!existing, notified });
+  return res.status(200).json({ ok: true, updated: !!existing, notified, sent, total });
 }
 
 export default async function handler(req, res) {

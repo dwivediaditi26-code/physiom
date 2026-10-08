@@ -3,13 +3,14 @@ import { trackEvent } from "../analytics/trackEvent.js";
 import {
   Search, Bell, Hand, Move,
   Dumbbell, FlaskConical, Brain, BarChart3, Footprints, Link2,
-  GraduationCap, Activity, ChevronLeft, ChevronRight,
+  Activity, ChevronLeft, ChevronRight,
   BookOpen, ClipboardCheck, Stethoscope, Target,
 } from "lucide-react";
 import StudyMode from "./learn/StudyMode.jsx";
 import ClinicalLearning from "./learn/ClinicalLearning.jsx";
 import { DisplayFont } from "./learn/learnTheme.jsx";
 import "./physiofeed.css";
+import { usePreviewFeaturesForCurrentUser } from "../featureFlags.js";
 
 // These Assessment Library / Advanced Assessment items have real,
 // structured per-item data (technique/position/finding fields in
@@ -24,7 +25,7 @@ import "./physiofeed.css";
 // Everything else (Demographics, Subjective, and the rest of Advanced
 // Assessment/Treatment & Exercise) still has no such per-item data, so
 // it keeps its single card as before -- no study mode invented for it.
-const STUDY_TYPES = new Set(["rom", "mmt", "special", "neuro", "outcome", "kinetic", "fma", "cardio", "palpation", "nkt"]);
+const STUDY_TYPES = new Set(["rom", "mmt", "special", "neuro", "outcome", "kinetic", "fma", "cardio", "palpation", "nkt", "exercise"]);
 
 // Real section keys, pulled straight from physiom's own ALL_TESTS (see
 // src/sharedClinicalData.js) -- same labels, same navTo(key) targets the
@@ -55,7 +56,7 @@ const ADVANCED_ASSESSMENT = [
 ];
 
 const EXERCISE = [
-  { key: "exercise", label: "Exercise Prescription", desc: "Treatment plan", icon: Dumbbell, tint: "violet" },
+  { key: "exercise", label: "Exercise Learn", desc: "Learn • Practice • Apply", icon: Dumbbell, tint: "violet" },
 ];
 
 
@@ -64,11 +65,6 @@ const TINT_GRAD = {
   violet: "from-violet-600 to-fuchsia-500", blue: "from-sky-600 to-indigo-500", green: "from-cyan-500 to-blue-500",
   amber: "from-amber-500 to-orange-400", rose: "from-rose-600 to-pink-500", teal: "from-cyan-500 to-sky-500", indigo: "from-indigo-600 to-violet-500",
   emerald: "from-emerald-600 to-green-500",
-};
-const TINT_PILL = {
-  violet: "bg-violet-100 text-violet-700", blue: "bg-sky-100 text-sky-700", green: "bg-cyan-100 text-cyan-700",
-  amber: "bg-amber-100 text-amber-700", rose: "bg-rose-100 text-rose-700", teal: "bg-cyan-100 text-cyan-700", indigo: "bg-indigo-100 text-indigo-700",
-  emerald: "bg-emerald-100 text-emerald-700",
 };
 const TINT_BORDER = {
   violet: "border-violet-200", blue: "border-sky-200", green: "border-cyan-200", amber: "border-amber-200", rose: "border-rose-200", teal: "border-cyan-200", indigo: "border-indigo-200",
@@ -81,25 +77,47 @@ const TINT_BORDER = {
 // The small "Tool" link that used to sit beside the Study pill, opening the
 // live assessment screen from here, was removed (2026-09-19, Aditi: "when we
 // click on tool written it opens... so normal study mode open").
+// Small medical illustration on the right of a row (public/learn/*.png). Rows with no
+// picture here (Palpation, CPA, Exercise Prescription) are unchanged.
+const CARD_ART = {
+  rom: "rom", mmt: "mmt", special: "special-tests", neuro: "neurological", outcome: "outcome-measures",
+  cardio: "cardio-respiratory", fma: "functional-movement", kinetic: "kinetic-chain",
+};
+
+// Soft card colour per tint, so each card carries its own pastel.
+const TINT_CARD = {
+  violet: "from-violet-50 to-white", blue: "from-sky-50 to-white", green: "from-cyan-50 to-white",
+  amber: "from-amber-50 to-white", rose: "from-rose-50 to-white", teal: "from-cyan-50 to-white", indigo: "from-indigo-50 to-white",
+  emerald: "from-emerald-50 to-white",
+};
+
+// A grid card (2026-10-06, Aditi): the picture top left (where the coloured icon used to be; rows
+// with no picture keep their icon), title and subtitle beside it, a chevron at the top right.
+// The whole card is the button; there is no separate "Study" pill any more.
 function Row({ item, onNav, onStudy }) {
   const Icon = item.icon;
+  const art = CARD_ART[item.key];
   const studyable = STUDY_TYPES.has(item.key);
   const main = () => (studyable ? onStudy(item.key) : onNav(item.key));
   return (
-    <div className={`flex items-center gap-3 bg-white border ${TINT_BORDER[item.tint]} rounded-2xl px-3 py-2.5 mb-2.5 shadow-sm hover:shadow-md transition`}>
-      <button type="button" onClick={main} className="flex items-center gap-3 flex-1 min-w-0 text-left">
-        <span className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-gradient-to-br ${TINT_GRAD[item.tint]} text-white shadow-sm`}>
-          <Icon size={20} strokeWidth={2.2}/>
+    <button type="button" onClick={main} data-testid={`learn-card-${item.key}`}
+      className={`relative flex flex-col text-left h-full min-w-0 bg-gradient-to-br ${TINT_CARD[item.tint]} border ${TINT_BORDER[item.tint]} rounded-3xl p-2.5 min-[400px]:p-3 shadow-sm hover:shadow-md transition overflow-hidden`}>
+      <span className="flex flex-col min-[350px]:flex-row items-start gap-2 min-w-0 w-full">
+        {art ? (
+          <img src={`${import.meta.env.BASE_URL}learn/${art}.png`} alt="" aria-hidden="true" loading="lazy" decoding="async"
+            data-testid={`learn-art-${item.key}`} className="w-10 h-10 min-[400px]:w-12 min-[400px]:h-12 object-contain shrink-0 pointer-events-none" />
+        ) : (
+          <span className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-gradient-to-br ${TINT_GRAD[item.tint]} text-white shadow-sm`}>
+            <Icon size={20} strokeWidth={2.2}/>
+          </span>
+        )}
+        <span className="min-w-0 w-full flex-1 break-words">
+          <span className="cl-display block font-extrabold text-[13px] min-[400px]:text-[14px] text-slate-900 leading-tight pr-3">{item.label}</span>
+          <span className="block text-[11px] min-[400px]:text-xs text-slate-500 mt-0.5 leading-snug">{item.desc}</span>
         </span>
-        <span className="min-w-0">
-          <span className="cl-display block font-extrabold text-[15px] text-slate-900 leading-tight">{item.label}</span>
-          <span className="block text-xs text-slate-500 mt-0.5 leading-snug">{item.desc}</span>
-        </span>
-      </button>
-      {studyable
-        ? <button type="button" onClick={() => onStudy(item.key)} className={`flex items-center gap-1 text-[11px] font-bold rounded-full px-2.5 py-1.5 shrink-0 ${TINT_PILL[item.tint]}`}><GraduationCap size={12}/> Study</button>
-        : <ChevronRight size={16} className="text-slate-300 shrink-0"/>}
-    </div>
+      </span>
+      <ChevronRight size={16} className="absolute top-3 right-2.5 text-slate-400"/>
+    </button>
   );
 }
 
@@ -108,7 +126,9 @@ function Section({ title, items, onNav, onStudy }) {
   return (
     <div className="mb-5">
       <div className="cl-display flex items-center gap-2 text-[13px] font-extrabold text-slate-700 mb-2.5 px-0.5"><span className="w-2.5 h-2.5 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500"/>{title}</div>
-      {items.map((item) => <Row key={item.key} item={item} onNav={onNav} onStudy={onStudy}/>)}
+      <div className="grid grid-cols-2 gap-3">
+        {items.map((item) => <Row key={item.key} item={item} onNav={onNav} onStudy={onStudy}/>)}
+      </div>
     </div>
   );
 }
@@ -118,6 +138,9 @@ function Section({ title, items, onNav, onStudy }) {
 // Learning have real content today -- they open the existing study/
 // assessment library, filtered; BPT / Test / Exam Ready are marked Soon
 // instead of pretending to have content.
+// Palpation is shown to admin accounts only for now (Aditi, 2026-10-06); everyone else
+// does not see the row, the card count or the study screen.
+const ADMIN_ONLY_KEYS = new Set(["palpation"]);
 const ALL_ITEMS = [...ASSESSMENT_LIBRARY, ...ADVANCED_ASSESSMENT, ...EXERCISE];
 const HOME_CARDS = [
   { id: "practical", label: "Practical Skills", desc: "ROM • MMT • Assessment", icon: Hand, tint: "amber", count: ALL_ITEMS.length },
@@ -127,8 +150,6 @@ const HOME_CARDS = [
   { id: "exam", label: "Exam Ready", desc: "Revision • Mock tests", icon: Target, tint: "indigo", soon: true },
 ];
 
-const LIVE_CARDS = HOME_CARDS.filter((c) => !c.soon);
-const SOON_CARDS = HOME_CARDS.filter((c) => c.soon);
 
 function HomeCard({ card, onOpen, wide }) {
   const Icon = card.icon;
@@ -168,12 +189,14 @@ function greeting() {
 
 export default function LearnTabEntry({ onNav }) {
   useEffect(() => { trackEvent("learn_viewed"); }, []);
+  const { enabled: isAdmin } = usePreviewFeaturesForCurrentUser();
+  const visibleKeys = (item) => isAdmin || !ADMIN_ONLY_KEYS.has(item.key);
   const [view, setView] = useState("home");
   const [query, setQuery] = useState("");
   const [studyType, setStudyType] = useState(null);
   const [last, setLast] = useState(readLast);
   const openStudy = (key) => { saveLast(key); setLast({ key }); setStudyType(key); trackEvent("module_viewed", { entityType: "module", entityId: key }); };
-  const lastItem = last && ALL_ITEMS.find((i) => i.key === last.key);
+  const lastItem = last && ALL_ITEMS.filter(visibleKeys).find((i) => i.key === last.key);
 
   const filter = (items) => {
     if (!query.trim()) return items;
@@ -182,10 +205,10 @@ export default function LearnTabEntry({ onNav }) {
   };
 
   const filtered = useMemo(() => ({
-    assess: filter(ASSESSMENT_LIBRARY),
+    assess: filter(ASSESSMENT_LIBRARY.filter(visibleKeys)),
     adv: filter(ADVANCED_ASSESSMENT),
     exercise: filter(EXERCISE),
-  }), [query]);
+  }), [query, isAdmin]);
 
   const noResults = filtered.assess.length === 0 && filtered.adv.length === 0 && filtered.exercise.length === 0;
 
@@ -255,17 +278,13 @@ export default function LearnTabEntry({ onNav }) {
       )}
       {showCards ? (
         <>
+          {/* Practical Skills and Clinical Cases are live. Test, BPT and Exam Ready are shown as disabled
+              "Soon" cards (restored 2026-10-07, Aditi), so students can see what is coming. */}
           <div className="grid grid-cols-2 gap-3">
-            {LIVE_CARDS.map((c, i) => (
-              <HomeCard key={c.id} card={c} wide={LIVE_CARDS.length % 2 === 1 && i === LIVE_CARDS.length - 1} onOpen={setView}/>
+            {HOME_CARDS.map((c, i) => (
+              <HomeCard key={c.id} card={c.count != null ? { ...c, count: ALL_ITEMS.filter(visibleKeys).length } : c} wide={HOME_CARDS.length % 2 === 1 && i === HOME_CARDS.length - 1} onOpen={setView}/>
             ))}
           </div>
-          {/* The not-yet-built sections used to be three big disabled cards; one line says it. */}
-          {SOON_CARDS.length > 0 && (
-            <p data-testid="learn-coming-soon" className="text-center text-xs text-slate-500 mt-1">
-              More coming soon: {SOON_CARDS.map((c) => c.label).join(", ")}.
-            </p>
-          )}
         </>
       ) : noResults ? (
         <div className="text-center py-14 text-slate-400 text-sm">No matches for "{query}".</div>

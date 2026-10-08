@@ -1,9 +1,11 @@
 import { REMOVED_CAREPLAN_STEP_IDS, withCarePlanSummaryStep } from "./assessmentSteps.js";
-import { ClinicalInterpretationSection } from "./clinicalInterpretation.jsx";
+import { ClinicalInterpretationSection, DiagnosisSection } from "./clinicalInterpretation.jsx";
+import { neuroDiagnosisOptionsFor } from "./specialtyDiagnoses.js";
 import { AddAssessmentModal } from "./assessmentFrame.jsx";
 import { rowsForStep } from "./orthoSummary.jsx";
 import { MedicalRecordsSection } from "./MedicalRecords.jsx";
-import React, { useState, useMemo, useRef, useEffect, useContext, createContext, lazy, Suspense } from "react";
+import React, { useState, useMemo, useRef, useEffect, useContext, createContext, Suspense } from "react";
+import { lazy } from "./lazyReload.js";
 import { createPortal } from "react-dom";
 import InfoCard from "./InfoCard.jsx";
 import { neuroConditionLibraryData } from "./neuroConditionLibraryData.js";
@@ -104,6 +106,7 @@ const STEP_META = [
   { id: "functional", icon: <Icon name="bed" />, label: "Functional Assessment" },
   { id: "outcomes", icon: <Icon name="chart" />, label: "Outcome Measures" },
   { id: "interpretation", icon: <Icon name="brain" />, label: "Clinical Interpretation" },
+  { id: "diagnosis", icon: <Icon name="stethoscope" />, label: "Diagnosis" },
   // Order: Problems -> Goals -> Treatment -> Plan -> Sessions (2026-09-18,
   // Aditi: "do in neuro and cardio the care plan do the same the serial
   // number" -- matches the reorder already done for Ortho's own step nav.
@@ -831,7 +834,7 @@ function NeuroTemplateComposer({ onClose, onSave }) {
       <div className="ct-modal-body">
         <TextField label="Template name" value={name} onChange={setName} placeholder="e.g. Stroke — quick OPD screen" />
         <div className="hint" style={{ margin: "10px 0" }}>
-          Tick every exam area this template should include, from the Neuro assessment list. Patient Information, Safety, Subjective, Chart Review, Observation, Clinical Interpretation, Care Plan, Precautions and Exercise Prescription are always included, so they aren't listed here.
+          Tick every exam area this template should include, from the Neuro assessment list. Patient Information, Safety, Subjective, Chart Review, Observation, Clinical Interpretation, Diagnosis, Care Plan, Precautions and Exercise Prescription are always included, so they aren't listed here.
         </div>
         <div className="ct-group">
           {DOMAIN_STEP_IDS.map((id) => {
@@ -1756,7 +1759,7 @@ const ENTRY_MODES = [
 const DOMAIN_STEP_IDS = ["cognition", "cranial", "sensory", "motor", "tone", "coordination", "balance", "gait", "functional", "outcomes"];
 const CAREPLAN_STEP_IDS = ["carePlanProblems", "carePlanGoals"];
 const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "goals", carePlanTreatment: "treatment", carePlanPlan: "plan", carePlanSessions: "sessions", carePlanProgress: "progress" };
-const ALWAYS_STEP_IDS = ["demographics", "safety", "subjective", "chart", "medicalRecords", "observation", "interpretation", ...CAREPLAN_STEP_IDS, "exercisePrescription", "precautions", "summary"];
+const ALWAYS_STEP_IDS = ["demographics", "safety", "subjective", "chart", "medicalRecords", "observation", "interpretation", "diagnosis", ...CAREPLAN_STEP_IDS, "exercisePrescription", "precautions", "summary"];
 const FULL_STEP_ORDER = ASSESS_STEPS.map((s) => s.id);
 
 function buildStepOrder(domainStepIds, customIds) {
@@ -2056,6 +2059,9 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
     () => stepOrder.filter((id) => !RETIRED_STEP_IDS.includes(id)).map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepIcon(customStepsMeta[id], "brain"), label: customStepsMeta[id]?.label || "Assessment" }),
     [stepOrder, customStepsMeta]
   );
+
+  // Diagnosis and differential suggestions for the condition chosen / added.
+  const neuroDiagnosisOptions = useMemo(() => neuroDiagnosisOptionsFor({ condition, stepOrder }), [condition, stepOrder]);
 
   const total = 1 + assessSteps.length;
   const assessIndex = step - 1; // index within assessSteps
@@ -2702,6 +2708,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
               {current.id === "functional" && <FunctionalSection data={data} setData={setData} />}
               {current.id === "outcomes" && <OutcomesSection data={data} setData={setData} onNav={onNav} />}
               {current.id === "interpretation" && <InterpretationSection data={data} setData={setData} />}
+              {current.id === "diagnosis" && <DiagnosisSection data={data} setData={setData} kind="neuro" options={neuroDiagnosisOptions} legacy={{ section: "interpretation" }} />}
               {current.id === "precautions" && <PrecautionsSection data={data} setData={setData} setting={setting} />}
               {/* CAREPLAN_PHASE_BY_STEP, not CAREPLAN_STEP_IDS -- the latter
                   is trimmed to the active default steps (Progress removed,

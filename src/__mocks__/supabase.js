@@ -30,8 +30,18 @@ function chainable(result = { data: [], error: null }) {
 // — e.g. to simulate a logged-in session without ever touching real Supabase.
 import { vi } from "vitest";
 
+// A realtime channel that never delivers anything: PhysioFeed's notification
+// bell and Messages subscribe with supabase.channel(...).on(...).subscribe()
+// and clean up with supabase.removeChannel(...).
+function fakeChannel() {
+  const ch = { on: () => ch, subscribe: () => ch, unsubscribe() {} };
+  return ch;
+}
+
 export const supabase = {
   from: vi.fn(() => chainable()),
+  channel: vi.fn(() => fakeChannel()),
+  removeChannel: vi.fn(() => Promise.resolve("ok")),
   auth: {
     getSession: vi.fn(() => Promise.resolve({ data: { session: null }, error: null })),
     getUser: vi.fn(() => Promise.resolve({ data: { user: null }, error: null })),

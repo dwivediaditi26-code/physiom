@@ -18,7 +18,9 @@
 // supabase/add_push_notification_trigger.sql) can invoke this now, never
 // a browser using its own session.
 //
-// Deploy: supabase functions deploy send-push
+// Deploy: supabase functions deploy send-push --no-verify-jwt
+// (--no-verify-jwt is what lets the newer sb_secret_ key through; the check in
+// isServiceCaller below is what keeps everyone else out.)
 // Secrets required (set once via the Supabase dashboard or CLI, never
 // committed to the repo):
 //   supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_SUBJECT=mailto:you@example.com
@@ -32,25 +34,34 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3";
 
-// Decodes the JWT's payload WITHOUT verifying its signature -- that's
-// fine here because the Supabase gateway (verify_jwt: true) has already
-// verified the signature before this code ever runs; this only reads the
-// `role` claim out of a token that's already been proven genuine.
-function jwtRole(req: Request): string | null {
-  const auth = req.headers.get("Authorization") || "";
-  const token = auth.replace(/^Bearer\s+/i, "");
-  const parts = token.split(".");
-  if (parts.length !== 3) return null;
+// Who may call this: server code that holds the project's service key -- the
+// Vercel API routes and the database trigger. The key can be the older long
+// service_role JWT (eyJ...) or the newer secret key (sb_secret_...); the newer
+// one is not a JWT at all, so the platform's own JWT check has to be off for
+// it (deploy with --no-verify-jwt) and this function checks the caller itself.
+//
+// The check is "can this key do something only a service key can": list users
+// through the admin API. Supabase verifies the key for that, so a forged token
+// or the public anon key fails. It deliberately does NOT decode the token and
+// read its `role` -- with the platform check off, nothing has verified that
+// token's signature, so anyone could write a token that says service_role.
+function callerToken(req: Request): string {
+  const auth = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "").trim();
+  return auth || (req.headers.get("apikey") || "").trim();
+}
+
+async function isServiceCaller(token: string): Promise<boolean> {
+  if (!token) return false;
   try {
-    const json = atob(parts[1].replace(/-/g, "+").replace(/_/g, "/"));
-    return JSON.parse(json)?.role ?? null;
+    const probe = createClient(SUPABASE_URL, token, { auth: { persistSession: false, autoRefreshToken: false } });
+    const { error } = await probe.auth.admin.listUsers({ page: 1, perPage: 1 });
+    return !error;
   } catch {
-    return null;
+    return false;
   }
 }
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY")!;
 const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY")!;
 const VAPID_SUBJECT = Deno.env.get("VAPID_SUBJECT") || "mailto:support@physiomindapp.com";
@@ -62,7 +73,8 @@ Deno.serve(async (req) => {
     return new Response("Method not allowed", { status: 405 });
   }
 
-  if (jwtRole(req) !== "service_role") {
+  const token = callerToken(req);
+  if (!(await isServiceCaller(token))) {
     return new Response(JSON.stringify({ error: "Forbidden -- service role only" }), { status: 403 });
   }
 
@@ -78,7 +90,9 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: "title and (user_id or broadcast) are required" }), { status: 400 });
   }
 
-  const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+  // The caller's own key (already shown above to be a service key) -- works the
+  // same whichever key style the project uses.
+  const supabase = createClient(SUPABASE_URL, token);
   const subsQuery = supabase.from("push_subscriptions").select("id, endpoint, p256dh, auth");
   const { data: subs, error } = broadcast ? await subsQuery : await subsQuery.eq("user_id", user_id);
 
@@ -109,7 +123,13 @@ Deno.serve(async (req) => {
   );
 
   const sent = results.filter((r) => r.status === "fulfilled").length;
-  return new Response(JSON.stringify({ sent, total: subs.length }), {
+  // Why a device was refused (e.g. 403 = the app's push key does not match the
+  // one this phone registered with), so a failed test can say so.
+  const failed = results
+    .filter((r): r is PromiseRejectedResult => r.status === "rejected")
+    .slice(0, 3)
+    .map((r) => ({ status: r.reason?.statusCode ?? null, body: String(r.reason?.body ?? r.reason?.message ?? "").slice(0, 200) }));
+  return new Response(JSON.stringify({ sent, total: subs.length, ...(failed.length ? { failed } : {}) }), {
     status: 200,
     headers: { "Content-Type": "application/json" },
   });

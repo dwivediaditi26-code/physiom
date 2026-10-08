@@ -84,6 +84,25 @@ export function AiHubNav({ items, activeId, visited, onJump }) {
    still have emoji... make it like svg"), anything else (an emoji string,
    the many condition-picker lists across the app) renders exactly as
    before so those aren't touched by this. */
+// Anatomy picture for each body-region card (public/anatomy/<group>/<file>.png). Pelvis uses the sacrum
+// picture (it shows the whole pelvis); Multiple regions and Whole body keep the plain bone icon.
+const REGION_ART = {
+  cervical: "spine/cervical", thoracic: "spine/thoracic", lumbar: "spine/lumbar", sacrum: "spine/sacrum-coccyx", pelvis: "spine/sacrum-coccyx",
+  shoulder: "upper-limb/shoulder", upperArm: "upper-limb/upper-arm", elbow: "upper-limb/elbow",
+  forearm: "upper-limb/forearm", wrist: "upper-limb/wrist", hand: "upper-limb/hand-fingers",
+  hip: "lower-limb/hip", thigh: "lower-limb/thigh", knee: "lower-limb/knee",
+  leg: "lower-limb/leg", ankle: "lower-limb/ankle", foot: "lower-limb/foot-toes",
+};
+
+function RegionArt({ id }) {
+  const file = REGION_ART[id];
+  if (!file) return <PickerIcon icon="ti-bone" />;
+  return (
+    <img className="region-card-art" src={`${import.meta.env.BASE_URL}anatomy/${file}.png`} alt="" aria-hidden="true"
+      loading="lazy" decoding="async" data-testid={`region-art-${id}`} />
+  );
+}
+
 export function PickerIcon({ icon }) {
   const isGlyph = typeof icon === "string" && icon.startsWith("ti-");
   return (
@@ -194,7 +213,7 @@ export function RegionPicker({ selectedRegions, setSelectedRegions, excludeIds }
               return (
                 <div key={it.id} className="region-card-block">
                   <button type="button" className={"region-card" + (sel ? " selected" : "")} onClick={() => toggleRegion(it.id)}>
-                    <PickerIcon icon="ti-bone" />
+                    <RegionArt id={it.id} />
                     <div className="region-card-label">{it.label}</div>
                     <div className={"region-card-trail" + (sel ? " region-card-check" : "")}>
                       <i className={"ti " + (sel ? "ti-check" : "ti-chevron-right")} aria-hidden="true"></i>

@@ -65,7 +65,9 @@ describe("Spinal cord injury template", () => {
     }
     expect(screen.getByText(/No sacral sparing on all three checks/)).toBeTruthy();
     cleanup();
-  });
+    // Renders a whole assessment, so allow more than vitest's 5s default -- it
+    // timed out when the full suite ran in parallel on a busy machine.
+  }, 20000);
   it("includes the Outcome Measures step", () => {
     startTemplate("Neuro Rehabilitation", "Spinal Cord Injury");
     expect(screen.getAllByRole("button").some((b) => /^Outcome Measures/.test((b.textContent || "").trim()))).toBe(true);

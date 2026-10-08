@@ -1,4 +1,5 @@
-import React, { useState, useCallback, lazy, Suspense } from "react";
+import React, { useState, useCallback, Suspense } from "react";
+import { lazy } from "./lazyReload.js";
 
 // ════════════════════════════════════════════════════════════════════════
 // TesterEntry — standalone preview build for external testers.

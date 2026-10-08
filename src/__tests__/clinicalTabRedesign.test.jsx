@@ -60,14 +60,12 @@ describe("Clinical tab — patient list + specialty picker", () => {
     expect(await screen.findByText("Which pathway is this assessment for?", {}, { timeout: 25000 })).toBeInTheDocument();
   }, 30000);
 
-  it("Next stays disabled until a specialty is picked and the patient's permission is ticked", async () => {
+  it("Next stays disabled until a specialty is picked (no permission tick any more)", async () => {
     await renderLoggedIn();
     await openClinical();
     const modal = await openSpecialtyStep();
     expect(modal.getByText("Next →").closest("button")).toBeDisabled();
     fireEvent.click(modal.getByText("Neuro"));
-    expect(modal.getByText("Next →").closest("button")).toBeDisabled();
-    tickPatientPermission(modal);
     expect(modal.getByText("Next →").closest("button")).not.toBeDisabled();
   });
 });

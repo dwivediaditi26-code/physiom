@@ -11,6 +11,7 @@ import CreateOpportunityTypePicker from "../components/opportunities/CreateOppor
 import WorkshopWizard from "../components/opportunities/wizard/WorkshopWizard.jsx";
 import ApplicationOpportunityForm from "../components/opportunities/wizard/ApplicationOpportunityForm.jsx";
 import MyPostingsPage from "../components/opportunities/MyPostingsPage.jsx";
+import ExtendListingModal from "../components/opportunities/ExtendListingModal.jsx";
 import MyOpportunitiesPage from "../components/opportunities/MyOpportunitiesPage.jsx";
 import ApplicantPipeline from "../components/opportunities/ApplicantPipeline.jsx";
 import ApplicantProfileSheet from "../components/opportunities/ApplicantProfileSheet.jsx";
@@ -329,6 +330,14 @@ export default function ExplorePage() {
     }
   };
 
+  const [extendingOpp, setExtendingOpp] = useState(null);
+  const extendListing = async (fields) => {
+    const updated = await db.extendOpportunity(extendingOpp.id, fields);
+    // extendOpportunity can't see the applicant count, so keep the one we have.
+    setOpportunities((prev) => prev.map((o) => o.id === updated.id ? { ...updated, stats: o.stats } : o));
+    setExtendingOpp(null);
+  };
+
   const viewFromPostings = (opp) => { setMyPostingsOpen(false); openOpportunity(opp); };
 
   const toggleSave = async (opp) => {
@@ -415,6 +424,7 @@ export default function ExplorePage() {
 
   if (myPostingsOpen) {
     return (
+      <>
       <MyPostingsPage
         postings={myPostings}
         onBack={() => setMyPostingsOpen(false)}
@@ -428,7 +438,10 @@ export default function ExplorePage() {
         onCancel={cancelListing}
         onDuplicate={duplicateListing}
         onDelete={deleteListing}
+        onExtend={setExtendingOpp}
       />
+      {extendingOpp && <ExtendListingModal opp={extendingOpp} onClose={() => setExtendingOpp(null)} onSave={extendListing} />}
+      </>
     );
   }
 

@@ -69,6 +69,7 @@ const ALIAS = {
   cognition: "brain",
   neurovascular: "brain",
   interpretation: "brain",
+  diagnosis: "stethoscope",
   impression: "brain",
   cpa: "brain",
   sensory: "hand",

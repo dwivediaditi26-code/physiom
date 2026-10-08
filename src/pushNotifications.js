@@ -28,9 +28,68 @@ export function pushSupported() {
   return typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window;
 }
 
+// iPhone/iPad only allow web notifications once the app is added to the Home
+// Screen and opened from there; in a normal Safari tab the push API does not
+// exist at all.
+export function isStandalone() {
+  if (typeof window === "undefined") return false;
+  return window.navigator.standalone === true || (window.matchMedia?.("(display-mode: standalone)").matches ?? false);
+}
+export function isIosDevice() {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent || "";
+  return /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
 export function pushPermission() {
   if (typeof Notification === "undefined") return "unsupported";
   return Notification.permission; // "default" | "granted" | "denied"
+}
+
+// True when this device's existing push registration was made with the
+// current public key. A registration made with an older key looks "on" (the
+// browser still has it) but the server can no longer send to it.
+function usesCurrentKey(subscription) {
+  const have = subscription?.options?.applicationServerKey;
+  if (!have) return true; // this browser doesn't say which key was used -- leave it alone
+  const a = new Uint8Array(have);
+  const b = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+  return a.length === b.length && a.every((v, i) => v === b[i]);
+}
+
+// Gets a working registration for this device: reuses the existing one only
+// if it uses the current key, otherwise drops it (and its saved row) and
+// registers again, then saves it for this user.
+async function registerDevice(userId) {
+  const registration = await navigator.serviceWorker.ready;
+  let subscription = await registration.pushManager.getSubscription();
+  if (subscription && !usesCurrentKey(subscription)) {
+    const oldEndpoint = subscription.endpoint;
+    await subscription.unsubscribe().catch(() => {});
+    try { await supabase.from("push_subscriptions").delete().eq("endpoint", oldEndpoint); } catch {}
+    subscription = null;
+  }
+  if (!subscription) {
+    subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+    });
+  }
+
+  const json = subscription.toJSON();
+  // Delete then insert, not upsert: the table lets you insert, read and
+  // delete your own rows but has no UPDATE rule, so an upsert onto a row that
+  // already exists (turning notifications on again, or the repair above) was
+  // refused and the device silently stayed unregistered.
+  try { await supabase.from("push_subscriptions").delete().eq("endpoint", json.endpoint); } catch { /* not ours or not there -- the insert below decides */ }
+  const { error } = await supabase.from("push_subscriptions").insert({
+    user_id: userId,
+    endpoint: json.endpoint,
+    p256dh: json.keys.p256dh,
+    auth: json.keys.auth,
+  });
+  if (error) { console.warn("[push] failed to save subscription", error); return { ok: false, reason: "save_failed" }; }
+  return { ok: true };
 }
 
 // Must be called from a user gesture (button click) -- browsers ignore or
@@ -41,27 +100,20 @@ export async function subscribeToPush(userId) {
   const permission = await Notification.requestPermission();
   if (permission !== "granted") return { ok: false, reason: permission };
 
-  const registration = await navigator.serviceWorker.ready;
-  let subscription = await registration.pushManager.getSubscription();
-  if (!subscription) {
-    subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-    });
-  }
+  return registerDevice(userId);
+}
 
-  const json = subscription.toJSON();
-  const { error } = await supabase.from("push_subscriptions").upsert(
-    {
-      user_id: userId,
-      endpoint: json.endpoint,
-      p256dh: json.keys.p256dh,
-      auth: json.keys.auth,
-    },
-    { onConflict: "endpoint" }
-  );
-  if (error) { console.warn("[push] failed to save subscription", error); return { ok: false, reason: "save_failed" }; }
-  return { ok: true };
+// Runs on app start for a signed-in user who already allowed notifications.
+// Fixes a device whose registration predates the 2026-10-02 key change: it
+// shows as "on" but never receives anything. Does nothing if this device has
+// no registration (the person turned notifications off) -- it never turns
+// them back on by itself.
+export async function ensurePushSubscription(userId) {
+  if (!pushSupported() || !userId || pushPermission() !== "granted") return { ok: false, reason: "not_enabled" };
+  const registration = await navigator.serviceWorker.ready;
+  const subscription = await registration.pushManager.getSubscription();
+  if (!subscription) return { ok: false, reason: "not_enabled" };
+  return registerDevice(userId);
 }
 
 // Called on sign-out / "turn off reminders" -- removes both the browser's

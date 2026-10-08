@@ -1,4 +1,5 @@
-import React, { useState, lazy, Suspense } from "react";
+import React, { useState, Suspense } from "react";
+import { lazy } from "./lazyReload.js";
 import { SectionIntro, SelectField, Segmented, TextArea, TextField, Hint, useSectionData } from "./orthoFieldKit.jsx";
 import {
   palpationZonesForRegions,

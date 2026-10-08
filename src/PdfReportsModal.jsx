@@ -94,7 +94,7 @@ export default function PdfReportsModal({ data, dx, onClose, currentUser }) {
     rom: ["📏", "Range of Motion"], mmt: ["💪", "Muscle Strength (MMT)"], jointMobility: ["🦴", "Joint Mobility"],
     specialTests: ["🔬", "Special Tests"], neuroScreen: ["⚡", "Neuro Screen"], limbLength: ["📐", "Limb Length"],
     kineticChain: ["⛓️", "Kinetic Chain"], cpa: ["🧠", "CPA (NKT)"], sttt: ["🦴", "STTT (Cyriax)"],
-    fma: ["🏃", "Functional Movement"], fascia: ["🕸️", "Fascia"], clinicalAssessment: ["🩺", "Clinical Assessment"],
+    fma: ["🏃", "Functional Movement"], fascia: ["🕸️", "Fascia"], clinicalAssessment: ["🩺", "Clinical Assessment"], diagnosis: ["🩺", "Diagnosis"],
     carePlanProblems: ["🧩", "Problem List"], carePlanGoals: ["🎯", "Care Plan Goals"],
   };
   const orthoStepCard = (stepId) => {
@@ -526,7 +526,7 @@ export default function PdfReportsModal({ data, dx, onClose, currentUser }) {
     // inside the assessment itself, now produces the whole thing).
     // Skip the Objective Findings page entirely when there is nothing to show
     // (it used to print as a near-empty page holding one grey line).
-    const objStepIds = ["observation","palpation","rom","mmt","jointMobility","specialTests","neuroScreen","limbLength","kineticChain","cpa","sttt","fma","fascia","clinicalAssessment"];
+    const objStepIds = ["observation","palpation","rom","mmt","jointMobility","specialTests","neuroScreen","limbLength","kineticChain","cpa","sttt","fma","fascia","clinicalAssessment","diagnosis"];
     const orthoObjHtml = orthoWizardData ? objStepIds.map(orthoStepCard).join("") : "";
     const hasObjective = orthoWizardData ? !!orthoObjHtml : objSections.length > 0;
     const totalPages = 1 + (hasObjective ? 1 : 0) + (d.cardio ? 1 : 0) + (d.neuro ? 1 : 0) + 1;

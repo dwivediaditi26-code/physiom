@@ -144,7 +144,14 @@ describe("generated quizzes hold to the rules for every real item", () => {
 
   it("gives every MMT muscle 8 questions and every ROM movement at least 6", () => {
     sets.mmt.forEach(({ id, qs }) => expect(qs.length, id).toBe(8));
-    sets.rom.forEach(({ id, qs }) => expect(qs.length, id).toBeGreaterThanOrEqual(6));
+    // A quiz can only ask about data the movement really has. Movements with no standard range or no
+    // plane/axis on file (a few finger and thumb rows) are not padded with invented facts: they need
+    // at least 3 questions instead of 6.
+    sets.rom.forEach(({ id, qs }) => {
+      const m = romAll.find((x) => x.id === id);
+      const complete = m.normal != null && m.plane && m.axis;
+      expect(qs.length, id).toBeGreaterThanOrEqual(complete ? 6 : 3);
+    });
   });
 
   it("gives every special test at least 3 questions and most palpation structures at least 5", () => {

@@ -1,5 +1,6 @@
 import { ClinicalInterpretationSection } from "./clinicalInterpretation.jsx";
-import React, { useState, lazy, Suspense } from "react";
+import React, { useState, Suspense } from "react";
+import { lazy } from "./lazyReload.js";
 import { SectionIntro, TextField, SelectField, Segmented, TextArea, NumberField, Stepper, Hint, useSectionData, fmtVal, FieldShell } from "./orthoFieldKit.jsx";
 import { RedFlagFields } from "./orthoRedFlagScreen.jsx";
 import { subjectiveFieldsForRegion, sectionedFieldsForRegion, isMatchingRelevant } from "./orthoSubjectiveRegionData.js";
@@ -384,7 +385,7 @@ export function ClinicalAssessmentSection({ data, setData }) {
       kind="ortho"
       section="clinicalAssessment"
       title="Clinical Assessment"
-      keys={{ physioDiagnosis: "finalDiagnosis", impression: "clinicalImpression" }}
+      keys={{ impression: "clinicalImpression" }}
       intro={{ info: "Clinician's own reasoning from the findings above — not an AI-generated diagnosis." }}
       extras={[
         { key: "keyFindings", label: "Key findings" },

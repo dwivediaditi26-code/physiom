@@ -33,13 +33,17 @@ describe("Learn tab", () => {
 
     // Learn opens on a home grid of cards (2026-09-18 redesign). Only Practical Skills
     // and Clinical Cases have content; the not-yet-built sections (Test, BPT, Exam Ready)
-    // are one "More coming soon" line, not three disabled cards (2026-10-03).
+    // are shown as disabled "Soon" cards (restored 2026-10-07).
     await waitFor(() => {
       expect(screen.getByText("Practical Skills")).toBeTruthy();
     }, { timeout: 10_000 });
     expect(screen.getByText("Clinical Cases")).toBeTruthy();
-    expect(screen.getByTestId("learn-coming-soon").textContent).toMatch(/Test, BPT, Exam Ready/);
-    expect(screen.queryByText("Exam Ready", { selector: "span.cl-display" })).toBeNull();
+    for (const name of ["Test", "BPT", "Exam Ready"]) {
+      const card = screen.getByText(name, { selector: "span.cl-display" }).closest("button");
+      expect(card.disabled, name).toBe(true);
+      expect(card.textContent, name).toMatch(/Soon/);
+    }
+    expect(screen.queryByTestId("learn-coming-soon")).toBeNull();
 
     fireEvent.click(screen.getByText("Practical Skills"));
     expect(screen.getByRole("heading", { name: "Practical Skills" })).toBeTruthy();
@@ -53,25 +57,41 @@ describe("Learn tab", () => {
     // (dual-render pattern) -- its old Learn card's unique description text
     // is the reliable signal instead.
     expect(screen.queryByText("Visual inspection")).toBeNull();
-    expect(screen.getByText("Tissue assessment")).toBeTruthy(); // Palpation row
+    // Palpation is for admin accounts only (2026-10-06), so an ordinary user has no such row.
+    expect(screen.queryByText("Tissue assessment")).toBeNull();
     expect(screen.getByText("Joint-by-joint")).toBeTruthy();    // Kinetic Chain row
 
-    // Search narrows the list to real matches. Checked by each row's own
-    // description text, since labels like "Palpation" also appear in the
-    // always-present desktop sidebar.
+    // Search narrows the list to real matches, checked by each row's own description text.
     const search = screen.getByPlaceholderText(/search topics/i);
     fireEvent.change(search, { target: { value: "kinetic" } });
     await waitFor(() => {
-      expect(screen.queryByText("Tissue assessment")).toBeNull();
+      expect(screen.queryByText("Range of motion")).toBeNull();
     }, { timeout: 5_000 });
     expect(screen.getByText("Joint-by-joint")).toBeTruthy();
 
-    // Clear the search, then tap Exercise Prescription -- it has no study
-    // mode, so it opens the real (redesigned) Exercise Prescription screen.
+    // Clear the search, then tap Exercise Learn -- it opens the student exercise library
+    // (study mode), built from the app's own exercise data.
     fireEvent.change(search, { target: { value: "" } });
-    fireEvent.click(await screen.findByText("Treatment plan"));
+    fireEvent.click(await screen.findByText("Learn • Practice • Apply"));
     await waitFor(() => {
-      expect(screen.getByText("Browse exercises")).toBeTruthy();
+      expect(screen.getByText("Browse by region")).toBeTruthy();
     }, { timeout: 10_000 });
   }, 20_000);
+
+  it("shows the Palpation row to an admin account", async () => {
+    const realFrom = supabase.from.getMockImplementation();
+    vi.mocked(supabase.from).mockImplementation((table) => {
+      const chain = realFrom(table);
+      if (table !== "profiles") return chain;
+      return { ...chain, select: (cols) => (cols === "is_admin"
+        ? { eq: () => ({ maybeSingle: () => Promise.resolve({ data: { is_admin: true }, error: null }) }) }
+        : chain.select(cols)) };
+    });
+    render(<App />);
+    await waitFor(() => { expect(screen.getAllByText("Learn").length).toBeGreaterThan(0); }, { timeout: 10_000 });
+    fireEvent.click(screen.getByTestId("bnav-tab-learn"));
+    fireEvent.click(await screen.findByText("Practical Skills"));
+    await waitFor(() => { expect(screen.getByText("Tissue assessment")).toBeTruthy(); }, { timeout: 10_000 });
+    vi.mocked(supabase.from).mockImplementation(realFrom);
+  }, 30000);
 });

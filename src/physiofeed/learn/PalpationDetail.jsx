@@ -118,7 +118,7 @@ export default function PalpationDetail({ item, region, list, onBack, onNext }) 
         {tab === "Quiz" && <QuizTab key={item.id} quiz={quiz} onReview={() => setTab("Learn")}/>}
       </div>
 
-      {next && onNext && <NextButton label={`Next structure: ${next.name}`} onClick={() => onNext(next)} theme="rose"/>}
+      {next && onNext && tab !== "Quiz" && <NextButton label={`Next structure: ${next.name}`} onClick={() => onNext(next)} theme="rose"/>}
     </div>
   );
 }
