@@ -308,7 +308,16 @@ function kcTestFor(testName, regionKey) {
   }
   return best;
 }
-function fmaTestFor(testName) {
+// A test that appears under several regions (Trunk Stability Push-Up is in both
+// Lumbar and Shoulder) is looked up in the open region's own list first, so the
+// Shoulder screen shows the Shoulder entry and its photos, not the Lumbar one.
+function fmaTestFor(testName, regionKey) {
+  const prefix = String(regionKey || "").toLowerCase().replace(/^ankle.*/, "ankle").replace(/^elbow.*/, "elbow");
+  if (prefix) {
+    const own = Object.entries(FMA_DATA).filter(([label]) => label.toLowerCase().startsWith(prefix)).flatMap(([, tests]) => tests);
+    const hit = findByNormalizedLabel(own, testName, "label");
+    if (hit) return hit;
+  }
   return findByNormalizedLabel(ALL_FMA_TESTS, testName, "label");
 }
 function kcHelpsFindLocal(t) {
@@ -400,16 +409,16 @@ function nktRichItemFor(muscleName) {
 // note (the condition's own line on why this screen matters) goes into the
 // info card too, so the how-to/why lives in one place; tests with no match
 // in the Functional Movement Screen library still get a card from it.
-function functionalRichItem(testName, note) {
-  const base = fmaRichItemFor(testName);
+function functionalRichItem(testName, note, regionKey) {
+  const base = fmaRichItemFor(testName, regionKey);
   if (!note) return base;
   const noteCard = <InfoCard icon="📝" label="Why it's screened here" tint="amber">{note}</InfoCard>;
   if (!base) return { title: testName, perform: noteCard };
   return { ...base, perform: <>{base.perform}{noteCard}</> };
 }
-function fmaRichItemFor(testName) {
-  const t = findByNormalizedLabel(ALL_FMA_TESTS, testName, "label");
-  return t ? fmaRichItem(t) : null;
+function fmaRichItemFor(testName, regionKey) {
+  const t = fmaTestFor(testName, regionKey);
+  return t ? fmaRichItem(t, regionKey) : null;
 }
 
 // Maps this screen's own region config keys (config.key) onto
@@ -2601,17 +2610,17 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
 
           {activeSubtopic === "functional" && <>
           {isV1 ? (() => {
-            const fmaMatch = fmaTestFor(condition.functionalScreen.testName);
+            const fmaMatch = fmaTestFor(condition.functionalScreen.testName, config.key);
             const hasReal = fmaMatch?.observations?.length > 0;
             return (
             <ModuleCard label="Functional Screen" color="#16A34A">
               <div className="movement-name-row">
                 {fmaMatch && <FmaIcon id={fmaMatch.id} size={22} />}
                 <span style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink }}>{condition.functionalScreen.testName}</span>
-                <InfoButton title={condition.functionalScreen.testName} richItem={functionalRichItem(condition.functionalScreen.testName, condition.functionalScreen.note)} />
+                <InfoButton title={condition.functionalScreen.testName} richItem={functionalRichItem(condition.functionalScreen.testName, condition.functionalScreen.note, config.key)} />
               </div>
               {fmaMatch?.subtitle && <div className="muscle-subtitle">{fmaMatch.subtitle}</div>}
-              {fmaMatch && <PhotoSlots ids={fmaImageIds(fmaMatch.id)} />}
+              {fmaMatch && <PhotoSlots ids={fmaImageIds(fmaMatch.id, config.key)} />}
               {(condition.functionalScreen.note || hasReal) && (
                 <div style={{ marginTop: 8, marginBottom: hasReal ? 0 : 10 }}>
                   <InfoCard icon="🔎" label="Helps find" tint="violet">{hasReal ? (FMA_HELPS[fmaMatch.id] || condition.functionalScreen.note) : condition.functionalScreen.note}</InfoCard>
@@ -2660,7 +2669,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
               )}
             </ModuleCard>
             ); })() : (() => {
-            const fmaMatch = fmaTestFor(condition.functionalScreen.name);
+            const fmaMatch = fmaTestFor(condition.functionalScreen.name, config.key);
             const hasReal = fmaMatch?.observations?.length > 0;
             return (
             <ModuleCard label="Functional Screen" color="#16A34A">
@@ -2669,7 +2678,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
               ) : (
                 <>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, marginBottom: 4 }}>
-                    <InfoButton imageTrigger size="lg" fallbackIcon="ti-walk" title={condition.functionalScreen.name} richItem={functionalRichItem(condition.functionalScreen.name, condition.functionalScreen.note)} />
+                    <InfoButton imageTrigger size="lg" fallbackIcon="ti-walk" title={condition.functionalScreen.name} richItem={functionalRichItem(condition.functionalScreen.name, condition.functionalScreen.note, config.key)} />
                     <div style={{ minWidth: 0 }}>
                       <div className="movement-name-row">
                         {fmaMatch && <FmaIcon id={fmaMatch.id} size={22} />}
@@ -2679,7 +2688,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                       {fmaMatch?.subtitle && <div className="muscle-subtitle">{fmaMatch.subtitle}</div>}
                     </div>
                   </div>
-                  {fmaMatch && <PhotoSlots ids={fmaImageIds(fmaMatch.id)} />}
+                  {fmaMatch && <PhotoSlots ids={fmaImageIds(fmaMatch.id, config.key)} />}
                   {(condition.functionalScreen.note || hasReal) && (
                     <div style={{ marginTop: 8, marginBottom: hasReal ? 0 : 12 }}>
                       <InfoCard icon="🔎" label="Helps find" tint="violet">{hasReal ? (FMA_HELPS[fmaMatch.id] || condition.functionalScreen.note) : condition.functionalScreen.note}</InfoCard>

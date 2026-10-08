@@ -22,7 +22,17 @@ export function kcImageIds(testId) {
 // prefixed so they can never clash with another library's Cloudinary id. A test
 // that appears under several regions (the fms_* battery on Hip/Knee/Ankle) is
 // the same real-world test, so it shares one set of photos.
+//
+// Some tests share an id across regions but must not share pictures: the photo
+// of Trunk Stability Push-Up taken for the Lumbar spine is not the one wanted
+// under Shoulder (2026-10-07, Aditi: "in shoulder trunk stability push up it
+// takes the image of lumbar"). The FIRST region keeps the original id so photos
+// already uploaded keep showing; the listed regions get their own set.
 export const FMA_IMAGE_SLOTS = 3;
-export function fmaImageIds(testId) {
-  return Array.from({ length: FMA_IMAGE_SLOTS }, (_, i) => (i === 0 ? `fma_${testId}` : `fma_${testId}_${i + 1}`));
+const FMA_OWN_PHOTOS_IN = { fms_tspu: ["shoulder"] };
+export function fmaImageIds(testId, region) {
+  const r = String(region || "").toLowerCase();
+  const own = (FMA_OWN_PHOTOS_IN[testId] || []).find((x) => r.startsWith(x));
+  const base = own ? `${testId}_${own}` : testId;
+  return Array.from({ length: FMA_IMAGE_SLOTS }, (_, i) => (i === 0 ? `fma_${base}` : `fma_${base}_${i + 1}`));
 }

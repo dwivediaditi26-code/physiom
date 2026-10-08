@@ -50,8 +50,8 @@ const ICONS = {
 // diagrams some items carry, used to render below too -- dropped 2026-09-17
 // per Aditi from both this study-mode card and the live assessment's info
 // card (orthoAdvancedTools.jsx's fmaRichItem).)
-function toCard(t) {
-  const images = fmaImageIds(t.id);
+function toCard(t, region) {
+  const images = fmaImageIds(t.id, region);
   return {
     id: t.id,
     image: images[0],
@@ -91,7 +91,7 @@ export default function FunctionalStudy({ onBack }) {
   const [region, setRegion] = useState(REGION_KEYS[0]);
   const [selected, setSelected] = useState(null);
   const bucket = FUNCTIONAL_SCREEN_DATA[region];
-  const cards = useMemo(() => (bucket?.tests || []).map(toCard), [bucket]);
+  const cards = useMemo(() => (bucket?.tests || []).map((t) => toCard(t, bucket.label || region)), [bucket, region]);
 
   if (selected) return <StudyDetail item={selected} onBack={() => setSelected(null)}>{selected.sections}</StudyDetail>;
 

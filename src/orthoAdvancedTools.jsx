@@ -680,7 +680,7 @@ export const FMA_GRADE_COLOR = { 0: "#16A34A", 1: "#D97706", 2: "#DC2626" };
 // from Learn's Functional Screen study mode (FunctionalStudy.jsx). The
 // underlying t.svgNormal/t.svgAbnormal data is untouched in case either
 // surface wants it back later.
-export function fmaRichItem(t) {
+export function fmaRichItem(t, region) {
   // Same content the older Functional Screen carries: what to observe, what
   // each option means clinically (obs.clues), and the grading scale -- the
   // first version only had setup + normal pattern.
@@ -697,7 +697,7 @@ export function fmaRichItem(t) {
       </InfoCard>
     );
   });
-  const images = fmaImageIds(t.id);
+  const images = fmaImageIds(t.id, region);
   return {
     image: images[0],
     images,
@@ -815,7 +815,7 @@ export function FmaSection({ data, setData, sectionKey = "fma" }) {
               return (
                 <button type="button" key={t.id} onClick={() => setOpenId(t.id)}
                   style={{ textAlign: "left", fontFamily: "inherit", cursor: "pointer", background: "#fff", borderRadius: 14, padding: "12px 12px 10px", border: done ? "1.5px solid #34D399" : "1px solid #E5E7EB", display: "flex", flexDirection: "column", gap: 4 }}>
-                  <TestTilePhoto ids={fmaImageIds(t.id)} />
+                  <TestTilePhoto ids={fmaImageIds(t.id, activeKey)} />
                   <span style={{ fontWeight: 700, fontSize: "0.86rem", color: "#1f2937", lineHeight: 1.25 }}>{t.label}</span>
                   <HelpsFindLine text={firstSentence(FMA_HELPS[t.id]) || t.subtitle} />
                   <span style={{ alignSelf: "flex-start", marginTop: 4, fontSize: "0.68rem", padding: "1px 8px", borderRadius: 10, background: done ? "#DCFCE7" : "#F3F4F6", color: done ? "#166534" : "#6b7280", fontWeight: 600 }}>
@@ -837,10 +837,10 @@ export function FmaSection({ data, setData, sectionKey = "fma" }) {
             <button type="button" onClick={() => setOpenId(null)} style={{ background: "none", border: "none", padding: 0, marginBottom: 10, color: "#6D28D9", fontWeight: 700, fontSize: "0.82rem", cursor: "pointer", fontFamily: "inherit" }}>‹ Back to all {activeKey} tests</button>
             <div className="movement-name-row">
               <span className="movement-name" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><FmaIcon id={t.id} size={26} />{t.label}</span>
-              <InfoButton title={t.label} richItem={fmaRichItem(t)} />
+              <InfoButton title={t.label} richItem={fmaRichItem(t, activeKey)} />
             </div>
             <div className="muscle-subtitle">{t.subtitle}</div>
-            <PhotoSlots ids={fmaImageIds(t.id)} scale={0.6} />
+            <PhotoSlots ids={fmaImageIds(t.id, activeKey)} scale={0.6} />
 
             <InfoCard icon="🔎" label="Helps find" tint="violet">{FMA_HELPS[t.id] || `${t.phase}. ${t.subtitle}.`}</InfoCard>
 

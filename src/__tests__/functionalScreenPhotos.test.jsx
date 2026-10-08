@@ -94,6 +94,34 @@ describe("the same 3 photos show everywhere", () => {
     expect(srcs.some((u) => u.endsWith(`/${firstTest.id}`))).toBe(false);
   });
 
+  describe("a test that is in two regions' lists keeps separate photos where asked", () => {
+    it("Trunk Stability Push-Up: Lumbar keeps the original photo ids, Shoulder gets its own", () => {
+      expect(fmaImageIds("fms_tspu", "Lumbar")[0]).toBe("fma_fms_tspu");
+      expect(fmaImageIds("fms_tspu")[0]).toBe("fma_fms_tspu");
+      expect(fmaImageIds("fms_tspu", "Shoulder")).toEqual(["fma_fms_tspu_shoulder", "fma_fms_tspu_shoulder_2", "fma_fms_tspu_shoulder_3"]);
+      expect(fmaImageIds("fms_tspu", "shoulder")[0]).toBe("fma_fms_tspu_shoulder");
+    });
+
+    it("other shared tests (e.g. Deep Squat in Hip/Knee/Ankle) still share one set", () => {
+      expect(fmaImageIds("fms_sq", "Hip")).toEqual(fmaImageIds("fms_sq", "Knee"));
+    });
+
+    it("the Shoulder screen opens the push-up with the Shoulder photo slots, the Lumbar screen with the original", () => {
+      const open = (regionLabel) => {
+        const { container, unmount } = render(<FmaSection data={{}} setData={() => {}} />);
+        fireEvent.click(screen.getByRole("button", { name: regionLabel }));
+        fireEvent.click(screen.getByText(/Trunk Stability Push-Up/));
+        const srcs = [...container.querySelectorAll('[data-testid="photo-slots-track"] img')].map((i) => i.getAttribute("src"));
+        unmount();
+        return srcs;
+      };
+      expect(open("Shoulder").some((u) => u.includes("fma_fms_tspu_shoulder"))).toBe(true);
+      const lumbar = open("Lumbar");
+      expect(lumbar.some((u) => u.includes("fma_fms_tspu"))).toBe(true);
+      expect(lumbar.some((u) => u.includes("shoulder"))).toBe(false);
+    });
+  });
+
   it("the reference photo is 40% smaller (60% of the card width) on the opened test", () => {
     render(<FmaSection data={{}} setData={() => {}} />);
     fireEvent.click(screen.getByText(firstTest.label));
