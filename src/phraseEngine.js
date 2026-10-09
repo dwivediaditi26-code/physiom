@@ -80,7 +80,7 @@ export const WORDS = {
   PAIN: "pain pains painful paining hurt hurts hurting ache aches aching sore soreness tender burning throbbing throbs throb dard दर्द dukh* दुख* takleef तकलीफ jalan जलन",
   NERVE: "numb* tingl* sunn* jhunjhuni झनझनाहट सुन्न* pins_and_needles",
   SIDE: "side taraf wala wale wali तरफ वाला वाले वाली ओर border edge",
-  OTHERS: "friend friends colleague colleagues neighbour neighbor dost",
+  OTHERS: "friend friends colleague colleagues neighbour neighbor dost cousin cousins",
   // A relative's illness is not the patient's own history.
   FAMILY: "mother father family mom dad mummy mumma mama sister brother uncle aunt grandmother grandfather grandma grandpa relative relatives wife husband son daughter maa मां माँ माता माताजी papa पापा पिता पिताजी pitaji pita baap बाप bhai भाई behen बहन dada dadi nana nani दादा दादी नाना नानी चाचा चाची ताऊ मामा मौसी बुआ patni पत्नी pati पति beta बेटा beti बेटी biwi बीवी",
 };
