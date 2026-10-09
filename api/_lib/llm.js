@@ -8,7 +8,7 @@
 // bad key, empty or broken answer).
 //
 //   GROQ_API_KEY      Groq  (openai/gpt-oss-120b)
-//   GEMINI_API_KEY    Google Gemini (default gemini-2.5-flash-lite; GEMINI_MODEL changes it)
+//   GEMINI_API_KEY    Google Gemini (default gemini-3.5-flash-lite; GEMINI_MODEL changes it)
 //   AI_PROVIDER_ORDER "groq,gemini" (default) or "gemini,groq"
 //
 // With only one key set it behaves exactly as before. PRIVACY: use a Gemini key
@@ -19,7 +19,10 @@
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_MODEL = 'openai/gpt-oss-120b';
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
-const GEMINI_DEFAULT_MODEL = 'gemini-2.5-flash-lite';
+// gemini-2.5-flash-lite was refused for new accounts on 2026-10-09 ("no longer available to new
+// users... use gemini-3.5-flash-lite"), which the admin-only 'Skipped first' note on the
+// extraction card made visible. Set GEMINI_MODEL in Vercel to change it without a deploy.
+const GEMINI_DEFAULT_MODEL = 'gemini-3.5-flash-lite';
 
 export function providerOrder(env = process.env) {
   const wanted = String(env.AI_PROVIDER_ORDER || 'groq,gemini').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);

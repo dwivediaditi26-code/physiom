@@ -72,6 +72,13 @@ describe("chatJson with both keys", () => {
     expect(body.generationConfig).toMatchObject({ temperature: 0.1, maxOutputTokens: 1234, responseMimeType: "application/json" });
   });
 
+  test("without GEMINI_MODEL, Gemini 3.5 Flash-Lite is used (2.5 Flash-Lite is refused for new accounts)", async () => {
+    global.fetch = vi.fn(async (url) => (isGroq(url) ? limit429() : geminiOk({ a: 2 })));
+    await chatJson({ system: "S", user: "U" });
+    const [url] = global.fetch.mock.calls.find(([u]) => isGemini(u));
+    expect(url).toContain("/models/gemini-3.5-flash-lite:generateContent");
+  });
+
   test("a Gemini answer blocked by Google's safety filter counts as a failure", async () => {
     process.env.AI_PROVIDER_ORDER = "gemini,groq";
     global.fetch = vi.fn(async (url) => (isGemini(url) ? { ok: true, json: async () => ({ promptFeedback: { blockReason: "SAFETY" } }) } : groqOk({ from: "groq" })));
