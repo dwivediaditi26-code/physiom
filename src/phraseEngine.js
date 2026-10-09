@@ -70,6 +70,8 @@ export const NEGATORS = new Set(["no", "not", "never", "without", "none", "nothi
 const NEGATORS_AFTER = new Set(["nahi", "नहीं"]);
 const RELIEF = new Set(["better", "relieved", "relief", "eases", "ease", "improves", "improve", "settles", "helps",
   "aaram", "rahat", "आराम", "राहत"]);
+// Words right AFTER a trigger that turn it into a relief ("chalne se dard kam ho jata hai" = walking eases it).
+const RELIEF_AFTER = new Set([...RELIEF, "kam", "कम", "less", "lessens", "lessen", "reduces", "reduced", "theek", "ठीक"]);
 const CLAUSE_BREAKS = new Set(["|", "but", "however", "although", "though", "lekin", "magar", "लेकिन", "मगर", "परंतु", "किंतु"]);
 const CONNECTORS = new Set([",", "and", "or", "aur", "ya", "और", "या"]);
 
@@ -276,6 +278,7 @@ export function createPhraseMatcher({ phrases, singleChoiceFields = ["pattern"],
         if (wordsAfter(span.e, 3).some((t) => NEGATORS_AFTER.has(t))) continue;
       }
       if (r.reliefKills && (inside.some((t) => RELIEF.has(t)) || wordsBefore(span.s, 5).some((t) => RELIEF.has(t)))) continue;
+      if (r.reliefAfter && wordsAfter(span.e, 3).some((t) => RELIEF_AFTER.has(t))) continue;
       out.push({ field: r.field, option: r.option, phrase: "rule" });
     }
     return out;
@@ -287,11 +290,14 @@ export function createPhraseMatcher({ phrases, singleChoiceFields = ["pattern"],
     const aboutOtherPart = anyWord(tokens, FOREIGN) && !anyWord(tokens, OWN);
     if (aboutOtherPart && !EXEMPT.size) return [];
     if (anyWord(tokens, OTHERS)) return []; // "my friend has tennis elbow"
-    const claimed = new Array(tokens.length).fill(false);
+    // Words are "claimed" per question: inside one question the longest phrase wins ("thumb side of the wrist"
+    // over "thumb"), but a word can answer two different questions ("mostly in the groin" = where AND dominant place).
+    const claimedBy = {};
     const found = [];
     for (const c of COMPILED) {
       if (!fields.has(c.field)) continue;
       if (c.bare && !bareAllowed) continue;
+      const claimed = (claimedBy[c.field] ||= new Array(tokens.length).fill(false));
       for (let s = 0; s + c.tokens.length <= tokens.length; s++) {
         if (!matchesAt(tokens, s, c.tokens)) continue;
         const e = s + c.tokens.length;

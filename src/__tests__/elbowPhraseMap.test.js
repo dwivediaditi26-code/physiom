@@ -234,7 +234,7 @@ const STORY = [
   ["OV-07 order does not matter", "grip hurts when i grip. outer elbow.", { aggravating: [GRIP], location: [LAT] }],
   ["OV-08 'tennis elbow' is a location, 'tennis' later is the sport", "tennis elbow from tennis", { location: [LAT], mechanism: [RACQ] }],
   ["OV-09 fall + deformity + swelling", "Fell on my hand, elbow looks deformed, swelling is increasing fast", { mechanism: [FALL], redFlags: [FRAC, COMP] }],
-  ["OV-10 scaphoid", "Pain at the base of the thumb after a fall", { redFlags: [SNUFF] }],
+  ["OV-10 scaphoid (and the place it hurts)", "Pain at the base of the thumb after a fall", { redFlags: [SNUFF], location: [THUMB] }],
   ["OV-11 tendon rupture", "suddenly can't straighten finger", { redFlags: [TEND] }],
   ["OV-12 hot red joint", "the joint is hot and red", { redFlags: [HOT] }],
   ["OV-13 Hinglish hot red", "garam aur laal sujan hai", { redFlags: [HOT] }],

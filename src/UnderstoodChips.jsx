@@ -14,12 +14,14 @@ export const PHRASE_FIELDS = {
   elbowWristHand: ["location", "radiation", "mechanism", "aggravating", "pattern", "neuro", "redFlags"],
   shoulder: ["mechanism", "aggravating", "relieving", "pattern", "radiation", "redFlags"],
   knee: ["location", "mechanism", "givingWay", "locking", "pattern", "redFlags"],
+  hip: ["location", "locationPattern", "mechanism", "aggravating", "pattern", "mechanical", "redFlags"],
 };
 // How to load each region's matcher (a separate chunk, fetched on first use).
 const MATCHER_LOADERS = {
   elbowWristHand: () => import("./elbowPhraseMap.js"),
   shoulder: () => import("./shoulderPhraseMap.js"),
   knee: () => import("./kneePhraseMap.js"),
+  hip: () => import("./hipPhraseMap.js"),
 };
 export const hasPhrases = (contentKey, fieldId) => !!PHRASE_FIELDS[contentKey]?.includes(fieldId);
 const hasRegionPhrases = (contentKey) => !!PHRASE_FIELDS[contentKey];

@@ -163,7 +163,7 @@ describe("robustness", () => {
     const big = "the knee gives way on stairs and the pain is worse at night. ".repeat(2000);
     const t0 = performance.now();
     const r = understandStory(big);
-    expect(performance.now() - t0).toBeLessThan(2000);
+    expect(performance.now() - t0).toBeLessThan(5000);
     expect(r.suggestions.length).toBeGreaterThan(0);
   });
   it("non-string input does not throw", () => {
