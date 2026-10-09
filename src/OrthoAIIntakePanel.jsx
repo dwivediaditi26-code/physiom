@@ -3,6 +3,9 @@ import { Hint } from "./orthoFieldKit.jsx";
 import { authHeader } from "./supabase.js";
 import { apiUrl } from "./apiUrl.js";
 import { mapParseResultToOrthoUpdates } from "./orthoAiIntake.js";
+import { useIsAdmin } from "./useIsAdmin.js";
+
+const PROVIDER_NAMES = { groq: "Groq", gemini: "Gemini" };
 
 /* ============================================================
    OrthoAIIntakePanel — "say your assessment in your own words"
@@ -22,6 +25,8 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen }
   const [text, setText] = useState("");
   const [status, setStatus] = useState("idle"); // idle | recording | processing | done | error
   const [result, setResult] = useState(null);
+  const [provider, setProvider] = useState(null); // which AI answered (admins see it, see below)
+  const isAdmin = useIsAdmin();
   const [errorMsg, setErrorMsg] = useState("");
   const recognitionRef = useRef(null);
 
@@ -96,8 +101,9 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen }
       if (!res.ok) throw new Error(json.error || "Parse failed — try again.");
       // Which AI answered (api/_lib/llm.js sets this header). Printed to the
       // browser console so a test build can show Groq vs Gemini; no patient text.
-      const provider = res.headers?.get?.("X-AI-Provider");
-      if (provider) console.info("[AI intake] answered by", provider);
+      const answeredBy = res.headers?.get?.("X-AI-Provider") || null;
+      if (answeredBy) console.info("[AI intake] answered by", answeredBy);
+      setProvider(answeredBy);
       setResult({ ...json, _narrative: text });
       setStatus("done");
     } catch (e) {
@@ -243,6 +249,7 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen }
                 })}
                 <div style={{ padding: "8px 14px 10px", fontSize: "0.7rem", color: "#8B8B8D" }}>
                   {rows.length} field{rows.length === 1 ? "" : "s"} extracted
+                  {isAdmin && provider && <span data-testid="ai-provider-note" style={{ float: "right", color: "#7c3aed", fontWeight: 700 }}>AI engine: {PROVIDER_NAMES[provider] || provider}</span>}
                 </div>
               </div>
             );

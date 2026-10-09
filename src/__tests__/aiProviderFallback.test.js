@@ -172,3 +172,29 @@ describe("the AI intake screen tells the console which AI answered", () => {
     }
   });
 });
+
+describe("admins see which AI answered, on screen", () => {
+  async function runWith({ admin, header }) {
+    vi.resetModules();
+    vi.doMock("../supabase.js", () => import("../__mocks__/supabase.js"));
+    vi.doMock("../useIsAdmin.js", () => ({ useIsAdmin: () => admin }));
+    const React = (await import("react")).default;
+    const { render, screen, fireEvent, waitFor, cleanup } = await import("@testing-library/react");
+    cleanup(); // the previous test's screen must not leak into this one
+    const { default: Panel } = await import("../OrthoAIIntakePanel.jsx");
+    global.fetch = vi.fn(async () => ({ ok: true, headers: { get: (k) => (k === "X-AI-Provider" ? header : null) }, json: async () => ({ chiefComplaint: "Low back pain", region: "Lumbar / SI" }) }));
+    render(React.createElement(Panel, { onApply: () => {}, defaultOpen: true }));
+    fireEvent.change(screen.getByPlaceholderText(/45 year old office worker/), { target: { value: "Low back pain for 5 days" } });
+    fireEvent.click(screen.getByRole("button", { name: /Parse with AI/ }));
+    await waitFor(() => expect(screen.getByText("Extracted Patient Information")).toBeTruthy());
+    return screen;
+  }
+  test("an admin sees 'AI engine: Gemini'", async () => {
+    const screen = await runWith({ admin: true, header: "gemini" });
+    expect(screen.getByTestId("ai-provider-note").textContent).toBe("AI engine: Gemini");
+  });
+  test("a student sees nothing about it", async () => {
+    const screen = await runWith({ admin: false, header: "gemini" });
+    expect(screen.queryByTestId("ai-provider-note")).toBeNull();
+  });
+});
