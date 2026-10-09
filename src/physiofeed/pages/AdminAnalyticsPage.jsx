@@ -16,6 +16,18 @@ const RANGE_OPTIONS = [
   { key: "custom", label: "Custom" },
 ];
 
+const CONNECTION_LABEL = { "4g": "Good (4G or wifi)", "3g": "Weak (3G)", "2g": "Very weak (2G)", "slow-2g": "Very weak (2G)", unknown: "Not reported (e.g. iPhone)" };
+const seconds = (ms) => (ms == null ? "—" : `${(ms / 1000).toFixed(1)} s`);
+function SpeedStat({ label, value, tone }) {
+  const color = tone === "warn" ? "text-amber-600" : "text-slate-900";
+  return (
+    <div>
+      <div className="text-slate-500">{label}</div>
+      <div className={`text-lg font-semibold ${color}`}>{value}</div>
+    </div>
+  );
+}
+
 // Whole-app admin overview: real numbers now (users/patients/posts/
 // opportunities/applications), plus DAU/WAU/MAU and a live feed once
 // analytics_events has enough rows. Cross-user aggregates (patients,
@@ -121,6 +133,7 @@ export default function AdminAnalyticsPage() {
     : userGroups;
   const visiblePeople = q || showAllPeople ? matchedPeople : matchedPeople.slice(0, PEOPLE_PREVIEW);
   const errors = summary?.errors || [];
+  const speed = summary?.speedStats;
 
   // Live activity only carries raw ids (user_id, entity_id) -- reuse the
   // names we already have from the per-user section instead of a second
@@ -201,6 +214,53 @@ export default function AdminAnalyticsPage() {
             )}
           </section>
 
+          <section>
+            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">How fast the app opens</h2>
+            {speed?.total ? (
+              <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+                <div className="px-4 py-3 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <SpeedStat label="Typical time to open" value={seconds(speed.total.medianOpenMs)} />
+                  <SpeedStat label="Slowest 1 in 10" value={seconds(speed.total.p90OpenMs)} />
+                  <SpeedStat label="Took over 5 s" value={`${speed.total.slowPct}%`} tone={speed.total.slowPct > 20 ? "warn" : "ok"} />
+                  <SpeedStat label="Patients ready (typical)" value={seconds(speed.total.medianPatientsMs)} />
+                </div>
+                <div className="px-4 pb-3 text-[11px] text-slate-500">
+                  {speed.total.loads} opens by {speed.total.students} student{speed.total.students === 1 ? "" : "s"}.
+                  {speed.total.patientsNotReady > 0 && ` Patients were still not ready after 30 s on ${speed.total.patientsNotReady} open${speed.total.patientsNotReady === 1 ? "" : "s"}.`}
+                  {speed.total.patientsFailed > 0 && ` The cloud could not be read on ${speed.total.patientsFailed}.`}
+                </div>
+                <table className="w-full text-xs border-t border-slate-100">
+                  <thead>
+                    <tr className="text-left text-slate-400">
+                      <th className="px-4 py-2 font-medium">Connection</th>
+                      <th className="px-2 py-2 font-medium">Opens</th>
+                      <th className="px-2 py-2 font-medium">Typical</th>
+                      <th className="px-2 py-2 font-medium">Slowest 1 in 10</th>
+                      <th className="px-2 py-2 font-medium">Over 5 s</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {speed.byConnection.map((row) => (
+                      <tr key={row.key}>
+                        <td className="px-4 py-2 font-medium text-slate-800">{CONNECTION_LABEL[row.key] || row.key}</td>
+                        <td className="px-2 py-2">{row.loads}</td>
+                        <td className="px-2 py-2">{seconds(row.medianOpenMs)}</td>
+                        <td className="px-2 py-2">{seconds(row.p90OpenMs)}</td>
+                        <td className="px-2 py-2">{row.slowPct}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="px-4 py-2 text-[11px] text-slate-400 border-t border-slate-100">
+                  Time from tapping the app to the home screen. Only times and the connection type are recorded, never patient data. Opens where the student left the app while it was loading are left out.
+                </div>
+              </div>
+            ) : (
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs text-slate-500">
+                No timings yet. They appear after students open the app (not guests).
+              </div>
+            )}
+          </section>
           <section>
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">What should I do next?</h2>
             {insights.length > 0 ? (

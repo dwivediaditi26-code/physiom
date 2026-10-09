@@ -9,6 +9,7 @@ import { trackEvent } from "./analytics/trackEvent.js";
 import { Sparkles, Bone, HeartPulse, Brain, Footprints, Stethoscope, Users as UsersIcon, Pill as PillIcon, ClipboardList as ClipboardListIcon, PersonStanding, Search as SearchIcon, Bell as BellIcon, MessageSquare as MessageSquareIcon, Plus as PlusIcon } from "lucide-react";
 import { pfData } from "./physiofeed/data/lazyDb.js";
 import { writeDraft, restoreDraftData } from "./patientDraft.js";
+import { markAppReady, markPatientsReady } from "./analytics/loadTimer.js";
 import { setGoBackHandler } from "./nativeApp.js";
 import { C, useTheme, MobileStyleInjector, ErrorBoundary, TabLoader } from "./utils.jsx";
 import OfflineBanner from "./OfflineBanner.jsx";
@@ -469,6 +470,12 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     });
   }, [currentUser?.id]);
   useEffect(() => { loadPatientsFromCloud(); }, []);
+  // How long the app took to open and the patients to arrive, for the admin page (analytics/loadTimer.js).
+  useEffect(() => { if (currentUser?.id) markAppReady(); }, []);
+  useEffect(() => {
+    if (!currentUser?.id || patientsLoad.state === "loading") return;
+    markPatientsReady({ count: patientsRef.current.filter((p) => !isSamplePatient(p)).length, ok: patientsLoad.state === "ok" });
+  }, [patientsLoad.state]);
 
   // ── Auto-save draft to localStorage (2s debounce) ─────────────────────
   // activePatientId is a real dep now (2026-09-24) -- see its own declaration
