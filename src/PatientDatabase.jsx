@@ -6,7 +6,7 @@ import { patientSessionView, longDate, shortDate } from "./txSessions.js";
 import { createPortal } from "react-dom";
 import { Search as SearchIcon, ChevronRight, Bone, HeartPulse, Brain, Footprints, MoreVertical } from "lucide-react";
 import { supabase } from "./supabase.js";
-import { hasSessionKey, encryptJSON, decryptJSON, isEncryptedEnvelope } from "./localCrypto.js";
+import { hasSessionKey, encryptJSON, decryptJSON, isEncryptedEnvelope, openedWithOldKey, clearDeviceKey } from "./localCrypto.js";
 import { SAMPLE_PATIENT_IDS, isSamplePatient, withoutSamples } from "./samplePatients.js";
 // Loaded on demand: PostureEngine is ~600 KB of source and only these two cards
 // (inside a posture session's results) need it from here.
@@ -433,6 +433,15 @@ function clearPatientCache(userId) {
   else _patientCache.delete(userId);
 }
 
+// Signing out or deleting the account: this phone forgets the account's patients. The saved
+// copy is removed and its key is deleted, so it cannot be opened again. (Anything not yet
+// sent to the cloud should be sent first -- see the sign-out button in AppFull.jsx.)
+async function forgetDeviceCopy(userId) {
+  clearPatientCache(userId);
+  try { if (userId) localStorage.removeItem(dbKey(userId)); } catch { /* storage blocked */ }
+  await clearDeviceKey(userId);
+}
+
 // Synchronous peek at what's on disk right now, without decrypting.
 // Legacy (pre-encryption) caches are plain JSON arrays; new caches are a
 // JSON object envelope ({__enc:1, iv, ct}) -- both parse cleanly with
@@ -508,6 +517,8 @@ async function hydrateLocalCache(userId) {
     const decrypted = await decryptJSON(rawState.envelope);
     if (Array.isArray(decrypted)) {
       _patientCache.set(userId, decrypted);
+      // A copy locked the old way (with the sign-in token) is locked again with the device key.
+      if (openedWithOldKey()) await persistPatientsLocal(decrypted, userId);
     } else {
       // Shouldn't normally happen (wrong/missing key, corrupt data). Leave
       // the cache unset -- loadPatientDB()'s [] fallback + the Supabase
@@ -1745,7 +1756,7 @@ async function fetchPatientsFromSupabase(userId, { pageSize = PATIENT_PAGE_SIZE,
 export {
   dbKey, draftKey,
   loadPatientDB, savePatientDB, savePatientDBLocalOnly,
-  hydrateLocalCache, clearPatientCache, relockLocalCache,
+  hydrateLocalCache, clearPatientCache, forgetDeviceCopy, relockLocalCache,
   isSyncDirty, flushPendingSync,
   fetchPatientsFromSupabase, markPatientsSynced,
   loadTaskDB, saveTaskDB,

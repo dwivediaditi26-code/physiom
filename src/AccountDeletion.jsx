@@ -21,7 +21,7 @@ import React, { useState } from "react";
 import { supabase, authHeader } from "./supabase.js";
 import { apiUrl } from "./apiUrl.js";
 import { clearSessionKey } from "./localCrypto.js";
-import { clearPatientCache } from "./PatientDatabase.jsx";
+import { clearPatientCache, forgetDeviceCopy } from "./PatientDatabase.jsx";
 
 function downloadPatientsJSON(patients) {
   const data = JSON.stringify(patients, null, 2);
@@ -56,6 +56,8 @@ export default function DeleteAccountButton({ patients, buttonStyle }) {
     if (busy || !password) return;
     setBusy(true); setError("");
     try {
+      let uid = null;
+      try { uid = (await supabase.auth.getSession())?.data?.session?.user?.id || null; } catch { /* only needed to forget this device's copy */ }
       const res = await fetch(apiUrl("/api/deleteAccount"), {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(await authHeader()) },
@@ -76,6 +78,7 @@ export default function DeleteAccountButton({ patients, buttonStyle }) {
       // must not block the client-side cleanup that actually matters here.
       clearPatientCache();
       clearSessionKey();
+      try { if (uid) await forgetDeviceCopy(uid); } catch { /* the account is gone either way */ }
       try { await supabase.auth.signOut(); } catch {}
     } catch (e) {
       setError("Network error — please try again.");

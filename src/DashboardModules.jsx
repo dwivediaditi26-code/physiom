@@ -234,7 +234,7 @@ function TherapistDashboardModule({ patients, data, onNav, onProfile, onQuickSta
   const { useState, useEffect, useMemo } = React;
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => { setTimeout(() => setMounted(true), 80); }, []);
+  useEffect(() => { const t = setTimeout(() => setMounted(true), 80); return () => clearTimeout(t); }, []); // cleared when the screen goes away (a late timer once crashed the test run after teardown)
 
   // Only real derived value the minimal page still needs -- everything
   // else (tasks, schedule, outcomes analytics, trend chart) was removed

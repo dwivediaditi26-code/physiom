@@ -28,7 +28,7 @@ import { PatientPermissionReminder } from "./PatientPermission.jsx";
 import {
   draftKey,
   loadPatientDB, savePatientDB, savePatientDBLocalOnly,
-  hydrateLocalCache, clearPatientCache, relockLocalCache, fetchPatientsFromSupabase, markPatientsSynced,
+  hydrateLocalCache, clearPatientCache, forgetDeviceCopy, flushPendingSync, isSyncDirty, relockLocalCache, fetchPatientsFromSupabase, markPatientsSynced,
   loadTaskDB, saveTaskDB,
   genId,
   PatientDatabasePanel, TreatmentCaseloadPanel,
@@ -2651,8 +2651,9 @@ export default function App() {
 
   // ── Local-cache encryption key lifecycle ──────────────────────────────
   // The AES key that protects the local patient cache (see localCrypto.js /
-  // PatientDatabase.jsx) is derived from the session's access token and
-  // held only in memory. On a genuinely new sign-in we must decrypt the
+  // PatientDatabase.jsx) is a device-held key per account (it used to be derived
+  // from the session's access token, which changes about hourly and made the saved
+  // copy unreadable after a refresh); it is loaded into memory here. On a genuinely new sign-in we must decrypt the
   // existing local cache (hydrateLocalCache) BEFORE AppInner's synchronous
   // `useState(() => loadPatientDB(...))` runs, or that first read sees an
   // empty placeholder instead of the real cached list. `keyHydrated` gates
@@ -2674,19 +2675,32 @@ export default function App() {
       // redo the (already-done) cache hydration.
       // The token changed, so the key did too: lock the open list with it
       // again, or the copy on disk could no longer be opened after a reload.
-      setSessionKey(session.access_token).then(() => relockLocalCache(uid));
+      setSessionKey(session.access_token, uid).then(() => relockLocalCache(uid));
       return;
     }
     hydratedUserIdRef.current = uid;
     setKeyHydrated(false);
     let active = true;
     (async () => {
-      await setSessionKey(session.access_token);
+      await setSessionKey(session.access_token, uid);
       await hydrateLocalCache(uid);
       if (active) setKeyHydrated(true);
     })();
     return () => { active = false; };
   }, [session]);
+
+  // Signing out makes this phone forget the account's patients: the saved copy is removed and
+  // its key deleted. Anything still waiting to go to the cloud is sent first (up to 5 seconds);
+  // if it still cannot be sent, the copy is kept, because it would be the only one.
+  const signOutAndForget = async () => {
+    trackEvent("user_logged_out");
+    const uid = session?.user?.id;
+    try {
+      if (uid && isSyncDirty(uid)) await Promise.race([flushPendingSync(uid), new Promise((r) => setTimeout(r, 5000))]);
+      if (uid && !isSyncDirty(uid)) await forgetDeviceCopy(uid);
+    } catch { /* never get in the way of signing out */ }
+    supabase.auth.signOut();
+  };
 
   if (session === undefined) {
     return (
@@ -2727,7 +2741,7 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <AppInner currentUser={session.user} onSignOut={() => { trackEvent("user_logged_out"); supabase.auth.signOut(); }} />
+      <AppInner currentUser={session.user} onSignOut={signOutAndForget} />
       <InstallPrompt currentUser={session.user} />
       <PushOptInBanner currentUser={session.user} />
     </ErrorBoundary>
