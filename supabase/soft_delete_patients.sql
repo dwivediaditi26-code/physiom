@@ -10,11 +10,10 @@
 -- matching what the Privacy Policy already promises ("all data deleted
 -- within 30 days" of an account/record deletion, not instantly).
 --
--- This does NOT set up automatic purging after 30 days -- that needs a
--- scheduled job (pg_cron or a Vercel cron hitting a cleanup endpoint) and
--- is a separate follow-up. Until that exists, treat old soft-deleted rows
--- as needing occasional manual cleanup (see the commented DELETE at the
--- bottom of this file for how, run deliberately, never automatically).
+-- Automatic purge after 30 days is done by a daily Vercel cron,
+-- api/cron/purgeDeletedPatients.js (scheduled in vercel.json), which erases
+-- rows whose deleted_at is older than 30 days. The commented DELETE at the
+-- bottom of this file is the same thing by hand, if ever needed.
 
 ALTER TABLE patients
   ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;

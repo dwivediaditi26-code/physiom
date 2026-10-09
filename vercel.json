@@ -92,6 +92,10 @@
     {
       "path": "/api/cron/fetchCareerNews",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/purgeDeletedPatients",
+      "schedule": "0 4 * * *"
     }
   ]
 }

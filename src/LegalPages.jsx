@@ -3,6 +3,10 @@
 
 import React from "react";
 
+// Bump when the Terms or Privacy Policy text changes in a way users must accept
+// again. Saved on the account at signup (AuthScreen.jsx) next to the date.
+export const LEGAL_VERSION="2026-10";
+
 const A="#7c3aed",TX="#1a1025",MU="#7e6a9a",BD="#d8cce8",S2="#f5f0fb";
 
 const prose={fontSize:"0.84rem",color:TX,lineHeight:1.8};
@@ -126,7 +130,7 @@ export function PrivacyPolicy({onClose}){
       <ul style={ul}>
         <li style={li}><strong>Access:</strong> request a copy of all data we hold about you</li>
         <li style={li}><strong>Correction:</strong> update inaccurate data at any time within the app</li>
-        <li style={li}><strong>Deletion:</strong> delete your account yourself, instantly, from the "Delete account" button in the app. This removes your account, profile, patient records, posts, comments, stories, applications, notifications and messages from our live database straight away. Messages you sent also disappear from the other person's inbox. Photos and videos you uploaded to PhysioFeed file storage are not yet removed automatically — email us and we will delete them within 30 days.</li>
+        <li style={li}><strong>Deletion:</strong> delete your account yourself, instantly, from the "Delete account" button in the app. This removes your account, profile, patient records, posts, comments, stories, applications, notifications and messages from our live database straight away. Messages you sent also disappear from the other person's inbox. Photos, videos, documents and CVs you uploaded to PhysioFeed file storage are erased at the same time.</li>
         <li style={li}><strong>Portability:</strong> download your full patient database as a JSON file at any time, including as an offered step before deleting your account</li>
         <li style={li}><strong>Withdraw consent / object:</strong> stop using any optional feature at any time (for example, turn off reminders), or opt out of non-essential data processing by emailing us</li>
       </ul>
@@ -149,7 +153,7 @@ export function PrivacyPolicy({onClose}){
         <li style={li}>Active account data: retained while your account is active</li>
         <li style={li}>After account deletion: your account and its records (see section 6) are deleted from our live database immediately — deletion is real-time and self-service, triggered by you from within the app</li>
         <li style={li}>Backup copies: purged within 90 days of deletion request</li>
-        <li style={li}>Deleting a single patient: the record disappears from the app at once, but a safety copy is kept in our database so that a mistaken delete can be undone. It is not erased automatically yet. To erase it permanently, delete your account, or email us and we will erase that record within 30 days.</li>
+        <li style={li}>Deleting a single patient: the record disappears from the app at once, but a safety copy is kept for 30 days so that a mistaken delete can be undone. After 30 days it is erased permanently and automatically. To erase it sooner, email us.</li>
         <li style={li}>Usage and error records (section 2d): kept for as long as needed to run and improve the service</li>
       </ul>
 

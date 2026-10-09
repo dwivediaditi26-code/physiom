@@ -7,6 +7,13 @@
 // all associated patient data" line (LegalPages.jsx, section 6) into an
 // enforced fact instead of a manual process someone has to remember to run.
 //
+// Uploaded files: database rows cascade, but files in Supabase Storage (post
+// photos/videos, profile pictures, CVs ...) do not. They are erased here
+// first, from the caller's own folder `<userId>/` in every media bucket
+// (src/physiofeed/data/mediaStorage.js: putMedia() always writes there). If
+// that fails the account is NOT deleted and the person is told to retry, so
+// the Privacy Policy's "your files are erased with your account" stays true.
+//
 // Auth: verifies the caller's own Supabase JWT server-side (same
 // getUser(token) pattern as api/_lib/rateLimit.js) and deletes ONLY that
 // verified user's id -- never a client-supplied id, so there is no way to
@@ -19,6 +26,34 @@ import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://gkhcysvayjrkrufcnqvz.supabase.co';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+// Every bucket putMedia() can write to. Keep in step with BUCKET_LIMIT_MB in
+// src/physiofeed/data/mediaStorage.js (a test fails if they drift apart).
+export const MEDIA_BUCKETS = ['post-images', 'profile-images', 'opportunity-covers', 'post-videos', 'post-documents', 'resumes'];
+
+const PAGE = 100;
+const MAX_PAGES = 200; // 20,000 files per bucket -- a stop so a stuck loop can never run forever
+
+const isBucketMissing = (err) => /not found/i.test(err?.message || '') || String(err?.statusCode || err?.status) === '404';
+
+// Erases every file in `<userId>/` of every media bucket. Throws if any file
+// cannot be listed or removed. A bucket that does not exist has no files.
+export async function removeUserFiles(admin, userId) {
+  for (const bucket of MEDIA_BUCKETS) {
+    const store = admin.storage.from(bucket);
+    for (let page = 0; page < MAX_PAGES; page++) {
+      const { data: files, error: listErr } = await store.list(userId, { limit: PAGE, offset: 0 });
+      if (listErr) {
+        if (isBucketMissing(listErr)) break;
+        throw new Error(`list ${bucket}: ${listErr.message}`);
+      }
+      if (!files || files.length === 0) break;
+      const { data: removed, error: removeErr } = await store.remove(files.map((f) => `${userId}/${f.name}`));
+      if (removeErr) throw new Error(`remove ${bucket}: ${removeErr.message}`);
+      if (!removed || removed.length === 0) throw new Error(`remove ${bucket}: nothing was removed`);
+    }
+  }
+}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -45,6 +80,13 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Your session has expired — please sign in again.' });
   }
   const userId = userData.user.id;
+
+  try {
+    await removeUserFiles(admin, userId);
+  } catch (e) {
+    console.error('deleteAccount: could not erase uploaded files for', userId, e);
+    return res.status(500).json({ error: 'Could not remove your uploaded files right now, so your account was not deleted. Please try again or email support.' });
+  }
 
   // Immediate, not a 30-day queued job -- well within the Privacy Policy's
   // stated upper bound on deletion time.

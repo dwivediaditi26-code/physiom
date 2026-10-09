@@ -5,7 +5,7 @@ import React, { useState } from "react";
 import { supabase } from "./supabase.js";
 import { trackEvent } from "./analytics/trackEvent.js";
 import { siteOrigin } from "./apiUrl.js";
-import { PrivacyPolicy, TermsOfService } from "./LegalPages.jsx";
+import { PrivacyPolicy, TermsOfService, LEGAL_VERSION } from "./LegalPages.jsx";
 import DemoWalkthrough from "./DemoWalkthrough.jsx";
 
 const A="#7c3aed",BG="#ffffff",SUR="#ffffff",BD="#d8cce8",TX="#1a1025",MU="#7e6a9a",S2="#f5f0fb",RE="#dc2626",GR="#059669";
@@ -82,7 +82,9 @@ function Register({onSwitch,onAuth,onShowLegal}){
     // Aditi: first "asking again and again for consent" right after
     // signup, then "why is this coming every time I login" on a different
     // device/session).
-    const{data,error:er}=await supabase.auth.signUp({email,password:pass,options:{data:{full_name:name,clinic_name:clinic,pm_onboarded:true}}});
+    // terms_accepted_at / terms_version: when, and to which text, this person
+    // ticked the Terms + Privacy Policy box (DPDP asks that consent can be shown).
+    const{data,error:er}=await supabase.auth.signUp({email,password:pass,options:{data:{full_name:name,clinic_name:clinic,pm_onboarded:true,terms_accepted_at:new Date().toISOString(),terms_version:LEGAL_VERSION}}});
     setLoading(false);
     if(er){setError(er.message);return;}
     try{localStorage.setItem("pm_onboarded","1");}catch{}
@@ -194,7 +196,7 @@ export default function AuthScreen({onAuth,onTryGuest}){
         )}
         {/* Trust badges */}
         <div style={{display:"flex",justifyContent:"center",gap:10,marginTop:20,flexWrap:"wrap"}}>
-          {["🔒 Secure","🇮🇳 DPDP Act compliant","🇮🇳 Built for India","✦ Free to start"].map(t=>(
+          {["🔒 Secure","🇮🇳 Privacy-first","🇮🇳 Built for India","✦ Free to start"].map(t=>(
             <span key={t} style={{fontSize:"0.65rem",color:MU,background:SUR,padding:"4px 10px",borderRadius:20,border:`1px solid ${BD}`,fontWeight:600}}>{t}</span>
           ))}
         </div>
