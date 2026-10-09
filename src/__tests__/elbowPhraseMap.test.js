@@ -239,6 +239,9 @@ const STORY = [
   ["OV-12 hot red joint", "the joint is hot and red", { redFlags: [HOT] }],
   ["OV-13 Hinglish hot red", "garam aur laal sujan hai", { redFlags: [HOT] }],
   ["OV-14 wasting", "hand muscles have shrunk", { neuro: [WASTE] }],
+  // found while testing live in the app: a comma separates two statements, a rule must not join them
+  ["OV-15 night numbness is not night pain", "pakadne me dard hota hai, raat ko haath sunn ho jata hai", { aggravating: [GRIP], neuro: [NCARP] }],
+  ["OV-16 same in English", "my wrist hurts when I grip, at night my hand goes numb", { aggravating: [GRIP], neuro: [NCARP] }],
 ];
 
 // What must give NOTHING at all.

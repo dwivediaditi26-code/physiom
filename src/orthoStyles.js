@@ -127,6 +127,10 @@ export function orthoStyles() {
         .field-block { margin-bottom: ${SPACING.betweenRelatedFields}px; }
         .field-label-row { display: flex; align-items: center; gap: 8px; margin-bottom: ${SPACING.labelToValue}px; flex-wrap: wrap; }
         .field-label { font-weight: ${TYPO.fieldLabel.weight}; font-size: ${TYPO.fieldLabel.size}px; line-height: ${TYPO.fieldLabel.lineHeight}; color: ${BRAND.ink}; }
+        .understood-row { margin: 6px 0 4px; }
+        .understood-title { font-size: 11px; font-weight: 700; color: ${BRAND.gray}; margin-bottom: 5px; }
+        .understood-chip { display: inline-block; margin: 0 6px 6px 0; padding: 6px 11px; border-radius: 999px; border: 1.5px solid ${BRAND.purple}; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-size: 12px; font-weight: 700; line-height: 1.25; text-align: left; cursor: pointer; font-family: inherit; }
+        .understood-chip:active { transform: scale(0.97); }
         .hint { font-size: ${TYPO.supportingText.size}px; font-weight: ${TYPO.supportingText.weight}; line-height: ${TYPO.supportingText.lineHeight}; color: ${BRAND.gray}; margin-top: 6px; font-style: italic; }
 
         .lr-grid { border: 1.5px solid ${BRAND.border}; border-radius: 14px; overflow: hidden; }

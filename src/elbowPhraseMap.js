@@ -544,12 +544,12 @@ rule("pattern", OPT("pattern", 0), ["never", "away stops ends eases go goes", PA
 rule("pattern", OPT("pattern", 1), ["sometimes occasionally some_days on_some_days kabhi_kabhi कभी_कभी at_times now_and_then", PAIN_W], 6);
 rule("pattern", OPT("pattern", 2), ["morning subah सुबह wake* uthte uthne", "worse worst most mostly stiff* zyada ज्यादा akdan akad* अकड* first"], 6, { ctx: "pain", reliefKills: true });
 rule("pattern", OPT("pattern", 2), ["out_of_bed get_up getting_up", "first most worst worse mostly"], 8, { ctx: "pain", reliefKills: true });
-rule("pattern", OPT("pattern", 2), ["morning mornings subah सुबह", PAIN_W], 4, { reliefKills: true, block: "only when while if type" });
+rule("pattern", OPT("pattern", 2), ["morning mornings subah सुबह", PAIN_W], 4, { reliefKills: true, noComma: true, block: "only when while if type" });
 rule("pattern", OPT("pattern", 3), ["night raat रात", "worse worst more zyada ज्यादा badh bad"], 5, { ctx: "pain", reliefKills: true });
 // "wakes me at night" is night pain, but "hurts most when I wake up" is morning pain
-rule("pattern", OPT("pattern", 3), ["wakes_me woke_me waking_me wake_me wake_up_at wake_up_in wake_up_during jag jaag जाग* disturb* neend नींद sleep", PAIN_W], 8, { reliefKills: true, unless: "morning mornings subah सुबह first_thing out_of_bed get_up" });
-rule("pattern", OPT("pattern", 2), ["wake_up waking_up woke_up उठते उठने", PAIN_W], 5, { reliefKills: true, unless: "night raat रात at_night" });
-rule("pattern", OPT("pattern", 3), ["night raat रात", PAIN_W], 4, { reliefKills: true });
+rule("pattern", OPT("pattern", 3), ["wakes_me woke_me waking_me wake_me wake_up_at wake_up_in wake_up_during jag jaag जाग* disturb* neend नींद sleep", PAIN_W], 8, { reliefKills: true, noComma: true, unless: "morning mornings subah सुबह first_thing out_of_bed get_up" });
+rule("pattern", OPT("pattern", 2), ["wake_up waking_up woke_up उठते उठने", PAIN_W], 5, { reliefKills: true, noComma: true, unless: "night raat रात at_night" });
+rule("pattern", OPT("pattern", 3), ["night raat रात", PAIN_W], 4, { reliefKills: true, noComma: true });
 rule("pattern", OPT("pattern", 4), ["only sirf सिर्फ", "use* using work* activity play* kaam काम move* moving hilna", PAIN_W], 8);
 rule("pattern", OPT("pattern", 4), ["kaam काम", "dauran दौरान waqt वक्त samay समय", PAIN_W], 7);
 rule("pattern", OPT("pattern", 5), ["better improves improve* eases settles aaram आराम राहत loosen* warm*", "day din दिन moving move* movement activity hours hilna चलने हिलने"], 6, { ctx: "painOrArm" });

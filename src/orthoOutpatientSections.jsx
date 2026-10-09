@@ -3,7 +3,8 @@ import React, { useState, Suspense } from "react";
 import { lazy } from "./lazyReload.js";
 import { SectionIntro, TextField, SelectField, Segmented, TextArea, NumberField, Stepper, Hint, useSectionData, fmtVal, FieldShell } from "./orthoFieldKit.jsx";
 import { RedFlagFields } from "./orthoRedFlagScreen.jsx";
-import { subjectiveFieldsForRegion, sectionedFieldsForRegion, isMatchingRelevant } from "./orthoSubjectiveRegionData.js";
+import { subjectiveFieldsForRegion, sectionedFieldsForRegion, isMatchingRelevant, contentKeyForRegion } from "./orthoSubjectiveRegionData.js";
+import UnderstoodChips from "./UnderstoodChips.jsx";
 import { AiExtractedPanel } from "./OrthoAiExtractedPanel.jsx";
 import { humanizeKey } from "./medicalAbbreviations.js";
 import { ALL_REGIONS } from "./orthoRegionLibrary.js";
@@ -23,10 +24,16 @@ const LazyOrthoAIIntakePanel = lazy(() => import("./OrthoAIIntakePanel.jsx"));
 // whichever field component renders it -- SelectField/TextArea/TextField
 // all just print `label` as-is, no prop plumbing needed for the marker
 // itself, only for the legend/title explaining what it means (below).
-function RegionField({ field, value, onChange, starred }) {
+function RegionField({ field, value, onChange, starred, contentKey }) {
   const label = starred ? `⭐ ${field.label}` : field.label;
   if (field.type === "multi" || field.type === "single") {
-    return <SelectField label={label} type={field.type} options={field.options} value={value} onChange={onChange} />;
+    // While typing in the student's own words, suggest the matching checklist answers (tap to add).
+    return (
+      <>
+        <SelectField label={label} type={field.type} options={field.options} value={value} onChange={onChange} />
+        <UnderstoodChips mode="field" contentKey={contentKey} field={field} value={value} onPick={onChange} />
+      </>
+    );
   }
   if (field.type === "textarea") return <TextArea label={label} value={value} onChange={onChange} />;
   return <TextField label={label} value={value} onChange={onChange} />;
@@ -51,7 +58,7 @@ function RegionSubjectiveGroup({ title, fields, open, onToggle, region, regionDa
         <span className={"collapsible-chevron" + (open ? " open" : "")}>⌄</span>
       </button>
       {open && fields.map((f) => (
-        <RegionField key={f.id} field={f} value={regionData[f.id]} onChange={(v) => setField(f.id, v)} starred={isMatchingRelevant(region, f.id)} />
+        <RegionField key={f.id} field={f} value={regionData[f.id]} onChange={(v) => setField(f.id, v)} starred={isMatchingRelevant(region, f.id)} contentKey={contentKeyForRegion(region)} />
       ))}
     </div>
   );
@@ -100,6 +107,8 @@ function RegionSubjectiveTabs({ selectedRegions, regionLabelOf, regions, setRegi
           only when non-empty) so it also works as an ordinary manual
           note field when no AI intake was used. */}
       <TextArea label="From AI intake (review & transcribe into the fields below)" value={regionData.aiNotes} onChange={(v) => setField("aiNotes", v)} />
+      {/* Written in the student's own words (any language): suggest the checklist answers it means. */}
+      <UnderstoodChips mode="story" contentKey={contentKeyForRegion(region)} text={regionData.aiNotes} fields={subjectiveFieldsForRegion(region)} regionData={regionData} onPick={setField} />
       {sections.map((s) => (
         <RegionSubjectiveGroup
           key={s.title}
