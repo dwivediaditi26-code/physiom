@@ -1,5 +1,5 @@
 import { ClinicalInterpretationSection } from "./clinicalInterpretation.jsx";
-import React, { useState, Suspense } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 import { lazy } from "./lazyReload.js";
 import { SectionIntro, TextField, SelectField, Segmented, TextArea, NumberField, Stepper, Hint, useSectionData, fmtVal, FieldShell } from "./orthoFieldKit.jsx";
 import { RedFlagFields } from "./orthoRedFlagScreen.jsx";
@@ -44,16 +44,23 @@ function RegionField({ field, value, onChange, starred, contentKey }) {
 // fields, especially going through the AI flow -- group into sections
 // instead of cutting any of them). Same .collapsible-head/-chevron CSS
 // orthoExercisePrescription.jsx's "Quick-apply protocol" already uses.
-// Collapsed by default -- a section only stays open because the clinician
-// opened it, not because of how many fields happen to be in it.
-function RegionSubjectiveGroup({ title, fields, open, onToggle, region, regionData, setField }) {
-  const answeredCount = fields.filter((f) => {
+// A section that already has answers starts OPEN (2026-10-09, Aditi: what the AI
+// filled "should be uncollapsed ... show what we have filled"), so the clinician
+// sees the filled answers without hunting through closed headers; an empty one
+// starts closed. The clinician's own tap on a header always wins (see
+// RegionSubjectiveTabs).
+export function answeredCountOf(fields, regionData) {
+  return fields.filter((f) => {
     const v = regionData[f.id];
     return Array.isArray(v) ? v.length > 0 : !!v;
   }).length;
+}
+
+function RegionSubjectiveGroup({ title, fields, open, onToggle, region, regionData, setField }) {
+  const answeredCount = answeredCountOf(fields, regionData);
   return (
     <div>
-      <button type="button" className="collapsible-head" onClick={onToggle}>
+      <button type="button" className="collapsible-head" onClick={onToggle} aria-expanded={open}>
         <span>{title}{answeredCount > 0 ? ` (${answeredCount}/${fields.length})` : ""}</span>
         <span className={"collapsible-chevron" + (open ? " open" : "")}>⌄</span>
       </button>
@@ -69,22 +76,44 @@ function RegionSubjectiveGroup({ title, fields, open, onToggle, region, regionDa
    at Setup, each showing that region's own core subjective field set. */
 function RegionSubjectiveTabs({ selectedRegions, regionLabelOf, regions, setRegions }) {
   const [activeIdx, setActiveIdx] = useState(0);
-  // Shared across regions on purpose -- "keep Aggravating Factors open" is
-  // a preference about the SECTION, not about which region tab it's under.
-  const [openSections, setOpenSections] = useState(() => new Set());
-  if (!selectedRegions.length) return null;
-  const region = selectedRegions[Math.min(activeIdx, selectedRegions.length - 1)];
-  const sections = sectionedFieldsForRegion(region);
-  const regionData = regions[region.id] || {};
+  // What the clinician chose by tapping a header. A section they OPENED stays open in every region
+  // tab ("keep Aggravating Factors open" is a preference about the SECTION). One they CLOSED is closed
+  // only in the region where they closed it. Anything they have not touched is open exactly when it
+  // already has answers.
+  const [openedTitles, setOpenedTitles] = useState(() => new Set());
+  const [closedKeys, setClosedKeys] = useState(() => new Set());
+  const lastCounts = useRef({});
+  const region = selectedRegions.length ? selectedRegions[Math.min(activeIdx, selectedRegions.length - 1)] : null;
+  const sections = region ? sectionedFieldsForRegion(region) : [];
+  const regionData = (region && regions[region.id]) || {};
+  const keyOf = (title) => `${region?.id}|${title}`;
+  const countsNow = Object.fromEntries(sections.map((s) => [keyOf(s.title), answeredCountOf(s.fields, regionData)]));
+  const isOpen = (title) => {
+    if (closedKeys.has(keyOf(title))) return false;
+    if (openedTitles.has(title)) return true;
+    return countsNow[keyOf(title)] > 0;
+  };
+  // A section that was empty and now has answers (the AI just filled it, or the clinician typed into it)
+  // opens, even if it had been closed before it had anything in it.
+  useEffect(() => {
+    const justFilled = Object.keys(countsNow).filter((k) => countsNow[k] > 0 && !(lastCounts.current[k] > 0));
+    lastCounts.current = { ...lastCounts.current, ...countsNow };
+    if (justFilled.some((k) => closedKeys.has(k))) {
+      setClosedKeys((prev) => { const next = new Set(prev); justFilled.forEach((k) => next.delete(k)); return next; });
+    }
+  });
+  if (!region) return null;
   function setField(fieldId, value) {
     setRegions({ ...regions, [region.id]: { ...regionData, [fieldId]: value } });
   }
   function toggleSection(title) {
-    setOpenSections((prev) => {
-      const next = new Set(prev);
-      if (next.has(title)) next.delete(title); else next.add(title);
-      return next;
-    });
+    const key = keyOf(title);
+    if (isOpen(title)) {
+      setClosedKeys((prev) => new Set(prev).add(key));
+    } else {
+      setClosedKeys((prev) => { const next = new Set(prev); next.delete(key); return next; });
+      setOpenedTitles((prev) => new Set(prev).add(title));
+    }
   }
   return (
     <>
@@ -114,7 +143,7 @@ function RegionSubjectiveTabs({ selectedRegions, regionLabelOf, regions, setRegi
           key={s.title}
           title={s.title}
           fields={s.fields}
-          open={openSections.has(s.title)}
+          open={isOpen(s.title)}
           onToggle={() => toggleSection(s.title)}
           region={region}
           regionData={regionData}

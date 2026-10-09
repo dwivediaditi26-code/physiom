@@ -28,8 +28,10 @@ async function parseAndApply(c) {
 }
 
 function openAllRegionSections() {
-  // every collapsed group header -> open it
-  screen.getAllByRole("button").filter((b) => b.className.includes("collapsible-head")).forEach((b) => fireEvent.click(b));
+  // every still-collapsed group header -> open it (groups the AI filled are already open)
+  screen.getAllByRole("button")
+    .filter((b) => b.className.includes("collapsible-head") && b.getAttribute("aria-expanded") !== "true")
+    .forEach((b) => fireEvent.click(b));
 }
 
 describe("AI Parse fills the region-specific Subjective form", () => {
@@ -50,6 +52,41 @@ describe("AI Parse fills the region-specific Subjective form", () => {
     await parseAndApply(c);
     const heads = screen.getAllByRole("button").filter((b) => b.className.includes("collapsible-head")).map((b) => b.textContent);
     expect(heads.some((t) => /\(\d+\/\d+\)/.test(t))).toBe(true);
+  });
+});
+
+describe("groups the AI filled are already open (2026-10-09, Aditi)", () => {
+  const c = AI_REGION_CASES.find((x) => x.id === "shoulder-impingement");
+  const heads = () => screen.getAllByRole("button").filter((b) => b.className.includes("collapsible-head"));
+  const filled = (b) => /\(\d+\/\d+\)/.test(b.textContent);
+
+  it("opens every group that has answers, shows them without a tap, and leaves empty groups closed", async () => {
+    await parseAndApply(c);
+    const all = heads();
+    expect(all.some(filled)).toBe(true);
+    expect(all.some((b) => !filled(b))).toBe(true); // the case does not answer everything
+    all.forEach((b) => expect(b.getAttribute("aria-expanded")).toBe(filled(b) ? "true" : "false"));
+    // the answers are on screen with no tap at all
+    const inputs = [...document.querySelectorAll("input.select-input")].map((i) => i.value);
+    expect(inputs).toContain("Lateral shoulder (deltoid)");
+  });
+
+  it("the clinician can still close an open group, and open it again", async () => {
+    await parseAndApply(c);
+    const head = heads().find(filled);
+    const title = head.textContent.replace(/\s*\(\d+\/\d+\).*/, "").replace("⌄", "").trim();
+    fireEvent.click(head);
+    const after = heads().find((b) => b.textContent.startsWith(title));
+    expect(after.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(after);
+    expect(heads().find((b) => b.textContent.startsWith(title)).getAttribute("aria-expanded")).toBe("true");
+  });
+
+  it("an empty group opens when the clinician taps it", async () => {
+    await parseAndApply(c);
+    const empty = heads().find((b) => !filled(b));
+    fireEvent.click(empty);
+    expect(heads().find((b) => b.textContent === empty.textContent).getAttribute("aria-expanded")).toBe("true");
   });
 });
 

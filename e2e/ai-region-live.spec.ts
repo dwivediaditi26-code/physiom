@@ -60,7 +60,10 @@ async function openAiAssessment(page: Page) {
 async function readRegionForm(page: Page): Promise<string> {
   await expect(page.getByText("Region-specific subjective")).toBeVisible({ timeout: 30_000 });
   const heads = page.locator("button.collapsible-head");
-  for (let i = 0; i < (await heads.count()); i++) await heads.nth(i).click();
+  // Groups the AI filled are already open (a tap would close them); open only the closed ones.
+  for (let i = 0; i < (await heads.count()); i++) {
+    if ((await heads.nth(i).getAttribute("aria-expanded")) !== "true") await heads.nth(i).click();
+  }
   const values = await page.$$eval("input.select-input, textarea, input.text-input", (els) => els.map((e) => (e as HTMLInputElement).value).filter(Boolean));
   return values.join("\n");
 }
