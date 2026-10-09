@@ -273,7 +273,7 @@ const { PAIN: PAIN_W } = WORDS;
 const OWN_W = "shoulder* arm arms upper_arm deltoid collarbone clavicle scapula blade blades rotator elbow hand hands up_to_neck to_neck into_neck gardan_tak गर्दन_तक kandha कंधा baju बाजू बांह haath हाथ";
 const FOREIGN_W = "back_pain backache pain_in_back upper_back neck gardan गर्दन knee* hip* ankle* foot feet leg legs thigh calf groin waist lumbar spine lower_back low_back stomach headache jaw toe* tooth teeth eye* ear throat ghutn* ghutna kamar कमर घुटन* पैर पेट सिर घुटने";
 // A relative's illness is not the patient's cancer history.
-const FAMILY_W = "mother father family mom dad mummy mumma mama sister brother uncle aunt grandmother grandfather grandma grandpa relative relatives wife husband son daughter maa मां माँ papa पापा baap बाप bhai भाई behen बहन dada dadi nana nani चाचा मामा";
+const FAMILY_W = WORDS.FAMILY;
 
 const matcher = createPhraseMatcher({
   phrases: SHOULDER_PHRASES,

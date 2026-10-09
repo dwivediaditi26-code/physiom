@@ -10,9 +10,11 @@ import { describe, it, expect } from "vitest";
 import { SUBJECTIVE_REGION_FIELDS } from "../orthoSubjectiveRegionData.js";
 import { PHRASE_FIELDS } from "../UnderstoodChips.jsx";
 import * as shoulder from "../shoulderPhraseMap.js";
+import * as knee from "../kneePhraseMap.js";
 
 export const MATCHERS = [
   { key: "shoulder", mod: shoulder, phrases: shoulder.SHOULDER_PHRASES },
+  { key: "knee", mod: knee, phrases: knee.KNEE_PHRASES },
 ];
 
 const HINGLISH_MARKERS = /\b(dard|haath|kandh[ea]|ghutn[ae]|kulh[ae]|takhn[ae]|pair|edi|nahi|raat|subah|kamzor|sunnpan|jhunjhuni|uthana|uthane|pakad|sujan|chot|gir|dono|kaam|kabhi|hamesha|lagatar|bina|apne|dheere|zyada|koi|aaram|neend|achanak|sekai|dawai|ke|ki|ka|me|se|par)\b/i;
