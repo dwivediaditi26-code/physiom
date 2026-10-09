@@ -2,12 +2,53 @@
 const CACHE = 'physiomind-__CACHE_VERSION__';
 const PRECACHE = ['/', '/index.html'];
 
+// How long opening the app waits for the network before it shows the copy kept on
+// the phone. On a weak connection the answer can take 30 seconds or never come; the
+// kept copy is the same app (the newest one is fetched in the background and used
+// next time).
+const NAV_WAIT_MS = 2500;
+
+// Keeps the first screen's own files (the script, the styles) as well as index.html,
+// so a phone that has opened the app once can start it with no connection at all.
+// A file that fails to save is skipped: the browser fetches it when needed.
+async function saveFirstScreen() {
+  const cache = await caches.open(CACHE);
+  await cache.addAll(PRECACHE);
+  try {
+    const html = await (await cache.match('/index.html')).text();
+    const files = [...new Set([...html.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)].map(m => m[1]))];
+    await Promise.all(files.map(f => cache.add(f).catch(() => {})));
+  } catch { /* not worth failing the install over */ }
+}
+
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(PRECACHE)).then(() => self.skipWaiting()));
+  e.waitUntil(saveFirstScreen().then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
+
+// Opening the app: the network first (so a new version shows up), but never wait
+// longer than NAV_WAIT_MS when a saved copy exists.
+function openPage(e) {
+  const request = e.request;
+  const network = fetch(request).then(r => {
+    if (r.ok) { const clone = r.clone(); caches.open(CACHE).then(c => c.put(request, clone)); }
+    return r;
+  });
+  // Stay alive until the slow answer arrives, so it still gets saved for next time.
+  e.waitUntil(network.catch(() => {}));
+  const gaveUp = new Promise(resolve => setTimeout(() => resolve(null), NAV_WAIT_MS));
+  return (async () => {
+    try {
+      const r = await Promise.race([network, gaveUp]);
+      if (r && (r.ok || r.status < 500)) return r;
+    } catch { /* offline or failed: use the saved copy below */ }
+    const saved = (await caches.match(request)) || (await caches.match('/index.html'));
+    return saved || network; // nothing saved yet: keep waiting for the real answer
+  })();
+}
+
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   // Never intercept cross-origin requests (Supabase auth/REST calls, etc.).
@@ -24,7 +65,7 @@ self.addEventListener('fetch', e => {
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith('/api/')) return;
   if (e.request.mode === 'navigate') {
-    e.respondWith(fetch(e.request).then(r => { const clone = r.clone(); caches.open(CACHE).then(c => c.put(e.request, clone)); return r; }).catch(() => caches.match('/index.html')));
+    e.respondWith(openPage(e));
     return;
   }
   if (url.pathname.match(/\.(js|css|woff2?|png|jpg|svg|ico)$/)) {

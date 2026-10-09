@@ -136,8 +136,8 @@ test("@ai-accuracy real Groq intake pipeline scores across built-in + extended c
 
   await page.goto("/");
   await loginToProd(page); // /api/parse now requires a valid session -- see api/_lib/rateLimit.js
-  // window.physioAITest attaches at module load (src/main.jsx), before
-  // React even mounts -- wait for it defensively anyway.
+  // window.physioAITest is attached by src/main.jsx right after the page's load
+  // event (the tool is fetched after the first screen), so wait for it.
   await page.waitForFunction(
     () => Boolean((window as any).physioAITest?.runOne && (window as any).physioAITest?.CASES && (window as any).physioAITest?.EXTRA_CASES),
     { timeout: 15_000 }

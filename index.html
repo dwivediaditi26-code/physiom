@@ -18,31 +18,23 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-    <!-- Inter — used by the Onboarding tour card (2026-09-16, Aditi:
-         "make it good not this font") instead of the plain system-ui
-         stack that card previously fell back to. -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" />
+    <!-- Fonts: Inter (Onboarding tour card), Baloo 2 + Nunito Sans (PhysioFeed's
+         Explore board, the "Candy Coat" look) and Caveat (the handwritten tagline on
+         the PhysioFeed profile header; scoped via .pf-font-head/.pf-font-body/
+         .pf-font-quote in physiofeed.css, not applied app-wide).
+         ONE request, and it must never block the first screen: a normal stylesheet
+         link in <head> keeps the page blank until it arrives, and on a weak
+         connection that can be many seconds (or forever). media="print" makes the
+         browser fetch it without waiting; the onload flips it on. Until the fonts
+         arrive the system font is shown (font-display: swap). -->
+    <link rel="stylesheet" media="print" onload="this.media='all'"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Baloo+2:wght@500;600;700;800&family=Nunito+Sans:wght@400;600;700;800&family=Caveat:wght@600;700&display=swap" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Baloo+2:wght@500;600;700;800&family=Nunito+Sans:wght@400;600;700;800&family=Caveat:wght@600;700&display=swap" /></noscript>
 
-    <!-- Baloo 2 / Nunito Sans -- PhysioFeed's Explore board only
-         (2026-09-22, Aditi picked "Candy Coat" from three restyle
-         directions I mocked up). Scoped via the .pf-font-head/.pf-font-body
-         classes in physiofeed.css, not applied app-wide. -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito+Sans:wght@400;600;700;800&display=swap" />
-
-    <!-- Caveat -- the handwritten-style tagline on the PhysioFeed profile
-         header (2026-09-22 redesign, Aditi's reference screenshot: "Better
-         Movement Better Lives" in a signature/script font). Scoped via
-         .pf-font-quote in physiofeed.css. -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&display=swap" />
-
-    <!-- Tabler outline icon webfont — used by <i class="ti ti-*"> icons
-         across the Ortho Objective Assessment redesign (subtopic tabs,
-         ROM/Special Tests photo-trigger fallback icon, finding cards).
-         Without this, every ti-* icon silently renders as an empty glyph
-         (2026-09-11, Aditi: "not showing same photo as I have already
-         uploaded" — was actually the fallback icon rendering blank, not a
-         missing photo). -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" />
+    <!-- The <i class="ti ti-*"> icons (Ortho Objective Assessment, setup screens,
+         tour) come from a small font we ship ourselves: src/fonts/tabler-icons-subset.*,
+         imported in src/main.jsx. It used to be the full Tabler font from a third-party
+         site (213 KB of CSS that blocked the first screen, plus a 507 KB font). -->
 
     <!-- Favicon (was pointing at a nonexistent /favicon.svg — now a real generated icon) -->
     <link rel="icon" type="image/png" href="/favicon.png" />

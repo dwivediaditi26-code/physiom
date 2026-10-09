@@ -3,7 +3,7 @@
 import { doctorFirstName } from "./userName.js";
 import { withoutSamples } from "./samplePatients.js";
 import React, { useState, useEffect } from "react";
-import { getCareerNews } from "./physiofeed/data/db.js";
+import { pfData } from "./physiofeed/data/lazyDb.js";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // HOME MODULE — App Introduction & Feature Overview
@@ -102,7 +102,7 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, curr
   // reachable via the Quick Access tile below, and Opportunity can take
   // this same spot later once it has real, actively-posted content).
   const [news, setNews] = useState([]);
-  useEffect(() => { getCareerNews().then((rows) => setNews(rows.slice(0, 3))).catch(() => {}); }, []);
+  useEffect(() => { pfData().then((m) => m.getCareerNews()).then((rows) => setNews(rows.slice(0, 3))).catch(() => {}); }, []);
 
   const TILES = [
     { key:"clinical",   icon:"📋", bg:"#EEF2FF", title:"Clinical",        sub:"Patients and treatment",            action:()=>onNav("clinical") },

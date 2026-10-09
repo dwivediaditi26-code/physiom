@@ -7,7 +7,7 @@ import { track } from "@vercel/analytics";
 import { supabase } from "./supabase.js";
 import { trackEvent } from "./analytics/trackEvent.js";
 import { Sparkles, Bone, HeartPulse, Brain, Footprints, Stethoscope, Users as UsersIcon, Pill as PillIcon, ClipboardList as ClipboardListIcon, PersonStanding, Search as SearchIcon, Bell as BellIcon, MessageSquare as MessageSquareIcon, Plus as PlusIcon } from "lucide-react";
-import { getNotifications as getPfNotifications, getUnreadMessageCount as getPfUnreadMessages } from "./physiofeed/data/db.js";
+import { pfData } from "./physiofeed/data/lazyDb.js";
 import { setGoBackHandler } from "./nativeApp.js";
 import { C, useTheme, MobileStyleInjector, ErrorBoundary, TabLoader } from "./utils.jsx";
 import OfflineBanner from "./OfflineBanner.jsx";
@@ -28,7 +28,7 @@ import { PatientPermissionReminder } from "./PatientPermission.jsx";
 import {
   draftKey,
   loadPatientDB, savePatientDB, savePatientDBLocalOnly,
-  hydrateLocalCache, clearPatientCache, relockLocalCache, fetchPatientsFromSupabase,
+  hydrateLocalCache, clearPatientCache, relockLocalCache, fetchPatientsFromSupabase, markPatientsSynced,
   loadTaskDB, saveTaskDB,
   genId,
   PatientDatabasePanel, TreatmentCaseloadPanel,
@@ -190,7 +190,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // Evidence preview already reads PhysioFeed data (getEvidence()) without
   // needing to be mounted inside PhysioFeed's own AppDataProvider/router.
   const [pfUnread, setPfUnread] = useState(false);
-  useEffect(() => { getPfNotifications().then((n) => setPfUnread(n.some((x) => !x.read))).catch(() => {}); }, []);
+  useEffect(() => { pfData().then((m) => m.getNotifications()).then((n) => setPfUnread(n.some((x) => !x.read))).catch(() => {}); }, []);
   // Same, for the message icon beside it (P3) -- it had no unread dot at
   // all, so a DM that arrived while you were outside PhysioFeed's
   // Messages page was invisible. Re-checked on every tab change rather
@@ -198,7 +198,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // AppDataProvider, and tapping between tabs is the only moment the
   // dot's state can matter to you here.
   const [pfUnreadMsgs, setPfUnreadMsgs] = useState(0);
-  useEffect(() => { getPfUnreadMessages().then(setPfUnreadMsgs).catch(() => {}); }, [active]);
+  useEffect(() => { pfData().then((m) => m.getUnreadMessageCount()).then(setPfUnreadMsgs).catch(() => {}); }, [active]);
   // ── Back navigation (in-app Back button + real browser/hardware back) ──
   // activeRef mirrors `active` synchronously so navTo (a stable useCallback)
   // can tell whether a nav call is actually going somewhere new, without
@@ -408,6 +408,9 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
 
   // ── Multi-Patient Database ─────────────────────────────────────────────
   const [patients, setPatients] = useState(() => loadPatientDB(currentUser?.id));
+  // The newest list, for the cloud read below (which should only download what the phone does not already have).
+  const patientsRef = useRef(patients);
+  patientsRef.current = patients;
   const [taskDB, setTaskDB] = useState(() => loadTaskDB());
 
   // ── Supabase: load patients on mount and merge with localStorage ──────────
@@ -426,7 +429,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     const uid = currentUser?.id;
     if (!uid) { setPatientsLoad({ state: "ok", skipped: 0 }); return; }
     setPatientsLoad((prev) => ({ state: "loading", skipped: prev.skipped }));
-    fetchPatientsFromSupabase(uid).then(({ rows, skipped, error }) => {
+    fetchPatientsFromSupabase(uid, { local: patientsRef.current }).then(({ rows, skipped, error }) => {
       if (error) reportClientError(error, { phase: "patients_load", skipped, got: rows.length });
       setPatientsLoad({ state: error ? "error" : "ok", skipped });
       if (!rows || rows.length === 0) return;
@@ -454,6 +457,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           merged.push(rt >= lt ? rem : loc);
         }
         merged.sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
+        markPatientsSynced(uid, merged.filter(p => remoteMap.get(p.id) === p)); // these came from the cloud: no need to send them back
         savePatientDBLocalOnly(merged, uid); // encrypted local cache write, no re-upload
         return merged;
       });

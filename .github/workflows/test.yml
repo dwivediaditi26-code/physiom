@@ -56,7 +56,7 @@ jobs:
         run: npm test
 
   # A first visit used to download ~1,600 KB because heavy screens were tied into
-  # the first screen; it is ~250 KB now. This fails if it grows past 400 KB again.
+  # the first screen; it is ~206 KB now. This fails if it grows past 260 KB again.
   first-load-size:
     runs-on: ubuntu-latest
     timeout-minutes: 15

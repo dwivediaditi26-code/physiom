@@ -31,6 +31,25 @@ function swCacheBusterPlugin() {
   }
 }
 
+// The set of modules the entry files load straight away (static imports only,
+// followed all the way down). Built once, on first use. See manualChunks below.
+let firstScreen = null;
+function firstScreenModules(getModuleIds, getModuleInfo) {
+  if (firstScreen) return firstScreen;
+  firstScreen = new Set();
+  const queue = [];
+  for (const id of getModuleIds()) {
+    if (getModuleInfo(id)?.isEntry) { firstScreen.add(id); queue.push(id); }
+  }
+  while (queue.length) {
+    const info = getModuleInfo(queue.pop());
+    for (const next of info?.importedIds || []) {
+      if (!firstScreen.has(next)) { firstScreen.add(next); queue.push(next); }
+    }
+  }
+  return firstScreen;
+}
+
 export default defineConfig({
   plugins: [react(), swCacheBusterPlugin()],
   build: {
@@ -45,7 +64,7 @@ export default defineConfig({
         tester: path.resolve(__dirname, 'tester.html'),
       },
       output: {
-        manualChunks: (id) => {
+        manualChunks: (id, { getModuleIds, getModuleInfo }) => {
           // Real incident (PhysioFeed integration, this session): splitting
           // react/react-dom into their own 'react-core' chunk, separate from
           // a 'vendor' chunk holding all other node_modules, worked fine
@@ -63,17 +82,16 @@ export default defineConfig({
           // circularity can't exist by construction -- confirmed no
           // "Circular chunk" warning on rebuild after this change.
           if (id.includes('node_modules/')) {
-            // jsPDF and html2canvas (plus the small libraries only they use) are
-            // only needed when someone downloads a PDF: sharedClinicalData.js
-            // loads them with import(). Forcing them into 'vendor' made every
-            // first visit download ~700 KB of PDF code it will probably never
-            // run. Returning nothing lets Rollup keep them in their own lazy
-            // chunks. They never import anything from 'vendor', so this cannot
-            // recreate the circular-chunk problem described above.
-            if (/node_modules\/(jspdf|html2canvas|canvg|svg-pathdata|rgbcolor|stackblur-canvas|dompurify|css-line-break|text-segmentation|utrie|base64-arraybuffer|fast-png|iobuffer|pako|fflate|raf|performance-now)\//.test(id)) {
-              return undefined;
-            }
-            return 'vendor';
+            // 'vendor' is what the FIRST screen needs, nothing more. It used to take
+            // every library in node_modules, including ones only a lazy screen uses
+            // (the PDF tools' helper core-js, the PhysioFeed router and icons...), so
+            // every first visit downloaded them for nothing. Now a library goes in
+            // 'vendor' only if the entry file reaches it through plain static imports;
+            // anything else is left to Rollup, which keeps it in the lazy file that
+            // uses it. This cannot recreate the circular-chunk problem above: a
+            // library the first screen reaches only imports libraries it reaches too,
+            // so 'vendor' never has to import from a lazy file.
+            return firstScreenModules(getModuleIds, getModuleInfo).has(id) ? 'vendor' : undefined;
           }
           // (sharedClinicalData.js used to be pinned to a named 'chunk-shareddata' here,
           // so importing even one small constant would not drag in a heavy UI chunk. But

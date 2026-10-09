@@ -11,13 +11,13 @@
 // `node tools/check-first-load.mjs --why` to see which files are in the list, then
 // find what imports the heavy one from the first screen.
 //
-//   FIRST_LOAD_BUDGET_KB   budget in KB (default 400)
+//   FIRST_LOAD_BUDGET_KB   budget in KB (default 260)
 import fs from "node:fs";
 import path from "node:path";
 import zlib from "node:zlib";
 
 const dist = path.resolve(process.argv.find((a) => a.startsWith("--dist="))?.slice(7) || "dist");
-const budget = Number(process.env.FIRST_LOAD_BUDGET_KB || 400);
+const budget = Number(process.env.FIRST_LOAD_BUDGET_KB || 260);
 const html = fs.readFileSync(path.join(dist, "index.html"), "utf8");
 const refs = [...new Set([...html.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)].map((m) => m[1]))];
 if (!refs.length) { console.error("No /assets files found in dist/index.html: did the build run?"); process.exit(2); }

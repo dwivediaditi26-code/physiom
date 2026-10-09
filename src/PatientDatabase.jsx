@@ -540,27 +540,67 @@ async function hydrateLocalCache(userId) {
 // retry"). Demo patients are sample data, so they stay on the device.
 const DEMO_PATIENT_IDS = new Set(SAMPLE_PATIENT_IDS);
 
-// Resolves to true only when the patients really reached Supabase, and to
-// false when there was nothing to upload (not logged in, or only the demo
-// patients) -- so the header can say "Saved to cloud" only when it is true.
+// ── Send only what changed ──────────────────────────────────────────────────
+// Every save used to send EVERY patient (attachments included) in one request. On
+// good wifi nobody noticed; on a weak connection each autosave -- two seconds after
+// typing stops -- meant megabytes up the line, so saving crawled or failed. Now a
+// patient is sent only when the cloud is not already known to hold this version of
+// it. "Known" comes from two places only: a save of that version that succeeded in
+// this session, or the cloud itself telling us (at app start) it holds the same
+// version. Anything uncertain is sent, exactly as before.
+//
+// The version of a patient is its last-changed time plus the few fields kept beside
+// the data (name, red-flag mark, last diagnosis). Every place in the app that
+// changes a patient sets a new last-changed time, so an edit is never mistaken for
+// "already saved".
+const _syncedVersion = new Map(); // `${userId}:${patientId}` -> version the cloud holds
+const timeOf = (v) => { const t = Date.parse(v); return Number.isNaN(t) ? null : t; };
+function versionOf(p) {
+  const t = timeOf(p.updatedAt);
+  if (t === null) return null; // no usable time: cannot tell, so always send
+  return `${t}|${p.name || ""}|${p.hasRedFlags ? 1 : 0}|${p.lastDx || ""}`;
+}
+function isKnownSynced(userId, p) {
+  const v = versionOf(p);
+  return v !== null && _syncedVersion.get(`${userId}:${p.id}`) === v;
+}
+// Records that the cloud holds exactly these versions (after a successful save, or
+// after reading them from the cloud).
+function markPatientsSynced(userId, patients) {
+  if (!userId) return;
+  for (const p of patients || []) {
+    const v = versionOf(p);
+    if (v !== null) _syncedVersion.set(`${userId}:${p.id}`, v);
+  }
+}
+const UPLOAD_BATCH = 5; // patients per request, so a weak connection keeps the progress it made
+
+// Resolves to true only when the patients really reached Supabase (or are already
+// there), and to false when there was nothing to upload (not logged in, or only the
+// demo patients) -- so the header can say "Saved to cloud" only when it is true.
 // Rejects when the upload failed.
 async function syncPatientsToSupabase(patients, userId) {
   try {
     if (!userId) return false; // not logged in — don't sync
     const toSync = patients.filter(p => !DEMO_PATIENT_IDS.has(p.id));
     if (toSync.length === 0) return false; // only demo patients -- nothing to upload
-    const rows = toSync.map(p => ({
-      id: p.id,
-      user_id: userId,
-      name: p.name || "Unknown",
-      data: p.data || {},
-      created_at: p.createdAt || new Date().toISOString(),
-      updated_at: p.updatedAt || new Date().toISOString(),
-      has_red_flags: p.hasRedFlags || false,
-      last_dx: p.lastDx || "",
-    }));
-    const { error } = await supabase.from("patients").upsert(rows, { onConflict: "id" });
-    if (error) { console.warn("[Supabase sync]", error.message); throw error; }
+    const changed = toSync.filter(p => !isKnownSynced(userId, p));
+    for (let i = 0; i < changed.length; i += UPLOAD_BATCH) {
+      const batch = changed.slice(i, i + UPLOAD_BATCH);
+      const rows = batch.map(p => ({
+        id: p.id,
+        user_id: userId,
+        name: p.name || "Unknown",
+        data: p.data || {},
+        created_at: p.createdAt || new Date().toISOString(),
+        updated_at: p.updatedAt || new Date().toISOString(),
+        has_red_flags: p.hasRedFlags || false,
+        last_dx: p.lastDx || "",
+      }));
+      const { error } = await supabase.from("patients").upsert(rows, { onConflict: "id" });
+      if (error) { console.warn("[Supabase sync]", error.message); throw error; }
+      markPatientsSynced(userId, batch);
+    }
     clearSyncDirty(userId);
     return true;
   } catch (e) {
@@ -1568,17 +1608,14 @@ function PostureSessionsView({ d, C, onNav }) {
 // got plus how many records it could not read (and why).
 const PATIENT_PAGE_SIZE = 8;
 const PATIENT_RETRY_DELAYS_MS = [400, 1200];
+const INDEX_PAGE_SIZE = 500;
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function fetchPatientRange(userId, from, size, retryDelays) {
+// Runs one read with retries. `build` returns a fresh query each time.
+async function readWithRetries(build, retryDelays) {
   let lastError = null;
   for (let attempt = 0; attempt <= retryDelays.length; attempt++) {
-    let query = supabase.from("patients").select("*")
-      .eq("user_id", userId)
-      .is("deleted_at", null) // hide soft-deleted rows -- see deletePatient() in AppFull.jsx
-      .order("updated_at", { ascending: false })
-      .order("id")
-      .range(from, from + size - 1);
+    let query = build();
     // Newer supabase-js retries failed reads itself (1s, 2s, 4s) -- on top of
     // ours that made an outage take 20+ seconds to be reported. Ours is enough.
     if (typeof query.retry === "function") query = query.retry(false);
@@ -1590,16 +1627,39 @@ async function fetchPatientRange(userId, from, size, retryDelays) {
   return { rows: [], error: lastError };
 }
 
-async function fetchPatientsFromSupabase(userId, { pageSize = PATIENT_PAGE_SIZE, retryDelays = PATIENT_RETRY_DELAYS_MS, maxPages = 250 } = {}) {
+const ownPatients = (columns, userId) =>
+  supabase.from("patients").select(columns)
+    .eq("user_id", userId)
+    .is("deleted_at", null); // hide soft-deleted rows -- see deletePatient() in AppFull.jsx
+
+function fetchPatientRange(userId, from, size, retryDelays) {
+  return readWithRetries(() => ownPatients("*", userId)
+    .order("updated_at", { ascending: false })
+    .order("id")
+    .range(from, from + size - 1), retryDelays);
+}
+
+function fetchPatientsByIds(userId, ids, retryDelays) {
+  return readWithRetries(() => ownPatients("*", userId).in("id", ids), retryDelays);
+}
+
+// Reads the whole account, or only `ids` when given. Returns the rows it got plus
+// how many records it could not read (and why).
+async function readPatients(userId, { ids = null, pageSize, retryDelays, maxPages }) {
+  const read = (from, size, delays) => (ids
+    ? fetchPatientsByIds(userId, ids.slice(from, from + size), delays)
+    : fetchPatientRange(userId, from, size, delays));
   const rows = [];
   let skipped = 0;
   let error = null;
   for (let pageNo = 0; pageNo < maxPages; pageNo++) {
     const from = pageNo * pageSize;
-    const page = await fetchPatientRange(userId, from, pageSize, retryDelays);
+    if (ids && from >= ids.length) break;
+    const page = await read(from, pageSize, retryDelays);
     if (!page.error) {
       rows.push(...page.rows);
-      if (page.rows.length < pageSize) break;
+      // Reading everything: a short page means the end. Reading chosen ids: the list is the end.
+      if (ids ? from + pageSize >= ids.length : page.rows.length < pageSize) break;
       continue;
     }
     error = page.error;
@@ -1610,7 +1670,8 @@ async function fetchPatientsFromSupabase(userId, { pageSize = PATIENT_PAGE_SIZE,
     let failedInARow = 0;
     const skippedBefore = skipped;
     for (let i = 0; i < pageSize; i++) {
-      const one = await fetchPatientRange(userId, from + i, 1, retryDelays.slice(0, 1));
+      if (ids && from + i >= ids.length) break;
+      const one = await read(from + i, 1, retryDelays.slice(0, 1));
       if (one.error) {
         skipped += 1; error = one.error; failedInARow += 1;
         // Two in a row with none read yet means it is not one heavy record
@@ -1619,7 +1680,7 @@ async function fetchPatientsFromSupabase(userId, { pageSize = PATIENT_PAGE_SIZE,
         continue;
       }
       failedInARow = 0;
-      if (one.rows.length === 0) { reachedEnd = true; break; }
+      if (!ids && one.rows.length === 0) { reachedEnd = true; break; }
       readOne = true;
       rows.push(...one.rows);
     }
@@ -1631,13 +1692,62 @@ async function fetchPatientsFromSupabase(userId, { pageSize = PATIENT_PAGE_SIZE,
   return { rows, skipped, error };
 }
 
+// The cloud's list of what it holds: just id + last-changed time for every patient
+// (a few bytes each, attachments left behind). null when it could not be read.
+async function fetchPatientIndex(userId, retryDelays) {
+  const index = [];
+  for (let pageNo = 0; pageNo < 40; pageNo++) {
+    const from = pageNo * INDEX_PAGE_SIZE;
+    const page = await readWithRetries(() => ownPatients("id, updated_at", userId)
+      .order("updated_at", { ascending: false })
+      .order("id")
+      .range(from, from + INDEX_PAGE_SIZE - 1), retryDelays);
+    if (page.error) return null;
+    index.push(...page.rows);
+    if (page.rows.length < INDEX_PAGE_SIZE) break;
+  }
+  return index;
+}
+
+// Used on every app start. It used to be one `select *` for the whole list; a
+// record with big attachments, or a slow phone connection, could make that one
+// request fail -- and the failure was swallowed, so the person just saw an
+// empty list although everything was safe in the cloud. Now: a few records at a
+// time, each retried, and if a group still fails it is retried one record at a
+// time so a single heavy record can't hide all the others.
+//
+// With `local` (the list already on the phone) it also stops re-downloading what the
+// phone already has: first it asks the cloud only "which patients, changed when?",
+// then downloads just the ones that are new or newer than the phone's copy. If that
+// first question cannot be answered, it reads everything, as before.
+async function fetchPatientsFromSupabase(userId, { pageSize = PATIENT_PAGE_SIZE, retryDelays = PATIENT_RETRY_DELAYS_MS, maxPages = 250, local = null } = {}) {
+  if (Array.isArray(local)) {
+    const index = await fetchPatientIndex(userId, retryDelays);
+    if (index) {
+      const mine = new Map(local.map((p) => [p.id, p]));
+      const wanted = [];
+      for (const entry of index) {
+        const have = mine.get(entry.id);
+        const theirTime = timeOf(entry.updated_at);
+        const myTime = have ? timeOf(have.updatedAt) : null;
+        if (!have || myTime === null || theirTime === null || myTime < theirTime) wanted.push(entry.id);
+        else if (myTime === theirTime) markPatientsSynced(userId, [have]); // the cloud holds this very version
+        // a newer copy on the phone stays as it is; it goes up with the next save
+      }
+      if (wanted.length === 0) return { rows: [], skipped: 0, error: null };
+      return readPatients(userId, { ids: wanted, pageSize, retryDelays, maxPages });
+    }
+  }
+  return readPatients(userId, { pageSize, retryDelays, maxPages });
+}
+
 // ── Exports for AppFull.jsx ──────────────────────────────────────────────────
 export {
   dbKey, draftKey,
   loadPatientDB, savePatientDB, savePatientDBLocalOnly,
   hydrateLocalCache, clearPatientCache, relockLocalCache,
   isSyncDirty, flushPendingSync,
-  fetchPatientsFromSupabase,
+  fetchPatientsFromSupabase, markPatientsSynced,
   loadTaskDB, saveTaskDB,
   genId,
   PatientDatabasePanel, TreatmentCaseloadPanel,

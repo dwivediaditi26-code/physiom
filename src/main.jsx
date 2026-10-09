@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import { inject } from '@vercel/analytics'
 import * as Sentry from '@sentry/react'
-import { installAiIntakeTestHarness } from './aiIntakeTestHarness.js'
 import { installButtonRipple } from './rippleEffect.js'
 import { initNativeApp } from './nativeApp.js'
 import { installGlobalErrorReporting } from './analytics/errorReporter.js'
@@ -12,6 +11,8 @@ import { installKeepBarsInPlace } from './pwa/keepBarsInPlace.js'
 import { prefetchLikelyScreens } from './prefetchScreens.js'
 import { registerServiceWorker } from './pwa/registerServiceWorker.js'
 import PwaBanners from './pwa/PwaBanners.jsx'
+// The icon font (only the icons we use, shipped from our own site -- see tools/make-tabler-subset.py)
+import './fonts/tabler-icons-subset.css'
 
 inject() // Enables Vercel Analytics — tracks page views and visitors automatically
 
@@ -25,7 +26,8 @@ initNativeApp()
 // narratives through the actual /api/parse -> field mapping ->
 // interpretation -> SOAP pipeline and see the results. See
 // aiIntakeTestHarness.js for what it does and why it's opt-in only.
-installAiIntakeTestHarness()
+// Loaded after the first screen (it is only for someone typing into the console).
+window.addEventListener('load', () => { import('./aiIntakeTestHarness.js').then((m) => m.installAiIntakeTestHarness()).catch(() => {}) })
 
 // Adds a real tap-press feel (depress + ripple) to every purple "primary"
 // button across the app -- was previously pure CSS with zero :active
