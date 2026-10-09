@@ -75,10 +75,10 @@ describe("chips under one question's box", () => {
   });
 
   it("shows nothing for a region group that has no phrases yet", async () => {
-    render(<UnderstoodChips mode="field" contentKey="knee" field={{ ...F("aggravating") }} value="gripping" onPick={() => {}} />);
+    render(<UnderstoodChips mode="field" contentKey="cervical" field={{ ...F("aggravating") }} value="gripping" onPick={() => {}} />);
     await new Promise((r) => setTimeout(r, 60));
     expect(screen.queryByTestId("understood-chips")).toBeNull();
-    expect(hasPhrases("knee", "aggravating")).toBe(false);
+    expect(hasPhrases("cervical", "aggravating")).toBe(false);
     expect(hasPhrases("elbowWristHand", "aggravating")).toBe(true);
   });
 

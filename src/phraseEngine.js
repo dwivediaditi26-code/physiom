@@ -136,6 +136,9 @@ function wordsAndCommas(tokens) {
   return { words, commaBefore };
 }
 
+// An option guard only looks at the words near the match (this many words each side), not the whole sentence:
+// "twisted my knee playing football, ... , it gives way on stairs" is still a twisting injury.
+const GUARD_RADIUS = 8;
 const RULE_CHUNK = 80;
 const RULE_MAX_TOKENS = 400; // a real note is a few dozen words; a huge paste must not slow the screen
 
@@ -241,7 +244,7 @@ export function createPhraseMatcher({ phrases, singleChoiceFields = ["pattern"],
     for (let s = 0; s < tokens.length; s += RULE_CHUNK / 2) {
       const part = tokens.slice(s, s + RULE_CHUNK);
       for (const r of understandByRulesChunk(part, commaBefore.slice(s, s + RULE_CHUNK), fields)) {
-        const key = r.field + "|" + r.option; if (!seen.has(key)) { seen.add(key); out.push(r); }
+        const key = r.field + "|" + r.option; if (!seen.has(key)) { seen.add(key); out.push({ ...r, s: r.s + s, e: r.e + s }); }
       }
       if (s + RULE_CHUNK >= tokens.length) break;
     }
@@ -279,7 +282,7 @@ export function createPhraseMatcher({ phrases, singleChoiceFields = ["pattern"],
       }
       if (r.reliefKills && (inside.some((t) => RELIEF.has(t)) || wordsBefore(span.s, 5).some((t) => RELIEF.has(t)))) continue;
       if (r.reliefAfter && wordsAfter(span.e, 3).some((t) => RELIEF_AFTER.has(t))) continue;
-      out.push({ field: r.field, option: r.option, phrase: "rule" });
+      out.push({ field: r.field, option: r.option, phrase: "rule", s: span.s, e: span.e });
     }
     return out;
   }
@@ -342,11 +345,14 @@ export function createPhraseMatcher({ phrases, singleChoiceFields = ["pattern"],
     }
     const fromPhrases = results.filter((r) => !r.negated);
     const fromRules = understandByRules(tokens, commaBefore, fields)
-      .map((x) => ({ c: { field: x.field, option: x.option, key: x.phrase } }));
+      .map((x) => ({ c: { field: x.field, option: x.option, key: x.phrase }, s: x.s, e: x.e }));
     let all = [...fromPhrases, ...fromRules];
     if (aboutOtherPart) all = all.filter((r) => EXEMPT.has(r.c.field + "|" + r.c.option));
     if (!GUARDS.size) return all;
-    return all.filter((r) => { const gd = GUARDS.get(r.c.field + "|" + r.c.option); return !gd || !anyWord(tokens, gd); });
+    return all.filter((r) => {
+      const gd = GUARDS.get(r.c.field + "|" + r.c.option);
+      return !gd || !anyWord(tokens.slice(Math.max(0, r.s - GUARD_RADIUS), r.e + GUARD_RADIUS), gd);
+    });
   }
 
   function runUnderstanding(text, fields, bareAllowed) {
