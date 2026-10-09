@@ -264,6 +264,19 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // own MemoryRouter/internal navigation same as PhysioFeed's, so a bare
   // re-tap needs the same remount-to-reset treatment, not just PhysioFeed's.
   const [profileResetKey, setProfileResetKey] = useState(0);
+  // The Ortho/Neuro/Cardio assessment screens stay mounted (hidden) while you visit other
+  // tabs, so a half-done assessment is still there when you come back. But that also meant
+  // a SECOND patient's assessment opened the first patient's finished screen, and the
+  // patient list then showed both under the first patient's name. Every deliberate start
+  // of a different assessment (new patient, another patient opened, Edit from a profile)
+  // bumps these keys so the screens start clean, with the data now in `data`.
+  const [assessmentRun, setAssessmentRun] = useState({ ortho: 0, neuro: 0, cardio: 0 });
+  const RUN_KIND = { ortho_new_assessment: "ortho", neuro_assessment: "neuro", cardio_assessment: "cardio" };
+  // No argument: every assessment screen (a different patient is now being worked on).
+  // With a screen key: only that one (e.g. Edit from the profile).
+  const freshAssessment = (screenKey) => setAssessmentRun((r) => (screenKey && RUN_KIND[screenKey]
+    ? { ...r, [RUN_KIND[screenKey]]: r[RUN_KIND[screenKey]] + 1 }
+    : { ortho: r.ortho + 1, neuro: r.neuro + 1, cardio: r.cardio + 1 }));
   const [pendingLeave, setPendingLeave] = useState(null);
   // Every tab stays mounted once visited (DeferredMount below just toggles
   // display:none/block, see mountedTabs) inside this one shared scrollable
@@ -603,6 +616,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // a specialty does the exact same real thing (blank-slate + navigate to
   // that specialty's real tool) no matter which entry point was used.
   function startSpecialty(st) {
+    freshAssessment();
     if (st.id === "cardio") {
       setData({}); setActivePatientId(null);
       trackAssessmentStart("cardio"); navTo("cardio_assessment");
@@ -620,6 +634,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // See OrthoAssessment.jsx's entryMode handling for the skip-ahead logic.
   function startOrthoEntry(mode, justConfirmedAt) {
     const consentAt = justConfirmedAt || permAckAt;
+    freshAssessment();
     setData(consentAt ? { consent_confirmed_at: consentAt } : {});
     setActivePatientId(null);
     trackAssessmentStart("ortho", mode); navTo("ortho_new_assessment", { entryMode: mode });
@@ -645,6 +660,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       cc_main: "",
       ...(isGuest || !permAckAt ? {} : { consent_confirmed_at: permAckAt }),
     };
+    freshAssessment();
     setActivePatientId(null);
     setData(seedData);
     setShowSpecialtyPicker(false);
@@ -785,6 +801,8 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
         return updated;
       });
     }
+    // A different patient: any assessment screen still open belongs to the previous one.
+    if (p.id !== activePatientId) freshAssessment();
     // Load patient data; ignore any draft that belongs to a different patient
     try {
       const raw = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
@@ -2116,7 +2134,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               PhysioFeed's own deferred-mount comment just above. */}
           {mountedTabs.has("cardio_assessment") && (
             <div className="pm-bleed" style={{display: active==="cardio_assessment" ? "block" : "none"}}>
-              <Suspense fallback={<TabFallback/>}><LazyCardioAssessment patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="cardio_assessment"?navContext:undefined} backRef={wizardBackRef} onGeneratePdf={()=>setShowPdfReports(true)}/></Suspense>
+              <Suspense fallback={<TabFallback/>}><LazyCardioAssessment key={assessmentRun.cardio} patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="cardio_assessment"?navContext:undefined} backRef={wizardBackRef} onGeneratePdf={()=>setShowPdfReports(true)}/></Suspense>
             </div>
           )}
           {active==="cardio_assessment" && !mountedTabs.has("cardio_assessment") && (
@@ -2129,7 +2147,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               explanation). Same deferred-mount fix as Cardiopulmonary. */}
           {mountedTabs.has("neuro_assessment") && (
             <div className="pm-bleed" style={{display: active==="neuro_assessment" ? "block" : "none"}}>
-              <Suspense fallback={<TabFallback/>}><LazyNeuroAssessment patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="neuro_assessment"?navContext:undefined} backRef={wizardBackRef} onGeneratePdf={()=>setShowPdfReports(true)}/></Suspense>
+              <Suspense fallback={<TabFallback/>}><LazyNeuroAssessment key={assessmentRun.neuro} patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="neuro_assessment"?navContext:undefined} backRef={wizardBackRef} onGeneratePdf={()=>setShowPdfReports(true)}/></Suspense>
             </div>
           )}
           {active==="neuro_assessment" && !mountedTabs.has("neuro_assessment") && (
@@ -2142,7 +2160,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               removed 2026-09-25.) Same deferred-mount fix as above. */}
           {mountedTabs.has("ortho_new_assessment") && (
             <div className="pm-bleed" style={{display: active==="ortho_new_assessment" ? "block" : "none"}}>
-              <Suspense fallback={<TabFallback/>}><LazyOrthoAssessmentNew patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="ortho_new_assessment"?navContext:undefined} requireAuth={requireAuth} isGuest={isGuest} entryMode={active==="ortho_new_assessment"?navContext.entryMode:undefined} resume={active==="ortho_new_assessment"?navContext.resume:undefined} backRef={wizardBackRef} onGeneratePdf={()=>setShowPdfReports(true)}/></Suspense>
+              <Suspense fallback={<TabFallback/>}><LazyOrthoAssessmentNew key={assessmentRun.ortho} patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="ortho_new_assessment"?navContext:undefined} requireAuth={requireAuth} isGuest={isGuest} entryMode={active==="ortho_new_assessment"?navContext.entryMode:undefined} resume={active==="ortho_new_assessment"?navContext.resume:undefined} backRef={wizardBackRef} onGeneratePdf={()=>setShowPdfReports(true)}/></Suspense>
             </div>
           )}
           {active==="ortho_new_assessment" && !mountedTabs.has("ortho_new_assessment") && (
@@ -2181,7 +2199,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 showPosture={postureEnabled}
                 patient={activePatient ? {...activePatient, data:{...activePatient.data, ...(activePatient.id===activePatientId?data:{})}} : null}
                 initialTab={profileTab||undefined}
-                onNav={navTo}
+                onNav={(key, ctx, opts) => { if (OPAQUE_ASSESSMENT_KEYS.has(key)) freshAssessment(key); navTo(key, ctx, opts); }}
                 onGeneratePdf={()=>setShowPdfReports(true)}
                 onBack={()=>{ setProfileTab(null); navTo("clinical"); }}
                 onSaveField={saveProfileField}
