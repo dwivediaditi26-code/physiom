@@ -1,4 +1,5 @@
 import { authenticateAndRateLimit } from './_lib/rateLimit.js';
+import { chatJson, providerOrder } from './_lib/llm.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -18,8 +19,9 @@ export default async function handler(req, res) {
   const { text } = req.body || {};
   if (!text || !text.trim()) return res.status(400).json({ error: 'No text provided' });
 
-  const GROQ_KEY = process.env.GROQ_API_KEY;
-  if (!GROQ_KEY) return res.status(500).json({ error: 'GROQ_API_KEY not configured' });
+  // The AI itself is called through _lib/llm.js: Groq first, Gemini when Groq
+  // fails or its limit is used up (whichever keys are set -- see that file).
+  if (!providerOrder().length) return res.status(500).json({ error: 'No AI key configured (set GROQ_API_KEY or GEMINI_API_KEY)' });
 
   const system = `You are a clinical data extractor for a physiotherapy intake form used by physiotherapy students and clinicians for real patient care decisions. Extract structured data and return ONLY valid JSON.
 
@@ -104,59 +106,23 @@ If input is Hindi/mixed, extract clinical meaning in English.`;
 Do not invent new information that isn't in the first-pass JSON or the narrative. Do not change a field's value unless you found a real, evidence-based problem with it -- when in doubt whether something is genuinely correct, leave it exactly as the first pass had it. Return ONLY the corrected JSON object, in EXACTLY the same shape as the first-pass JSON you were given (the same keys, the same value types, nothing added or removed). If a field's value changes, keep _confidence/_sourceQuotes in sync (remove entries for anything you nulled out).`;
 
   try {
-    const extractResp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${GROQ_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        // llama-3.3-70b-versatile was deprecated by Groq on 2026-06-17,
-        // shutdown 2026-08-16 (console.groq.com/docs/deprecations) --
-        // migrated to their recommended replacement ahead of that date.
-        // gpt-oss-120b is a reasoning model: reasoning tokens land in a
-        // separate message.reasoning field, never mixed into content, so
-        // JSON.parse(content) below is unaffected. Reasoning kept low and
-        // excluded from the response -- this is structured extraction,
-        // not a task that benefits from visible chain-of-thought, and low
-        // effort keeps latency close to the old non-reasoning model's.
-        model: 'openai/gpt-oss-120b',
-        messages: [{ role: 'system', content: system }, { role: 'user', content: text.trim() }],
-        temperature: 0.1, max_completion_tokens: 3000,
-        reasoning_effort: 'low', include_reasoning: false,
-        response_format: { type: 'json_object' },
-      }),
-    });
-    if (!extractResp.ok) { const t = await extractResp.text(); return res.status(502).json({ error: 'Groq error', detail: t }); }
-    const extractData = await extractResp.json();
-    const extractContent = extractData.choices?.[0]?.message?.content;
-    if (!extractContent) return res.status(502).json({ error: 'Empty response' });
-    let firstPass;
-    try { firstPass = JSON.parse(extractContent); }
-    catch (parseErr) { return res.status(502).json({ error: 'Malformed extraction JSON', detail: parseErr.message }); }
+    const extracted = await chatJson({ system, user: text.trim(), maxTokens: 3000 });
+    if (!extracted.ok) return res.status(extracted.status || 502).json({ error: extracted.error, ...(extracted.detail ? { detail: extracted.detail } : {}) });
+    const firstPass = extracted.json;
+    res.setHeader('X-AI-Provider', extracted.provider);
 
     // Verification is a strict-improvement layer, not a new point of
     // failure for a feature that already works stand-alone -- any problem
-    // here (network error, bad JSON, non-OK response) falls back to the
-    // first pass rather than failing the whole request.
+    // here (every provider failing, bad JSON, non-OK response) falls back to
+    // the first pass rather than failing the whole request.
     try {
-      const verifyResp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${GROQ_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'openai/gpt-oss-120b',
-          messages: [
-            { role: 'system', content: verifierSystem },
-            { role: 'user', content: `ORIGINAL NARRATIVE:\n${text.trim()}\n\nFIRST-PASS EXTRACTION:\n${JSON.stringify(firstPass)}` },
-          ],
-          temperature: 0.1, max_completion_tokens: 3000,
-          reasoning_effort: 'low', include_reasoning: false,
-          response_format: { type: 'json_object' },
-        }),
+      const verified = await chatJson({
+        system: verifierSystem,
+        user: `ORIGINAL NARRATIVE:\n${text.trim()}\n\nFIRST-PASS EXTRACTION:\n${JSON.stringify(firstPass)}`,
+        maxTokens: 3000,
       });
-      if (!verifyResp.ok) return res.status(200).json(firstPass);
-      const verifyData = await verifyResp.json();
-      const verifyContent = verifyData.choices?.[0]?.message?.content;
-      if (!verifyContent) return res.status(200).json(firstPass);
-      const verified = JSON.parse(verifyContent);
-      return res.status(200).json(verified);
+      if (!verified.ok) return res.status(200).json(firstPass);
+      return res.status(200).json(verified.json);
     } catch (verifyErr) {
       return res.status(200).json(firstPass);
     }

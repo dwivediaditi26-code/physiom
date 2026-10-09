@@ -18,7 +18,9 @@ import { describe, test, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const parseSrc = readFileSync(resolve(process.cwd(), "api/parse.js"), "utf-8");
+// The Groq request now lives in the shared AI caller (api/_lib/llm.js), which
+// api/parse.js uses; the model id is a constant there.
+const parseSrc = readFileSync(resolve(process.cwd(), "api/_lib/llm.js"), "utf-8");
 
 describe("Groq model migration off the deprecated llama-3.3-70b-versatile", () => {
   // Checks the actual `model:` assignment specifically (a regex on
@@ -26,9 +28,10 @@ describe("Groq model migration off the deprecated llama-3.3-70b-versatile", () =
   // substring" -- the migration comment left in both files deliberately
   // names the old model id for future readers, so a blanket check would
   // incorrectly fail on that explanatory prose rather than real code.
-  test("api/parse.js's actual model field is the replacement, not the deprecated id", () => {
+  test("the Groq model field (api/_lib/llm.js, used by api/parse.js) is the replacement, not the deprecated id", () => {
     expect(parseSrc).not.toMatch(/model:\s*['"]llama-3\.3-70b-versatile['"]/);
-    expect(parseSrc).toMatch(/model:\s*['"]openai\/gpt-oss-120b['"]/);
+    expect(parseSrc).toMatch(/GROQ_MODEL\s*=\s*['"]openai\/gpt-oss-120b['"]/);
+    expect(parseSrc).toMatch(/model:\s*GROQ_MODEL/);
   });
 
   test("gpt-oss is a reasoning model -- reasoning kept low-effort and out of the response, since api/parse.js doesn't read message.reasoning", () => {
