@@ -26,6 +26,7 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen }
   const [status, setStatus] = useState("idle"); // idle | recording | processing | done | error
   const [result, setResult] = useState(null);
   const [provider, setProvider] = useState(null); // which AI answered (admins see it, see below)
+  const [orderNote, setOrderNote] = useState(null); // which AIs the server has keys for, in the order it tries them
   const [skippedNote, setSkippedNote] = useState(null); // why a provider that was tried first was skipped
   const isAdmin = useIsAdmin();
   const [errorMsg, setErrorMsg] = useState("");
@@ -106,6 +107,7 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen }
       if (answeredBy) console.info("[AI intake] answered by", answeredBy);
       setProvider(answeredBy);
       setSkippedNote(res.headers?.get?.("X-AI-Fallback") || null);
+      setOrderNote(res.headers?.get?.("X-AI-Order") || null);
       setResult({ ...json, _narrative: text });
       setStatus("done");
     } catch (e) {
@@ -252,6 +254,7 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen }
                 <div style={{ padding: "8px 14px 10px", fontSize: "0.7rem", color: "#8B8B8D" }}>
                   {rows.length} field{rows.length === 1 ? "" : "s"} extracted
                   {isAdmin && provider && <span data-testid="ai-provider-note" style={{ float: "right", color: "#7c3aed", fontWeight: 700 }}>AI engine: {PROVIDER_NAMES[provider] || provider}</span>}
+                  {isAdmin && orderNote && <div data-testid="ai-order-note" style={{ color: "#6b7280", marginTop: 4, fontSize: "0.68rem" }}>Server tries: {orderNote.split(",").map((p) => PROVIDER_NAMES[p] || p).join(" → ") || "none"}</div>}
                   {isAdmin && skippedNote && <div data-testid="ai-skipped-note" style={{ color: "#b45309", marginTop: 4, fontSize: "0.68rem" }}>Skipped first: {skippedNote}</div>}
                 </div>
               </div>

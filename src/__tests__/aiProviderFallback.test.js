@@ -220,6 +220,7 @@ describe("an admin can see why Gemini was skipped", () => {
     await handler({ method: "POST", body: { text: "Knee pain." } }, res);
     expect(headers["X-AI-Provider"]).toBe("groq");
     expect(headers["X-AI-Fallback"]).toMatch(/^gemini: Gemini error - quota exceeded/);
+    expect(headers["X-AI-Order"]).toBe("gemini,groq");
     const h2 = {};
     const res2 = { ...res, setHeader: (k, v) => { h2[k] = v; } };
     global.fetch = vi.fn(async () => groqOk({ chiefComplaint: "ok" }));

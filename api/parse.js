@@ -110,6 +110,7 @@ Do not invent new information that isn't in the first-pass JSON or the narrative
     if (!extracted.ok) return res.status(extracted.status || 502).json({ error: extracted.error, ...(extracted.detail ? { detail: extracted.detail } : {}) });
     const firstPass = extracted.json;
     res.setHeader('X-AI-Provider', extracted.provider);
+    res.setHeader('X-AI-Order', providerOrder().join(',')); // which providers this deployment has keys for, in order
     if (extracted.skipped?.length) res.setHeader('X-AI-Fallback', skipNote(extracted.skipped));
 
     // Verification is a strict-improvement layer, not a new point of
