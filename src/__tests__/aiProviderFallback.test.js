@@ -151,3 +151,24 @@ describe("the AI intake endpoint (api/parse.js)", () => {
     expect(res._json.error).toBe("AI service unavailable");
   });
 });
+
+describe("the AI intake screen tells the console which AI answered", () => {
+  test("logs the provider from the X-AI-Provider header, and stays quiet without it", async () => {
+    vi.resetModules();
+    vi.doMock("../supabase.js", () => import("../__mocks__/supabase.js"));
+    const React = (await import("react")).default;
+    const { render, screen, fireEvent, waitFor } = await import("@testing-library/react");
+    const { default: Panel } = await import("../OrthoAIIntakePanel.jsx");
+    const info = vi.spyOn(console, "info").mockImplementation(() => {});
+    for (const [header, expected] of [["gemini", true], [null, false]]) {
+      info.mockClear();
+      global.fetch = vi.fn(async () => ({ ok: true, headers: { get: (k) => (k === "X-AI-Provider" ? header : null) }, json: async () => ({ chiefComplaint: "Low back pain", region: "Lumbar / SI" }) }));
+      const { unmount } = render(React.createElement(Panel, { onApply: () => {}, defaultOpen: true }));
+      fireEvent.change(screen.getByPlaceholderText(/45 year old office worker/), { target: { value: "Low back pain for 5 days" } });
+      fireEvent.click(screen.getByRole("button", { name: /Parse with AI/ }));
+      await waitFor(() => expect(screen.getByText("Extracted Patient Information")).toBeTruthy());
+      expect(info.mock.calls.some((c) => c[0] === "[AI intake] answered by" && c[1] === "gemini")).toBe(expected);
+      unmount();
+    }
+  });
+});

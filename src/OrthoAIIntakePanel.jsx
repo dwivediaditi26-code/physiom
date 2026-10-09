@@ -94,6 +94,10 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen }
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Parse failed — try again.");
+      // Which AI answered (api/_lib/llm.js sets this header). Printed to the
+      // browser console so a test build can show Groq vs Gemini; no patient text.
+      const provider = res.headers?.get?.("X-AI-Provider");
+      if (provider) console.info("[AI intake] answered by", provider);
       setResult({ ...json, _narrative: text });
       setStatus("done");
     } catch (e) {
