@@ -8,6 +8,7 @@ import { supabase } from "./supabase.js";
 import { trackEvent } from "./analytics/trackEvent.js";
 import { Sparkles, Bone, HeartPulse, Brain, Footprints, Stethoscope, Users as UsersIcon, Pill as PillIcon, ClipboardList as ClipboardListIcon, PersonStanding, Search as SearchIcon, Bell as BellIcon, MessageSquare as MessageSquareIcon, Plus as PlusIcon } from "lucide-react";
 import { pfData } from "./physiofeed/data/lazyDb.js";
+import { writeDraft, restoreDraftData } from "./patientDraft.js";
 import { setGoBackHandler } from "./nativeApp.js";
 import { C, useTheme, MobileStyleInjector, ErrorBoundary, TabLoader } from "./utils.jsx";
 import OfflineBanner from "./OfflineBanner.jsx";
@@ -27,7 +28,7 @@ import { PC } from "./postureColors.js";
 import { PatientPermissionReminder } from "./PatientPermission.jsx";
 import {
   draftKey,
-  loadPatientDB, savePatientDB, savePatientDBLocalOnly,
+  loadPatientDB, savePatientDB, savePatientDBLocalOnly, savePatientDBLocalSoon,
   hydrateLocalCache, clearPatientCache, forgetDeviceCopy, flushPendingSync, isSyncDirty, relockLocalCache, fetchPatientsFromSupabase, markPatientsSynced,
   loadTaskDB, saveTaskDB,
   genId,
@@ -365,7 +366,11 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     try {
       const raw = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
       const draft = raw && raw.pid ? raw.data : (raw && !raw.pid ? raw : null);
-      if (draft && Object.keys(draft).length > 5) return draft;
+      if (draft && Object.keys(draft).length > 5) {
+        // The draft never holds attached files, and may be older than the saved record: see patientDraft.js
+        if (raw.pid) return restoreDraftData(raw, loadPatientDB(currentUser?.id).find(p => p.id === raw.pid));
+        return draft;
+      }
       // Draft is empty/too thin but a patient is still active (raw.pid). Load
       // that patient's saved record so the Subjective form matches the header
       // instead of rendering blank while the header shows the patient's name.
@@ -472,10 +477,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     if (!data || Object.keys(data).length === 0) return;
     const pid = activePatientId;
     const timer = setTimeout(() => {
-      try {
-        localStorage.setItem(DRAFT_KEY, JSON.stringify({ pid: pid || null, data }));
-        setLastSaved(new Date());
-      } catch {}
+      if (writeDraft(DRAFT_KEY, pid, data)) setLastSaved(new Date());
     }, 2000);
     return () => clearTimeout(timer);
   }, [data, activePatientId]);
@@ -718,7 +720,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           return oldHit || grfHit || regionRfHit;
         })()
       } : p);
-      savePatientDBLocalOnly(updated, currentUser?.id);
+      savePatientDBLocalSoon(updated, currentUser?.id);
       return updated;
     });
   }, [data, activePatientId]);
@@ -813,7 +815,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       const draftPid = raw && raw.pid ? raw.pid : null;
       const draftData = raw && raw.pid ? raw.data : null;
       if (draftPid === p.id && draftData && Object.keys(draftData).length > 5) {
-        setData(draftData); // restore draft for THIS patient only
+        setData(restoreDraftData(raw, p)); // restore draft for THIS patient only (attached files come from the record)
       } else {
         setData(p.data || {}); // use saved data, ignore other patient's draft
         try { if (draftPid && draftPid !== p.id) localStorage.removeItem(DRAFT_KEY); } catch {}
@@ -1315,7 +1317,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                   if (id === activePatientId) {
                     setData(prev => {
                       const next = { ...prev, ...newData };
-                      try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ pid: id, data: next })); } catch {}
+                      writeDraft(DRAFT_KEY, id, next);
                       return next;
                     });
                   }

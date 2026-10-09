@@ -7,6 +7,7 @@ import { createPortal } from "react-dom";
 import { Search as SearchIcon, ChevronRight, Bone, HeartPulse, Brain, Footprints, MoreVertical } from "lucide-react";
 import { supabase } from "./supabase.js";
 import { hasSessionKey, encryptJSON, decryptJSON, isEncryptedEnvelope, openedWithOldKey, clearDeviceKey } from "./localCrypto.js";
+import { readCopy, writeCopy, removeCopy } from "./localCopyStore.js";
 import { SAMPLE_PATIENT_IDS, isSamplePatient, withoutSamples } from "./samplePatients.js";
 // Loaded on demand: PostureEngine is ~600 KB of source and only these two cards
 // (inside a posture session's results) need it from here.
@@ -437,8 +438,10 @@ function clearPatientCache(userId) {
 // copy is removed and its key is deleted, so it cannot be opened again. (Anything not yet
 // sent to the cloud should be sent first -- see the sign-out button in AppFull.jsx.)
 async function forgetDeviceCopy(userId) {
+  cancelPendingCopyWrite(userId);
   clearPatientCache(userId);
   try { if (userId) localStorage.removeItem(dbKey(userId)); } catch { /* storage blocked */ }
+  try { if (userId) await removeCopy(userId); } catch { /* no device database: nothing stored there */ }
   await clearDeviceKey(userId);
 }
 
@@ -512,13 +515,28 @@ function loadPatientDB(userId) {
 // Also transparently upgrades a still-plaintext legacy cache to encrypted.
 async function hydrateLocalCache(userId) {
   if (!userId) return;
+  // 1. The copy in the device database: where it lives now.
+  let stored;
+  try { stored = await readCopy(userId); } catch { stored = undefined; }
+  if (isEncryptedEnvelope(stored)) {
+    const decrypted = await decryptJSON(stored);
+    if (Array.isArray(decrypted)) {
+      _patientCache.set(userId, decrypted);
+      // A copy locked the old way (with the sign-in token) is locked again with the device key.
+      if (openedWithOldKey()) await persistPatientsLocal(decrypted, userId);
+    } else {
+      console.error("[PatientDatabase] could not decrypt local patient copy for", userId);
+    }
+    return;
+  }
+  // 2. The old place (localStorage, about 5 MB in total). A copy found there is opened and moved
+  // to the device database, which has no such small limit.
   const rawState = readDbRawSync(userId);
   if (rawState.kind === "encrypted") {
     const decrypted = await decryptJSON(rawState.envelope);
     if (Array.isArray(decrypted)) {
       _patientCache.set(userId, decrypted);
-      // A copy locked the old way (with the sign-in token) is locked again with the device key.
-      if (openedWithOldKey()) await persistPatientsLocal(decrypted, userId);
+      await persistPatientsLocal(decrypted, userId);
     } else {
       // Shouldn't normally happen (wrong/missing key, corrupt data). Leave
       // the cache unset -- loadPatientDB()'s [] fallback + the Supabase
@@ -685,15 +703,74 @@ if (typeof window !== "undefined" && !window.__physioSyncListenersInstalled) {
 // async. Falls back to plaintext when there's no session key (Guest Mode,
 // or a save that races ahead of key derivation) -- same as the old
 // behaviour in that case, never worse.
-async function persistPatientsLocal(patients, userId) {
-  _patientCache.set(userId, patients);
+// Writes the newest list (not the one it was called with: a later call may have replaced it)
+// to the device database, locked. If the browser gives no device database it falls back to
+// localStorage, as before. A copy that reached the device database is removed from
+// localStorage, so the two never disagree.
+async function writeCopyToDisk(userId) {
+  const patients = _patientCache.get(userId);
+  if (!Array.isArray(patients)) return; // signed out in the meantime
   try {
     if (hasSessionKey()) {
       const envelope = await encryptJSON(patients);
-      if (envelope) { localStorage.setItem(dbKey(userId), JSON.stringify(envelope)); return; }
+      if (envelope) {
+        try {
+          await writeCopy(userId, envelope);
+          try { localStorage.removeItem(dbKey(userId)); } catch { /* storage blocked */ }
+          return;
+        } catch { /* no device database: use the old place */ }
+        localStorage.setItem(dbKey(userId), JSON.stringify(envelope));
+        return;
+      }
     }
     localStorage.setItem(dbKey(userId), JSON.stringify(patients));
-  } catch {}
+  } catch { /* storage full or blocked: the cloud copy is the one that counts */ }
+}
+
+// One write at a time per person, so an older list can never land after a newer one.
+const _copyWrites = new Map();
+function queueCopyWrite(userId) {
+  const done = (_copyWrites.get(userId) || Promise.resolve()).then(() => writeCopyToDisk(userId));
+  _copyWrites.set(userId, done);
+  return done;
+}
+
+// Typing changes the list on every keystroke. Locking and writing the whole list that often
+// made typing lag once a few documents were attached, so those writes wait until typing
+// pauses (and happen at least every few seconds, and when the page is hidden or closed).
+let COPY_WRITE_PAUSE_MS = 700;
+let COPY_WRITE_LONGEST_WAIT_MS = 4000;
+function setCopyWriteTimingForTests(pauseMs = 700, longestMs = 4000) { COPY_WRITE_PAUSE_MS = pauseMs; COPY_WRITE_LONGEST_WAIT_MS = longestMs; }
+const _copyTimers = new Map(); // userId -> { timer, since }
+
+function cancelPendingCopyWrite(userId) {
+  const t = _copyTimers.get(userId);
+  if (t) { clearTimeout(t.timer); _copyTimers.delete(userId); }
+}
+
+function persistPatientsLocalSoon(patients, userId) {
+  _patientCache.set(userId, patients); // in memory right away
+  const now = Date.now();
+  const since = _copyTimers.get(userId)?.since ?? now;
+  cancelPendingCopyWrite(userId);
+  const wait = Math.max(0, Math.min(COPY_WRITE_PAUSE_MS, since + COPY_WRITE_LONGEST_WAIT_MS - now));
+  _copyTimers.set(userId, { since, timer: setTimeout(() => { _copyTimers.delete(userId); queueCopyWrite(userId); }, wait) });
+}
+
+function flushPendingCopyWrites() {
+  for (const userId of [..._copyTimers.keys()]) { cancelPendingCopyWrite(userId); queueCopyWrite(userId); }
+}
+if (typeof window !== "undefined" && !window.__physioCopyFlushInstalled) {
+  window.__physioCopyFlushInstalled = true;
+  window.addEventListener("pagehide", flushPendingCopyWrites);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") flushPendingCopyWrites(); });
+}
+
+// Writes the saved copy now. The returned promise resolves when it has been written.
+function persistPatientsLocal(patients, userId) {
+  _patientCache.set(userId, patients);
+  cancelPendingCopyWrite(userId);
+  return queueCopyWrite(userId);
 }
 
 // For call sites that already have the authoritative list (e.g. just
@@ -702,6 +779,12 @@ async function persistPatientsLocal(patients, userId) {
 // localStorage.setItem it replaces was also fire-and-forget.
 function savePatientDBLocalOnly(patients, userId) {
   return persistPatientsLocal(patients, userId);
+}
+
+// Same, for the per-keystroke update while someone is typing: the list is current in memory at
+// once, the locked copy on the device is written when typing pauses.
+function savePatientDBLocalSoon(patients, userId) {
+  persistPatientsLocalSoon(patients, userId);
 }
 
 // The local copy is locked with a key made from the sign-in token (see
@@ -1755,7 +1838,7 @@ async function fetchPatientsFromSupabase(userId, { pageSize = PATIENT_PAGE_SIZE,
 // ── Exports for AppFull.jsx ──────────────────────────────────────────────────
 export {
   dbKey, draftKey,
-  loadPatientDB, savePatientDB, savePatientDBLocalOnly,
+  loadPatientDB, savePatientDB, savePatientDBLocalOnly, savePatientDBLocalSoon, flushPendingCopyWrites, setCopyWriteTimingForTests,
   hydrateLocalCache, clearPatientCache, forgetDeviceCopy, relockLocalCache,
   isSyncDirty, flushPendingSync,
   fetchPatientsFromSupabase, markPatientsSynced,
