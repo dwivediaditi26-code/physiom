@@ -1,5 +1,5 @@
 import { authenticateAndRateLimit } from './_lib/rateLimit.js';
-import { chatJson, providerOrder } from './_lib/llm.js';
+import { chatJson, providerOrder, skipNote } from './_lib/llm.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -110,6 +110,7 @@ Do not invent new information that isn't in the first-pass JSON or the narrative
     if (!extracted.ok) return res.status(extracted.status || 502).json({ error: extracted.error, ...(extracted.detail ? { detail: extracted.detail } : {}) });
     const firstPass = extracted.json;
     res.setHeader('X-AI-Provider', extracted.provider);
+    if (extracted.skipped?.length) res.setHeader('X-AI-Fallback', skipNote(extracted.skipped));
 
     // Verification is a strict-improvement layer, not a new point of
     // failure for a feature that already works stand-alone -- any problem

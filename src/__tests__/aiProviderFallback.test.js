@@ -6,7 +6,7 @@ import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 
 vi.mock("../../api/_lib/rateLimit.js", () => ({ authenticateAndRateLimit: vi.fn(async () => "test-user") }));
 
-import { chatJson, providerOrder } from "../../api/_lib/llm.js";
+import { chatJson, providerOrder, skipNote } from "../../api/_lib/llm.js";
 import handler from "../../api/parse.js";
 
 const groqOk = (obj) => ({ ok: true, status: 200, json: async () => ({ choices: [{ message: { content: JSON.stringify(obj) } }] }), text: async () => "" });
@@ -196,5 +196,35 @@ describe("admins see which AI answered, on screen", () => {
   test("a student sees nothing about it", async () => {
     const screen = await runWith({ admin: false, header: "gemini" });
     expect(screen.queryByTestId("ai-provider-note")).toBeNull();
+  });
+});
+
+describe("an admin can see why Gemini was skipped", () => {
+  test("chatJson reports the skipped provider and its reason, and skipNote makes a short header-safe line", async () => {
+    process.env.GROQ_API_KEY = "groq-key"; process.env.GEMINI_API_KEY = "gem-key"; process.env.AI_PROVIDER_ORDER = "gemini,groq";
+    global.fetch = vi.fn(async (url) => (isGemini(url)
+      ? { ok: false, status: 400, text: async () => JSON.stringify({ error: { code: 400, message: "API key not valid. Please pass a valid API key.", status: "INVALID_ARGUMENT" } }) }
+      : groqOk({ a: 1 })));
+    const r = await chatJson({ system: "S", user: "U" });
+    expect(r).toMatchObject({ ok: true, provider: "groq" });
+    expect(r.skipped).toHaveLength(1);
+    expect(skipNote(r.skipped)).toBe("gemini: Gemini error - API key not valid. Please pass a valid API key.");
+    expect(skipNote([{ provider: "gemini", error: "Gemini error", detail: "line1\nline2 \u2713" }])).not.toMatch(/[\n\u2713]/);
+    expect(skipNote([])).toBe("");
+  });
+  test("api/parse.js sends it as the X-AI-Fallback header, and not when nothing was skipped", async () => {
+    process.env.GROQ_API_KEY = "groq-key"; process.env.GEMINI_API_KEY = "gem-key"; process.env.AI_PROVIDER_ORDER = "gemini,groq";
+    const headers = {};
+    const res = { _status: 200, _json: null, setHeader: (k, v) => { headers[k] = v; }, status(c) { this._status = c; return this; }, json(o) { this._json = o; return this; }, end() { return this; } };
+    global.fetch = vi.fn(async (url) => (isGemini(url) ? limit429("quota exceeded") : groqOk({ chiefComplaint: "ok" })));
+    await handler({ method: "POST", body: { text: "Knee pain." } }, res);
+    expect(headers["X-AI-Provider"]).toBe("groq");
+    expect(headers["X-AI-Fallback"]).toMatch(/^gemini: Gemini error - quota exceeded/);
+    const h2 = {};
+    const res2 = { ...res, setHeader: (k, v) => { h2[k] = v; } };
+    global.fetch = vi.fn(async () => groqOk({ chiefComplaint: "ok" }));
+    process.env.AI_PROVIDER_ORDER = "groq,gemini";
+    await handler({ method: "POST", body: { text: "Knee pain." } }, res2);
+    expect(h2["X-AI-Fallback"]).toBeUndefined();
   });
 });

@@ -78,6 +78,16 @@ const CALLERS = { groq: callGroq, gemini: callGemini };
 // Ask for a JSON object. Returns { ok: true, json, provider } or
 // { ok: false, status, error, detail }. A provider that errors, returns nothing,
 // or returns text that is not valid JSON is skipped and the next one is tried.
+// One short, header-safe line about why a provider was skipped (no keys, no
+// patient text): Google/Groq error messages only say things like "API key not valid".
+export function skipNote(skipped = []) {
+  return skipped.map((s) => {
+    let msg = String(s.detail || '');
+    try { msg = JSON.parse(msg)?.error?.message || msg; } catch { /* plain text */ }
+    return `${s.provider}: ${s.error}${msg ? ` - ${msg}` : ''}`;
+  }).join(' | ').replace(/[^\x20-\x7E]/g, ' ').replace(/\s+/g, ' ').slice(0, 220);
+}
+
 export async function chatJson({ system, user, maxTokens = 3000, env = process.env }) {
   const order = providerOrder(env);
   if (!order.length) return { ok: false, status: 500, error: 'No AI key configured (set GROQ_API_KEY or GEMINI_API_KEY)' };
@@ -91,7 +101,8 @@ export async function chatJson({ system, user, maxTokens = 3000, env = process.e
     }
     if (result.ok) {
       try {
-        return { ok: true, json: JSON.parse(result.content), provider };
+        // `skipped` lists providers tried first that failed, so an admin can see why.
+        return { ok: true, json: JSON.parse(result.content), provider, skipped: failures.map(({ provider: p, error, detail }) => ({ provider: p, error, detail })) };
       } catch (parseErr) {
         result = { ok: false, status: 502, error: 'Malformed extraction JSON', detail: parseErr.message };
       }
