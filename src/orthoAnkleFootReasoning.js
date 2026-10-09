@@ -5,7 +5,7 @@
 import { runReasoningFromData } from "./reasoningEngine/index";
 import ankleEvidence from "./reasoningEngine/regions/ankle.evidence.json";
 import footEvidence from "./reasoningEngine/regions/foot.evidence.json";
-import { specialTestValue, joinMulti, tierOf } from "./reasoningHelpers.js";
+import { specialTestValue, joinMulti, tierOf, mergedRegionAnswers } from "./reasoningHelpers.js";
 
 const ROM_IDS = ["rom_adf", "rom_apf", "rom_ainv", "rom_aev"];
 const MMT_IDS = ["mmt_ta", "mmt_soleus", "mmt_tp", "mmt_peronls"];
@@ -26,7 +26,9 @@ footEvidence.diagnoses.forEach((m) => { SUPPORTING_TOTAL_BY_NAME[m.name] = m.sup
 function buildFlatAnkleFootData(data) {
   const flat = {};
   const subjective = data.subjective || {};
-  const regionData = subjective.regions?.ankleFoot || {};
+  // Answers are saved per region id (leg / ankle / foot); "ankleFoot" is the older
+  // single key, still read in case an old assessment used it.
+  const regionData = mergedRegionAnswers(subjective.regions, ["ankleFoot", "leg", "ankle", "foot"]);
 
   flat.cc_main = subjective.chiefComplaint || "";
   flat.cc_onset = subjective.onset || "";

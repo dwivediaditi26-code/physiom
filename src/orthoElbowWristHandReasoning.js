@@ -6,7 +6,7 @@ import { runReasoningFromData } from "./reasoningEngine/index";
 import elbowEvidence from "./reasoningEngine/regions/elbow.evidence.json";
 import wristEvidence from "./reasoningEngine/regions/wrist.evidence.json";
 import handEvidence from "./reasoningEngine/regions/hand.evidence.json";
-import { specialTestValue, joinMulti, tierOf } from "./reasoningHelpers.js";
+import { specialTestValue, joinMulti, tierOf, mergedRegionAnswers } from "./reasoningHelpers.js";
 
 const ELBOW_ROM_IDS = ["rom_eflex", "rom_eext", "rom_esup", "rom_epro"];
 const WRIST_ROM_IDS = ["rom_wflex", "rom_wext", "rom_wrad", "rom_wuln"];
@@ -71,7 +71,9 @@ function withEnginePhrases(value, rules) {
 function buildFlatElbowWristHandData(data) {
   const flat = {};
   const subjective = data.subjective || {};
-  const regionData = subjective.regions?.elbowWristHand || {};
+  // Answers are saved per region id (elbow / forearm / wrist / hand); "elbowWristHand"
+  // is the older single key, still read in case an old assessment used it.
+  const regionData = mergedRegionAnswers(subjective.regions, ["elbowWristHand", "elbow", "forearm", "wrist", "hand"]);
 
   flat.cc_main = subjective.chiefComplaint || "";
   flat.cc_onset = subjective.onset || "";

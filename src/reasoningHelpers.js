@@ -62,6 +62,31 @@ export function joinMulti(v) {
   return String(v);
 }
 
+// The Subjective form (and the AI intake) save each region's answers under that
+// region's OWN id -- subjective.regions.elbow, .wrist, .hand, .ankle, .foot. The
+// Elbow/Wrist/Hand and Ankle/Foot matchers want one set of answers for the whole
+// group, and used to read subjective.regions.elbowWristHand / .ankleFoot, which
+// nothing ever writes -- so every ticked answer was invisible to them and the
+// AI Objective Assessment showed "0%" for everything. This gathers the answers
+// of every region in the group (plus the group's own key, kept for older saved
+// data). Where two regions answered the same question the answers are joined; a
+// single-choice answer (the 24-hour pattern) keeps the first one given.
+export function mergedRegionAnswers(regions, ids) {
+  const out = {};
+  for (const id of ids) {
+    const answers = regions?.[id];
+    if (!answers || typeof answers !== "object") continue;
+    for (const [field, value] of Object.entries(answers)) {
+      const next = joinMulti(value);
+      if (!next) continue;
+      const have = out[field];
+      if (!have) out[field] = value;
+      else if (field !== "pattern" && joinMulti(have) !== next) out[field] = `${joinMulti(have)}, ${next}`;
+    }
+  }
+  return out;
+}
+
 // The plain-language label for one differential's strength of match.
 export function tierOf(d) {
   if (d.excluded) return "Unlikely";

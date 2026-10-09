@@ -22,26 +22,48 @@ const ELBOW = [{ id: "elbow", label: "Elbow" }];
 const WRIST = [{ id: "wrist", label: "Wrist" }];
 const BOTH = [{ id: "elbow", label: "Elbow" }, { id: "wrist", label: "Wrist" }];
 
-// A textbook tennis elbow, ticked the way the Subjective checklist records it.
-const tennisElbow = {
-  demographics: { age: "35" },
-  subjective: {
-    chiefComplaint: "Outer elbow pain",
-    regions: {
-      elbowWristHand: {
-        location: ["Lateral elbow"],
-        mechanism: ["Racquet sport (lateral elbow)", "Repetitive gripping / lifting"],
-        aggravating: ["Gripping", "Wrist extension against resistance"],
-        pattern: "Mechanical",
-        neuro: ["None"],
-        redFlags: ["None of the above"],
-      },
-    },
-  },
+// A textbook tennis elbow, ticked the way the Subjective checklist records it. The form
+// (and the AI intake) save the answers under the REGION'S OWN id -- regions.elbow -- as
+// "A, B" strings. (An earlier version of this test used regions.elbowWristHand, a key
+// nothing in the app writes, which is exactly how the real bug went unnoticed.)
+const tennisAnswers = {
+  location: "Lateral elbow",
+  mechanism: "Racquet sport (lateral elbow), Repetitive gripping / lifting",
+  aggravating: "Gripping, Wrist extension against resistance",
+  pattern: "Mechanical",
+  neuro: "None",
+  redFlags: "None of the above",
 };
+const withAnswers = (regions) => ({ demographics: { age: "35" }, subjective: { chiefComplaint: "Outer elbow pain", regions } });
+const tennisElbow = withAnswers({ elbow: tennisAnswers });
 
 const cardNames = () => [...document.querySelectorAll(".obj-match-card .obj-match-name")].map((n) => n.textContent);
 const WRIST_OR_HAND = /Trigger Finger|Carpal Tunnel|De Quervain|TFCC|Scapholunate|Scaphoid|Distal Radius|CMC|ECU|Digital Osteoarthritis|Dupuytren|Raynaud|Thumb Ulnar|Finger Sprain|Wrist Osteoarthritis/i;
+
+describe("Answers ticked in the Subjective form are what the matcher reads", () => {
+  it("regions.elbow (what the form really saves) is picked up and ranks tennis elbow first", () => {
+    const res = runElbowWristHandDifferential(tennisElbow, ELBOW);
+    expect(res.conditions[0].name).toMatch(/Lateral epicondylalgia/i);
+    expect(res.conditions[0].supportingMatched.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("the older regions.elbowWristHand key still works", () => {
+    const res = runElbowWristHandDifferential(withAnswers({ elbowWristHand: tennisAnswers }), ELBOW);
+    expect(res.conditions[0].name).toMatch(/Lateral epicondylalgia/i);
+  });
+
+  it("answers from Elbow and Wrist are both used when both are picked", () => {
+    const data = withAnswers({ elbow: tennisAnswers, wrist: { location: "Radial wrist / thumb side", aggravating: "Thumb movements" } });
+    const names = runElbowWristHandDifferential(data, BOTH).conditions.map((c) => c.name).join(" | ");
+    expect(names).toMatch(/Lateral epicondylalgia/i);
+    expect(names).toMatch(/Quervain|CMC|Trigger finger/i);
+  });
+
+  it("nothing ticked -> nothing supports any condition", () => {
+    const res = runElbowWristHandDifferential(withAnswers({ elbow: {} }), ELBOW);
+    expect(res.conditions.every((c) => c.supportingMatched.length === 0)).toBe(true);
+  });
+});
 
 describe("Elbow / Wrist / Hand matching only uses the regions that were picked", () => {
   const names = (res) => res.conditions.map((c) => c.name);
