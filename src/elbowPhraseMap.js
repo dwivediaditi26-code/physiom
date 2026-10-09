@@ -1,4 +1,4 @@
-// elbowPhraseMap.js -- DRAFT, for Aditi to review.
+// elbowPhraseMap.js -- DRAFT, for Aditi to review. (The matching engine itself is in phraseEngine.js.)
 //
 // Understands what a student types about an Elbow / Wrist / Hand complaint in
 // everyday words (English, Hinglish, Hindi in Devanagari) and suggests which of
@@ -16,6 +16,9 @@
 // Phrase notation:  "~word"  = a bare word that only counts when the student is
 // typing INTO that question's own box (e.g. "gripping" typed in "Aggravating
 // movement"). In a free story it is ignored, because on its own it proves nothing.
+
+import { createPhraseMatcher, WORDS } from "./phraseEngine.js";
+import { PATTERN_PHRASES, patternRules } from "./phrasePattern.js";
 
 export const ELBOW_PHRASES = {
   location: {
@@ -235,43 +238,7 @@ export const ELBOW_PHRASES = {
     ],
   },
 
-  pattern: {
-    "Constant": [
-      "~constant", "constant pain", "pain all the time", "pain all day and night", "pain 24 hours", "never goes away",
-      "never fully goes away", "always painful", "always there",
-      "hamesha dard", "hamesha rehta hai", "lagatar dard", "din raat dard", "dard kabhi khatam nahi hota",
-      "हमेशा दर्द", "लगातार दर्द", "दिन रात दर्द",
-    ],
-    "Intermittent": [
-      "~intermittent", "comes and goes", "on and off", "now and then", "occasional pain", "occasionally", "sometimes pain",
-      "kabhi kabhi dard", "kabhi hota hai kabhi nahi", "aata jata rehta hai", "thodi der ke liye aata hai",
-      "कभी कभी दर्द", "आता जाता रहता है", "थोड़ी देर के लिए आता है",
-    ],
-    "Worse in morning": [
-      "worse in the morning", "worse in morning", "worst in the morning", "stiff in the morning", "morning stiffness",
-      "first thing in the morning", "pain on waking", "pain when i wake up",
-      "subah zyada dard", "subah dard zyada hota hai", "subah uthte hi dard", "subah akdan",
-      "सुबह ज्यादा दर्द", "सुबह उठते ही दर्द", "सुबह अकड़न",
-    ],
-    "Worse at night": [
-      "worse at night", "worse during the night", "night pain", "pain at night", "pain wakes me up",
-      "wakes me up at night", "cannot sleep because of pain", "pain disturbs my sleep",
-      "raat ko dard", "raat ko zyada dard", "raat me dard badh", "raat ko neend nahi aati dard se",
-      "रात को दर्द", "रात में ज्यादा दर्द", "दर्द से नींद खुल जाती है",
-    ],
-    "Activity-related": [
-      "~activity related", "pain with activity", "pain only with activity", "pain when i use it", "pain only when using",
-      "only hurts when i move it", "hurts only during activity",
-      "kaam karne par dard", "kaam karte waqt dard", "sirf kaam karne par dard", "hilane par dard", "istemal karne par dard",
-      "काम करने पर दर्द", "सिर्फ काम करने पर दर्द", "इस्तेमाल करने पर दर्द",
-    ],
-    "Improves through the day": [
-      "improves through the day", "gets better during the day", "better as the day goes on", "eases through the day",
-      "loosens up during the day", "warms up", "better once i start moving",
-      "din me theek ho jata hai", "din chadhte theek", "chalne phirne se aaram", "hilne dulne se aaram",
-      "दिन में ठीक हो जाता है", "दिन चढ़ने पर आराम", "हिलने डुलने से आराम",
-    ],
-  },
+  pattern: PATTERN_PHRASES,
 
   neuro: {
     "None": [
@@ -361,415 +328,80 @@ export const ELBOW_PHRASES = {
   },
 };
 
-export const ELBOW_FIELDS = Object.keys(ELBOW_PHRASES);
-const SINGLE_CHOICE_FIELDS = new Set(["pattern"]);
 
-// ───────────────────────── normalising ─────────────────────────
-// Common Hinglish spellings -> one form. Phrases and typed text both go through this,
-// so a phrase written one way still matches the same word spelled another way.
-const HINGLISH = [
-  [/\b(kehni|kuhni|kohnee|kohani|kohni)\b/g, "kohni"],
-  [/\b(darad|dardd|dard)\b/g, "dard"],
-  [/\b(nahin|nahi|nhi|nahee)\b/g, "nahi"],
-  [/\b(sunn?pan|sunpan|sunnapan)\b/g, "sunnpan"],
-  [/\b(jhunjhuni|jhunjhunee|jhunjhunahat|jhanjhanahat)\b/g, "jhunjhuni"],
-  [/\b(ungli|unglee|ungliyan|ungliyon|unglian|ungliya|ungliyaan)\b/g, "ungli"],
-  [/\b(kalai|kalayi|kalaee)\b/g, "kalai"],
-  [/\b(angutha|angootha|anguthe|angoothe|angutho|anguthaa)\b/g, "angutha"],
-  [/\b(hatheli|hathheli)\b/g, "hatheli"],
-  [/\b(haath|hath|hathon|haathon)\b/g, "haath"],
-  [/\b(uthana|uthane|uthaana|uthaane|uthate|uthaate|uthata|uthati|uthayi|uthaya|uthaye)\b/g, "uthana"],
-  [/\b(pakadna|pakadne|pakadte|pakadta|pakadti|pakad|pakarna|pakarne|pakarte|pakar|pakadkar)\b/g, "pakad"],
-  [/\b(zyada|jyada|jyaada|zyaada)\b/g, "zyada"],
-  [/\b(subah|subha|savere)\b/g, "subah"],
-  [/\b(kamzor|kamjor|kamzori|kamjori|kamzoree)\b/g, "kamzor"],
-  [/\b(sujan|sujhan|sooji|suji|sooja|suja|soojan)\b/g, "sujan"],
-  [/\b(garam|garm|garum)\b/g, "garam"],
-  [/\b(laal|lal|laall)\b/g, "laal"],
-  [/\bgir (gaya|gayi|gaye|jata|jati|jate|gya)\b/g, "gir"],
-  [/\b(girne|girna|girta|girti|girte|gira|gire|giri|girgaya|girgayi)\b/g, "gir"],
-  [/\b(tedhi|tedha|tedhe)\b/g, "tedha"],
-  [/\btoot (gayi|gaya|gaye)\b/g, "toot"],
-  [/\b(tooti|toota|tuta|tuti|toot)\b/g, "toot"],
-  [/\b(badhta|badhti|badhne|badhna|badh rahi|badh raha|badh rahe|badh)\b/g, "badh"],
-  [/\b(failta|failti|failna|phailta|phailti|phailna|fail)\b/g, "fail"],
-  [/\b(chotein|chott|chot)\b/g, "chot"],
-  [/\blag (gayi|gaya|gaye)\b/g, "lag"],
-  [/\b(lagi|lagna|lagta|lagti|laga|lage|lagne|lag)\b/g, "lag"],
-  [/\b(phenkne|phenkna|phenka|fenkne|fenkna)\b/g, "phenkna"],
-  [/\b(chalane|chalana|chalate|chalata|chalani)\b/g, "chalana"],
-  [/\b(khelne|khelna|khelte|khelta|khelti|khela)\b/g, "khelna"],
-  [/\b(karne|karna|karte|karta|karti)\b/g, "karna"],
-  [/\b(hilane|hilana|hilne|hilna|hilte)\b/g, "hilna"],
-  [/\b(mudne|mudna|mudte|mudta|mudti|mudi|modne|modna|modti|mod kar|mod)\b/g, "mod"],
-  [/\b(dhone|dhona|dhote|dhoti|dhoya|dhoye)\b/g, "dhona"],
-];
-const DEVA = [
-  [/पकड(ना|ने|ते|ता|ती|कर)?/g, "पकड"],
-  [/टूट(ी|ा|े)?/g, "टूट"],
-  [/उठा(ना|ने|ते|ता|ती|या)/g, "उठाना"],
-  [/उंगली(यां|यों|याँ)?/g, "उंगली"],
-  [/अंगूठ[ाेों]/g, "अंगूठा"],
-  [/हाथ(ों)?/g, "हाथ"],
-  [/सूज(न|ी|ा)/g, "सूजन"],
-  [/गिर(ा|ी|ने|ना|ते|ता|ती|े)?/g, "गिर"],
-  [/नहीं|नही/g, "नहीं"],
-  [/कमजोर(ी)?|कमज़ोर(ी)?/g, "कमजोर"],
-];
-
-function canon(raw) {
-  let s = String(raw ?? "").normalize("NFC").toLowerCase();
-  s = s.replace(/[​-‍﻿]/g, "");
-  s = s.replace(/़/g, "");            // Devanagari nukta
-  s = s.replace(/ँ/g, "ं");      // chandrabindu -> anusvara
-  s = s.replace(/[’‘`´]/g, "'");
-  s = s.replace(/([a-z])'([a-z])/g, "$1$2"); // don't -> dont
-  s = s.replace(/'/g, "");
-  s = s.replace(/[।.;!?\n\r]+/g, " | "); // sentence ends
-  s = s.replace(/,/g, " , ");
-  s = s.replace(/[()/:"“”\-–—_+*#<>{}[\]=~]/g, " ");
-  for (const [re, to] of HINGLISH) s = s.replace(re, to);
-  for (const [re, to] of DEVA) s = s.replace(re, to);
-  s = s.replace(/\b(the|my|a|an)\b/g, " ");   // "back of my elbow" == "back of the elbow"
-  return s.replace(/\s+/g, " ").trim();
-}
-
-const NEGATORS = new Set(["no", "not", "never", "without", "none", "nothing", "neither", "nor", "nil",
-  "dont", "doesnt", "didnt", "isnt", "wasnt", "arent", "hasnt", "havent", "wont", "wouldnt",
-  "nahi", "bina", "bagair", "mat", "नहीं", "बिना", "बगैर", "मत"]);
-const NEGATORS_AFTER = new Set(["nahi", "नहीं"]);
-const RELIEF = new Set(["better", "relieved", "relief", "eases", "ease", "improves", "improve", "settles", "helps",
-  "aaram", "rahat", "आराम", "राहत"]);
-const CLAUSE_BREAKS = new Set(["|", "but", "however", "although", "though", "lekin", "magar", "लेकिन", "मगर", "परंतु", "किंतु"]);
-const CONNECTORS = new Set([",", "and", "or", "aur", "ya", "और", "या"]);
-
-// ───────────────────────── compiling ─────────────────────────
-const COMPILED = [];
-for (const field of ELBOW_FIELDS) {
-  for (const [option, list] of Object.entries(ELBOW_PHRASES[field])) {
-    for (const raw of list) {
-      const bare = raw.startsWith("~");
-      const tokens = canon(bare ? raw.slice(1) : raw).split(" ").filter((t) => t && t !== ",");
-      if (!tokens.length) continue;
-      const selfNegating = tokens.some((t) => NEGATORS.has(t));
-      COMPILED.push({ field, option, bare, tokens, selfNegating, key: tokens.join(" ") });
-    }
-  }
-}
-// The exact wording of each checklist option always maps to itself, so pasting or typing
-// the option's own text works. One- and two-word labels ("Constant", "Lifting", "None")
-// are bare: they only count inside that question's own box.
-const SEEN = new Set(COMPILED.map((c) => c.field + "|" + c.option + "|" + c.key));
-for (const field of ELBOW_FIELDS) {
-  for (const option of Object.keys(ELBOW_PHRASES[field])) {
-    const tokens = canon(option).split(" ").filter((t) => t && t !== ",");
-    const key = tokens.join(" ");
-    if (!tokens.length || SEEN.has(field + "|" + option + "|" + key)) continue;
-    COMPILED.push({ field, option, bare: tokens.length <= 2, tokens, selfNegating: tokens.some((t) => NEGATORS.has(t)), key });
-  }
-}
-// Longest phrase first, so "thumb side of the wrist" wins over "thumb".
-COMPILED.sort((a, b) => b.tokens.length - a.tokens.length || b.key.length - a.key.length);
-
-export const PHRASE_COUNT = COMPILED.length;
-export function phrasesFor(field, option) { return (ELBOW_PHRASES[field]?.[option] || []).map((p) => (p.startsWith("~") ? p.slice(1) : p)); }
-export function allPhrases() {
-  return COMPILED.map((c) => ({ field: c.field, option: c.option, bare: c.bare, key: c.key, selfNegating: c.selfNegating }));
-}
-
-
-// ───────────────────────── word-order rules ─────────────────────────
-// The phrase list needs the exact words in the exact order. Real typing is looser ("elbow outer
-// side", "glass pakadte hi dard hota hai"). A rule says: these WORD GROUPS must all appear close
-// together, in any order. Each group is a space-separated list of alternatives; "a_b" is the
-// two-word alternative "a b"; a trailing * matches any ending (lift* = lift, lifting, lifted).
-//
-// Safety, because a wrong suggestion misleads:
-//  - rules stay silent in a sentence that mentions another body part (back, knee, neck ...),
-//  - negation ("no", "not", "nahi") and "better with ..." kill a rule, as for phrases,
-//  - several rules also need a pain word, an arm word, or must not have a blocking word between.
-const g = (s) => s.split(/\s+/).filter(Boolean).map((alt) => alt.split("_").map((w) => {
-  const star = w.endsWith("*"); const c = canon(star ? w.slice(0, -1) : w);
-  return { w: c, prefix: star };
-}));
+const { PAIN: PAIN_W, NERVE: NERVE_W, SIDE: SIDE_W } = WORDS;
 const ELBOW_W = "elbow elbows kohni कोहनी";
 const WRIST_W = "wrist wrists kalai कलाई";
-const PAIN_W = "pain pains painful paining hurt hurts hurting ache aches aching sore soreness tender burning throbbing throbs throb dard दर्द dukh* दुख* takleef तकलीफ jalan जलन";
-const NERVE_W = "numb* tingl* sunn* jhunjhuni झनझनाहट सुन्न* pins_and_needles";
-const SIDE_W = "side taraf wala wale wali तरफ वाला वाले वाली ओर border edge";
 const ARM_W = "elbow* forearm wrist* hand hands arm arms thumb finger fingers palm kohni kalai haath ungli angutha hatheli कोहनी कलाई हाथ उंगली अंगूठा हथेली";
 // A sentence about another body part is not about this complaint.
 const FOREIGN_W = "back backs backache knee* neck shoulder* hip* ankle* foot feet leg legs spine waist thigh calf chest stomach head headache jaw toe* groin tooth teeth eye* ear throat kamar ghutn* ghutna gardan kandha कमर घुटन* गर्दन कंधा पैर पेट सिर घुटने";
 
-const RULES = [];
-const rule = (field, option, groups, win, o = {}) => RULES.push({ field, option, groups: groups.map(g), win, selfNeg: false, ...o, src: groups, srcFlags: o,
-  noComma: !!o.noComma, unless: o.unless ? g(o.unless) : null, block: o.block ? g(o.block) : null, blockBefore: o.blockBefore ? g(o.blockBefore) : null, ctx: o.ctx || null });
-const OPT = (field, i) => Object.keys(ELBOW_PHRASES[field])[i];
+const matcher = createPhraseMatcher({
+  phrases: ELBOW_PHRASES,
+  singleChoiceFields: ["pattern"],
+  noneOptions: { neuro: "None", redFlags: "None of the above" },
+  ownWords: ARM_W,
+  foreignWords: FOREIGN_W,
+  rules: ({ rule, O }) => {
+    const OPT = O;
+    // location
+    rule("location", OPT("location", 0), [ELBOW_W, "outer outside lateral bahar bahari बाहर बाहरी"], 5);
+    rule("location", OPT("location", 1), [ELBOW_W, "inner medial andruni अंदरूनी"], 5);
+    rule("location", OPT("location", 2), [ELBOW_W, "posterior behind olecranon back_side backside pichle pichla piche peeche पीछे पिछले पिछला"], 5);
+    rule("location", OPT("location", 3), [ELBOW_W, "anterior front crease aage samne आगे सामने"], 5);
+    rule("location", OPT("location", 9), ["thumb angutha अंगूठा", PAIN_W], 4, { unless: "side taraf wrist kalai कलाई radial ulnar" });
+    rule("location", OPT("location", 7), [WRIST_W, "thumb angutha अंगूठा radial", SIDE_W], 7);
+    rule("location", OPT("location", 8), [WRIST_W, "pinky little_finger chhoti छोटी ulnar", SIDE_W], 7);
+    // radiation
+    rule("radiation", OPT("radiation", 1), [ "radiat* spread* travel* goes going jata jati जाता जाती फैल* fail", "fingers finger ungli उंगली" ], 7, { ctx: "pain" });
+    rule("radiation", OPT("radiation", 3), [NERVE_W, "thumb angutha अंगूठा", "index middle first pehli tarjani two do"], 8);
+    rule("radiation", OPT("radiation", 4), [NERVE_W, "pinky little_finger little_fingers chhoti छोटी anamika अनामिका ring_finger ring_fingers"], 7);
+    // mechanism
+    rule("mechanism", OPT("mechanism", 1), ["fell fallen tripped landed gir गिर", "hand palm wrist outstretched"], 6, { unless: "asleep sleep ill sick love apart" });
+    rule("mechanism", OPT("mechanism", 1), ["put_hand_out put_hands_out stuck_hand_out stretched_hand_out", "fall fell stop save slipped tripped"], 10);
+    rule("mechanism", OPT("mechanism", 1), ["gir गिर", "haath_ke_bal haath_pe haath_par haath_tek हाथ_के_बल हाथ_पर हाथ_टेककर"], 6);
+    rule("mechanism", OPT("mechanism", 2), ["carry* lift* uthana उठाना", "heavy bhari भारी"], 5, { ctx: "painOrArm", blockBefore: PAIN_W });
+    rule("mechanism", OPT("mechanism", 2), ["paint* garden* gardening weed* hammer* wring* knead* scrub* mop* sweep* farming"], 1, { ctx: "painOrArm" });
+    rule("mechanism", OPT("mechanism", 4), ["throw* bowl* phenkna", "ball cricket javelin"], 4, { ctx: "painOrArm" });
+    rule("mechanism", OPT("mechanism", 5), ["carry* lift* hold* uthana उठाना god गोद pick*", "baby bachche bachcha बच्चे बच्चा infant newborn"], 4, { ctx: "painOrArm" });
+    rule("mechanism", OPT("mechanism", 6), ["chot चोट hit banged knocked bumped struck injured crash* collided landed_on", ELBOW_W], 4);
+    // aggravating
+    // "weak grip" is weakness, not painful gripping; "lifting my baby all day, pain at ..." is exposure, not
+    // "hurts when I lift" -- so these words between the two groups switch the rule off.
+    const A = { reliefKills: true, block: "weak* kamzor कमजोर all_day every_day daily din_bhar roz रोज" };
+    rule("aggravating", OPT("aggravating", 0), ["grip* grab* pakad पकड clutch*", PAIN_W], 7, A);
+    rule("aggravating", OPT("aggravating", 0), ["cup mug glass bottle jar handle pen racket hammer doorknob", PAIN_W], 10, A);
+    rule("aggravating", OPT("aggravating", 1), ["lift* uthana उठाना carry*", PAIN_W], 6, A);
+    rule("aggravating", OPT("aggravating", 6), ["grip* hold* pakad पकड steering", "steering long_drive* long_drives long_time for_long hours der lambe देर लंबे", PAIN_W], 9, { reliefKills: true, block: "weak* kamzor कमजोर" });
+    rule("aggravating", OPT("aggravating", 5), ["typing typed types mouse keyboard laptop computer टाइप माउस कीबोर्ड कंप्यूटर type_lot type_all type_on i_type type_report* type_email* type_notes", PAIN_W], 7, { reliefKills: true, block: "weak* kamzor कमजोर" });
+    rule("aggravating", OPT("aggravating", 4), ["thumb angutha अंगूठा", "move* moving movement* use using chalana texting scrolling mobile phone hilna हिलाना हिलने", PAIN_W], 7, A);
+    patternRules({ rule, O });
+    // neuro
+    rule("neuro", OPT("neuro", 1), [NERVE_W, "night raat रात sleep* neend नींद wake* shake*"], 12, { unless: "elbow kohni कोहनी bent bend* flex*" });
+    rule("neuro", OPT("neuro", 2), [NERVE_W, "bent bend* bending flex* mod मोड*", ELBOW_W], 12);
+    rule("neuro", OPT("neuro", 3), ["weak* kamzor कमजोर cannot cant unable", "grip* hold* pakad पकड pen cup glass bottle jar things objects"], 5, { selfNeg: true });
+    rule("neuro", OPT("neuro", 4), ["drop* chhut* छूट* gir गिर slip*", "things objects cup* glass phone pen keys plate* bottle* coin* cheez* चीज* saman सामान"], 5);
+    rule("neuro", OPT("neuro", 5), ["wast* shrunk shrink* thin* flat hollow patl* पतल* sookh* सूख*", "muscle* mansapeshi* मांसपेशी*"], 6);
+    // red flags
+    rule("redFlags", OPT("redFlags", 0), ["bone haddi हड्डी", "broken break* bent crooked toot टूट tedha टेढ़"], 5);
+    rule("redFlags", OPT("redFlags", 0), ["looks lag लग dikh* दिख*", "bent crooked deformed tedha टेढ़*", ARM_W], 7);
+    rule("redFlags", OPT("redFlags", 0), ["heard suna सुना", "snap* crack* pop*"], 3);
+    rule("redFlags", OPT("redFlags", 0), ["fracture fractured broken", "think thought suspect* lag लग might maybe"], 5);
+    rule("redFlags", OPT("redFlags", 3), ["swell* sujan सूजन", "increas* growing bigger doubled doubling tripled ballooned ballooning badh बढ़ rapid* fast quickly tezi तेजी jaldi"], 6);
+    rule("redFlags", OPT("redFlags", 4), ["hot warm garam गर्म* गरम* गर्मी heat*", "red laal लाल", "swollen swelling puffy sujan सूजन सूजी"], 8);
+    rule("redFlags", OPT("redFlags", 4), ["hot warm garam गर्म* गरम*", "swollen swelling sujan सूजन", "elbow wrist joint kohni kalai कोहनी कलाई जोड़ haath"], 8);
+    rule("redFlags", OPT("redFlags", 5), ["both dono दोनों", ARM_W], 3);
+    rule("redFlags", OPT("redFlags", 1), ["thumb angutha अंगूठा snuffbox scaphoid", "fall fell falling gir गिर", "pain painful sore tender dard दर्द"], 10, { unless: "asleep sleep" });
+    rule("redFlags", OPT("redFlags", 2), ["finger ungli उंगली", "straighten* extend* seedhi सीधी सीधा", "sudden* achanak अचानक"], 12, { selfNeg: true });
+  },
+});
 
-// location
-rule("location", OPT("location", 0), [ELBOW_W, "outer outside lateral bahar bahari बाहर बाहरी"], 5);
-rule("location", OPT("location", 1), [ELBOW_W, "inner medial andruni अंदरूनी"], 5);
-rule("location", OPT("location", 2), [ELBOW_W, "posterior behind olecranon back_side backside pichle pichla piche peeche पीछे पिछले पिछला"], 5);
-rule("location", OPT("location", 3), [ELBOW_W, "anterior front crease aage samne आगे सामने"], 5);
-rule("location", OPT("location", 9), ["thumb angutha अंगूठा", PAIN_W], 4, { unless: "side taraf wrist kalai कलाई radial ulnar" });
-rule("location", OPT("location", 7), [WRIST_W, "thumb angutha अंगूठा radial", SIDE_W], 7);
-rule("location", OPT("location", 8), [WRIST_W, "pinky little_finger chhoti छोटी ulnar", SIDE_W], 7);
-// radiation
-rule("radiation", OPT("radiation", 1), [ "radiat* spread* travel* goes going jata jati जाता जाती फैल* fail", "fingers finger ungli उंगली" ], 7, { ctx: "pain" });
-rule("radiation", OPT("radiation", 3), [NERVE_W, "thumb angutha अंगूठा", "index middle first pehli tarjani two do"], 8);
-rule("radiation", OPT("radiation", 4), [NERVE_W, "pinky little_finger little_fingers chhoti छोटी anamika अनामिका ring_finger ring_fingers"], 7);
-// mechanism
-rule("mechanism", OPT("mechanism", 1), ["fell fallen tripped landed gir गिर", "hand palm wrist outstretched"], 6, { unless: "asleep sleep ill sick love apart" });
-rule("mechanism", OPT("mechanism", 1), ["put_hand_out put_hands_out stuck_hand_out stretched_hand_out", "fall fell stop save slipped tripped"], 10);
-rule("mechanism", OPT("mechanism", 1), ["gir गिर", "haath_ke_bal haath_pe haath_par haath_tek हाथ_के_बल हाथ_पर हाथ_टेककर"], 6);
-rule("mechanism", OPT("mechanism", 2), ["carry* lift* uthana उठाना", "heavy bhari भारी"], 5, { ctx: "painOrArm", blockBefore: PAIN_W });
-rule("mechanism", OPT("mechanism", 2), ["paint* garden* gardening weed* hammer* wring* knead* scrub* mop* sweep* farming"], 1, { ctx: "painOrArm" });
-rule("mechanism", OPT("mechanism", 4), ["throw* bowl* phenkna", "ball cricket javelin"], 4, { ctx: "painOrArm" });
-rule("mechanism", OPT("mechanism", 5), ["carry* lift* hold* uthana उठाना god गोद pick*", "baby bachche bachcha बच्चे बच्चा infant newborn"], 4, { ctx: "painOrArm" });
-rule("mechanism", OPT("mechanism", 6), ["chot चोट hit banged knocked bumped struck injured crash* collided landed_on", ELBOW_W], 4);
-// aggravating
-// "weak grip" is weakness, not painful gripping; "lifting my baby all day, pain at ..." is exposure, not
-// "hurts when I lift" -- so these words between the two groups switch the rule off.
-const A = { reliefKills: true, block: "weak* kamzor कमजोर all_day every_day daily din_bhar roz रोज" };
-rule("aggravating", OPT("aggravating", 0), ["grip* grab* pakad पकड clutch*", PAIN_W], 7, A);
-rule("aggravating", OPT("aggravating", 0), ["cup mug glass bottle jar handle pen racket hammer doorknob", PAIN_W], 10, A);
-rule("aggravating", OPT("aggravating", 1), ["lift* uthana उठाना carry*", PAIN_W], 6, A);
-rule("aggravating", OPT("aggravating", 6), ["grip* hold* pakad पकड steering", "steering long_drive* long_drives long_time for_long hours der lambe देर लंबे", PAIN_W], 9, { reliefKills: true, block: "weak* kamzor कमजोर" });
-rule("aggravating", OPT("aggravating", 5), ["typing typed types mouse keyboard laptop computer टाइप माउस कीबोर्ड कंप्यूटर type_lot type_all type_on i_type type_report* type_email* type_notes", PAIN_W], 7, { reliefKills: true, block: "weak* kamzor कमजोर" });
-rule("aggravating", OPT("aggravating", 4), ["thumb angutha अंगूठा", "move* moving movement* use using chalana texting scrolling mobile phone hilna हिलाना हिलने", PAIN_W], 7, A);
-// pattern
-rule("pattern", OPT("pattern", 0), [PAIN_W, "all_day all_time whole_day entire_day whole_time day_and_night 24_hours constantly never_stops never_stop nonstop non_stop din_bhar har_waqt har_samay हर_समय हर_वक्त lagatar लगातार din_raat दिन_रात"], 5,
-  { selfNeg: true, noComma: true, block: "after when while during from if only jab जब" });
-rule("pattern", OPT("pattern", 0), ["never", "away stops ends eases go goes", PAIN_W], 6, { selfNeg: true });
-rule("pattern", OPT("pattern", 1), ["sometimes occasionally some_days on_some_days kabhi_kabhi कभी_कभी at_times now_and_then", PAIN_W], 6);
-rule("pattern", OPT("pattern", 2), ["morning subah सुबह wake* uthte uthne", "worse worst most mostly stiff* zyada ज्यादा akdan akad* अकड* first"], 6, { ctx: "pain", reliefKills: true });
-rule("pattern", OPT("pattern", 2), ["out_of_bed get_up getting_up", "first most worst worse mostly"], 8, { ctx: "pain", reliefKills: true });
-rule("pattern", OPT("pattern", 2), ["morning mornings subah सुबह", PAIN_W], 4, { reliefKills: true, noComma: true, block: "only when while if type" });
-rule("pattern", OPT("pattern", 3), ["night raat रात", "worse worst more zyada ज्यादा badh bad"], 5, { ctx: "pain", reliefKills: true });
-// "wakes me at night" is night pain, but "hurts most when I wake up" is morning pain
-rule("pattern", OPT("pattern", 3), ["wakes_me woke_me waking_me wake_me wake_up_at wake_up_in wake_up_during jag jaag जाग* disturb* neend नींद sleep", PAIN_W], 8, { reliefKills: true, noComma: true, unless: "morning mornings subah सुबह first_thing out_of_bed get_up" });
-rule("pattern", OPT("pattern", 2), ["wake_up waking_up woke_up उठते उठने", PAIN_W], 5, { reliefKills: true, noComma: true, unless: "night raat रात at_night" });
-rule("pattern", OPT("pattern", 3), ["night raat रात", PAIN_W], 4, { reliefKills: true, noComma: true });
-rule("pattern", OPT("pattern", 4), ["only sirf सिर्फ", "use* using work* activity play* kaam काम move* moving hilna", PAIN_W], 8);
-rule("pattern", OPT("pattern", 4), ["kaam काम", "dauran दौरान waqt वक्त samay समय", PAIN_W], 7);
-rule("pattern", OPT("pattern", 5), ["better improves improve* eases settles aaram आराम राहत loosen* warm*", "day din दिन moving move* movement activity hours hilna चलने हिलने"], 6, { ctx: "painOrArm" });
-// neuro
-rule("neuro", OPT("neuro", 1), [NERVE_W, "night raat रात sleep* neend नींद wake* shake*"], 12, { unless: "elbow kohni कोहनी bent bend* flex*" });
-rule("neuro", OPT("neuro", 2), [NERVE_W, "bent bend* bending flex* mod मोड*", ELBOW_W], 12);
-rule("neuro", OPT("neuro", 3), ["weak* kamzor कमजोर cannot cant unable", "grip* hold* pakad पकड pen cup glass bottle jar things objects"], 5, { selfNeg: true });
-rule("neuro", OPT("neuro", 4), ["drop* chhut* छूट* gir गिर slip*", "things objects cup* glass phone pen keys plate* bottle* coin* cheez* चीज* saman सामान"], 5);
-rule("neuro", OPT("neuro", 5), ["wast* shrunk shrink* thin* flat hollow patl* पतल* sookh* सूख*", "muscle* mansapeshi* मांसपेशी*"], 6);
-// red flags
-rule("redFlags", OPT("redFlags", 0), ["bone haddi हड्डी", "broken break* bent crooked toot टूट tedha टेढ़"], 5);
-rule("redFlags", OPT("redFlags", 0), ["looks lag लग dikh* दिख*", "bent crooked deformed tedha टेढ़*", ARM_W], 7);
-rule("redFlags", OPT("redFlags", 0), ["heard suna सुना", "snap* crack* pop*"], 3);
-rule("redFlags", OPT("redFlags", 0), ["fracture fractured broken", "think thought suspect* lag लग might maybe"], 5);
-rule("redFlags", OPT("redFlags", 3), ["swell* sujan सूजन", "increas* growing bigger doubled doubling tripled ballooned ballooning badh बढ़ rapid* fast quickly tezi तेजी jaldi"], 6);
-rule("redFlags", OPT("redFlags", 4), ["hot warm garam गर्म* गरम* गर्मी heat*", "red laal लाल", "swollen swelling puffy sujan सूजन सूजी"], 8);
-rule("redFlags", OPT("redFlags", 4), ["hot warm garam गर्म* गरम*", "swollen swelling sujan सूजन", "elbow wrist joint kohni kalai कोहनी कलाई जोड़ haath"], 8);
-rule("redFlags", OPT("redFlags", 5), ["both dono दोनों", ARM_W], 3);
-rule("redFlags", OPT("redFlags", 1), ["thumb angutha अंगूठा snuffbox scaphoid", "fall fell falling gir गिर", "pain painful sore tender dard दर्द"], 10, { unless: "asleep sleep" });
-rule("redFlags", OPT("redFlags", 2), ["finger ungli उंगली", "straighten* extend* seedhi सीधी सीधा", "sudden* achanak अचानक"], 12, { selfNeg: true });
-
-function patMatchAt(tokens, i, alt) {
-  if (i + alt.length > tokens.length) return false;
-  for (let j = 0; j < alt.length; j++) {
-    const t = tokens[i + j], p = alt[j];
-    if (p.prefix ? !t.startsWith(p.w) : t !== p.w) return false;
-  }
-  return true;
-}
-// Every place a group occurs: [{s, e}]
-function groupHits(tokens, group) {
-  const hits = [];
-  for (let i = 0; i < tokens.length; i++) for (const alt of group) if (patMatchAt(tokens, i, alt)) hits.push({ s: i, e: i + alt.length });
-  return hits;
-}
-const anyWord = (tokens, group) => groupHits(tokens, group).length > 0;
-const FOREIGN = g(FOREIGN_W), PAIN = g(PAIN_W), ARM = g(ARM_W);
-const OTHERS = g("friend friends colleague colleagues neighbour neighbor dost");
-
-// Smallest span that holds one hit from every group without overlapping hits.
-function bestSpan(hitLists, win) {
-  let best = null;
-  const pick = (gi, chosen) => {
-    if (gi === hitLists.length) {
-      const s = Math.min(...chosen.map((h) => h.s)), e = Math.max(...chosen.map((h) => h.e));
-      if (e - s <= win && (!best || e - s < best.e - best.s)) best = { s, e };
-      return;
-    }
-    for (const h of hitLists[gi]) {
-      if (chosen.some((c) => h.s < c.e && c.s < h.e)) continue;
-      pick(gi + 1, [...chosen, h]);
-    }
-  };
-  pick(0, []);
-  return best;
-}
-
-// For the review sheet: each rule in words (original word lists, not the compiled form).
-export function describeRules() {
-  return RULES.map((r) => ({ field: r.field, option: r.option, groups: r.src, window: r.win, flags: r.srcFlags }));
-}
-export const RULE_COUNT = RULES.length;
-
-const RULE_CHUNK = 80;
-const RULE_MAX_TOKENS = 400; // a real note is a few dozen words; a huge paste must not slow the screen
-function understandByRules(allTokens, allCommaBefore, fields) {
-  const tokens = allTokens.slice(0, RULE_MAX_TOKENS), commaBefore = allCommaBefore.slice(0, RULE_MAX_TOKENS);
-  if (tokens.length <= RULE_CHUNK) return understandByRulesChunk(tokens, commaBefore, fields);
-  const seen = new Set(); const out = [];
-  for (let s = 0; s < tokens.length; s += RULE_CHUNK / 2) {
-    const part = tokens.slice(s, s + RULE_CHUNK);
-    for (const r of understandByRulesChunk(part, commaBefore.slice(s, s + RULE_CHUNK), fields)) {
-      const key = r.field + "|" + r.option; if (!seen.has(key)) { seen.add(key); out.push(r); }
-    }
-    if (s + RULE_CHUNK >= tokens.length) break;
-  }
-  return out;
-}
-function understandByRulesChunk(tokens, commaBefore, fields) {
-  if (!RULES.length) return [];
-  const out = [];
-  const wordsBefore = (idx, n) => {
-    const w = []; let i = idx - 1;
-    if (idx < tokens.length && commaBefore[idx]) return w;
-    while (i >= 0 && w.length < n) { w.push(tokens[i]); if (commaBefore[i]) break; i--; }
-    return w;
-  };
-  const wordsAfter = (idx, n) => { const w = []; for (let i = idx; i < tokens.length && w.length < n; i++) { if (commaBefore[i]) break; w.push(tokens[i]); } return w; };
-  const hasPain = anyWord(tokens, PAIN), hasArm = anyWord(tokens, ARM);
-  for (const r of RULES) {
-    if (!fields.has(r.field)) continue;
-    if (r.ctx === "pain" && !hasPain) continue;
-    if (r.ctx === "painOrArm" && !hasPain && !hasArm) continue;
-    if (r.unless && anyWord(tokens, r.unless)) continue;
-    const lists = r.groups.map((grp) => groupHits(tokens, grp));
-    if (lists.some((l) => !l.length)) continue;
-    const span = bestSpan(lists, r.win);
-    if (!span) continue;
-    const inside = tokens.slice(span.s, span.e);
-    if (r.noComma && commaBefore.slice(span.s + 1, span.e).some(Boolean)) continue;
-    if (r.block && groupHits(inside, r.block).length) continue;
-    if (r.blockBefore && groupHits(wordsBefore(span.s, 3), r.blockBefore).length) continue;
-    if (!r.selfNeg) {
-      if (inside.some((t) => NEGATORS.has(t))) continue;
-      if (wordsBefore(span.s, 4).some((t) => NEGATORS.has(t))) continue;
-      if (wordsAfter(span.e, 3).some((t) => NEGATORS_AFTER.has(t))) continue;
-    }
-    if (r.reliefKills && (inside.some((t) => RELIEF.has(t)) || wordsBefore(span.s, 5).some((t) => RELIEF.has(t)))) continue;
-    out.push({ field: r.field, option: r.option, phrase: "rule" });
-  }
-  return out;
-}
-
-function matchesAt(tokens, start, phraseTokens) {
-  if (start + phraseTokens.length > tokens.length) return false;
-  for (let i = 0; i < phraseTokens.length; i++) if (tokens[start + i] !== phraseTokens[i]) return false;
-  return true;
-}
-
-// Splits canonical text into words plus, for each word, whether a comma sits just before it.
-function wordsAndCommas(tokens) {
-  const words = []; const commaBefore = [];
-  let pendingComma = false;
-  for (const t of tokens) {
-    if (t === ",") { pendingComma = true; continue; }
-    words.push(t); commaBefore.push(pendingComma); pendingComma = false;
-  }
-  return { words, commaBefore };
-}
-
-function understandClause(rawTokens, fields, { bareAllowed }) {
-  const { words: tokens, commaBefore } = wordsAndCommas(rawTokens);
-  // "my back hurts when I lift", "neck pain is worse at night": about another body part, no arm word -> not ours.
-  if (anyWord(tokens, FOREIGN) && !anyWord(tokens, ARM)) return [];
-  if (anyWord(tokens, OTHERS)) return []; // "my friend has tennis elbow"
-  const claimed = new Array(tokens.length).fill(false);
-  const found = [];
-  for (const c of COMPILED) {
-    if (!fields.has(c.field)) continue;
-    if (c.bare && !bareAllowed) continue;
-    for (let s = 0; s + c.tokens.length <= tokens.length; s++) {
-      if (!matchesAt(tokens, s, c.tokens)) continue;
-      const e = s + c.tokens.length;
-      if (claimed.slice(s, e).some(Boolean)) continue;
-      for (let i = s; i < e; i++) claimed[i] = true;
-      found.push({ c, s, e });
-    }
-  }
-  found.sort((a, b) => a.s - b.s);
-
-  // The words just before a match, never reaching back across a comma.
-  const wordsBefore = (idx, n) => {
-    const out = []; let i = idx - 1;
-    if (idx < tokens.length && commaBefore[idx]) return out;
-    while (i >= 0 && out.length < n) { out.push(tokens[i]); if (commaBefore[i]) break; i--; }
-    return out;
-  };
-  // The words just after a match, never reaching forward across a comma.
-  const wordsAfter = (idx, n) => {
-    const out = [];
-    for (let i = idx; i < tokens.length && out.length < n; i++) { if (commaBefore[i]) break; out.push(tokens[i]); }
-    return out;
-  };
-  const results = [];
-  let prev = null;
-  for (const f of found) {
-    let negated = false;
-    if (!f.c.selfNegating) {
-      negated = wordsBefore(f.s, 4).some((t) => NEGATORS.has(t));
-      if (!negated) negated = wordsAfter(f.e, 3).some((t) => NEGATORS_AFTER.has(t));
-      // "no tennis or badminton" / "no tennis, badminton": the "no" reaches the next item of the list
-      if (!negated && prev && prev.negated && f.s > 0) {
-        const viaWord = CONNECTORS.has(tokens[f.s - 1]) && prev.e <= f.s - 1;
-        const viaComma = commaBefore[f.s] && prev.e === f.s;
-        if (viaWord || viaComma) negated = true;
-      }
-    }
-    // "better with gripping" is relief, not something that makes it worse
-    if (!negated && f.c.field === "aggravating" && wordsBefore(f.s, 5).some((t) => RELIEF.has(t))) negated = true;
-    results.push({ ...f, negated });
-    prev = results[results.length - 1];
-  }
-  const fromPhrases = results.filter((r) => !r.negated);
-  const fromRules = understandByRules(tokens, commaBefore, fields)
-    .map((x) => ({ c: { field: x.field, option: x.option, key: x.phrase } }));
-  return [...fromPhrases, ...fromRules];
-}
-
-function runUnderstanding(text, fields, bareAllowed) {
-  const tokens = canon(text).split(" ").filter(Boolean);
-  const clauses = []; let cur = [];
-  for (const t of tokens) { if (CLAUSE_BREAKS.has(t)) { if (cur.length) clauses.push(cur); cur = []; } else cur.push(t); }
-  if (cur.length) clauses.push(cur);
-  const seen = new Set(); const suggestions = [];
-  for (const clause of clauses) {
-    for (const r of understandClause(clause, fields, { bareAllowed })) {
-      const k = r.c.field + "|" + r.c.option;
-      if (seen.has(k)) continue;
-      seen.add(k);
-      suggestions.push({ field: r.c.field, option: r.c.option, phrase: r.c.key });
-    }
-  }
-  // "None" means no nerve symptoms at all -- never suggest it next to a symptom.
-  const hasNeuroSymptom = suggestions.some((s) => s.field === "neuro" && s.option !== "None");
-  const hasRedFlag = suggestions.some((s) => s.field === "redFlags" && s.option !== "None of the above");
-  const clean = suggestions.filter((s) => !(s.field === "neuro" && s.option === "None" && hasNeuroSymptom)
-    && !(s.field === "redFlags" && s.option === "None of the above" && hasRedFlag));
-  const byField = {};
-  for (const s of clean) (byField[s.field] ||= []).push(s.option);
-  const ambiguous = Object.keys(byField).filter((f) => SINGLE_CHOICE_FIELDS.has(f) && byField[f].length > 1);
-  return { suggestions: clean, byField, ambiguous };
-}
-
-// The student typed into ONE question's own box: bare words count.
-export function understandField(fieldId, text) {
-  if (!ELBOW_PHRASES[fieldId]) return { suggestions: [], byField: {}, ambiguous: [] };
-  return runUnderstanding(text, new Set([fieldId]), true);
-}
-
-// The student wrote a free story: only phrases that carry their own context count.
-export function understandStory(text) {
-  return runUnderstanding(text, new Set(ELBOW_FIELDS), false);
-}
+export const ELBOW_FIELDS = matcher.fields;
+export const FIELDS = matcher.fields;
+export const PHRASE_COUNT = matcher.PHRASE_COUNT;
+export const RULE_COUNT = matcher.RULE_COUNT;
+export const phrasesFor = matcher.phrasesFor;
+export const allPhrases = matcher.allPhrases;
+export const describeRules = matcher.describeRules;
+export const understandField = matcher.understandField;
+export const understandStory = matcher.understandStory;

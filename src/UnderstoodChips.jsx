@@ -2,18 +2,25 @@
 //
 // Shown under a Subjective question (or under the free-story box) while a student types in their own
 // words. It only SUGGESTS: nothing is ticked until the student taps a chip. Uses the everyday-phrase
-// matcher (elbowPhraseMap.js: no AI, no network, no cost). Elbow / Wrist / Hand only for now.
+// matcher of the region (elbowPhraseMap.js, shoulderPhraseMap.js ...: no AI, no network, no cost).
 //
-// The matcher is big (hundreds of phrases and rules), so it is loaded the first time someone types,
-// not with the app.
+// Each matcher is big (hundreds of phrases and rules), so it is loaded the first time someone types in that
+// region, not with the app.
 import React, { useEffect, useMemo, useState } from "react";
 import { splitMultiValue } from "./orthoFieldKit.jsx";
 
-// Which questions have phrases, per region group (the 7 that change the AI Objective Assessment ranking).
+// Which questions have phrases, per region group (the ones that change the AI Objective Assessment ranking).
 export const PHRASE_FIELDS = {
   elbowWristHand: ["location", "radiation", "mechanism", "aggravating", "pattern", "neuro", "redFlags"],
+  shoulder: ["mechanism", "aggravating", "relieving", "pattern", "radiation", "redFlags"],
+};
+// How to load each region's matcher (a separate chunk, fetched on first use).
+const MATCHER_LOADERS = {
+  elbowWristHand: () => import("./elbowPhraseMap.js"),
+  shoulder: () => import("./shoulderPhraseMap.js"),
 };
 export const hasPhrases = (contentKey, fieldId) => !!PHRASE_FIELDS[contentKey]?.includes(fieldId);
+const hasRegionPhrases = (contentKey) => !!PHRASE_FIELDS[contentKey];
 
 // Wait for a short pause in typing before suggesting, so a chip does not flash up and vanish mid-sentence
 // ("tennis ... nahi khelta": the "nahi" at the end cancels it).
@@ -28,15 +35,17 @@ function useDebounced(value, ms) {
   return v;
 }
 
-let loadedMatcher = null;
-function useMatcher(active) {
-  const [matcher, setMatcher] = useState(loadedMatcher);
+const loadedMatchers = {};
+function useMatcher(contentKey, active) {
+  const [matcher, setMatcher] = useState(loadedMatchers[contentKey] || null);
   useEffect(() => {
-    if (!active || matcher) return undefined;
+    const load = MATCHER_LOADERS[contentKey];
+    if (!active || !load) return undefined;
+    if (loadedMatchers[contentKey]) { setMatcher(loadedMatchers[contentKey]); return undefined; }
     let alive = true;
-    import("./elbowPhraseMap.js").then((m) => { loadedMatcher = m; if (alive) setMatcher(m); }).catch(() => {});
+    load().then((m) => { loadedMatchers[contentKey] = m; if (alive) setMatcher(m); }).catch(() => {});
     return () => { alive = false; };
-  }, [active, matcher]);
+  }, [contentKey, active]);
   return matcher;
 }
 
@@ -61,7 +70,7 @@ const isAlreadyChosen = (field, value, option) =>
 export default function UnderstoodChips({ mode = "field", contentKey, field, value, fields, regionData, text, onPick }) {
   const typedNow = String(mode === "story" ? text ?? "" : value ?? "");
   const typed = useDebounced(typedNow, PAUSE_MS); // what to understand: after a pause
-  const matcher = useMatcher(typedNow.trim().length >= 3);
+  const matcher = useMatcher(contentKey, typedNow.trim().length >= 3 && hasRegionPhrases(contentKey));
 
   // Understood from `typed` (after the pause), but "already ticked" is checked against the live value,
   // so a tapped chip disappears at once.
