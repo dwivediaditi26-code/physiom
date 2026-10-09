@@ -53,7 +53,7 @@ import { runShoulderDifferential, hasShoulderChecklistData } from "./orthoShould
 import { runHipDifferential, hasHipChecklistData } from "./orthoHipReasoning.js";
 import { runKneeDifferential, hasKneeChecklistData } from "./orthoKneeReasoning.js";
 import { runAnkleFootDifferential, hasAnkleFootChecklistData } from "./orthoAnkleFootReasoning.js";
-import { runElbowWristHandDifferential, hasElbowWristHandChecklistData } from "./orthoElbowWristHandReasoning.js";
+import { runElbowWristHandDifferential, hasElbowWristHandChecklistData, elbowWristHandOrderFor } from "./orthoElbowWristHandReasoning.js";
 import cervicalConditionsRaw from "./cervicalConditions.json";
 import thoracicConditionsRaw from "./thoracicConditions.json";
 import lumbarConditionsRaw from "./lumbarConditions.json";
@@ -574,7 +574,9 @@ const REGION_CONFIGS = [
     key: "elbowWristHand", label: "Elbow / Wrist / Hand", schema: "v2",
     matchesRegion: (r) => ["elbow", "forearm", "wrist", "hand"].includes(r.id),
     hasData: (data) => hasElbowWristHandChecklistData(data),
-    run: (data) => runElbowWristHandDifferential(data),
+    run: (data, regions) => runElbowWristHandDifferential(data, regions),
+    // Only the conditions of the region(s) picked (Elbow -> elbow conditions).
+    orderFor: (regions) => elbowWristHandOrderFor(ELBOW_WRIST_HAND_CONDITION_ORDER, regions),
     matchByName: true, nameIdMap: ELBOW_WRIST_HAND_ID_BY_NAME,
     conditions: ELBOW_WRIST_HAND_CONDITIONS, order: ELBOW_WRIST_HAND_CONDITION_ORDER,
     getRedFlag: evidenceModelRedFlag,
@@ -825,7 +827,7 @@ function combinedMatchPct(m, obj) {
   return Math.round(base + headroom * (obj.matched / obj.total));
 }
 
-function ConditionTabs({ conditions, order, matchById, objSupportById, activeId, onSelect }) {
+function ConditionTabs({ conditions, order, matchById, objSupportById, activeId, onSelect, hasMatchEvidence = true }) {
   return (
     <div className="obj-match-row">
       {order.map((id, i) => {
@@ -833,6 +835,9 @@ function ConditionTabs({ conditions, order, matchById, objSupportById, activeId,
         if (!c) return null;
         const m = matchById[id];
         const pct = combinedMatchPct(m, objSupportById?.[id]);
+        // Nothing matched yet and nothing confirmed on the Objective tabs: a dash,
+        // not a row of "0%" that reads like a result.
+        const noEvidenceYet = !hasMatchEvidence && !objSupportById?.[id]?.matched;
         const isActive = id === activeId;
         return (
           <button
@@ -841,7 +846,9 @@ function ConditionTabs({ conditions, order, matchById, objSupportById, activeId,
             className={"obj-match-card obj-match-c" + (i % 6) + (isActive ? " obj-match-card-active" : "")}
             onClick={() => onSelect(id)}
           >
-            {pct != null ? (
+            {noEvidenceYet ? (
+              <span className="obj-match-pct" style={{ color: BRAND.grayLight }}>—</span>
+            ) : pct != null ? (
               <span className="obj-match-pct">{pct}%</span>
             ) : m ? (
               <span className="obj-match-pct" style={{ color: MATCH_TIER_TONE[m.matchTier] }}>{m.matchTier}</span>
@@ -874,13 +881,13 @@ const TIER_TEXT = { high: "High", med: "Med", low: "Low" };
 // "remove this upper [grid] only three comming... make the 2nd below it
 // permanant"). Now just the one always-visible list, no top grid, no
 // Customize toggle.
-function HypothesisGrid({ conditions, order, matchById, objSupportById, activeId, onSelect }) {
+function HypothesisGrid({ conditions, order, matchById, objSupportById, activeId, onSelect, hasMatchEvidence }) {
   return (
     <div>
       <div className="obj-hypo-head">
         <span className="obj-hypo-label">Target Hypotheses</span>
       </div>
-      <ConditionTabs conditions={conditions} order={order} matchById={matchById} objSupportById={objSupportById} activeId={activeId} onSelect={onSelect} />
+      <ConditionTabs conditions={conditions} order={order} matchById={matchById} objSupportById={objSupportById} activeId={activeId} onSelect={onSelect} hasMatchEvidence={hasMatchEvidence} />
     </div>
   );
 }
@@ -1798,19 +1805,10 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
   // Switching regions should land on that region's own front screen, not
   // whatever condition state the previous region was showing.
   useEffect(() => { setActiveId(null); setActiveSubtopic("observation"); }, [config.key]);
-  // Content used to stay hidden behind this tap -- Aditi wants it visible
-  // immediately since the ranking is already computed synchronously from
-  // Subjective data (engineResult/rankedIds below), so the button is now
-  // just a "re-run" affordance that replays the "Analyzing…" beat in place
-  // rather than a reveal gate (2026-09-10, Aditi: "motion graphic when we
-  // click on it"; 2026-09-13, Aditi: "show it normally even we dont click
-  // button").
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  function runSuggestAnalysis() {
-    if (isAnalyzing) return;
-    setIsAnalyzing(true);
-    setTimeout(() => setIsAnalyzing(false), 550);
-  }
+  // The ranking is computed live from the Subjective answers (engineResult /
+  // rankedIds below), so there is nothing to "run". A Re-analyze button used to
+  // sit here that only replayed an "Analyzing…" animation and changed nothing --
+  // students pressed it expecting a new result (removed 2026-10, Aditi).
 
   const regionPicked = regions.some(config.matchesRegion);
 
@@ -1818,9 +1816,9 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
     if (!regionPicked) return null;
     try {
       if (!config.hasData(data)) return null;
-      return config.run(data);
+      return config.run(data, regions);
     } catch { return null; }
-  }, [regionPicked, config, data]);
+  }, [regionPicked, config, data, regions]);
 
   // Shoulder bridges SH0x engine ids -> S0x condition-library ids by
   // normalized name (see SHOULDER_ID_BY_NAME above); every other region's
@@ -1850,9 +1848,10 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
     return ids.slice().sort((a, b) => (conditionMatchPct(matchById[b]) ?? -1) - (conditionMatchPct(matchById[a]) ?? -1));
   }, [engineResult, config, matchById]);
 
+  const baseOrder = useMemo(() => (config.orderFor ? config.orderFor(regions) : config.order), [config, regions]);
   const order = useMemo(
-    () => [...rankedIds, ...config.order.filter((id) => !rankedIds.includes(id))],
-    [rankedIds, config]
+    () => [...rankedIds, ...baseOrder.filter((id) => !rankedIds.includes(id))],
+    [rankedIds, baseOrder]
   );
   // Recomputed on every Objective tab tap (state changes) so Target
   // Hypotheses' % visibly climbs as findings are confirmed, live -- not
@@ -1862,7 +1861,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
     for (const id of order) out[id] = computeObjectiveSupport(id, config.conditions[id], config, state, data);
     return out;
   }, [order, config, state, data]);
-  const selectedId = activeId || rankedIds[0] || config.order[0];
+  const selectedId = activeId || rankedIds[0] || baseOrder[0];
   const condition = config.conditions[selectedId];
 
   // Switching condition jumps back to the first subtopic page.
@@ -1940,6 +1939,10 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
   const matchedCondition = matchById[selectedId];
   const specialTestItems = isV1 ? condition.keyExams : condition.specialTests;
   const rankedCount = rankedIds.length;
+  // How many conditions have at least one Subjective answer supporting them. Zero
+  // means nothing useful was ticked (typed text and age alone do not match anything).
+  const matchedCount = engineResult ? engineResult.conditions.filter((c) => (c.supportingMatched || []).length > 0).length : 0;
+  const hasMatchEvidence = matchedCount > 0;
   const cyriaxResistedTests = cyriaxTestsFor(config.key, "resistedTests");
   const cyriaxPassiveTests = cyriaxTestsFor(config.key, "passiveROM");
   const hasCyriaxCatalogue = cyriaxResistedTests.length > 0 || cyriaxPassiveTests.length > 0;
@@ -1950,15 +1953,14 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
     <div>
       {regionTabs}
 
-      {/* Differential Inference banner -- same gradient-card/Re-analyze
-          treatment as the Stitch reference (2026-09-24, Aditi: "make the AI
-          page of ortho like this same to same"), replacing the old
-          "🧠 Suggest probable objective assessment" button. Still the same
-          underlying behaviour: the ranked cards below are always live off
-          the current Subjective data (2026-09-13, Aditi: "show it normally
-          even we dont click button") -- Re-analyze just replays the
-          "Analyzing…" beat as a visual refresh cue, it doesn't reveal
-          anything new.
+      {/* Differential Inference banner -- gradient-card treatment from the
+          Stitch reference (2026-09-24, Aditi: "make the AI page of ortho like
+          this same to same"), replacing the old "🧠 Suggest probable objective
+          assessment" button. The ranked cards below are always live off the
+          current Subjective data (2026-09-13, Aditi: "show it normally even we
+          dont click button"), so there is no button. When no Subjective answer
+          matches any condition yet it says so, instead of "Live Match" over a
+          row of 0% cards.
           Not sticky: when this renders inside the AI Objective Assessment
           wizard step, it sat under the same scrolling ancestor as that
           step's own sticky .topbar (journey dots + back button) and, being
@@ -1970,23 +1972,19 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           .topbar/Cardio's header rather than stacking a second one. */}
       <div className="obj-diag-banner">
         <div className="obj-diag-banner-main">
-          <span className={"obj-diag-banner-icon" + (isAnalyzing ? " obj-ai-thinking-icon" : "")}>🧠</span>
+          <span className="obj-diag-banner-icon">🧠</span>
           <div style={{ minWidth: 0 }}>
             <div className="obj-diag-banner-title-row">
               <span className="obj-diag-banner-title">Differential Inference</span>
-              {engineResult && <span className="obj-diag-banner-badge">{isAnalyzing ? "Analyzing…" : "Live Match"}</span>}
+              {hasMatchEvidence && <span className="obj-diag-banner-badge">Live Match</span>}
             </div>
             <div className="obj-diag-banner-sub">
-              {engineResult
-                ? `Matches Subjective answers — ${config.label}, ${rankedCount} condition${rankedCount === 1 ? "" : "s"} matched.`
-                : `Matches conditions to your Subjective answers — ${config.label}, fill Subjective first.`}
+              {hasMatchEvidence
+                ? `Matches your Subjective answers — ${config.label}: ${matchedCount} condition${matchedCount === 1 ? "" : "s"} matched.`
+                : `Nothing to match yet — tick the answers in the Subjective step (the ⭐ ones matter most) to see which ${config.label} conditions fit best.`}
             </div>
           </div>
         </div>
-        <button type="button" className="obj-diag-banner-btn" onClick={runSuggestAnalysis} disabled={isAnalyzing}>
-          <i className="ti ti-refresh" aria-hidden="true"></i>
-          <span>Re-analyze</span>
-        </button>
       </div>
 
       <>
@@ -2007,6 +2005,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
               objSupportById={objSupportById}
               activeId={selectedId}
               onSelect={setActiveId}
+              hasMatchEvidence={hasMatchEvidence}
             />
           </div>
 

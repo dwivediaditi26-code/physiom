@@ -904,7 +904,7 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
     hip: { hasData: (d) => hasHipChecklistData(d), run: (d) => runHipDifferential(d), itemIds: hipConditionItemIds, label: "Hip" },
     knee: { hasData: (d) => hasKneeChecklistData(d), run: (d) => runKneeDifferential(d), itemIds: kneeConditionItemIds, label: "Knee" },
     ankleFoot: { hasData: (d) => hasAnkleFootChecklistData(d), run: (d) => runAnkleFootDifferential(d), itemIds: ankleFootConditionItemIds, label: "Ankle/Foot" },
-    elbowWristHand: { hasData: (d) => hasElbowWristHandChecklistData(d), run: (d) => runElbowWristHandDifferential(d), itemIds: elbowWristHandConditionItemIds, label: "Elbow/Wrist/Hand" },
+    elbowWristHand: { hasData: (d) => hasElbowWristHandChecklistData(d), run: (d, r, all) => runElbowWristHandDifferential(d, all || r), itemIds: elbowWristHandConditionItemIds, label: "Elbow/Wrist/Hand" },
   };
   const engineMatch = useMemo(() => {
     for (const region of selectedRegions) {
@@ -913,7 +913,7 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
       if (!engine) continue;
       if (!engine.hasData(data, region)) continue;
       try {
-        const result = engine.run(data, region);
+        const result = engine.run(data, region, selectedRegions);
         return { region, key, engine, result };
       } catch { continue; }
     }

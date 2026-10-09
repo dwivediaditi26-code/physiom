@@ -853,9 +853,10 @@ export function orthoStyles() {
         .obj-ai-thinking-icon { display: inline-block; animation: objAiPulse .6s ease-in-out infinite; }
 
         /* Differential Inference banner — same Stitch reference (2026-09-24,
-           "same to same"): a gradient explainer card with its own explicit
-           Re-analyze button, replacing the old whole-card-is-one-tap-target
-           "Suggest probable objective assessment" button above. */
+           "same to same"): a gradient explainer card, replacing the old
+           whole-card-is-one-tap-target "Suggest probable objective
+           assessment" button above. (Its Re-analyze button was removed
+           2026-10: the list updates live, the button changed nothing.) */
         .obj-diag-banner { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 10px; border-radius: 12px; background: linear-gradient(90deg, ${BRAND.purpleFaint} 0%, #F3EEFE 60%, #EEF2FF 100%); border: 1px solid #DDD6FE; margin-top: 0; }
         .obj-diag-banner-main { display: flex; align-items: flex-start; gap: 9px; min-width: 0; }
         .obj-diag-banner-icon { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(135deg, ${BRAND.purple}, ${BRAND.purpleDark}); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
@@ -863,9 +864,6 @@ export function orthoStyles() {
         .obj-diag-banner-title { font-size: 12px; font-weight: 800; color: ${BRAND.purpleDark}; }
         .obj-diag-banner-badge { font-size: 8px; font-weight: 700; padding: 2px 6px; border-radius: 999px; background: #fff; color: ${BRAND.purple}; }
         .obj-diag-banner-sub { font-size: 10px; color: ${BRAND.gray}; line-height: 1.3; margin-top: 2px; }
-        .obj-diag-banner-btn { flex-shrink: 0; padding: 7px 12px; background: #fff; color: ${BRAND.purple}; font-size: 11px; font-weight: 700; border-radius: 10px; border: 1px solid #DDD6FE; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 5px; }
-        .obj-diag-banner-btn:active { transform: scale(0.96); }
-        .obj-diag-banner-btn:disabled { opacity: 0.6; cursor: default; }
 
         /* Target Hypotheses — compact 3-card grid, same reference mockup.
            Top-ranked condition gets the accent treatment (purple border +

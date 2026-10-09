@@ -136,8 +136,31 @@ export function hasElbowWristHandChecklistData(data) {
   return Object.values(flat).some((v) => String(v || "").trim());
 }
 
-export function runElbowWristHandDifferential(data) {
+// Region ids from the region picker -> which of the three engines they need.
+// "forearm" is an older id for the elbow/forearm area. Returns null when none of
+// the regions is an elbow/wrist/hand one (or none were given), meaning "all three".
+const GROUP_OF_REGION = { elbow: "elbow", forearm: "elbow", wrist: "wrist", hand: "hand" };
+export function elbowWristHandGroupsFor(regions) {
+  const list = Array.isArray(regions) ? regions : regions ? [regions] : [];
+  const groups = new Set(list.map((r) => GROUP_OF_REGION[r?.id ?? r]).filter(Boolean));
+  return groups.size ? groups : null;
+}
+
+// The condition library's ids start with E (elbow), W (wrist) or H (hand).
+const GROUP_OF_ID_PREFIX = { E: "elbow", W: "wrist", H: "hand" };
+export function elbowWristHandOrderFor(order, regions) {
+  const groups = elbowWristHandGroupsFor(regions);
+  return groups ? order.filter((id) => groups.has(GROUP_OF_ID_PREFIX[String(id)[0]])) : order;
+}
+
+// `regions` = the region(s) the student picked. A student who picked only Elbow is
+// matched against elbow conditions only; wrist/hand ones used to be mixed into that
+// list (e.g. Trigger finger in an Elbow assessment). Red flags are still read from
+// all three engines, so a ticked scaphoid/compartment warning is never hidden.
+export function runElbowWristHandDifferential(data, regions) {
   const flat = buildFlatElbowWristHandData(data);
+  const groups = elbowWristHandGroupsFor(regions);
+  const wanted = (g) => !groups || groups.has(g);
   const elbowResult = runReasoningFromData(flat, "elbow");
   const wristResult = runReasoningFromData(flat, "wrist");
   const handResult = runReasoningFromData(flat, "hand");
@@ -145,9 +168,9 @@ export function runElbowWristHandDifferential(data) {
   const stopped = elbowResult.stopped || wristResult.stopped || handResult.stopped;
   const redFlag = elbowResult.redFlag || wristResult.redFlag || handResult.redFlag || null;
   const allDifferentials = [
-    ...(elbowResult.differentials || []),
-    ...(wristResult.differentials || []),
-    ...(handResult.differentials || []),
+    ...(wanted("elbow") ? elbowResult.differentials || [] : []),
+    ...(wanted("wrist") ? wristResult.differentials || [] : []),
+    ...(wanted("hand") ? handResult.differentials || [] : []),
   ];
 
   const conditions = allDifferentials
