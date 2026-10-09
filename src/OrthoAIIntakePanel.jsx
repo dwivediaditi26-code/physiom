@@ -7,6 +7,21 @@ import { useIsAdmin } from "./useIsAdmin.js";
 
 const PROVIDER_NAMES = { groq: "Groq", gemini: "Gemini" };
 
+// Rough price of one intake from the token line the server sends, using the
+// paid prices per 1M tokens (USD): Gemini 3.5 Flash-Lite 0.30 in / 2.50 out
+// (thinking counts as out), Groq gpt-oss-120b 0.15 in / 0.60 out; ~87 rupees a dollar.
+// Admin-only guide, not a bill.
+const PRICE_PER_MILLION = { gemini: [0.30, 2.50], groq: [0.15, 0.60] };
+export function estimateRupees(note) {
+  let usd = 0;
+  String(note || "").split("|").forEach((part) => {
+    const m = /^\s*(\w+): in (\d+), out (\d+)(?:, thinking (\d+))?/.exec(part);
+    const price = m && PRICE_PER_MILLION[m[1]];
+    if (price) usd += (Number(m[2]) * price[0] + (Number(m[3]) + Number(m[4] || 0)) * price[1]) / 1e6;
+  });
+  return usd ? (usd * 87).toFixed(2) : "";
+}
+
 /* ============================================================
    OrthoAIIntakePanel — "say your assessment in your own words"
    for the new Ortho Outpatient wizard's Subjective step. Reuses
@@ -26,6 +41,7 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen }
   const [status, setStatus] = useState("idle"); // idle | recording | processing | done | error
   const [result, setResult] = useState(null);
   const [provider, setProvider] = useState(null); // which AI answered (admins see it, see below)
+  const [usageNote, setUsageNote] = useState(null); // token counts of this intake (admins)
   const [orderNote, setOrderNote] = useState(null); // which AIs the server has keys for, in the order it tries them
   const [skippedNote, setSkippedNote] = useState(null); // why a provider that was tried first was skipped
   const isAdmin = useIsAdmin();
@@ -108,6 +124,7 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen }
       setProvider(answeredBy);
       setSkippedNote(res.headers?.get?.("X-AI-Fallback") || null);
       setOrderNote(res.headers?.get?.("X-AI-Order") || null);
+      setUsageNote(res.headers?.get?.("X-AI-Usage") || null);
       setResult({ ...json, _narrative: text });
       setStatus("done");
     } catch (e) {
@@ -255,6 +272,7 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen }
                   {rows.length} field{rows.length === 1 ? "" : "s"} extracted
                   {isAdmin && provider && <span data-testid="ai-provider-note" style={{ float: "right", color: "#7c3aed", fontWeight: 700 }}>AI engine: {PROVIDER_NAMES[provider] || provider}</span>}
                   {isAdmin && orderNote && <div data-testid="ai-order-note" style={{ color: "#6b7280", marginTop: 4, fontSize: "0.68rem" }}>Server tries: {orderNote.split(",").map((p) => PROVIDER_NAMES[p] || p).join(" → ") || "none"}</div>}
+                  {isAdmin && usageNote && <div data-testid="ai-usage-note" style={{ color: "#6b7280", marginTop: 4, fontSize: "0.68rem" }}>Tokens: {usageNote}{estimateRupees(usageNote) ? ` · about ₹${estimateRupees(usageNote)} if billed` : ""}</div>}
                   {isAdmin && skippedNote && <div data-testid="ai-skipped-note" style={{ color: "#b45309", marginTop: 4, fontSize: "0.68rem" }}>Skipped first: {skippedNote}</div>}
                 </div>
               </div>

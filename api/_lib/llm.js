@@ -54,7 +54,7 @@ async function callGroq({ system, user, maxTokens }, env) {
   const data = await r.json();
   const content = data.choices?.[0]?.message?.content;
   if (!content) return { ok: false, status: 502, error: 'Empty response' };
-  return { ok: true, content };
+  return { ok: true, content, usage: { input: data.usage?.prompt_tokens, output: data.usage?.completion_tokens } };
 }
 
 async function callGemini({ system, user, maxTokens }, env) {
@@ -73,7 +73,9 @@ async function callGemini({ system, user, maxTokens }, env) {
   if (data.promptFeedback?.blockReason) return { ok: false, status: 502, error: 'Gemini error', detail: `blocked: ${data.promptFeedback.blockReason}` };
   const content = (data.candidates?.[0]?.content?.parts || []).map((p) => p.text || '').join('');
   if (!content) return { ok: false, status: 502, error: 'Empty response' };
-  return { ok: true, content };
+  const um = data.usageMetadata || {};
+  // Google reports thinking tokens separately; they are billed as output.
+  return { ok: true, content, usage: { input: um.promptTokenCount, output: um.candidatesTokenCount, thinking: um.thoughtsTokenCount } };
 }
 
 const CALLERS = { groq: callGroq, gemini: callGemini };
@@ -81,6 +83,21 @@ const CALLERS = { groq: callGroq, gemini: callGemini };
 // Ask for a JSON object. Returns { ok: true, json, provider } or
 // { ok: false, status, error, detail }. A provider that errors, returns nothing,
 // or returns text that is not valid JSON is skipped and the next one is tried.
+// Adds up the token counts of the AI calls made for one intake and writes one
+// short header-safe line: "gemini: in 6500, out 900, thinking 300 (2 calls)".
+// Counts only -- no text. Shown to admin accounts to see what an intake really costs.
+export function usageNote(calls = []) {
+  const byProvider = {};
+  calls.filter((c) => c && c.usage).forEach((c) => {
+    const t = (byProvider[c.provider] ||= { input: 0, output: 0, thinking: 0, calls: 0 });
+    t.input += Number(c.usage.input) || 0;
+    t.output += Number(c.usage.output) || 0;
+    t.thinking += Number(c.usage.thinking) || 0;
+    t.calls += 1;
+  });
+  return Object.entries(byProvider).map(([p, t]) => `${p}: in ${t.input}, out ${t.output}${t.thinking ? `, thinking ${t.thinking}` : ''} (${t.calls} call${t.calls === 1 ? '' : 's'})`).join(' | ');
+}
+
 // One short, header-safe line about why a provider was skipped (no keys, no
 // patient text): Google/Groq error messages only say things like "API key not valid".
 export function skipNote(skipped = []) {
@@ -105,7 +122,7 @@ export async function chatJson({ system, user, maxTokens = 3000, env = process.e
     if (result.ok) {
       try {
         // `skipped` lists providers tried first that failed, so an admin can see why.
-        return { ok: true, json: JSON.parse(result.content), provider, skipped: failures.map(({ provider: p, error, detail }) => ({ provider: p, error, detail })) };
+        return { ok: true, json: JSON.parse(result.content), provider, usage: result.usage, skipped: failures.map(({ provider: p, error, detail }) => ({ provider: p, error, detail })) };
       } catch (parseErr) {
         result = { ok: false, status: 502, error: 'Malformed extraction JSON', detail: parseErr.message };
       }

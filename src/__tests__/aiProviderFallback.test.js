@@ -6,7 +6,7 @@ import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 
 vi.mock("../../api/_lib/rateLimit.js", () => ({ authenticateAndRateLimit: vi.fn(async () => "test-user") }));
 
-import { chatJson, providerOrder, skipNote } from "../../api/_lib/llm.js";
+import { chatJson, providerOrder, skipNote, usageNote } from "../../api/_lib/llm.js";
 import handler from "../../api/parse.js";
 
 const groqOk = (obj) => ({ ok: true, status: 200, json: async () => ({ choices: [{ message: { content: JSON.stringify(obj) } }] }), text: async () => "" });
@@ -234,5 +234,42 @@ describe("an admin can see why Gemini was skipped", () => {
     process.env.AI_PROVIDER_ORDER = "groq,gemini";
     await handler({ method: "POST", body: { text: "Knee pain." } }, res2);
     expect(h2["X-AI-Fallback"]).toBeUndefined();
+  });
+});
+
+describe("token counts of an intake (admins can see what it really costs)", () => {
+  test("Gemini's usageMetadata (including thinking tokens) and Groq's usage are read", async () => {
+    process.env.GEMINI_API_KEY = "gem-key"; process.env.GROQ_API_KEY = "groq-key";
+    process.env.AI_PROVIDER_ORDER = "gemini,groq";
+    global.fetch = vi.fn(async () => ({ ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: "{}" }] } }], usageMetadata: { promptTokenCount: 4800, candidatesTokenCount: 700, thoughtsTokenCount: 250, totalTokenCount: 5750 } }) }));
+    const g = await chatJson({ system: "S", user: "U" });
+    expect(g.usage).toEqual({ input: 4800, output: 700, thinking: 250 });
+    process.env.AI_PROVIDER_ORDER = "groq,gemini";
+    global.fetch = vi.fn(async () => ({ ok: true, json: async () => ({ choices: [{ message: { content: "{}" } }], usage: { prompt_tokens: 4700, completion_tokens: 650 } }) }));
+    const r = await chatJson({ system: "S", user: "U" });
+    expect(r.usage).toEqual({ input: 4700, output: 650 });
+  });
+  test("usageNote adds the two calls of one intake into one short line, with no text in it", () => {
+    expect(usageNote([
+      { provider: "gemini", usage: { input: 4800, output: 700, thinking: 250 } },
+      { provider: "gemini", usage: { input: 1700, output: 650, thinking: 100 } },
+    ])).toBe("gemini: in 6500, out 1350, thinking 350 (2 calls)");
+    expect(usageNote([{ provider: "groq", usage: { input: 10, output: 5 } }, { provider: "groq", usage: { input: 1, output: 1 } }])).toBe("groq: in 11, out 6 (2 calls)");
+    expect(usageNote([{ provider: "groq" }, null])).toBe("");
+  });
+  test("api/parse.js sends the total in X-AI-Usage", async () => {
+    process.env.GROQ_API_KEY = "groq-key"; process.env.AI_PROVIDER_ORDER = "groq";
+    const headers = {};
+    const res = { _status: 200, _json: null, setHeader: (k, v) => { headers[k] = v; }, status(c) { this._status = c; return this; }, json(o) { this._json = o; return this; }, end() { return this; } };
+    global.fetch = vi.fn(async () => ({ ok: true, json: async () => ({ choices: [{ message: { content: JSON.stringify({ chiefComplaint: "ok" }) } }], usage: { prompt_tokens: 4800, completion_tokens: 500 } }) }));
+    await handler({ method: "POST", body: { text: "Knee pain." } }, res);
+    expect(headers["X-AI-Usage"]).toBe("groq: in 9600, out 1000 (2 calls)");
+  });
+  test("the card turns the token line into a rough rupee guide", async () => {
+    const { estimateRupees } = await import("../OrthoAIIntakePanel.jsx");
+    // 6500 in + (1350 out + 350 thinking) on Gemini = 0.00195 + 0.00425 = about $0.0062 = about 0.54 rupees
+    expect(estimateRupees("gemini: in 6500, out 1350, thinking 350 (2 calls)")).toBe("0.54");
+    expect(estimateRupees("groq: in 6500, out 1800 (2 calls)")).toBe("0.18");
+    expect(estimateRupees("")).toBe("");
   });
 });
