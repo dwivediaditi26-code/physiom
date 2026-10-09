@@ -165,7 +165,7 @@ const STORY = [
   ["HI-04", "subah uthte hi dard hota hai", { pattern: [MORN] }],
   ["HI-05", "dono haath me jhunjhuni", { redFlags: [BILAT] }],
   ["HI-06", "cricket me bowling karta hoon", { mechanism: [GOLF] }],
-  ["HI-07", "bachche ko uthane se kohni me dard", { mechanism: [THUMBUSE] }],
+  ["HI-07", "bachche ko uthane se kohni me dard", { mechanism: [THUMBUSE], aggravating: [LIFT] }], // pain from lifting the baby: both
   ["HI-08", "kuhni ke bahar darad hai", { location: [LAT] }],
   ["HI-09", "weight uthane me dard", { aggravating: [LIFT] }],
   ["HI-10", "haath me kamzori hai", { neuro: [WEAK] }],
@@ -399,11 +399,19 @@ describe("known limitations (documented, not fixed)", () => {
   it("a sport mentioned without playing it still counts: 'golf on TV' suggests Golf / throwing", () => {
     expect(understandStory("I watched golf on tv").byField.mechanism).toEqual([GOLF]);
   });
-  it("'dislocated' about another joint still suggests a suspected fracture", () => {
-    expect(understandStory("I dislocated my shoulder").byField.redFlags).toEqual([FRAC]);
+  it("'dislocated' about another joint is now ignored (a sentence about another body part with no arm word is skipped)", () => {
+    expect(understandStory("I dislocated my shoulder").suggestions).toEqual([]);
+    // ...but if the same sentence also names the arm, it can still be suggested
+    expect(understandStory("I dislocated my shoulder and my elbow").byField.redFlags).toEqual([FRAC]);
   });
   it("'both sides of the road' suggests bilateral symptoms", () => {
     expect(understandStory("accident on both sides of the road").byField.redFlags).toEqual([BILAT]);
+  });
+  it("any mention of a sport counts, even about the equipment: 'grip tape for tennis rackets' suggests Racquet sport", () => {
+    expect(understandStory("grip tape for tennis rackets").byField.mechanism).toEqual([RACQ]);
+  });
+  it("'picking up a cup' is suggested as BOTH Gripping and Lifting; a physio may want only one", () => {
+    expect([...understandStory("cup uthate time elbow me pain").byField.aggravating].sort()).toEqual([GRIP, LIFT].sort());
   });
   it("separate negatives ('no tingling, no numbness, no weakness') are not turned into 'None'", () => {
     expect(understandStory("no tingling, no numbness, no weakness").suggestions).toEqual([]);
@@ -411,8 +419,11 @@ describe("known limitations (documented, not fixed)", () => {
   it("misspellings it does not know are missed ('tenis')", () => {
     expect(understandStory("I play tenis").suggestions).toEqual([]);
   });
-  it("a different word order is missed ('outer side of the right elbow')", () => {
-    expect(understandStory("outer side of the right elbow hurts").suggestions).toEqual([]);
+  it("a different word order is now understood by the word-order rules ('outer side of the right elbow')", () => {
+    expect(understandStory("outer side of the right elbow hurts").byField.location).toEqual([LAT]);
+  });
+  it("...but a rule still needs its words close together: 'elbow' far from 'outer' is not enough", () => {
+    expect(understandStory("outer ring road is closed and I will see the doctor about my elbow next week").suggestions).toEqual([]);
   });
   it("words it was never given are missed ('pickleball' is known, 'padel' is not)", () => {
     expect(understandStory("I play padel").suggestions).toEqual([]);
