@@ -11,8 +11,11 @@ import { describe, test, expect, vi, beforeEach } from "vitest";
 // A storage with nothing in it, for tests that are about something else.
 const emptyStorage = () => ({ from: () => ({ list: async () => ({ data: [], error: null }), remove: vi.fn() }) });
 
-function mockReqRes({ authHeader } = {}) {
-  const req = { method: "POST", headers: authHeader ? { authorization: authHeader } : {} };
+// A correct password check, for the verified test user.
+const okSignIn = async () => ({ data: { user: { id: "real-user-abc", email: "t@example.com" } }, error: null });
+
+function mockReqRes({ authHeader, body = { password: "correct-password" } } = {}) {
+  const req = { method: "POST", headers: authHeader ? { authorization: authHeader } : {}, body };
   const res = {
     _status: 200, _json: null,
     setHeader: vi.fn(),
@@ -47,7 +50,7 @@ describe("api/deleteAccount.js handler", () => {
     const deleteUser = vi.fn();
     const getUser = vi.fn().mockResolvedValue({ data: null, error: { message: "invalid token" } });
     vi.doMock("@supabase/supabase-js", () => ({
-      createClient: () => ({ auth: { getUser, admin: { deleteUser } }, storage: emptyStorage() }),
+      createClient: () => ({ auth: { getUser, signInWithPassword: okSignIn, admin: { deleteUser } }, storage: emptyStorage() }),
     }));
     const { default: handler } = await import("../../api/deleteAccount.js");
     const { req, res } = mockReqRes({ authHeader: "Bearer bad-token" });
@@ -59,9 +62,9 @@ describe("api/deleteAccount.js handler", () => {
   test("valid token -> deletes EXACTLY the verified caller's own id, never a client-supplied one, and returns 200", async () => {
     vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test-service-role-key");
     const deleteUser = vi.fn().mockResolvedValue({ error: null });
-    const getUser = vi.fn().mockResolvedValue({ data: { user: { id: "real-user-abc" } }, error: null });
+    const getUser = vi.fn().mockResolvedValue({ data: { user: { id: "real-user-abc", email: "t@example.com" } }, error: null });
     vi.doMock("@supabase/supabase-js", () => ({
-      createClient: () => ({ auth: { getUser, admin: { deleteUser } }, storage: emptyStorage() }),
+      createClient: () => ({ auth: { getUser, signInWithPassword: okSignIn, admin: { deleteUser } }, storage: emptyStorage() }),
     }));
     const { default: handler } = await import("../../api/deleteAccount.js");
     const { req, res } = mockReqRes({ authHeader: "Bearer good-token" });
@@ -76,9 +79,9 @@ describe("api/deleteAccount.js handler", () => {
   test("Supabase deleteUser failure -> 500, does not report success", async () => {
     vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test-service-role-key");
     const deleteUser = vi.fn().mockResolvedValue({ error: { message: "db error" } });
-    const getUser = vi.fn().mockResolvedValue({ data: { user: { id: "real-user-abc" } }, error: null });
+    const getUser = vi.fn().mockResolvedValue({ data: { user: { id: "real-user-abc", email: "t@example.com" } }, error: null });
     vi.doMock("@supabase/supabase-js", () => ({
-      createClient: () => ({ auth: { getUser, admin: { deleteUser } }, storage: emptyStorage() }),
+      createClient: () => ({ auth: { getUser, signInWithPassword: okSignIn, admin: { deleteUser } }, storage: emptyStorage() }),
     }));
     const { default: handler } = await import("../../api/deleteAccount.js");
     const { req, res } = mockReqRes({ authHeader: "Bearer good-token" });
@@ -87,11 +90,63 @@ describe("api/deleteAccount.js handler", () => {
     expect(res._json).not.toEqual({ deleted: true });
   });
 
+  test("no password in the request -> 400, nothing erased, account not deleted", async () => {
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test-service-role-key");
+    const deleteUser = vi.fn();
+    const list = vi.fn();
+    const getUser = vi.fn().mockResolvedValue({ data: { user: { id: "real-user-abc", email: "t@example.com" } }, error: null });
+    vi.doMock("@supabase/supabase-js", () => ({
+      createClient: () => ({ auth: { getUser, signInWithPassword: okSignIn, admin: { deleteUser } }, storage: { from: () => ({ list, remove: vi.fn() }) } }),
+    }));
+    const { default: handler } = await import("../../api/deleteAccount.js");
+    for (const body of [null, {}, { password: "" }, { password: 123 }]) {
+      const { req, res } = mockReqRes({ authHeader: "Bearer good-token", body });
+      await handler(req, res);
+      expect(res._status).toBe(400);
+    }
+    expect(list).not.toHaveBeenCalled();
+    expect(deleteUser).not.toHaveBeenCalled();
+  });
+
+  test("wrong password -> 403, nothing erased, account not deleted", async () => {
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test-service-role-key");
+    const deleteUser = vi.fn();
+    const list = vi.fn();
+    const getUser = vi.fn().mockResolvedValue({ data: { user: { id: "real-user-abc", email: "t@example.com" } }, error: null });
+    const signInWithPassword = vi.fn().mockResolvedValue({ data: { user: null }, error: { message: "Invalid login credentials" } });
+    vi.doMock("@supabase/supabase-js", () => ({
+      createClient: () => ({ auth: { getUser, signInWithPassword, admin: { deleteUser } }, storage: { from: () => ({ list, remove: vi.fn() }) } }),
+    }));
+    const { default: handler } = await import("../../api/deleteAccount.js");
+    const { req, res } = mockReqRes({ authHeader: "Bearer good-token", body: { password: "nope" } });
+    await handler(req, res);
+    expect(signInWithPassword).toHaveBeenCalledWith({ email: "t@example.com", password: "nope" });
+    expect(res._status).toBe(403);
+    expect(res._json.code).toBe("wrong_password");
+    expect(list).not.toHaveBeenCalled();
+    expect(deleteUser).not.toHaveBeenCalled();
+  });
+
+  test("a password check that signs in a DIFFERENT account does not count", async () => {
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test-service-role-key");
+    const deleteUser = vi.fn();
+    const getUser = vi.fn().mockResolvedValue({ data: { user: { id: "real-user-abc", email: "t@example.com" } }, error: null });
+    const signInWithPassword = vi.fn().mockResolvedValue({ data: { user: { id: "someone-else" } }, error: null });
+    vi.doMock("@supabase/supabase-js", () => ({
+      createClient: () => ({ auth: { getUser, signInWithPassword, admin: { deleteUser } }, storage: emptyStorage() }),
+    }));
+    const { default: handler } = await import("../../api/deleteAccount.js");
+    const { req, res } = mockReqRes({ authHeader: "Bearer good-token" });
+    await handler(req, res);
+    expect(res._status).toBe(403);
+    expect(deleteUser).not.toHaveBeenCalled();
+  });
+
   test("erases the caller's uploaded files from every media bucket BEFORE deleting the account", async () => {
     vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test-service-role-key");
     const order = [];
     const deleteUser = vi.fn(async () => { order.push("deleteUser"); return { error: null }; });
-    const getUser = vi.fn().mockResolvedValue({ data: { user: { id: "real-user-abc" } }, error: null });
+    const getUser = vi.fn().mockResolvedValue({ data: { user: { id: "real-user-abc", email: "t@example.com" } }, error: null });
     // Each bucket holds two files the first time it is listed, nothing afterwards.
     const left = {};
     const removeCalls = [];
@@ -111,7 +166,7 @@ describe("api/deleteAccount.js handler", () => {
       }),
     };
     vi.doMock("@supabase/supabase-js", () => ({
-      createClient: () => ({ auth: { getUser, admin: { deleteUser } }, storage }),
+      createClient: () => ({ auth: { getUser, signInWithPassword: okSignIn, admin: { deleteUser } }, storage }),
     }));
     const { default: handler, MEDIA_BUCKETS } = await import("../../api/deleteAccount.js");
     const { req, res } = mockReqRes({ authHeader: "Bearer good-token" });
@@ -126,13 +181,13 @@ describe("api/deleteAccount.js handler", () => {
   test("if the files cannot be erased -> 500 and the account is NOT deleted (so the person can retry)", async () => {
     vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test-service-role-key");
     const deleteUser = vi.fn();
-    const getUser = vi.fn().mockResolvedValue({ data: { user: { id: "real-user-abc" } }, error: null });
+    const getUser = vi.fn().mockResolvedValue({ data: { user: { id: "real-user-abc", email: "t@example.com" } }, error: null });
     const storage = { from: () => ({
       list: async () => ({ data: [{ name: "a.jpg" }], error: null }),
       remove: async () => ({ data: null, error: { message: "storage down" } }),
     }) };
     vi.doMock("@supabase/supabase-js", () => ({
-      createClient: () => ({ auth: { getUser, admin: { deleteUser } }, storage }),
+      createClient: () => ({ auth: { getUser, signInWithPassword: okSignIn, admin: { deleteUser } }, storage }),
     }));
     const { default: handler } = await import("../../api/deleteAccount.js");
     const { req, res } = mockReqRes({ authHeader: "Bearer good-token" });
@@ -144,13 +199,13 @@ describe("api/deleteAccount.js handler", () => {
   test("a bucket that does not exist has no files, so it does not block deletion", async () => {
     vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test-service-role-key");
     const deleteUser = vi.fn().mockResolvedValue({ error: null });
-    const getUser = vi.fn().mockResolvedValue({ data: { user: { id: "real-user-abc" } }, error: null });
+    const getUser = vi.fn().mockResolvedValue({ data: { user: { id: "real-user-abc", email: "t@example.com" } }, error: null });
     const storage = { from: () => ({
       list: async () => ({ data: null, error: { message: "Bucket not found", statusCode: "404" } }),
       remove: vi.fn(),
     }) };
     vi.doMock("@supabase/supabase-js", () => ({
-      createClient: () => ({ auth: { getUser, admin: { deleteUser } }, storage }),
+      createClient: () => ({ auth: { getUser, signInWithPassword: okSignIn, admin: { deleteUser } }, storage }),
     }));
     const { default: handler } = await import("../../api/deleteAccount.js");
     const { req, res } = mockReqRes({ authHeader: "Bearer good-token" });

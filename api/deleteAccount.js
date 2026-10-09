@@ -7,6 +7,11 @@
 // all associated patient data" line (LegalPages.jsx, section 6) into an
 // enforced fact instead of a manual process someone has to remember to run.
 //
+// Password: the request must carry the account's own password, checked HERE
+// on the server (a fresh sign-in with the caller's verified email), so a
+// stolen or left-open session cannot delete an account without it. The
+// browser dialog asks for it, but the check does not depend on the browser.
+//
 // Uploaded files: database rows cascade, but files in Supabase Storage (post
 // photos/videos, profile pictures, CVs ...) do not. They are erased here
 // first, from the caller's own folder `<userId>/` in every media bucket
@@ -26,6 +31,8 @@ import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://gkhcysvayjrkrufcnqvz.supabase.co';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Public (publishable) key, same fallback src/supabase.js and cloudinarySign.js use.
+const SUPABASE_PUBLIC_KEY = process.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_v-dPE6_pd7a88gOFVuoDag_DmLUbgrT';
 
 // Every bucket putMedia() can write to. Keep in step with BUCKET_LIMIT_MB in
 // src/physiofeed/data/mediaStorage.js (a test fails if they drift apart).
@@ -80,6 +87,23 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Your session has expired — please sign in again.' });
   }
   const userId = userData.user.id;
+
+  const password = typeof req.body?.password === 'string' ? req.body.password : '';
+  if (!password) {
+    return res.status(400).json({ error: 'Enter your password to delete your account.', code: 'password_required' });
+  }
+  const email = userData.user.email;
+  if (!email) {
+    return res.status(400).json({ error: 'This account has no email address to check your password against. Please email support.' });
+  }
+  // A throwaway client: signing in on it changes nothing about the caller's own session.
+  const verifier = createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  const { data: signedIn, error: pwErr } = await verifier.auth.signInWithPassword({ email, password });
+  if (pwErr || signedIn?.user?.id !== userId) {
+    return res.status(403).json({ error: 'That password is not correct.', code: 'wrong_password' });
+  }
 
   try {
     await removeUserFiles(admin, userId);
