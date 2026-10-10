@@ -71,6 +71,17 @@ describe("Clinical landing page redesign", () => {
     }
   });
 
+  it("Assess sub-tab has its own AI box (not a badge on Ortho) that opens the AI assessment", async () => {
+    await renderLoggedIn();
+    await openClinical();
+    openSubTab("Assess");
+    const ai = await screen.findByTestId("assessment-ai-card");
+    expect(ai).toHaveTextContent("AI");
+    expect(screen.getByText("Ortho").closest("button")).not.toHaveTextContent("AI");
+    fireEvent.click(ai);
+    expect(await screen.findByText(/AI Assessment Intake/, {}, { timeout: 8000 })).toBeInTheDocument();
+  });
+
   it("sort/flags/import/export are still present, tucked behind a toggle", async () => {
     await renderLoggedIn();
     const panel = await openPatientsTab();
