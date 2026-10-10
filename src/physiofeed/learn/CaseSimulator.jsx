@@ -6,8 +6,8 @@ import {
 } from "lucide-react";
 import { KNEE_CASE, SIM_PATIENTS } from "./kneeSimCase.js";
 import StudyImage from "./StudyImage.jsx";
-import CaseEngine from "./CaseEngine.jsx";
-import { LUMBAR_CASE_1 } from "./lumbarCase1.js";
+import EncounterEngine, { SANS } from "./EncounterEngine.jsx";
+import { ENCOUNTER } from "./lumbarEncounter.js";
 
 // Case Simulator (Learn). Pick a patient, then play the case: the patient
 // talks, the PM bot asks what you would do next, you answer, and the bot
@@ -450,9 +450,9 @@ function Play({ onExit }) {
 export default function CaseSimulator({ onBack }) {
   const [playing, setPlaying] = useState(null);
   return (
-    <div data-testid="case-simulator" className="pb-10">
+    <div data-testid="case-simulator" className="pb-10" style={{ fontFamily: SANS }}>
       {playing === "knee" && <Play onExit={() => setPlaying(null)}/>}
-      {playing === "lumbar1" && <CaseEngine data={LUMBAR_CASE_1} onExit={() => setPlaying(null)} exitLabel="Return to Lumbar Cases"/>}
+      {playing === "lumbar1" && <EncounterEngine data={ENCOUNTER} onExit={() => setPlaying(null)} exitLabel="Return to Lumbar Cases"/>}
       {!playing && <PatientList onPick={setPlaying} onBack={onBack}/>}
     </div>
   );
