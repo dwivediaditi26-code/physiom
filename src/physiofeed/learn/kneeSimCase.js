@@ -22,6 +22,9 @@ export const SIM_PATIENTS = [
   { id: "neck", art: "patient-2", title: "Neck Pain", tag: "Musculoskeletal", sub: "28 y/o female", line: "Office worker" },
   { id: "back", art: "patient-3", title: "Low Back Pain", tag: "Spine", sub: "52 y/o male", line: "Pain while bending" },
   { id: "shoulder", art: "patient-4", title: "Shoulder Pain", tag: "Orthopaedics", sub: "35 y/o female", line: "Difficulty reaching" },
+  // Lumbar Case 1 (49-year-old woman). The character sheet has no patient like
+  // her, so the list shows the PM bot until a matching picture is supplied.
+  { id: "lumbar1", art: "bot-neutral", title: "Lumbar Case 1", tag: "Musculoskeletal · Lumbar", sub: "49 y/o female", line: "Persistent low back pain", live: true },
   { id: "breath", art: "patient-5", title: "Breathlessness", tag: "Cardiorespiratory", sub: "60 y/o male", line: "Reduced exercise tolerance" },
 ];
 

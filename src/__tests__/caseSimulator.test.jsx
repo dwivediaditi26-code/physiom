@@ -166,6 +166,15 @@ describe("Case Simulator", () => {
     expect(screen.getByTestId("sim-last")).toHaveTextContent("6/6");
   });
 
+  it("Lumbar Case 1 is on the list and opens its own nine-screen case; back returns to the list", () => {
+    render(<CaseSimulator onBack={() => {}}/>);
+    fireEvent.click(screen.getByText("Lumbar Case 1"));
+    expect(screen.getByTestId("case-engine")).toBeInTheDocument();
+    expect(screen.getByTestId("engine-count")).toHaveTextContent("Screen 1 of 9");
+    fireEvent.click(screen.getByLabelText("Back to cases"));
+    expect(screen.getByText("Choose a Patient")).toBeInTheDocument();
+  });
+
   it("Back from the list calls onBack", () => {
     let back = 0;
     render(<CaseSimulator onBack={() => { back++; }}/>);

@@ -6,6 +6,8 @@ import {
 } from "lucide-react";
 import { KNEE_CASE, SIM_PATIENTS } from "./kneeSimCase.js";
 import StudyImage from "./StudyImage.jsx";
+import CaseEngine from "./CaseEngine.jsx";
+import { LUMBAR_CASE_1 } from "./lumbarCase1.js";
 
 // Case Simulator (Learn). Pick a patient, then play the case: the patient
 // talks, the PM bot asks what you would do next, you answer, and the bot
@@ -120,7 +122,7 @@ function PatientList({ onPick, onBack }) {
               <span className="inline-block text-[11px] font-bold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 my-1">{p.tag}</span>
               <span className="block text-xs text-slate-600">{p.sub}</span>
               <span className="block text-xs text-slate-500">{p.line}</span>
-              {p.live && last && <span data-testid="sim-last" className="block text-[11px] font-bold text-emerald-700 mt-0.5">Last attempt: {last.correct}/{last.total} ({last.pct}%)</span>}
+              {p.live && p.id === "knee" && last && <span data-testid="sim-last" className="block text-[11px] font-bold text-emerald-700 mt-0.5">Last attempt: {last.correct}/{last.total} ({last.pct}%)</span>}
             </span>
             {p.live ? <ChevronRight size={18} className="text-sky-500 shrink-0"/> : <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 shrink-0">Soon</span>}
           </button>
@@ -446,10 +448,12 @@ function Play({ onExit }) {
 }
 
 export default function CaseSimulator({ onBack }) {
-  const [playing, setPlaying] = useState(false);
+  const [playing, setPlaying] = useState(null);
   return (
     <div data-testid="case-simulator" className="pb-10">
-      {playing ? <Play onExit={() => setPlaying(false)}/> : <PatientList onPick={() => setPlaying(true)} onBack={onBack}/>}
+      {playing === "knee" && <Play onExit={() => setPlaying(null)}/>}
+      {playing === "lumbar1" && <CaseEngine data={LUMBAR_CASE_1} onExit={() => setPlaying(null)} exitLabel="Return to Lumbar Cases"/>}
+      {!playing && <PatientList onPick={setPlaying} onBack={onBack}/>}
     </div>
   );
 }
