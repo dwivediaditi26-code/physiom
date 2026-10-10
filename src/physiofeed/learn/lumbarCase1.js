@@ -23,7 +23,7 @@ export const TAGS = {
   [S]: { label: "Still to check", hint: "Missing, or needs further assessment." },
 };
 
-const f = (text, tag = D, label) => ({ text, tag, label });
+const f = (text, tag = D, label, icon) => ({ text, tag, label, icon });
 
 export const LUMBAR_CASE_1 = {
   id: "lumbar-case-1",
@@ -61,15 +61,16 @@ export const LUMBAR_CASE_1 = {
       task: "Meet the patient and understand the clinical context. Not everything about the case is shown yet.",
       objective: "Recognise the broad presentation and understand that the patient's problem includes more than the presence of pain alone.",
       mood: "Uncomfortable and concerned, with a guarded posture",
+      art: "lumbar-patient-pain",
       quote: "I injured my back while installing car upholstery at work about 14 months ago. It improved a little initially, but now my pain keeps getting worse. I have been off work for six months, and I still cannot manage my normal activities.",
       quoteNote: "A concise educational summary of the supplied case, not a verbatim source quotation.",
       blocks: [
         { type: "facts", title: "Patient information", items: [
-          f("49 years", D, "Age"),
-          f("Automotive assembly worker", D, "Occupation"),
-          f("Persistent low back pain", D, "Main complaint"),
-          f("14 months", D, "Duration"),
-          f("Difficulty with prolonged sitting, standing, walking and daily activities", D, "Main functional concern"),
+          f("49 years", D, "Age", "user"),
+          f("Automotive assembly worker", D, "Occupation", "work"),
+          f("Persistent low back pain", D, "Main complaint", "pain"),
+          f("14 months", D, "Duration", "clock"),
+          f("Difficulty with prolonged sitting, standing, walking and daily activities", D, "Main concern", "walk"),
         ] },
       ],
       mcqs: [{
@@ -172,14 +173,15 @@ export const LUMBAR_CASE_1 = {
       task: "Recognise potentially modifiable psychosocial and occupational barriers without blaming the patient.",
       objective: "Identify relevant fear-avoidance beliefs, expectations, mood, activity changes, social effects and work-related factors.",
       mood: "Worried and uncertain",
+      art: "lumbar-patient-think",
       quote: "I am worried that the disc changes on my scan mean my back is damaged. I avoid doing things because I do not want to make it worse. I keep thinking that I need to find the right person who can fix it.",
       blocks: [
         { type: "groups", title: "Factors influencing recovery", groups: [
-          { title: "Beliefs and expectations", items: [f("The patient believes the right practitioner will fix her problem."), f("She is concerned about the CT report and disc pathology.")] },
-          { title: "Activity", items: [f("She has reduced activity to avoid pain.")] },
-          { title: "Mood and social participation", items: [f("She has been assessed as depressed."), f("She has taken antidepressants for three months."), f("She has become short-tempered with family and friends.")] },
-          { title: "Family and household", items: [f("Her spouse has taken over housework and shopping.")] },
-          { title: "Work", items: [f("She has been off work for six months."), f("The original injury occurred during automotive assembly work."), f("The job involves a physical work context.")] },
+          { title: "Beliefs and expectations", icon: "brain", items: [f("The patient believes the right practitioner will fix her problem."), f("She is concerned about the CT report and disc pathology.")] },
+          { title: "Activity", icon: "walk", items: [f("She has reduced activity to avoid pain.")] },
+          { title: "Mood and social participation", icon: "heart", items: [f("She has been assessed as depressed."), f("She has taken antidepressants for three months."), f("She has become short-tempered with family and friends.")] },
+          { title: "Family and household", icon: "home", items: [f("Her spouse has taken over housework and shopping.")] },
+          { title: "Work", icon: "work", items: [f("She has been off work for six months."), f("The original injury occurred during automotive assembly work."), f("The job involves a physical work context.")] },
         ] },
         { type: "terms", title: "Know the terms", terms: [
           ["Yellow flags", "Psychosocial factors that may be associated with a poorer outcome or barriers to recovery, such as fear of movement, unhelpful beliefs, distress or low confidence."],
@@ -209,7 +211,7 @@ export const LUMBAR_CASE_1 = {
       objective: "Select a focused, safe examination that considers lumbar movement, neurological status, neural mobility and functional limitations.",
       mood: "Waiting for the examination",
       blocks: [
-        { type: "examPicker", title: "Pick the examinations you would perform (at least one)", cards: [
+        { type: "examPicker", title: "Tap the examinations you would perform", cards: [
           { id: "obs", label: "General observation and gait", icon: "eye", relevant: true },
           { id: "rom", label: "Lumbar active range of motion", icon: "move", images: ["rom_lflex", "rom_lext", "rom_lrotl", "rom_lrotr"], relevant: true },
           { id: "palp", label: "Lumbar palpation", icon: "hand", relevant: true },
@@ -243,8 +245,7 @@ export const LUMBAR_CASE_1 = {
         ] },
       ],
       takeaway: "A useful examination tests a reasoned hypothesis, screens relevant systems and measures meaningful functional limitations. No single finding should be treated as the diagnosis.",
-      nextLabel: "Continue to Investigations",
-      needs: "examPicker",
+      nextLabel: "Next: Investigations and Interpretation",
     },
 
     // ───────────────────────── 6 ─────────────────────────

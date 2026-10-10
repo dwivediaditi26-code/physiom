@@ -24,9 +24,10 @@ function answerQ(q, id) {
   fireEvent.click(box.getByText(q.options.find((o) => o.id === id).text));
   fireEvent.click(box.getByText("Submit Answer"));
 }
+function toQuestion() { fireEvent.click(screen.getByText("Next: Answer a question")); }
 function finishScreen(n, pick = (q) => q.correct) {
   const s = SCREENS[n];
-  if (s.needs === "examPicker") fireEvent.click(screen.getByText("General observation and gait"));
+  toQuestion();
   s.mcqs.forEach((q) => answerQ(q, pick(q)));
   if (s.needs === "planBuilder") ["Patient education and shared understanding", "Graded walking and activity tolerance", "Individualised exercise"].forEach((t) => fireEvent.click(screen.getByText(t)));
 }
@@ -81,35 +82,38 @@ describe("Lumbar Case 1 — content (source case accuracy)", () => {
 });
 
 describe("Lumbar Case 1 — playing it", () => {
-  it("opens on screen 1 with the patient quote, hides the answers, and needs a choice before Submit", () => {
+  it("opens on screen 1 as an info page with the patient quote; the question comes on the next page, answers hidden, Submit needs a choice", () => {
     mount();
-    expect(screen.getByTestId("engine-count")).toHaveTextContent("Screen 1 of 9");
-    expect(screen.getByTestId("engine-title")).toHaveTextContent("Lumbar Case 1: Meet Your Patient");
+    expect(screen.getByTestId("engine-count")).toHaveTextContent("1/9");
+    expect(screen.getByTestId("engine-title")).toHaveTextContent("1. Meet Your Patient");
     expect(screen.getByTestId("engine-quote")).toHaveTextContent("installing car upholstery");
+    expect(screen.queryByText("Submit Answer")).not.toBeInTheDocument();
+    toQuestion();
+    expect(screen.getByText("Question 1")).toBeInTheDocument();
     expect(screen.getByText("Submit Answer")).toBeDisabled();
-    expect(screen.queryByText(/^Correct\./)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Correct!/)).not.toBeInTheDocument();
     expect(screen.queryByTestId("why-q1-B")).not.toBeInTheDocument();
     expect(screen.getByText("Start Subjective Assessment").closest("button")).toBeDisabled();
   });
 
   it("selecting an option does not reveal the answer; Submit reveals a reason for every option and the takeaway", () => {
-    mount();
+    mount(); toQuestion();
     const q = SCREENS[0].mcqs[0];
     fireEvent.click(screen.getByText(q.options[0].text));
     expect(screen.queryByTestId("why-q1-A")).not.toBeInTheDocument();
     fireEvent.click(screen.getByText("Submit Answer"));
-    for (const o of q.options) expect(screen.getByTestId(`why-q1-${o.id}`)).toHaveTextContent(o.why.slice(0, 20));
+    for (const o of q.options) expect(screen.getByTestId(`why-q1-${o.id}`)).toHaveTextContent(o.why.replace(/^(Correct|Incorrect)\.\s*/, "").slice(0, 20));
     expect(screen.getByText(/Not quite — the right answer is B/)).toBeInTheDocument();
     expect(screen.getByTestId("takeaway")).toHaveTextContent(SCREENS[0].takeaway);
     expect(screen.getByText("Start Subjective Assessment").closest("button")).not.toBeDisabled();
   });
 
   it("cannot be submitted twice, and records one attempt with the existing analytics call", async () => {
-    mount();
+    mount(); toQuestion();
     const q = SCREENS[0].mcqs[0];
     answerQ(q, "B");
     expect(screen.queryByText("Submit Answer")).not.toBeInTheDocument();
-    expect(JSON.parse(localStorage.getItem("pm_case_lumbar-case-1_v1")).answers.q1.attempts).toBe(1);
+    expect(JSON.parse(localStorage.getItem("pm_case_lumbar-case-1_v2")).answers.q1.attempts).toBe(1);
     await waitFor(() => expect(trackEvent).toHaveBeenCalledWith("case_mcq_submitted", expect.objectContaining({ entityType: "case", entityId: "lumbar-case-1", properties: expect.objectContaining({ question: "q1", selected: "B", correct: true, attempt: 1 }) })));
     expect(trackEvent.mock.calls.filter((c) => c[0] === "case_mcq_submitted")).toHaveLength(1);
   });
@@ -117,9 +121,9 @@ describe("Lumbar Case 1 — playing it", () => {
   it("Back keeps answers; going Back and Continue does not reset the case", () => {
     mount();
     finishScreen(0); goNext(0);
-    expect(screen.getByTestId("engine-count")).toHaveTextContent("Screen 2 of 9");
-    fireEvent.click(screen.getByText("Back"));
-    expect(screen.getByTestId("engine-count")).toHaveTextContent("Screen 1 of 9");
+    expect(screen.getByTestId("engine-count")).toHaveTextContent("2/9");
+    fireEvent.click(screen.getByText("Back")); // from the info page of screen 2 back to the question page of screen 1
+    expect(screen.getByTestId("engine-count")).toHaveTextContent("1/9");
     expect(screen.getByTestId("why-q1-B")).toBeInTheDocument();
     expect(screen.queryByText("Submit Answer")).not.toBeInTheDocument();
   });
@@ -139,25 +143,35 @@ describe("Lumbar Case 1 — playing it", () => {
     playTo(2);
     expect(screen.getByText(/does not list the patient's answers/)).toBeInTheDocument();
     expect(screen.queryByText(/Escalation required if present/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText("Bladder and bowel function"));
+    expect(screen.getByText("Any new loss of bowel control?")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("What we know"));
+    expect(screen.getByText("Symptoms have persisted for 14 months.")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("To check"));
+    expect(screen.getByText("Individual cauda equina screening questions.")).toBeInTheDocument();
+    toQuestion();
     answerQ(SCREENS[2].mcqs[0], "A"); // wrong choice
     expect(screen.getByText(/Escalation required if present/)).toBeInTheDocument();
     expect(screen.getByTestId("why-q3-C")).toHaveTextContent(/cauda equina/);
   });
 
-  it("screen 5: needs an examination chosen first; findings stay hidden until submitted, then show the documented values", () => {
+  it("screen 5: examinations can be tapped; the findings stay hidden until the answer is submitted, then show the documented values", () => {
     mount();
     playTo(4);
-    expect(screen.queryByText("SLR right: 50°.")).not.toBeInTheDocument();
+    expect(screen.getByTestId("exam-picker")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Lumbar active range of motion"));
+    expect(screen.getByText("Lumbar active range of motion").closest("button")).toHaveAttribute("aria-pressed", "true");
+    toQuestion();
+    expect(screen.queryByText(/SLR right: 50°/)).not.toBeInTheDocument();
     const q = SCREENS[4].mcqs[0];
     const box = within(screen.getByTestId("mcq-q5"));
     fireEvent.click(box.getByText(q.options[1].text));
-    expect(box.getByText("Submit Answer")).toBeDisabled();
-    fireEvent.click(screen.getByText("Lumbar active range of motion"));
     fireEvent.click(box.getByText("Submit Answer"));
-    expect(screen.getByText("SLR right: 50°.")).toBeInTheDocument();
-    expect(screen.getByText("SLR left: 50°.")).toBeInTheDocument();
-    expect(screen.getByText("Slump test: not evaluated.")).toBeInTheDocument();
-    expect(screen.getByText("No neurological abnormality detected in the supplied case.")).toBeInTheDocument();
+    const f = within(screen.getByTestId("findings"));
+    expect(f.getByText(/SLR right: 50°\./)).toBeInTheDocument();
+    expect(f.getByText(/SLR left: 50°\./)).toBeInTheDocument();
+    expect(f.getByText(/Slump test: not evaluated\./)).toBeInTheDocument();
+    expect(f.getByText(/No abnormality|No neurological abnormality detected in the supplied case\./)).toBeInTheDocument();
     expect(screen.getByText(/do not establish nerve-root compression/)).toBeInTheDocument();
   });
 
@@ -166,6 +180,7 @@ describe("Lumbar Case 1 — playing it", () => {
     playTo(5);
     expect(screen.getByText("Mild bilateral L4–L5 facet degeneration.")).toBeInTheDocument();
     expect(screen.getByText("Minor disc bulges at L4–L5 and L5–S1, with no nerve-root involvement reported.")).toBeInTheDocument();
+    toQuestion();
     answerQ(SCREENS[5].mcqs[0], "C");
     expect(screen.getByText(SCREENS[5].nextLabel).closest("button")).toBeDisabled();
     answerQ(SCREENS[5].mcqs[1], "B");
@@ -176,6 +191,8 @@ describe("Lumbar Case 1 — playing it", () => {
     mount();
     playTo(6);
     expect(screen.queryByTestId("impression")).not.toBeInTheDocument();
+    toQuestion();
+    expect(screen.queryByTestId("impression")).not.toBeInTheDocument();
     answerQ(SCREENS[6].mcqs[0], "B");
     expect(screen.getByTestId("impression")).toHaveTextContent(/does not establish a single structural pain generator|do not establish a single structural pain generator/);
   });
@@ -183,6 +200,7 @@ describe("Lumbar Case 1 — playing it", () => {
   it("screen 8: plan builder needs exactly three priorities before Continue", () => {
     mount();
     playTo(7);
+    toQuestion();
     answerQ(SCREENS[7].mcqs[0], "C");
     expect(screen.getByTestId("plan-count")).toHaveTextContent("0 of 3");
     expect(screen.getByText(SCREENS[7].nextLabel).closest("button")).toBeDisabled();
@@ -197,8 +215,9 @@ describe("Lumbar Case 1 — playing it", () => {
     const exit = vi.fn();
     mount(exit);
     playTo(8);
-    expect(screen.getByTestId("engine-count")).toHaveTextContent("Screen 9 of 9");
+    expect(screen.getByTestId("engine-count")).toHaveTextContent("9/9");
     expect(screen.getByTestId("case-report")).toHaveTextContent("Oswestry Disability Score 72%");
+    toQuestion();
     answerQ(SCREENS[8].mcqs[0], "A"); // wrong on purpose
     expect(screen.getByTestId("final-review")).toBeInTheDocument();
     expect(screen.getByTestId("final-score")).toHaveTextContent("9 of 10");
@@ -212,7 +231,7 @@ describe("Lumbar Case 1 — playing it", () => {
     expect(exit).toHaveBeenCalled();
     fireEvent.click(screen.getByText("Restart Lumbar Case 1"));
     fireEvent.click(screen.getByText("Yes, restart"));
-    expect(screen.getByTestId("engine-count")).toHaveTextContent("Screen 1 of 9");
+    expect(screen.getByTestId("engine-count")).toHaveTextContent("1/9");
     expect(screen.queryByTestId("why-q1-B")).not.toBeInTheDocument();
   });
 
@@ -221,12 +240,12 @@ describe("Lumbar Case 1 — playing it", () => {
     finishScreen(0); goNext(0);
     unmount();
     mount();
-    expect(screen.getByTestId("engine-count")).toHaveTextContent("Screen 2 of 9");
+    expect(screen.getByTestId("engine-count")).toHaveTextContent("2/9");
   });
 
   it("the references panel opens with all three references", () => {
     mount();
-    fireEvent.click(screen.getByText("References"));
+    fireEvent.click(screen.getByLabelText("References"));
     const p = within(screen.getByTestId("references-panel"));
     expect(p.getByText(/NICE/)).toBeInTheDocument();
     expect(p.getByText(/World Health Organization/)).toBeInTheDocument();

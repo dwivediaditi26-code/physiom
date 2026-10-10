@@ -170,7 +170,7 @@ describe("Case Simulator", () => {
     render(<CaseSimulator onBack={() => {}}/>);
     fireEvent.click(screen.getByText("Lumbar Case 1"));
     expect(screen.getByTestId("case-engine")).toBeInTheDocument();
-    expect(screen.getByTestId("engine-count")).toHaveTextContent("Screen 1 of 9");
+    expect(screen.getByTestId("engine-count")).toHaveTextContent("1/9");
     fireEvent.click(screen.getByLabelText("Back to cases"));
     expect(screen.getByText("Choose a Patient")).toBeInTheDocument();
   });
