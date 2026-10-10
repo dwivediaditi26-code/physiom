@@ -66,9 +66,10 @@ describe("Clinical landing page redesign", () => {
     await openClinical();
     openSubTab("Assess");
     expect(await screen.findByText("＋ New Assessment")).toBeInTheDocument();
-    for (const label of ["Ortho", "Neuro", "Cardio", "Sports"]) {
+    for (const label of ["Ortho", "Neuro", "Cardio", "AI Ortho Assessment"]) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
+    expect(screen.queryByText("Sports")).not.toBeInTheDocument();
   });
 
   it("Assess sub-tab has its own AI box (not a badge on Ortho) that opens the AI assessment", async () => {
@@ -76,7 +77,7 @@ describe("Clinical landing page redesign", () => {
     await openClinical();
     openSubTab("Assess");
     const ai = await screen.findByTestId("assessment-ai-card");
-    expect(ai).toHaveTextContent("AI");
+    expect(ai).toHaveTextContent("AI Ortho Assessment");
     expect(screen.getByText("Ortho").closest("button")).not.toHaveTextContent("AI");
     fireEvent.click(ai);
     expect(await screen.findByText(/AI Assessment Intake/, {}, { timeout: 20000 })).toBeInTheDocument();
