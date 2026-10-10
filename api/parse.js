@@ -1,4 +1,5 @@
 import { authenticateAndRateLimit } from './_lib/rateLimit.js';
+import { spendCredit, refundCredit } from './_lib/credits.js';
 import { chatJson, providerOrder, skipNote, usageNote } from './_lib/llm.js';
 
 export default async function handler(req, res) {
@@ -105,9 +106,15 @@ If input is Hindi/mixed, extract clinical meaning in English.`;
 
 Do not invent new information that isn't in the first-pass JSON or the narrative. Do not change a field's value unless you found a real, evidence-based problem with it -- when in doubt whether something is genuinely correct, leave it exactly as the first pass had it. Return ONLY the corrected JSON object, in EXACTLY the same shape as the first-pass JSON you were given (the same keys, the same value types, nothing added or removed). If a field's value changes, keep _confidence/_sourceQuotes in sync (remove entries for anything you nulled out).`;
 
+  // Parser credit counter: take one now (locks the feature at 0), give it back below if the AI fails.
+  const credit = await spendCredit(userId, 'parser');
+  if (!credit.ok) return res.status(402).json({ error: "You're out of AI Parser credits.", code: 'NO_CREDITS', kind: 'parser', remaining: 0 });
+  if (credit.remaining != null) res.setHeader('X-Credits-Remaining', String(credit.remaining));
+  const refund = () => (credit.charged ? refundCredit(userId, 'parser') : undefined);
+
   try {
     const extracted = await chatJson({ system, user: text.trim(), maxTokens: 3000 });
-    if (!extracted.ok) return res.status(extracted.status || 502).json({ error: extracted.error, ...(extracted.detail ? { detail: extracted.detail } : {}) });
+    if (!extracted.ok) { await refund(); return res.status(extracted.status || 502).json({ error: extracted.error, ...(extracted.detail ? { detail: extracted.detail } : {}) }); }
     const firstPass = extracted.json;
     res.setHeader('X-AI-Provider', extracted.provider);
     res.setHeader('X-AI-Order', providerOrder().join(',')); // which providers this deployment has keys for, in order
@@ -131,6 +138,7 @@ Do not invent new information that isn't in the first-pass JSON or the narrative
       return res.status(200).json(firstPass);
     }
   } catch (e) {
+    await refund();
     return res.status(500).json({ error: e.message });
   }
 }

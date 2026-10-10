@@ -1,4 +1,6 @@
 import { DiagnosisSection } from "./clinicalInterpretation.jsx";
+import { useCredits, spendAnalyzeCredit } from "./useCredits.js";
+import CreditsChip from "./CreditsChip.jsx";
 import { withCarePlanSummaryStep } from "./assessmentSteps.js";
 import { AddAssessmentModal } from "./assessmentFrame.jsx";
 import { regionLabelOf, formatPainSection } from "./orthoWizardHelpers.js";
@@ -459,6 +461,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
   const [reviewOpen, setReviewOpen] = useState(false);
   // Bumped by the top-bar "Re-analyze" button on the AI Objective Assessment step (see ConditionObjectiveAssessment).
   const [reanalyzeTick, setReanalyzeTick] = useState(0);
+  const analyzeCredits = useCredits();
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
   const [missingDemFields, setMissingDemFields] = useState(null);
@@ -727,13 +730,17 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
               <button
                 type="button"
                 className="reanalyze-btn"
-                onClick={() => setReanalyzeTick((t) => t + 1)}
+                disabled={!analyzeCredits.unlimited && analyzeCredits.analyze === 0}
+                onClick={async () => { if (await spendAnalyzeCredit()) setReanalyzeTick((t) => t + 1); }}
                 aria-label="Re-analyze from my Subjective answers"
                 title="Re-analyze from your latest Subjective answers"
               >
                 <span aria-hidden="true">🔄</span>
-                <span className="reanalyze-btn-text">Re-analyze</span>
+                <span className="reanalyze-btn-text">{!analyzeCredits.unlimited && analyzeCredits.analyze === 0 ? "🔒 Locked" : `Re-analyze${analyzeCredits.unlimited ? "" : " · 1 credit"}`}</span>
               </button>
+            )}
+            {current.id === "objectiveAI" && (
+              <CreditsChip kind="analyze" />
             )}
             {current.id !== "review" && (
               <button className="back-btn" onClick={() => setReviewOpen(true)} aria-label="Review filled so far" title="Review filled so far">

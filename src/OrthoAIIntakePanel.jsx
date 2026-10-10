@@ -4,6 +4,8 @@ import { authHeader } from "./supabase.js";
 import { apiUrl } from "./apiUrl.js";
 import { mapParseResultToOrthoUpdates } from "./orthoAiIntake.js";
 import { useIsAdmin } from "./useIsAdmin.js";
+import { useCredits, setParserCredits } from "./useCredits.js";
+import CreditsChip from "./CreditsChip.jsx";
 
 const PROVIDER_NAMES = { groq: "Groq", gemini: "Gemini" };
 
@@ -45,6 +47,8 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen }
   const [orderNote, setOrderNote] = useState(null); // which AIs the server has keys for, in the order it tries them
   const [skippedNote, setSkippedNote] = useState(null); // why a provider that was tried first was skipped
   const isAdmin = useIsAdmin();
+  const credits = useCredits();
+  const outOfCredits = !credits.unlimited && credits.parser === 0; // locked at 0
   const [errorMsg, setErrorMsg] = useState("");
   const recognitionRef = useRef(null);
 
@@ -105,7 +109,7 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen }
   }
 
   async function runParse() {
-    if (!text.trim()) return;
+    if (!text.trim() || outOfCredits) return;
     setStatus("processing");
     setErrorMsg("");
     try {
@@ -116,6 +120,9 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen }
         body: JSON.stringify({ text }),
       });
       const json = await res.json();
+      const left = Number(res.headers?.get?.("X-Credits-Remaining"));
+      if (res.headers?.get?.("X-Credits-Remaining") != null) setParserCredits(left);
+      if (res.status === 402) setParserCredits(0);
       if (!res.ok) throw new Error(json.error || "Parse failed — try again.");
       // Which AI answered (api/_lib/llm.js sets this header). Printed to the
       // browser console so a test build can show Groq vs Gemini; no patient text.
@@ -149,7 +156,7 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen }
   if (!open) {
     return (
       <button type="button" className="ai-intake-toggle" onClick={openPanel}>
-        ✨ Say your assessment in your own words
+        ✨ Say your assessment in your own words{!credits.unlimited && credits.parser != null ? ` · ${credits.parser} ${credits.parser === 1 ? "credit" : "credits"}` : ""}
       </button>
     );
   }
@@ -158,6 +165,7 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen }
     <div className="ai-intake-panel">
       <div className="ai-intake-head">
         <span>✨ AI Assessment Intake</span>
+        <CreditsChip kind="parser" />
         <button type="button" className="sheet-close" onClick={close} aria-label="Close">
           ✕
         </button>
@@ -184,8 +192,8 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen }
                 🎤 Voice
               </button>
             )}
-            <button type="button" className="primary-btn" onClick={runParse} disabled={!text.trim() || status === "processing" || status === "recording"}>
-              {status === "processing" ? "Parsing…" : "✦ Parse with AI"}
+            <button type="button" className="primary-btn" onClick={runParse} disabled={!text.trim() || outOfCredits || status === "processing" || status === "recording"}>
+              {status === "processing" ? "Parsing…" : outOfCredits ? "🔒 Out of credits" : `✦ Parse with AI${credits.unlimited ? "" : " · 1 credit"}`}
             </button>
           </div>
           {status === "error" && <div className="ai-intake-error">{errorMsg}</div>}

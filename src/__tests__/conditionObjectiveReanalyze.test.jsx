@@ -108,7 +108,7 @@ describe("the top-bar Re-analyze button of the Ortho wizard", () => {
     />
   );
 
-  it("is in the top bar of the AI Objective Assessment step and works", () => {
+  it("is in the top bar of the AI Objective Assessment step and works", async () => {
     const { container } = renderWizard({ initialStep: "objectiveAI" });
     const bar = container.querySelector(".topbar");
     const button = within(bar).getByRole("button", { name: /Re-analyze from my Subjective answers/ });
@@ -116,7 +116,8 @@ describe("the top-bar Re-analyze button of the Ortho wizard", () => {
     expect(screen.queryByTestId("reanalyzed-note")).toBeNull();
     fireEvent.click(cards()[3]);
     fireEvent.click(button);
-    expect(screen.getByTestId("reanalyzed-note").textContent).toMatch(/best match/);
+    // the tap first spends one Re-analyze credit (async), then runs the analysis
+    expect((await screen.findByTestId("reanalyzed-note")).textContent).toMatch(/best match/);
     expect(nameOf(activeCard())).toBe(nameOf(cards()[0]));
   });
 
