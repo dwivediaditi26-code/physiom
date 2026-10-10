@@ -12,7 +12,7 @@ function show(regions) {
   document.body.innerHTML = "";
   const data = { subjective: { regions } };
   return render(
-    <SubjectiveSection data={data} setData={() => {}} selectedRegions={[{ id: "hip", label: "Hip" }]} setSelectedRegions={() => {}} regionLabelOf={(r) => r.label} requireAuth={() => true} />
+    <SubjectiveSection data={data} setData={() => {}} selectedRegions={[{ id: "hip", label: "Hip" }]} setSelectedRegions={() => {}} regionLabelOf={(r) => r.label} requireAuth={() => true} aiEntry />
   );
 }
 const heads = () => [...document.querySelectorAll(".collapsible-head")];

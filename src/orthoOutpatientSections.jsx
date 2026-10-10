@@ -46,7 +46,7 @@ function RegionField({ field, value, onChange, starred, contentKey }) {
 // orthoExercisePrescription.jsx's "Quick-apply protocol" already uses.
 // Collapsed by default -- a section only stays open because the clinician
 // opened it, not because of how many fields happen to be in it.
-function RegionSubjectiveGroup({ title, fields, open, onToggle, region, regionData, setField }) {
+function RegionSubjectiveGroup({ title, fields, open, onToggle, region, regionData, setField, showStars }) {
   const answeredCount = fields.filter((f) => {
     const v = regionData[f.id];
     return Array.isArray(v) ? v.length > 0 : !!v;
@@ -70,7 +70,7 @@ function RegionSubjectiveGroup({ title, fields, open, onToggle, region, regionDa
         <span className={"collapsible-chevron" + (open ? " open" : "")}>⌄</span>
       </button>
       {open && fields.map((f) => (
-        <RegionField key={f.id} field={f} value={regionData[f.id]} onChange={(v) => setField(f.id, v)} starred={isMatchingRelevant(region, f.id)} contentKey={contentKeyForRegion(region)} />
+        <RegionField key={f.id} field={f} value={regionData[f.id]} onChange={(v) => setField(f.id, v)} starred={!!showStars && isMatchingRelevant(region, f.id)} contentKey={contentKeyForRegion(region)} />
       ))}
     </div>
   );
@@ -79,7 +79,9 @@ function RegionSubjectiveGroup({ title, fields, open, onToggle, region, regionDa
 /* Tab row reusing the exact .region-tab-row-wrap/.region-tab CSS already
    used by ROM/MMT (orthoRegionAssessments.jsx) — one tab per region picked
    at Setup, each showing that region's own core subjective field set. */
-function RegionSubjectiveTabs({ selectedRegions, regionLabelOf, regions, setRegions }) {
+// aiEntry: the AI-assisted flow, the only one that has an "AI Objective Assessment" step. The ⭐ marks, the line explaining them and the
+// "From AI intake" box only mean something there (Aditi, 2026-10-10: the normal Ortho assessment should not talk about AI).
+function RegionSubjectiveTabs({ selectedRegions, regionLabelOf, regions, setRegions, aiEntry }) {
   const [activeIdx, setActiveIdx] = useState(0);
   // Shared across regions on purpose -- "keep Aggravating Factors open" is
   // a preference about the SECTION, not about which region tab it's under.
@@ -101,22 +103,26 @@ function RegionSubjectiveTabs({ selectedRegions, regionLabelOf, regions, setRegi
   return (
     <>
       <div className="subheading">Region-specific subjective</div>
-      {/* Aditi (2026-10-10): the old line said "everything else ... doesn't currently feed that matching", which read as if the whole
-          Subjective (chief complaint, onset ...) was ignored, and was shown even for the spine regions where EVERY question counts.
-          What is true today: the starred answers drive the suggestions; the Chief complaint / Onset text above is only read for a few
-          keywords (the spine and Elbow read words from Onset, Shoulder from the Chief complaint; Knee, Hip and Ankle/Foot read neither). */}
-      {/* Aditi (2026-10-10): the full paragraph "takes too much space". Two short lines show; the rest is one tap away. */}
-      <Hint>
-        ⭐ = this answer changes which conditions "AI Objective Assessment" suggests. It ranks once Chief complaint, Onset or Duration and 2 ⭐ answers are filled in.
-        <details className="star-more">
-          <summary>More</summary>
-          {sections.every((sec) => sec.fields.every((f) => isMatchingRelevant(region, f.id)))
-            ? "In this region every question below counts. "
-            : "Answers without a star are saved in your notes but do not change the suggestions. "}
-          What you typed in Chief complaint and Onset above is only lightly read (a few keywords), so the answers below are what really drive the suggestions.
-          {CHIEF_COMPLAINT_CHIP_REGIONS.has(contentKeyForRegion(region)) && " For this region, tap the “We understood” chips under Duration to turn what you typed into ticks."}
-        </details>
-      </Hint>
+      {/* Only the AI-assisted flow has an "AI Objective Assessment" step for the ⭐ to point at (Aditi, 2026-10-10: the normal Ortho
+          assessment should not talk about AI).
+          History: the old line said "everything else ... doesn't currently feed that matching", which read as if the whole Subjective
+          (chief complaint, onset ...) was ignored, and was shown even for the spine regions where EVERY question counts. What is true:
+          the starred answers drive the suggestions; the Chief complaint / Onset text above is only read for a few keywords (the spine
+          and Elbow read words from Onset, Shoulder from the Chief complaint; Knee, Hip and Ankle/Foot read neither).
+          The full paragraph "takes too much space", so two short lines show and the rest is one tap away. */}
+      {aiEntry && (
+        <Hint>
+          ⭐ = this answer changes which conditions "AI Objective Assessment" suggests. It ranks once Chief complaint, Onset or Duration and 2 ⭐ answers are filled in.
+          <details className="star-more">
+            <summary>More</summary>
+            {sections.every((sec) => sec.fields.every((f) => isMatchingRelevant(region, f.id)))
+              ? "In this region every question below counts. "
+              : "Answers without a star are saved in your notes but do not change the suggestions. "}
+            What you typed in Chief complaint and Onset above is only lightly read (a few keywords), so the answers below are what really drive the suggestions.
+            {CHIEF_COMPLAINT_CHIP_REGIONS.has(contentKeyForRegion(region)) && " For this region, tap the “We understood” chips under Duration to turn what you typed into ticks."}
+          </details>
+        </Hint>
+      )}
       <div className="region-tab-row-wrap">
         <div className="region-tab-row">
           {selectedRegions.map((r, i) => (
@@ -126,16 +132,17 @@ function RegionSubjectiveTabs({ selectedRegions, regionLabelOf, regions, setRegi
           ))}
         </div>
       </div>
-      {/* Seeded by AI intake (2026-09-23, Aditi: "whatever it extracted it
-          should show in the subjective assessment... right now it leaves
-          out things") -- see orthoAiIntake.js's regionAiNotes comment for
-          why this is one plain-text note per region instead of the AI
-          auto-ticking the specific fields below. Always rendered (not
-          only when non-empty) so it also works as an ordinary manual
-          note field when no AI intake was used. */}
-      <TextArea label="From AI intake (review & transcribe into the fields below)" value={regionData.aiNotes} onChange={(v) => setField("aiNotes", v)} />
-      {/* Written in the student's own words (any language): suggest the checklist answers it means. */}
-      <UnderstoodChips mode="story" contentKey={contentKeyForRegion(region)} text={regionData.aiNotes} fields={subjectiveFieldsForRegion(region)} regionData={regionData} onPick={setField} />
+      {/* Seeded by AI intake (2026-09-23, Aditi: "whatever it extracted it should show in the subjective assessment... right now it
+          leaves out things") -- see orthoAiIntake.js's regionAiNotes comment for why this is one plain-text note per region instead of
+          the AI auto-ticking the specific fields below. Shown in the AI-assisted flow always, and in the normal flow only once the AI
+          intake panel has actually filled it -- an empty "From AI intake" box in a flow with no AI is wrong (Aditi, 2026-10-10). */}
+      {(aiEntry || regionData.aiNotes) && (
+        <>
+          <TextArea label="From AI intake (review & transcribe into the fields below)" value={regionData.aiNotes} onChange={(v) => setField("aiNotes", v)} />
+          {/* Written in the student's own words (any language): suggest the checklist answers it means. */}
+          <UnderstoodChips mode="story" contentKey={contentKeyForRegion(region)} text={regionData.aiNotes} fields={subjectiveFieldsForRegion(region)} regionData={regionData} onPick={setField} />
+        </>
+      )}
       {sections.map((s) => (
         <RegionSubjectiveGroup
           key={s.title}
@@ -146,6 +153,7 @@ function RegionSubjectiveTabs({ selectedRegions, regionLabelOf, regions, setRegi
           region={region}
           regionData={regionData}
           setField={setField}
+          showStars={aiEntry}
         />
       ))}
     </>
@@ -243,7 +251,7 @@ function ChiefComplaintChips({ text, selectedRegions, regions, setRegions, regio
   );
 }
 
-export function SubjectiveSection({ data, setData, selectedRegions = [], setSelectedRegions, regionLabelOf, requireAuth, autoOpenAI, onConditionDetected, detectedConditionLabel, patientData }) {
+export function SubjectiveSection({ data, setData, selectedRegions = [], setSelectedRegions, regionLabelOf, requireAuth, autoOpenAI, onConditionDetected, detectedConditionLabel, patientData, aiEntry = false }) {
   const [d, set] = useSectionData(data, setData, "subjective");
 
   // Two entry options for this step: say it, or write it.
@@ -386,6 +394,7 @@ export function SubjectiveSection({ data, setData, selectedRegions = [], setSele
         regionLabelOf={regionLabelOf}
         regions={d.regions || {}}
         setRegions={(next) => set("regions", next)}
+        aiEntry={aiEntry}
       />
       {/* Aditi (2026-10-10): these history questions come AFTER the region-specific subjective block, not before it. */}
       <TextArea label="Previous treatment" value={d.previousTreatment} onChange={(v) => set("previousTreatment", v)} placeholder="Prior physio, injections, medication, surgery..." />

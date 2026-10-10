@@ -801,6 +801,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
               regionLabelOf={regionLabelOf}
               requireAuth={requireAuth}
               autoOpenAI={autoOpenAI}
+              aiEntry={entryMode === "ai"}
               onConditionDetected={handleConditionDetected}
               detectedConditionLabel={detectedConditionLabel}
               patientData={patientData}

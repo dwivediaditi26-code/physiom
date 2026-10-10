@@ -2,7 +2,7 @@
 // Aditi (2026-10-10): the old line said "everything else ... doesn't currently feed that matching", which read as if the whole
 // Subjective (chief complaint, onset ...) was ignored, and it appeared even for the spine regions where every question counts.
 // Now: spine regions say every question counts; other regions say un-starred answers are only notes; both say honestly that
-// the Chief complaint / Onset text is only lightly read.
+// the Chief complaint / Onset text is only lightly read. All of this is the AI-assisted flow (aiEntry): the normal flow shows none of it.
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
@@ -14,6 +14,7 @@ function show(regionId) {
   document.body.innerHTML = "";
   render(
     <SubjectiveSection
+      aiEntry
       data={{}}
       setData={() => {}}
       selectedRegions={[{ id: regionId, label: regionId }]}
