@@ -356,7 +356,7 @@ export default function EncounterEngine({ data, onExit, exitLabel = "Return to L
       <>
         {!done(t.mcq) && <BackLink to={{ name: "hub" }}/>}
         <Title>Patient's Response</Title>
-        <Hero art={data.intro.art} quote={`“${t.quote}”`}/>
+        <Hero art={t.art || data.intro.art} quote={`“${t.quote}”`}/>
         <RecordAdded items={t.record}/>
         <Question mcq={t.mcq} state={answers[t.mcq.id]} onPick={(id) => choose(t.mcq, id)} onSubmit={() => submit(t.mcq, { name: "feedback", id: t.mcq.id, kind: "topic", of: t.id })}/>
       </>
@@ -419,7 +419,7 @@ export default function EncounterEngine({ data, onExit, exitLabel = "Return to L
         {!(d.mcq && done(d.mcq)) && <BackLink to={{ name: "examHub" }}/>}
         <Title>{d.findingsTitle}</Title>
         <div className="rounded-2xl border border-slate-200 bg-gradient-to-b from-sky-50 to-amber-50 flex overflow-hidden min-h-[170px]">
-          <SafeImg src={img(data.intro.art)} alt="The patient" className="self-end w-[34%] max-h-[180px] object-contain object-bottom shrink-0"/>
+          <SafeImg src={img(d.art || data.intro.art)} alt="The patient" className="self-end w-[36%] max-h-[200px] object-contain object-bottom shrink-0"/>
           <div className="flex-1 p-3 flex items-center"><ul data-testid="exam-findings" className="list-none p-0 m-0 space-y-1.5">{d.findings.map((f, n) => <li key={n} className="flex gap-2 text-[13px] text-slate-800 leading-snug"><span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0"/><span>{f.text}<TagChip tag={f.tag}/></span></li>)}</ul></div>
         </div>
         {d.mcq ? (

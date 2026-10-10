@@ -19,12 +19,11 @@
 
 export const SIM_PATIENTS = [
   { id: "knee", art: "patient-1", title: "Knee Pain", tag: "Orthopaedics", sub: "45 y/o male", line: "Difficulty with stairs", live: true },
+  // Lumbar Case 1 (49-year-old woman), shown with her picture from the mockup.
+  { id: "lumbar1", art: "lumbar-patient-pain", title: "Lumbar Case 1", tag: "Musculoskeletal · Lumbar", sub: "49 y/o female", line: "Persistent low back pain", live: true },
   { id: "neck", art: "patient-2", title: "Neck Pain", tag: "Musculoskeletal", sub: "28 y/o female", line: "Office worker" },
   { id: "back", art: "patient-3", title: "Low Back Pain", tag: "Spine", sub: "52 y/o male", line: "Pain while bending" },
   { id: "shoulder", art: "patient-4", title: "Shoulder Pain", tag: "Orthopaedics", sub: "35 y/o female", line: "Difficulty reaching" },
-  // Lumbar Case 1 (case text: 49-year-old woman). Shown with the sheet's male
-  // low-back-pain character, as Aditi asked; the case wording is unchanged.
-  { id: "lumbar1", art: "patient-3", title: "Lumbar Case 1", tag: "Musculoskeletal · Lumbar", sub: "49 y/o female", line: "Persistent low back pain", live: true },
   { id: "breath", art: "patient-5", title: "Breathlessness", tag: "Cardiorespiratory", sub: "60 y/o male", line: "Reduced exercise tolerance" },
 ];
 

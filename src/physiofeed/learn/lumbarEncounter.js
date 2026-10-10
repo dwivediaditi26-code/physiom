@@ -10,9 +10,8 @@
 // examine, the patient answers, the clinical record fills up with only what was
 // asked, and a reasoning question checks what the student does with it.
 //
-// Picture: the male low-back-pain character from Aditi's character sheet
-// (public/sim/patient-3). The case text itself describes a 49-year-old woman;
-// the wording has not been changed to match the picture.
+// Pictures: the 49-year-old woman, cut from Aditi's mockup (public/sim/
+// lumbar-patient-pain, -think, -walk), the same patient on every screen.
 //
 // Reasons for options that Aditi did not write out are marked `derived: true`.
 // They restate her own teaching points; they should be checked by her.
@@ -41,7 +40,7 @@ export const ENCOUNTER = {
   milestones: ["onset", "aggravating", "easing", "distribution", "previous", "psychosocial", "safety", "examination", "imaging", "impression", "management", "report"],
 
   intro: {
-    art: "patient-3",
+    art: "lumbar-patient-pain",
     quote: "I injured my back at work, and I've been having problems ever since. It has become difficult to do my normal activities.",
     info: [
       ["user", "Age", "49 years"],
@@ -139,7 +138,7 @@ export const ENCOUNTER = {
       keyPoint: "A different course from her usual episodes is a reason to rethink the approach, not to repeat what has not helped.",
     },
     {
-      id: "psychosocial", milestone: "psychosocial", icon: "heart", label: "Explore how this affects work and daily life",
+      id: "psychosocial", milestone: "psychosocial", icon: "heart", label: "Explore how this affects work and daily life", art: "lumbar-patient-think",
       quote: "I am worried that the disc changes on my scan mean my back is damaged. I avoid doing things because I do not want to make it worse. I keep thinking that I need to find the right person who can fix it.",
       record: [
         r("Concerned about the CT report and disc pathology."), r("Believes the right practitioner will fix the problem."), r("Reduced activity to avoid pain."),
@@ -206,7 +205,7 @@ export const ENCOUNTER = {
     prompt: "Choose an examination to perform.",
     domains: [
       {
-        id: "obs", icon: "eye", label: "General observation and gait", findingsTitle: "Observation and Gait — Findings",
+        id: "obs", icon: "eye", label: "General observation and gait", art: "lumbar-patient-walk", findingsTitle: "Observation and Gait — Findings",
         findings: [r("Grimacing and placing a hand on the back."), r("Frequent changes between sitting and standing."), r("Slow, guarded gait.")],
         mcq: {
           id: "q_obs", q: "What does this show?",
