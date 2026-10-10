@@ -12,6 +12,7 @@ import { KNEE_CASE, SIM_PATIENTS } from "../physiofeed/learn/kneeSimCase.js";
 beforeEach(() => localStorage.clear());
 afterEach(cleanup);
 const S = KNEE_CASE.stages;
+const good = (st) => (Array.isArray(st.correct) ? st.correct[0] : st.correct);
 
 function start() {
   render(<CaseSimulator onBack={() => {}}/>);
@@ -22,7 +23,7 @@ function answer(stage, index) {
   fireEvent.click(screen.getByText("Submit Answer"));
 }
 function goNext(k) { fireEvent.click(screen.getByText(k === S.length - 1 ? "See my summary" : "Next")); }
-function playAll(pick = (st) => st.correct) {
+function playAll(pick = (st) => good(st)) {
   S.forEach((st, k) => { answer(st, pick(st, k)); goNext(k); });
 }
 
@@ -31,8 +32,7 @@ describe("Case Simulator content", () => {
     expect(S).toHaveLength(6);
     for (const st of S) {
       expect(st.options).toHaveLength(4);
-      expect(st.correct).toBeGreaterThanOrEqual(0);
-      expect(st.correct).toBeLessThan(4);
+      for (const k of [].concat(st.correct)) { expect(k).toBeGreaterThanOrEqual(0); expect(k).toBeLessThan(4); }
     }
   });
   it("only uses existing app pictures for assessments that have one (ROM, MMT)", () => {
@@ -65,7 +65,7 @@ describe("Case Simulator", () => {
 
   it("right answer on stage 1: bot says correct, shows why, Next goes to stage 2", () => {
     start();
-    answer(S[0], S[0].correct);
+    answer(S[0], good(S[0]));
     expect(screen.getByText(/Correct!/)).toBeInTheDocument();
     expect(screen.getByText(S[0].explain)).toBeInTheDocument();
     fireEvent.click(screen.getByText("Next"));
@@ -75,11 +75,11 @@ describe("Case Simulator", () => {
 
   it("stage 2 shows the red flag screen; stage 3 the key information; stage 4 the history-complete screen", () => {
     start();
-    answer(S[0], S[0].correct); goNext(0);
-    answer(S[1], S[1].correct);
+    answer(S[0], good(S[0])); goNext(0);
+    answer(S[1], good(S[1]));
     expect(screen.getByText("Red flag screen")).toBeInTheDocument();
     goNext(1);
-    answer(S[2], S[2].correct);
+    answer(S[2], good(S[2]));
     expect(screen.getByText("Key information")).toBeInTheDocument();
     goNext(2);
     expect(screen.getByText(S[3].historyDone.bot)).toBeInTheDocument();
@@ -89,7 +89,7 @@ describe("Case Simulator", () => {
 
   it("findings stage: pick an exam, see its documented findings and the existing ROM picture", () => {
     start();
-    S.slice(0, 4).forEach((st, k) => { answer(st, st.correct); goNext(k); });
+    S.slice(0, 4).forEach((st, k) => { answer(st, good(st)); goNext(k); });
     const f = S[4];
     expect(screen.queryByTestId("sim-findings")).not.toBeInTheDocument();
     fireEvent.click(screen.getByText("Observation & Swelling"));
@@ -102,9 +102,25 @@ describe("Case Simulator", () => {
     expect(screen.getByText(f.ask)).toBeInTheDocument();
   });
 
+  it("findings stage accepts ROM, strength or functional test as right; McMurray immediately is wrong", () => {
+    const f = S[4];
+    expect(f.correct).toEqual([0, 1, 2]);
+    for (const k of [0, 1, 2]) {
+      cleanup(); start();
+      S.slice(0, 4).forEach((st, n) => { answer(st, good(st)); goNext(n); });
+      answer(f, k);
+      expect(screen.getByText(/Correct!/)).toBeInTheDocument();
+    }
+    cleanup(); start();
+    S.slice(0, 4).forEach((st, n) => { answer(st, good(st)); goNext(n); });
+    answer(f, 3);
+    expect(screen.getByText(/Not quite/)).toBeInTheDocument();
+    expect(screen.getByText(/right answers are/)).toBeInTheDocument();
+  });
+
   it("wrong answer says not quite, marks the right one, and the case still moves on", () => {
     start();
-    const wrong = S[0].options.findIndex((_, k) => k !== S[0].correct);
+    const wrong = S[0].options.findIndex((_, k) => k !== good(S[0]));
     answer(S[0], wrong);
     expect(screen.getByText(/Not quite/)).toBeInTheDocument();
     expect(screen.queryByText(S[0].explain)).not.toBeInTheDocument();
@@ -127,7 +143,7 @@ describe("Case Simulator", () => {
 
   it("summary tabs: Your Answers lists every question; Learning Points and References say not available", () => {
     start();
-    playAll((st, k) => (k === 5 ? 1 : st.correct)); // last one wrong
+    playAll((st, k) => (k === 5 ? 1 : good(st))); // last one wrong
     expect(screen.getByTestId("sim-correct")).toHaveTextContent("5/6");
     fireEvent.click(screen.getByText("Review My Answers"));
     const a = within(screen.getByTestId("sim-answers"));

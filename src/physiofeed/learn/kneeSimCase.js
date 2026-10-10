@@ -130,7 +130,10 @@ export const KNEE_CASE = {
         "Assess functional task such as sit to stand or step up.",
         "Perform a McMurray test immediately.",
       ],
-      correct: 2,
+      // ROM, strength and the functional test are all valid next steps
+      // (Aditi, 2026-10-10: "only functional answer is right, that will be
+      // wrong"). The McMurray option stays wrong, as in her mockup.
+      correct: [0, 1, 2],
     },
     {
       kind: "reasoning",
