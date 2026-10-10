@@ -68,6 +68,13 @@ describe("Knee: chips under Chief complaint / Onset / Duration", () => {
     expect(chipTexts().join("|")).toMatch(/Prolonged sitting/);
   });
 
+  it("Ankle / Foot works the same way", async () => {
+    render(<Harness regions={[{ id: "ankle", label: "Ankle" }]} />);
+    type(chiefBox(), "The patient rolled the ankle inwards on uneven ground, heel pain on the first steps in the morning.");
+    await waitFor(() => expect(chipTexts().join("|")).toMatch(/Inversion sprain/), { timeout: 15000 });
+    expect(chipTexts().join("|")).toMatch(/First steps in the morning/);
+  });
+
   it("other regions do not show these chips yet", async () => {
     render(<Harness regions={[{ id: "shoulder", label: "Shoulder" }]} />);
     type(chiefBox(), "They twisted on a planted foot and the knee gave way.");

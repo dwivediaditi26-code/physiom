@@ -10,8 +10,9 @@
 //
 // "~word" = a bare word that only counts when typed INTO that question's own box.
 import { createPhraseMatcher, WORDS } from "./phraseEngine.js";
+import { extendPhrases } from "./phrasePattern.js";
 
-export const ANKLE_FOOT_PHRASES = {
+const ANKLE_FOOT_BASE = {
   location: {
     "Lateral ankle ligaments": [
       "outer ankle", "lateral ankle", "outside of the ankle", "outside of my ankle", "atfl", "outer side of my ankle", "outer side of the ankle",
@@ -355,6 +356,37 @@ export const ANKLE_FOOT_PHRASES = {
   },
 };
 
+// Added from the clinician-voice "everyday words" sheet (PhysioMind-AnkleFoot-Everyday-Words-DRAFT.pdf): what a clinician types ABOUT the
+// patient ("the patient", "they"), in English, Hinglish and Hindi. See ankleSheetSet.test.js.
+const SHEET_PHRASES = {
+  location: {
+    "Lateral ankle ligaments": ["lateral ligaments", "pain over the lateral ligaments", "lateral malleolus", "behind the lateral malleolus", "outer ankle bone"],
+    "1st big toe joint": ["1st mtp", "1st mtp pain", "first mtp", "1st mtp joint", "anguthe ke jod mein dard", "angutha jod mein dard", "अंगूठे के जोड़ में दर्द", "अंगूठे का जोड़ दर्द"],
+    "Plantar heel / arch": ["plantar fascia pain", "plantar fascia", "plantar fasciitis", "centre of the heel", "center of the heel", "middle of the heel", "edi ke beech", "एड़ी के बीच", "bruise under the heel", "stone bruise under the heel", "under the heel", "edi ke neeche dard", "एड़ी के नीचे दर्द"],
+    "Top of the foot": ["top of the middle of the foot", "middle of the foot", "midfoot", "mid foot"],
+  },
+  mechanism: {
+    "Inversion sprain (rolled inward)": ["inversion", "inversion injury", "inversion sprain", "inversion sprains", "recurrent inversion", "repeated inversion", "inversion with the foot pointing down", "keeps rolling over", "rolling over", "ankle keeps rolling", "ankle turned in", "ankle went over"],
+    "Insidious onset / overuse": ["koi chot nahi", "dheere dheere koi chot nahi", "कोई चोट नहीं", "धीरे धीरे कोई चोट नहीं", "no real injury", "no single event", "crept up slowly", "crept up over weeks", "built up slowly", "gradual onset"],
+    "Sudden increase in training": ["more mileage", "increased mileage", "mileage increase", "sudden increase in training", "doubled their weekly running", "doubled the weekly running", "daud ki doori achanak badha di", "दौड़ की दूरी अचानक बढ़ा दी", "hills and speed work"],
+    "Change in footwear / surface": ["change to harder surfaces", "a change to harder surfaces", "switched to a hard track", "sakht zameen par daudna shuru kiya", "सख्त ज़मीन पर दौड़ना शुरू किया"],
+    "High ankle sprain (syndesmosis)": ["external rotation", "external rotation with dorsiflexion", "foot forced outwards while the ankle was bent up", "foot was forced outwards while the ankle was bent up"],
+  },
+  aggravating: {
+    "First steps in the morning": ["first step", "first steps", "first step pain", "first few steps", "out of bed", "get out of bed", "getting out of bed", "pehla kadam", "pehle kadam", "पहला कदम", "पहले कदम"],
+    "Barefoot on a hard floor": ["hard floors barefoot", "hard floor barefoot", "sakht farsh par nange pair", "सख्त फर्श पर नंगे पैर", "hard floors, barefoot"],
+  },
+  radiation: {
+    "Tarsal tunnel — burning into the sole/toes (posterior tibial nerve)": ["sole of the foot burns", "sole burns", "burning sole", "talve mein jalan", "तलवे में जलन"],
+  },
+};
+const mergePhrases = (base, extra) => {
+  const out = { ...base };
+  for (const [field, opts] of Object.entries(extra)) out[field] = extendPhrases(out[field], opts);
+  return out;
+};
+export const ANKLE_FOOT_PHRASES = mergePhrases(ANKLE_FOOT_BASE, SHEET_PHRASES);
+
 const { PAIN: PAIN_W } = WORDS;
 // Words that say a sentence is about this region / about another one.
 const OWN_W = "ankle* foot feet heel* sole arch toe* achilles shin* tibia tibial calf leg legs malleol* takhn* टखन* टखना pair पैर panje पंजे edi एड़ी एडी talwa तलवा pindli पिंडली tang टांग";
@@ -370,8 +402,10 @@ const matcher = createPhraseMatcher({
   optionGuards: {
     "redFlags|Cancer history": FAMILY_W,
     // an achilles story is not a plantar-heel story; a burning sole is the nerve answer, not plantar pain
-    "location|Plantar heel / arch": "achilles burn* jalan जलन heels",
+    "location|Plantar heel / arch": "achilles अकिलीज अकिलीस burn* jalan जलन heels ooncha uncha oonchi unchi ऊंचा ऊंची ऊँचा high_heel high_heels pehanne पहनने",
     // "nange pair chalne me dard" is the barefoot answer, not plain walking
+    // "like being kicked" is a simile, not a kick
+    "mechanism|Direct impact": "like as_if felt_as_if feels_like",
     "aggravating|Walking / running": "barefoot bare_foot bare_feet nange नंगे without_shoes bina_chappal bina_joote feels_fine fine_then",
     // burning at night is the "burning" answer, not plain night pain
     "pattern|Night dominant (screen for serious pathology)": "burn* jalan जलन jalte",
@@ -403,6 +437,10 @@ const matcher = createPhraseMatcher({
     [/\b(gaanth|ganth|gaath|gant)\b/g, "gaanth"],
     [/\b(dhalan|dhalaan|dhaalan)\b/g, "dhalan"],
     [/\b(kasa|kasi|kasna|kasne)\b/g, "kasa"],
+    [/\b(angutha|anguthe|angoothe|angootha|anguthon)\b/g, "angutha"],
+    // "takhna andar ki taraf mud gaya" = rolled inward; "pair bahar ki taraf mud gaya" = turned outward. Not pain places.
+    [/\bandar ki taraf (mod|mura|mudi|mude|mudna|modna)\b(?! par\b)/g, "inwardroll"],
+    [/\bbahar ki taraf (mod|mura|mudi|mude|mudna|modna)\b(?! par\b)/g, "outwardroll"],
   ],
   deva: [
     [/टखन(ा|े|ों|ो)?/g, "टखना"],
@@ -413,6 +451,10 @@ const matcher = createPhraseMatcher({
     [/पिंडल(ी|ियां|ियों|ि)/g, "पिंडली"],
     [/सीढ(ी|ि)(यों|यां|या)?/g, "सीढी"],
     [/उकडू|उकड़ू/g, "उकडू"],
+    [/अंगूठ(ा|े|ों)/g, "अंगूठा"],
+    [/जूत(े|ों|ा)/g, "जूते"],
+    [/अंदर की तरफ (मुडना|मुडा|मुडी|मुडे|मुड)(?![ऀ-ॿ])(?! पर)/g, "inwardroll"],
+    [/बाहर की तरफ (मुडना|मुडा|मुडी|मुडे|मुड)(?![ऀ-ॿ])(?! पर)/g, "outwardroll"],
   ],
   rules: ({ rule, O }) => {
     const ANKLEW = "ankle* takhna टखना";
@@ -422,20 +464,23 @@ const matcher = createPhraseMatcher({
     rule("location", LATA, ["outer outside lateral bahar bahari बाहर बाहरी", ANKLEW], 4, { unless: "inside inner medial front back" });
     rule("location", LATA, [ANKLEW, "outer outside lateral bahar बाहर", "side taraf तरफ"], 12, { unless: "inside inner medial front back" });
     rule("location", LATA, [ANKLEW, "on_outside on_the_outside outer_side outside_of lateral_side"], 12, { unless: "inside inner medial front back" });
-    rule("location", MEDA, ["inner inside medial andruni अंदरूनी andar अंदर", ANKLEW], 4, { unless: "outside outer lateral front back mod मुड़ rolled twisted turned moch" });
-    rule("location", MEDA, [ANKLEW, "inner inside medial andar अंदर", "side taraf तरफ"], 12, { unless: "outside outer lateral front back" });
+    rule("location", MEDA, ["inner inside medial andruni अंदरूनी andar अंदर", ANKLEW], 6, { unless: "outside outer lateral front back mod मुड़ rolled twisted turned moch" });
+    rule("location", MEDA, [ANKLEW, "inner inside medial andar अंदर", "side taraf तरफ"], 12, { unless: "outside outer lateral front back inwardroll outwardroll" });
     rule("location", ANTA, ["front anterior samne सामने aage आगे", ANKLEW], 4);
     rule("location", POSTA, ["back behind posterior peeche पीछे", ANKLEW], 4, { unless: "heel edi एडी achilles" });
-    rule("location", ACHI, ["achilles", "heel edi एडी", "insertion insertional attaches attachment judi जुड़ी judne"], 8);
-    rule("location", ACHM, ["achilles", "middle mid beech बीच midportion mid_portion"], 5);
+    rule("location", ACHI, ["achilles अकिलीज अकिलीस", "heel edi एडी", "insertion insertional attaches attachment judi जुड़ी judne judta judti जुड़ता जुड़ती pas पास near close"], 8);
+    rule("location", ACHM, ["achilles अकिलीज अकिलीस", "middle mid beech बीच midportion mid_portion"], 5);
     rule("location", ACHM, ["achilles tendon cord nas नस", "above upar ऊपर", "heel edi एडी"], 9);
-    rule("location", PLANT, ["heel edi एडी arch arches talwa तलवा", PAIN_W], 6, { unless: "back peeche पीछे behind achilles heels tak तक fail above upar ऊपर tendon" });
+    rule("location", PLANT, ["heel edi एडी arch arches talwa तलवा", "bruise bruised bruising"], 7, { unless: "back peeche पीछे behind achilles अकिलीज अकिलीस above upar ऊपर tendon" });
+    rule("location", PLANT, ["heel edi एडी arch arches talwa तलवा", PAIN_W], 6, { unless: "back peeche पीछे behind achilles अकिलीज अकिलीस heels tak तक fail above upar ऊपर tendon" });
+    rule("location", TOE1, ["angutha अंगूठा", "jod जोड़ jodd"], 4, { ctx: "pain" });
     rule("location", TOE1, ["big_toe bade_angutha hallux bunion pair_ka_angutha pair_ke_angutha पैर_का_अंगूठा पैर_के_अंगूठा", PAIN_W], 10);
-    rule("location", FORE, ["forefoot ball_of_foot metatarsal* panje पंजा pair_ke_aage पैर_के_आगे", PAIN_W], 8);
+    rule("location", FORE, ["forefoot ball_of_foot metatarsal* panje पंजा pair_ke_aage पैर_के_आगे", PAIN_W], 8, { block: "se से zor ज़ोर dhakka धक्का dhakke धक्के", blockAfter: "se से ko को zor ज़ोर dhakka धक्का dhakke धक्के" });
+    rule("location", FORE, ["under beneath niche", "front_of_the_foot front_of_foot ball_of_the_foot ball_of_foot forefoot"], 5, { ctx: "pain" });
     rule("location", BETW, ["between beech बीच", "toe toes ungli उंगली उंगलियों"], 6);
     rule("location", BETW, ["toe_web web_space webspace"], 2);
     rule("location", ACHI, ["edi एडी heel", "peeche पीछे back behind", "nas नस tendon"], 6, { unless: "above upar ऊपर" });
-    rule("location", TOP, ["top upper upar ऊपर ऊपरी dorsum dorsal", FOOTW], 4, { unless: "toe toes" });
+    rule("location", TOP, ["top upper upar ऊपर ऊपरी dorsum dorsal", FOOTW], 5, { unless: "toe toes thik ठीक just_above" });
     rule("location", SHIN, ["shin shinbone tibia pindli_ki_haddi", PAIN_W], 8);
     rule("location", SHIN, ["shin shinbone shin_ki_haddi pindli_ki_haddi tibia"], 1, { unless: "guard guards pad pads" });
     rule("location", SHIN, [PAIN_W, "lower_leg", "bone haddi हड्डी"], 8);
@@ -445,41 +490,51 @@ const matcher = createPhraseMatcher({
     rule("radiation", TARSAL, ["burn* jalan जलन tingl* jhunjhuni झनझनाहट pins_and_needles", "sole soles talwa तलवा toes ungli उंगली"], 9, { unless: "between beech बीच" });
     rule("radiation", BURNBETW, ["burn* jalan जलन numb* sunn* सुन्न* tingl* jhunjhuni झनझनाहट", "toe_web web_space webspace"], 5);
     rule("radiation", BURNBETW, ["burn* jalan जलन numb* sunn* सुन्न* tingl* jhunjhuni झनझनाहट", "between beech बीच", "toe toes ungli उंगली उंगलियों"], 7);
+    rule("radiation", TARSAL, ["sole soles talwa तलवा", "burns burning jalan जलन buzzes buzzing"], 5);
     rule("radiation", SOLE, ["radiat* spread* travel* goes going go shoots shoot shooting jata jati जाता जाती फैल* fail tak तक", "sole soles talwa तलवा"], 6, { ctx: "pain", unless: "burn* jalan जलन" });
     // mechanism
     const [INSID, INV, EVER, HIGH, DIRECT, FALLH, LAND, FOOTW_CHG, TRAIN] = [0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => O("mechanism", i));
-    rule("mechanism", INV, ["rolled twisted turned sprained went_over mod moch मोच मुड़", ANKLEW], 8, { unless: "outwards outward everted eversion high" });
+    rule("mechanism", INV, ["rolled rolls rolling twisted turned sprain* went_over mod moch मोच मुड़", ANKLEW], 8, { unless: "outwards outward everted eversion high upar ऊपर upwards dorsiflex* outwardroll" });
+    rule("mechanism", INV, ["inwardroll"], 1);
+    rule("mechanism", INV, [ANKLEW, "rolled twisted turned went rolling rolls", "in inwards inward over"], 4, { unless: "outwards outward everted eversion high" });
     rule("mechanism", INV, ["foot", "rolled turned twisted", "in inwards inward"], 3);
-    rule("mechanism", EVER, ["rolled twisted turned rotated", "outwards outward outside everted eversion"], 8, { ctx: "painOrArm" });
-    rule("mechanism", EVER, ["mod मुड़", "bahar बाहर"], 4, { ctx: "painOrArm" });
+    rule("mechanism", EVER, ["rolled twisted turned rotated", "outwards outward everted eversion"], 8, { ctx: "painOrArm", unless: "inwards inward inwardroll" });
+    rule("mechanism", EVER, ["mod मुड़", "bahar बाहर"], 4, { ctx: "painOrArm", unless: "andar अंदर inwardroll", block: "dard दर्द sujan सूजन", blockAfter: "par पर" });
+    rule("mechanism", EVER, ["outwardroll"], 1, { ctx: "painOrArm" });
     rule("mechanism", HIGH, ["high", "sprain moch मोच syndesmo*"], 4, { ctx: "painOrArm" });
-    rule("mechanism", HIGH, ["foot_planted planted_foot foot_was_planted planted_my_foot", "twist* rotat* tackle* tackled"], 8);
+    rule("mechanism", HIGH, ["foot_planted planted_foot foot_was_planted planted_my_foot foot_fixed foot_was_fixed fixed_foot", "twist* rotat* tackle* tackled"], 8);
+    rule("mechanism", HIGH, ["external_rotation externally_rotated forced_outwards forced_outward twisted_outwards turned_outwards pair_bahar_ki_taraf outwardroll", "dorsiflex* bent_up bent_upwards upar ऊपर upwards"], 14);
     rule("mechanism", DIRECT, ["kicked stamped stepped_on_foot hit struck smashed dropped fell_on laat लात", "foot feet shin ankle pair पैर"], 5, { unless: "asleep" });
-    rule("mechanism", FALLH, ["dropped_from fell_from jumped_from", "floor balcony terrace storey height ladder roof wall"], 6);
+    rule("mechanism", FALLH, ["dropped_from fell_from jumped_from jumping_down_from jumped_down_from jump_down_from", "floor balcony terrace storey height ladder roof wall"], 6);
     rule("mechanism", FALLH, ["kood कूद", "unchai ऊंचाई chat छत deewar दीवार"], 5);
     rule("mechanism", FALLH, ["fell fall fallen gir गिर jumped_off jumped_from jump_from kood_kar_gir", "height ladder roof wall floor tree unchai ऊंचाई chat छत seedhi सीढ़ी deewar दीवार"], 6);
     rule("mechanism", LAND, ["land* landed landing utarte उतरते utar", "jump* kood कूद* hop"], 6);
+    rule("mechanism", FOOTW_CHG, ["change changed switch switched shifted moved", "surface surfaces track ground floor roads road pavement tarmac concrete"], 5);
     rule("mechanism", FOOTW_CHG, ["moved switched changed shifted", "sandals sandal shoes boots trainers footwear chappal joote"], 6);
     rule("mechanism", FOOTW_CHG, ["new naye नए naya नया changed badle बदले switched different", "shoes shoe sandals boots joote जूते chappal चप्पल surface track floor ground heels trainers footwear"], 5);
     rule("mechanism", TRAIN, ["training trained trains", "marathon half_marathon 10k 5k race"], 6);
     rule("mechanism", TRAIN, ["started begun began beginning", "couch_to_5k couch_to_10k marathon half_marathon running_programme running_program"], 6);
-    rule("mechanism", TRAIN, ["increased increase doubled ramped upped badha बढ़ा sudden suddenly achanak अचानक", "training running mileage distance jogging daudna दौड़ना gym workout"], 6);
+    rule("mechanism", TRAIN, ["increased increase doubled ramped upped more badha बढ़ा sudden suddenly achanak अचानक", "training running mileage distance jogging daudna दौड़ना daud दौड़ doori दूरी gym workout"], 6);
     // aggravating
     const A = { reliefKills: true, reliefAfter: true, block: "weak* all_day every_day daily din_bhar roz रोज" };
-    const AGG_W = PAIN_W + " pinch* pinching worse worsens worsen worst aggravate*";
+    const AGG_W = PAIN_W + " pinch* pinching worse worsens worsen worst aggravate* badhta badhti badhte बढ़ता बढ़ती बढ़ते";
     const [FIRST, WALKRUN, DOWNH, DORSI, STAIRS, BAREFOOT, TIGHT] = [0, 1, 2, 3, 4, 5, 6].map((i) => O("aggravating", i));
+    rule("aggravating", FIRST, ["first_thing"], 2, { ctx: "pain", reliefKills: true });
+    rule("aggravating", FIRST, [PAIN_W, "get_out_of_bed getting_out_of_bed out_of_bed gets_out_of_bed"], 8, { reliefKills: true });
+    rule("aggravating", FIRST, ["first_step first_steps first_few_steps pehla_kadam pehle_kadam पहला_कदम पहले_कदम"], 3, { ctx: "painOrArm", reliefKills: true });
     rule("aggravating", FIRST, [AGG_W, "first pehle पहले", "step steps kadam कदम", "morning subah सुबह bed bistar बिस्तर get_up getting_up uthte उठते"], 8, A);
     rule("aggravating", FIRST, ["step stepping steps kadam कदम", "out_of_bed get_out_of_bed getting_out_of_bed bed bistar बिस्तर get_up getting_up"], 5, { ctx: "pain", reliefKills: true });
     rule("aggravating", FIRST, ["first pehle पहले", "out_of_bed getting_out_of_bed get_up getting_up bed bistar बिस्तर"], 5, { ctx: "pain", reliefKills: true });
     rule("aggravating", FIRST, ["uthte उठते", "subah सुबह morning bed bistar बिस्तर"], 3, { ctx: "pain", reliefKills: true, unless: "evening shaam शाम" });
     rule("aggravating", FIRST, ["first pehle पहले", "step steps kadam कदम", "morning subah सुबह bed bistar बिस्तर get_up getting_up uthte उठते"], 6, { ctx: "pain", reliefKills: true });
-    rule("aggravating", WALKRUN, [AGG_W, "walk* run* running jog* jogging chalna चल* daudna दौड़*"], 7, { ...A, block: "like jaise जैसे started began shuru", blockAfter: "shuru started began start", blockBefore: "downhill dhalan ढलान uphill", unless: "barefoot bare_foot bare_feet nange नंगे without_shoes without_slippers bina_chappal bina_joote warm warms warmed garam" });
+    rule("aggravating", WALKRUN, [AGG_W, "walk* run* running jog* jogging chalna चल* daudna दौड़*"], 7, { ...A, block: "like jaise जैसे started began shuru starting", blockAfter: "shuru started began start", blockBefore: "downhill dhalan ढलान uphill starting start starts", unless: "barefoot bare_foot bare_feet nange नंगे without_shoes without_slippers bina_chappal bina_joote warm warms warmed garam" });
     rule("aggravating", DOWNH, [AGG_W, "downhill dhalan ढलान utaar उतार pahaad पहाड़ slope hill descending"], 7, A);
     rule("aggravating", DORSI, [AGG_W, "squat* squatting crouch* kneel* kneeling ukdu उकडू dorsiflex*"], 9, A);
-    rule("aggravating", STAIRS, [AGG_W, "stairs staircase upstairs seedhiyan सीढी zeena जीना"], 7, { ...A, block: "down downstairs utarte उतरते", blockBefore: "down downstairs utarte उतरते", unless: "squat* ukdu उकडू" });
-    rule("aggravating", DORSI, [AGG_W, "stairs staircase steps seedhiyan सीढी zeena जीना", "down downstairs utarte उतरते"], 8, A);
+    rule("aggravating", STAIRS, [AGG_W, "stairs staircase upstairs seedhiyan सीढी zeena जीना"], 7, { ...A, block: "down downstairs utarte उतरते", blockBefore: "down downstairs utarte उतरते", blockAfter: "mod मुड़ rolled twisted turned utarte उतरते down downstairs", unless: "squat* ukdu उकडू" });
+    rule("aggravating", DORSI, [AGG_W, "stairs staircase steps seedhiyan सीढी zeena जीना", "down downstairs utarte उतरते"], 8, { ...A, blockAfter: "mod मुड़ rolled twisted turned" });
     rule("aggravating", TIGHT, [AGG_W, "heels"], 9, A);
-    rule("aggravating", TIGHT, ["tight narrow pointed pointy squashed squeezed cramped", "shoes shoe footwear boots trainers sandals joote जूते"], 3);
+    rule("aggravating", TIGHT, ["tight tang तंग narrow pointed pointy squashed squeezed cramped", "shoes shoe footwear boots trainers sandals joote जूते"], 3, { blockAfter: "calf calves muscle muscles hamstring hamstrings" });
+    rule("aggravating", BAREFOOT, ["hard sakht सख्त", "barefoot bare_foot bare_feet nange नंगे"], 5);
     rule("aggravating", BAREFOOT, ["cannot cant unable difficult mushkil मुश्किल", "barefoot bare_foot bare_feet nange नंगे"], 6, { selfNeg: true });
     rule("aggravating", BAREFOOT, [AGG_W, "barefoot bare_foot bare_feet nange नंगे bina_chappal बिना_चप्पल bina_joote बिना_जूते without_shoes without_slippers"], 8, { reliefKills: true });
     rule("aggravating", TIGHT, [AGG_W, "tight tang तंग narrow pointed pointy nukile नुकीले heels strap squeeze*", "shoe shoes footwear joote जूते sandal सैंडल chappal चप्पल heels"], 8, A);
@@ -494,6 +549,7 @@ const matcher = createPhraseMatcher({
     rule("pattern", MORNIMP, ["morning subah सुबह waking wake* on_waking", "stiffness stiff* akdan अकड़न", "loosen* eases settles improves"], 9);
     rule("pattern", WARM, ["eased eases settled settles better", "during while", "worse worsens flares", "after afterwards later baad बाद"], 12);
     rule("pattern", WARM, ["warm* garam", "worse worsens worst badh बढ़ flare* flares", "afterwards after later baad बाद"], 8);
+    rule("pattern", WARM, ["warms_up warm_up warmed_up", "then", "aches aching hurts sore worse pain again afterwards later"], 7);
     rule("pattern", NIGHT, ["night raat रात", "worse worst more zyada ज्यादा badh बढ़ bad"], 7, { ctx: "pain", reliefKills: true, unless: "burn* jalan जलन" });
     rule("pattern", NIGHT, ["wakes_me woke_me waking_me wake_me jag jaag जाग* disturb* neend नींद sleep", PAIN_W], 8, { reliefKills: true, noComma: true, unless: "morning mornings subah सुबह burn* jalan जलन" });
     rule("pattern", NIGHT, ["night raat रात", PAIN_W], 4, { reliefKills: true, noComma: true, unless: "burn* jalan जलन" });
@@ -516,10 +572,10 @@ const matcher = createPhraseMatcher({
     rule("redFlags", OTTWEIGHT, ["cant cannot unable couldnt could_not", "weight_bear bear_weight put_weight weight"], 5, { selfNeg: true });
     rule("redFlags", OTTWEIGHT, ["cant cannot unable couldnt nahi नहीं", "step steps kadam कदम", "four 4 chaar चार even bhi भी few ek एक one"], 6, { selfNeg: true });
     rule("redFlags", OTTWEIGHT, ["cant cannot unable couldnt", "walk walking", "injury injured accident fall fell collision tackle tackled twisted landed chot gir"], 14, { selfNeg: true });
-    rule("redFlags", ACHRUP, ["pop popped snap snapped rupture* ruptured toot टूट phat फट", "achilles back_of_the_ankle ankle_ke_peeche टखने_के_पीछे calf"], 10);
+    rule("redFlags", ACHRUP, ["pop popped snap snapped rupture* ruptured toot टूट phat फट पॉप", "achilles अकिलीज अकिलीस back_of_the_ankle ankle_ke_peeche टखने_के_पीछे calf"], 10);
     rule("redFlags", ACHRUP, ["pop popped snap snapped", "back peeche पीछे behind"], 6, { ctx: "painOrArm" });
-    rule("redFlags", ACHRUP, ["cant cannot unable nahi नहीं mushkil मुश्किल difficult", "rise tiptoe tip_toe tiptoes push_up push_off on_toes on_my_toes up_on_toes panjon पंजों पंजे"], 6, { selfNeg: true });
-    rule("redFlags", ACHRUP, ["cant cannot unable nahi नहीं mushkil मुश्किल difficult", "rise tiptoe tip_toe toes panjon पंजों push_off", "toes tiptoe पंजों पंजे"], 8, { selfNeg: true });
+    rule("redFlags", ACHRUP, ["cant cannot unable nahi नहीं mushkil मुश्किल difficult", "rise tiptoe tip_toe tiptoes push_up push_off on_toes on_my_toes up_on_toes panjon पंजों पंजे"], 6, { selfNeg: true, unless: "squat* kneel* ukdu उकडू weight_bear bear_weight put_weight weight bhaar भार" });
+    rule("redFlags", ACHRUP, ["cant cannot unable nahi नहीं mushkil मुश्किल difficult", "rise tiptoe tip_toe toes panjon पंजों push_off", "toes tiptoe पंजों पंजे"], 8, { selfNeg: true, unless: "squat* kneel* ukdu उकडू weight_bear bear_weight put_weight weight bhaar भार" });
     rule("redFlags", ATFL, ["torn tear torn_completely complete floppy loose dheela ढीला phat फट", "ligament ligaments lagament लिगामेंट atfl ankle takhna टखना"], 16);
     rule("redFlags", STRESS, ["stress_fracture pinpoint focal one_spot one_sore_spot ek_jagah एक_जगह", "shin tibia bone haddi हड्डी pindli पिंडली"], 7);
     rule("redFlags", PERON, ["click clicks snap snaps pop pops clunk", "outer outside lateral", "ankle_bone malleolus"], 8);
@@ -534,7 +590,7 @@ const matcher = createPhraseMatcher({
 });
 
 // "back" words for the "referred from the lower back" answer.
-function WORDS_BACK() { return "back kamar कमर sciatica sciatic lumbar spine"; }
+function WORDS_BACK() { return "lower_back low_back back_pain back_ache backache from_back kamar कमर sciatica sciatic lumbar spine spinal"; }
 
 export const FIELDS = matcher.fields;
 export const PHRASE_COUNT = matcher.PHRASE_COUNT;

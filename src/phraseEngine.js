@@ -68,7 +68,7 @@ export const NEGATORS = new Set(["no", "not", "never", "without", "none", "nothi
   "dont", "doesnt", "didnt", "isnt", "wasnt", "arent", "hasnt", "havent", "wont", "wouldnt",
   "nahi", "bina", "bagair", "mat", "नहीं", "बिना", "बगैर", "मत"]);
 const NEGATORS_AFTER = new Set(["nahi", "नहीं"]);
-const RELIEF = new Set(["better", "relieved", "relief", "eases", "ease", "improves", "improve", "settles", "helps",
+const RELIEF = new Set(["better", "relieved", "relief", "eases", "ease", "easing", "eased", "improves", "improve", "settles", "helps",
   "aaram", "rahat", "आराम", "राहत"]);
 // Words right AFTER a trigger that turn it into a relief ("chalne se dard kam ho jata hai" = walking eases it).
 const RELIEF_AFTER = new Set([...RELIEF, "kam", "कम", "less", "lessens", "lessen", "reduces", "reduced", "theek", "ठीक"]);
