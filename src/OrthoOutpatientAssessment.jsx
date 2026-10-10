@@ -457,6 +457,8 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
   const [visited, setVisited] = useState(new Set());
   const [addOpen, setAddOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
+  // Bumped by the top-bar "Re-analyze" button on the AI Objective Assessment step (see ConditionObjectiveAssessment).
+  const [reanalyzeTick, setReanalyzeTick] = useState(0);
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
   const [missingDemFields, setMissingDemFields] = useState(null);
@@ -721,6 +723,18 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
                 )}
               </div>
             </div>
+            {current.id === "objectiveAI" && (
+              <button
+                type="button"
+                className="reanalyze-btn"
+                onClick={() => setReanalyzeTick((t) => t + 1)}
+                aria-label="Re-analyze from my Subjective answers"
+                title="Re-analyze from your latest Subjective answers"
+              >
+                <span aria-hidden="true">🔄</span>
+                <span className="reanalyze-btn-text">Re-analyze</span>
+              </button>
+            )}
             {current.id !== "review" && (
               <button className="back-btn" onClick={() => setReviewOpen(true)} aria-label="Review filled so far" title="Review filled so far">
                 ✅
@@ -841,6 +855,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
                 selectedRegions={selectedRegions}
                 setSelectedRegions={setSelectedRegions}
                 onStartOutcomeMeasure={openOutcomeMeasure}
+                reanalyzeSignal={reanalyzeTick}
               />
             </>
           )}

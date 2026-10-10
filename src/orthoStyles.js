@@ -60,6 +60,13 @@ export function orthoStyles() {
           width: 32px; height: 32px; border-radius: 10px; font-size: 16px; cursor: pointer;
           display: flex; align-items: center; justify-content: center; flex-shrink: 0;
         }
+        .reanalyze-btn {
+          border: none; background: ${BRAND.purpleFaint}; color: ${BRAND.purple};
+          height: 32px; padding: 0 10px; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer;
+          display: flex; align-items: center; justify-content: center; gap: 5px; flex-shrink: 0; white-space: nowrap;
+        }
+        .reanalyze-btn:active { transform: scale(0.97); }
+        @media (max-width: 340px) { .reanalyze-btn-text { display: none; } .reanalyze-btn { padding: 0; width: 32px; } }
         .topbar-title { font-weight: 700; font-size: 15px; line-height: 1.25; flex: 1; }
         .topbar-breadcrumb { font-size: 11.5px; color: ${BRAND.gray}; margin-top: 1px; }
         .topbar-step-count { color: ${BRAND.purple}; font-weight: 700; }
@@ -867,6 +874,8 @@ export function orthoStyles() {
         .obj-diag-banner-title-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
         .obj-diag-banner-title { font-size: 12px; font-weight: 800; color: ${BRAND.purpleDark}; }
         .obj-diag-banner-badge { font-size: 8px; font-weight: 700; padding: 2px 6px; border-radius: 999px; background: #fff; color: ${BRAND.purple}; }
+        .obj-diag-banner { scroll-margin-top: 150px; }
+        .obj-diag-banner-done { font-size: 10.5px; font-weight: 700; color: #166534; background: #DCFCE7; border-radius: 8px; padding: 4px 8px; margin-top: 4px; line-height: 1.3; }
         .obj-diag-banner-sub { font-size: 10px; color: ${BRAND.gray}; line-height: 1.3; margin-top: 2px; }
 
         /* Target Hypotheses — compact 3-card grid, same reference mockup.

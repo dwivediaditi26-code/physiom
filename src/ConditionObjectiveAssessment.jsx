@@ -1777,7 +1777,7 @@ function AddSpecialTestPicker({ options, onAdd }) {
   );
 }
 
-export default function ConditionObjectiveAssessment({ data, setData, selectedRegions, setSelectedRegions, onStartOutcomeMeasure }) {
+export default function ConditionObjectiveAssessment({ data, setData, selectedRegions, setSelectedRegions, onStartOutcomeMeasure, reanalyzeSignal = 0 }) {
   const regions = selectedRegions || [];
   // Picking 2+ regions in Subjective used to only ever show the FIRST
   // matching region's condition-wise assessment here -- the rest were
@@ -1809,6 +1809,28 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
   // rankedIds below), so there is nothing to "run". A Re-analyze button used to
   // sit here that only replayed an "Analyzing…" animation and changed nothing --
   // students pressed it expecting a new result (removed 2026-10, Aditi).
+  // The top-bar "Re-analyze" button (OrthoOutpatientAssessment.jsx, 2026-10-10, Aditi: "if I change the
+  // Subjective I want to re-analyze") does the one real thing left to do: a
+  // condition tapped earlier stays selected even after the ranking changes, so
+  // the button sends the page back to the NEW best match and says what it is.
+  // Each tap bumps reanalyzeSignal; the first value (0) is not a tap.
+  const [reanalyzedAt, setReanalyzedAt] = useState(null);
+  const lastSignal = useRef(reanalyzeSignal);
+  const bannerRef = useRef(null);
+  useEffect(() => {
+    if (reanalyzeSignal === lastSignal.current) return;
+    lastSignal.current = reanalyzeSignal;
+    setActiveId(null);
+    setActiveSubtopic("observation");
+    setReanalyzedAt(Date.now());
+    const raf = typeof requestAnimationFrame === "function" ? requestAnimationFrame(() => bannerRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" })) : null;
+    return () => { if (raf != null && typeof cancelAnimationFrame === "function") cancelAnimationFrame(raf); };
+  }, [reanalyzeSignal]);
+  useEffect(() => {
+    if (!reanalyzedAt) return undefined;
+    const t = setTimeout(() => setReanalyzedAt(null), 8000);
+    return () => clearTimeout(t);
+  }, [reanalyzedAt]);
 
   const regionPicked = regions.some(config.matchesRegion);
 
@@ -1970,7 +1992,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           it's clicking so bad ... everything is vibrating"). Matches the
           single-sticky-header-per-screen pattern already established for
           .topbar/Cardio's header rather than stacking a second one. */}
-      <div className="obj-diag-banner">
+      <div className="obj-diag-banner" ref={bannerRef}>
         <div className="obj-diag-banner-main">
           <span className="obj-diag-banner-icon">🧠</span>
           <div style={{ minWidth: 0 }}>
@@ -1978,6 +2000,13 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
               <span className="obj-diag-banner-title">Differential Inference</span>
               {hasMatchEvidence && <span className="obj-diag-banner-badge">Live Match</span>}
             </div>
+            {reanalyzedAt && (
+              <div className="obj-diag-banner-done" role="status" data-testid="reanalyzed-note">
+                {hasMatchEvidence && rankedIds[0]
+                  ? `✓ Re-analyzed just now from your Subjective answers — best match: ${config.conditions[rankedIds[0]]?.name}${conditionMatchPct(matchById[rankedIds[0]]) != null ? ` (${conditionMatchPct(matchById[rankedIds[0]])}%)` : ""}.`
+                  : "✓ Re-analyzed just now — nothing matches yet. Tick answers in Subjective (the ⭐ ones matter most), then press Re-analyze again."}
+              </div>
+            )}
             <div className="obj-diag-banner-sub">
               {hasMatchEvidence
                 ? `Matches your Subjective answers — ${config.label}: ${matchedCount} condition${matchedCount === 1 ? "" : "s"} matched.`

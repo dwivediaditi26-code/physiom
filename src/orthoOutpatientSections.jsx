@@ -89,7 +89,16 @@ function RegionSubjectiveTabs({ selectedRegions, regionLabelOf, regions, setRegi
   return (
     <>
       <div className="subheading">Region-specific subjective</div>
-      <Hint>⭐ = this answer directly changes which conditions "AI Objective Assessment" suggests next. Everything else is still valuable documentation, it just doesn't currently feed that matching.</Hint>
+      {/* Aditi (2026-10-10): the old line said "everything else ... doesn't currently feed that matching", which read as if the whole
+          Subjective (chief complaint, onset ...) was ignored, and was shown even for the spine regions where EVERY question counts.
+          What is true today: the starred answers drive the suggestions; the Chief complaint / Onset text above is only read for a few
+          keywords (the spine and Elbow read words from Onset, Shoulder from the Chief complaint; Knee, Hip and Ankle/Foot read neither). */}
+      <Hint>
+        {sections.every((sec) => sec.fields.every((f) => isMatchingRelevant(region, f.id)))
+          ? '⭐ = this answer changes which conditions "AI Objective Assessment" suggests. In this region every question below does. '
+          : '⭐ = this answer changes which conditions "AI Objective Assessment" suggests. Answers without a star are saved in your notes but do not change the suggestions. '}
+        What you typed in Chief complaint and Onset above is only lightly read (a few keywords), so the answers below are what really drive the suggestions.
+      </Hint>
       <div className="region-tab-row-wrap">
         <div className="region-tab-row">
           {selectedRegions.map((r, i) => (
