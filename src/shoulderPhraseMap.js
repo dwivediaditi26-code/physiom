@@ -11,7 +11,7 @@
 import { createPhraseMatcher, WORDS } from "./phraseEngine.js";
 import { PATTERN_PHRASES, patternRules, extendPhrases } from "./phrasePattern.js";
 
-export const SHOULDER_PHRASES = {
+const SHOULDER_BASE = {
   mechanism: {
     "Insidious / overuse": [
       "overuse", "over use", "no injury", "no specific injury", "no particular injury", "no trauma", "started on its own",
@@ -268,6 +268,63 @@ export const SHOULDER_PHRASES = {
   },
 };
 
+// Added from the clinician-voice "everyday words" sheet (PhysioMind-Shoulder-Everyday-Words-DRAFT.pdf): what a clinician types ABOUT the
+// patient ("the patient", "they"), in English, Hinglish and Hindi. See shoulderSheetSet.test.js.
+const SHEET_PHRASES = {
+  mechanism: {
+    "Direct blow": ["rugby tackle", "football tackle", "tackled", "being tackled", "tackle", "टैकल", "tackle ke baad", "टैकल के बाद"],
+    "Insidious / overuse": [
+      "no recent trauma", "no recent injury", "no history of injury", "no single event", "built up slowly", "built up over weeks", "crept up slowly", "no clear cause", "no real injury", "did nothing special",
+      "it just started", "nothing they can think of", "not sure how it began", "no idea why", "nothing different", "no cause", "without any reason",
+      "koi chot nahi", "saalon mein dheere dheere", "mahino mein dheere dheere", "dheere dheere badha",
+      "कोई चोट नहीं", "सालों में धीरे धीरे", "महीनों में धीरे धीरे", "धीरे धीरे बढ़ा",
+    ],
+    "Fall onto shoulder / outstretched hand": [
+      "after a fall", "following a fall", "since the fall", "since a fall", "when they fell", "came off the bike", "fell off a bike", "fell off the bike",
+      "girne ke baad", "girne ke turant baad", "gir gaye", "gir gaya", "gir gayi",
+      "गिरने के बाद", "गिरने के तुरंत बाद", "गिर गए", "गिर गया", "गिर गई",
+    ],
+    "Throwing / racquet sport": [
+      "overhead throwing", "throwing sport", "throws a lot", "throw a lot", "bowls all day", "cricketer who bowls", "fast bowler", "bowler", "heavy bowling",
+      "bowl for hours", "play cricket and bowl", "racquet sport", "racket sport",
+      "cricket mein baar baar phenkna", "baar baar phenkna", "bahut phenkna", "cricket mein bahut phenkna",
+      "क्रिकेट में बार बार फेंकना", "बार बार फेंकना", "बहुत फेंकना", "क्रिकेट में बहुत फेंकना",
+    ],
+    "Age-related / degenerative": [
+      "elderly", "elderly patient", "old patient", "bujurg", "बुजुर्ग", "age over 50", "older patient", "in their fifties", "in their sixties", "with age", "age and wear",
+      "wear and tear", "worn since", "year after year", "slowly worn", "umar ke saath", "ghisav", "ghisaav",
+      "उम्र के साथ", "घिसाव",
+    ],
+  },
+  aggravating: {
+    "Painful arc (mid-range)": ["between 60 and 120", "60 to 120 degrees", "60 120 degrees", "60 and 120 degrees"],
+    "Overhead reaching": ["above shoulder height", "above shoulder level", "shoulder height", "shoulder level", "above the head height"],
+    "Lying on the shoulder": ["cannot lie on it", "cant lie on it", "can t lie on it", "unable to lie on it", "cannot lie on that side", "cant lie on that side"],
+    "Reaching behind back": ["cannot reach behind", "cant reach behind", "can t reach behind", "peeche haath nahi ja pata", "पीछे हाथ नहीं जा पाता", "peeche haath nahi jata", "पीछे हाथ नहीं जाता"],
+    "Reaching across the body": [
+      "seene ke saamne se", "सीने के सामने से", "haath seene ke saamne se", "seene ke samne se",
+      "across the chest", "across the body", "arm goes across the chest", "putting on a seatbelt", "putting on seatbelt",
+      "seene ke aar paar", "haath seene ke aar paar", "सीने के आर पार", "हाथ सीने के आर पार",
+    ],
+  },
+  relieving: {
+    "Rest": ["resting the arm", "rest the arm", "rested the arm"],
+  },
+  pattern: {
+    "Improves through the day": ["loosens up after moving", "loosens up after moving around"],
+  },
+  radiation: {
+    "No radiation": ["does not go anywhere", "doesnt go anywhere", "stays in the shoulder", "stays in shoulder", "kahin aur nahi jata", "कहीं और नहीं जाता"],
+    "Up to neck": ["neck pain", "pain in the neck", "pain starts in the neck", "begins at the neck", "starts in the neck", "gardan mein dard", "गर्दन में दर्द"],
+  },
+};
+const mergePhrases = (base, extra) => {
+  const out = { ...base };
+  for (const [field, opts] of Object.entries(extra)) out[field] = extendPhrases(out[field], opts);
+  return out;
+};
+export const SHOULDER_PHRASES = mergePhrases(SHOULDER_BASE, SHEET_PHRASES);
+
 const { PAIN: PAIN_W } = WORDS;
 // Words that say a sentence is about this region / about another one.
 const OWN_W = "shoulder* arm arms upper_arm deltoid collarbone clavicle scapula blade blades rotator elbow hand hands up_to_neck to_neck into_neck gardan_tak गर्दन_तक kandha कंधा baju बाजू बांह haath हाथ";
@@ -326,9 +383,9 @@ const matcher = createPhraseMatcher({
     const AGG_W = PAIN_W + " worse worsens worsen aggravate* badh बढ़";
     const A = { reliefKills: true, block: "weak* kamzor कमजोर all_day every_day daily din_bhar roz रोज" };
     const OH = O("aggravating", 0), BEHIND = O("aggravating", 1), ACROSS = O("aggravating", 2), LYING = O("aggravating", 3), LIFT = O("aggravating", 4), ARC = O("aggravating", 5);
-    rule("aggravating", OH, [PAIN_W, "overhead above_head upar ऊपर shelf shelves top_shelf high_shelf cupboard almari अलमारी"], 7, A);
-    rule("aggravating", OH, [PAIN_W, "raise* raising lift* lifting reach* uthana उठाना upar ऊपर comb* kanghi", "arm arms haath हाथ"], 6, { ...A, blockBefore: "lift* carry* heavy", blockAfter: "side sideways" });
-    rule("aggravating", OH, [PAIN_W, "haath हाथ arm arms", "upar ऊपर overhead"], 12, { ...A, blockBefore: "lift* carry* heavy", blockAfter: "side sideways" });
+    rule("aggravating", OH, [PAIN_W, "overhead above_head upar ऊपर shelf shelves top_shelf high_shelf cupboard almari अलमारी"], 7, { ...A, unless: "kandha_ke_upar कंधा_के_ऊपर" });
+    rule("aggravating", OH, [PAIN_W, "raise* raising lift* lifting reach* uthana उठाना upar ऊपर comb* kanghi", "arm arms haath हाथ"], 6, { ...A, blockBefore: "lift* carry* heavy", blockAfter: "side sideways", unless: "kandha_ke_upar कंधा_के_ऊपर" });
+    rule("aggravating", OH, [PAIN_W, "haath हाथ arm arms", "upar ऊपर overhead"], 12, { ...A, blockBefore: "lift* carry* heavy", blockAfter: "side sideways", unless: "kandha_ke_upar कंधा_के_ऊपर" });
     rule("aggravating", OH, [PAIN_W, "reach* reaching", "up above overhead"], 5, { ...A, blockBefore: "avoid* stop* stopped band बंद" });
     rule("aggravating", OH, ["comb* shampoo* wash* brush* tie tying dry* blow_dry* kanghi", "hair baal बाल"], 4, { ctx: "pain", reliefKills: true });
     rule("aggravating", OH, ["reach* reaching", "top high shelf shelves upar overhead above_head cupboard almari अलमारी"], 4, { ctx: "pain", reliefKills: true });
@@ -345,7 +402,7 @@ const matcher = createPhraseMatcher({
     const HELPS = "help* better relief relieve* relieved eases soothes settles improves theek ठीक rahat राहत kam कम aaram आराम take_edge_off work works worked";
     rule("relieving", REST, ["rest resting rested aaram आराम", "better relief relieves relieved helps eases settles improves theek ठीक rahat राहत kam कम"], 8);
     rule("relieving", SUPPORT, ["sling brace", HELPS], 5);
-    rule("relieving", SUPPORT, ["pillow takiya तकिया sling support* sahara सहारा", "arm haath हाथ elbow baju बाजू"], 5, { ctx: "painOrArm" });
+    rule("relieving", SUPPORT, ["pillow takiya तकिया sling support* sahara सहारा", "arm haath हाथ elbow baju बाजू"], 5, { ctx: "painOrArm", unless: "kept immobilised immobilized immobilisation immobilization fracture fractured surgery began started" });
     rule("relieving", SUPPORT, ["hold* holding support* supporting cradl* prop*", "arm elbow shoulder kandha", "other_hand opposite_hand dusre_haath"], 8);
     rule("relieving", ICEHEAT, ["ice icing barf बर्फ sekai सिकाई सेक fomentation hot_pack hot_water_bag hot_compress heating_pad heat warm_shower hot_shower warm_bath hot_bath hot_water warm_water garam_paani गरम_पानी गर्म_पानी", HELPS], 5);
     rule("relieving", MEDS, ["painkiller* pain_killer* tablet* tablets medicine* medication* ibuprofen diclofenac paracetamol brufen dawai दवा दवाई goli गोली", HELPS], 6);
@@ -369,7 +426,7 @@ const matcher = createPhraseMatcher({
     rule("redFlags", FRAC, ["fracture fractured broken", "think thought suspect* lag लग might maybe"], 5);
     rule("redFlags", FRAC, ["dislocat* utar utra utri उतर उतरा उतरी", "shoulder kandha कंधा"], 4);
     rule("redFlags", FRAC, ["deform* misshap* crooked tedha टेढ़*", "looks look looking dikh* दिख* appears lag लग"], 4, { ctx: "painOrArm" });
-    rule("redFlags", CANTLIFT, ["cant cannot unable couldnt nahi नहीं", "lift* raise* move* uthana उठ* utha* upar ऊपर", "arm haath hand shoulder kandha कंधा हाथ", "fall fell fallen accident injury injured trauma hit gir गिर chot चोट"], 14, { selfNeg: true });
+    rule("redFlags", CANTLIFT, ["cant cannot unable couldnt nahi नहीं", "lift* raise* move* uthana उठ* utha* upar ऊपर", "arm haath hand shoulder kandha कंधा हाथ", "fall fell fallen accident injury injured trauma hit gir गिर chot चोट"], 14, { selfNeg: true, unless: "koi_chot_nahi chot_nahi कोई_चोट_नहीं चोट_नहीं no_injury no_trauma" });
     rule("redFlags", PROGR, ["constant* continuous* unrelenting relentless lagatar लगातार", "progressive* worsening increasing getting_worse badh बढ़ every_day roz daily", PAIN_W], 9, { block: "when while if after" });
     rule("redFlags", NIGHTPOS, ["night raat रात", "any every whichever whatever kisi_bhi किसी_भी no_matter koi_bhi", "position positions side way lie lying lay taraf तरफ letna लेट* sona सोन* karwat करवट"], 9, { ctx: "pain" });
     rule("redFlags", MASS, ["lump lumps bump growth mass nodule gaanth गांठ ubhaar उभार", "shoulder collarbone clavicle armpit kandha कंधा baju बाजू"], 6);
@@ -377,6 +434,42 @@ const matcher = createPhraseMatcher({
     rule("redFlags", INFECT, ["hot warm garam गर्म* गरम*", "swollen swelling sujan सूजन", "shoulder joint kandha कंधा"], 8);
     rule("redFlags", INFECT, ["hot warm garam गर्म* गरम* heat*", "red laal लाल redness laali"], 10, { ctx: "painOrArm" });
     rule("redFlags", CANCER, ["cancer cancers tumor tumour tumors malignan* carcinoma lymphoma leukemia myeloma kainsar कैंसर cancerous", "history had diagnosed treated treatment survivor chemo chemotherapy radiotherapy past previous earlier before tha था hua हुआ ilaaj इलाज"], 6);
+    // ── clinician-voice notes ("the patient", "they", short fragments; see shoulderSheetSet.test.js) ──
+    // A fall mentioned without any body part ("Sudden onset after a fall.") is still this shoulder's fall.
+    rule("mechanism", FALL, ["fell fall fallen falling slipped tripped", "after since following when during moment"], 3, { unless: "asleep sleep ill sick love apart risk history prone afraid scared fear" });
+    rule("mechanism", FALL, ["fell slipped tripped", "stairs stair bike scooter ladder road ground floor bathroom"], 3);
+    rule("mechanism", REPOH, ["repeated repetitive", "overhead above_head"], 3);
+    rule("mechanism", REPOH, ["paint* whitewash*", "ceiling ceilings chhat छत"], 7);
+    rule("mechanism", THROW, ["throw* bowl* bowler pitch* phenkna फेंक*", "overhead cricket sport sports"], 4);
+    rule("mechanism", THROW, ["cricket cricketer क्रिकेट", "bowl* bowler फेंक* phenkna"], 6);
+    rule("mechanism", FORCED, ["forced force pulled pull dragged", "arm haath hand shoulder"], 4, { unless: "pull_up pull_ups pullup pullups door drawer rope" });
+    rule("mechanism", LIFTOH, ["heavy bhaari भारी", "lift* lifted lifting", "overhead above_head top_shelf high_shelf shelf shelves cupboard almari अलमारी"], 6, { blockBefore: PAIN_W });
+    rule("mechanism", LIFTOH, ["put* placing placed rakhte रखते rakh* रख*", "heavy bhaari भारी", "cupboard almari अलमारी shelf shelves overhead"], 7, { blockBefore: PAIN_W });
+    rule("aggravating", LYING, [PAIN_W, "lying lie lay sleeping sleep", "on_affected_shoulder on_affected_side on_sore_shoulder on_sore_side on_painful_shoulder on_bad_shoulder on_bad_side on_that_shoulder"], 11, A);
+    rule("aggravating", LIFT, ["carrying carry carried pick* picking lifting lift*", "hurt hurts hurting painful pain sore ache*"], 15, { reliefKills: true, block: "weak* kamzor कमजोर all_day every_day daily din_bhar roz रोज started began", blockBefore: "after since following started began injured strained while when avoid* avoids avoiding stop stopped upar ऊपर overhead above_head", blockAfter: "arm arms haath हाथ side sideways" });
+    rule("aggravating", OH, [PAIN_W, "reach* reaching", "up high overhead above_head"], 11, { ...A, blockBefore: "avoid* stop* stopped band बंद lift* carry* heavy" });
+    rule("pattern", O("pattern", 3), ["night raat रात", "no_sleep cannot_sleep cant_sleep can_t_sleep couldnt_sleep couldn_t_sleep unable_to_sleep neend_nahi नींद_नहीं"], 8, { selfNeg: true });
+    // "Gradual." / "gradual onset" written in the Onset box, but not "gradual improvement"
+    rule("mechanism", O("mechanism", 0), ["gradual gradually insidious"], 1, { blockAfter: "improvement improving improved improve better recovery recovering relief healing" });
+    // fresh clinician exam (shoulderSheetSetFresh.js)
+    rule("aggravating", LYING, ["rolling roll turning turn lying lie", "onto on on_to", "sore affected bad painful that this"], 4, { ctx: "painOrArm" });
+    rule("aggravating", LYING, ["letna लेट* sone sona सोन*", "kandha कंधा"], 4, { ctx: "painOrArm" });
+    rule("pattern", O("pattern", 3), ["night raat रात", "aankh_khul aankh_khulti neend_khul नींद_खुल आंख_खुल jag जाग*"], 10);
+    rule("aggravating", OH, ["worse worsens aggravated worst", "overhead above_head"], 4, { reliefKills: true });
+    rule("aggravating", BEHIND, ["peeche पीछे", "pocket जेब jeb bra"], 3, { selfNeg: true });
+    rule("mechanism", FALL, ["crash* crashed came_off", "bike scooter cycle motorbike motorcycle"], 3);
+    rule("mechanism", FALL, ["onto landed", "point_of_shoulder tip_of_shoulder"], 4);
+    rule("aggravating", LIFT, ["bench_press press pressing curl* curling deadlift* weights weightlifter weightlifting gym", PAIN_W], 12, { reliefKills: true, blockBefore: "avoid* avoids avoiding stop stopped" });
+    rule("aggravating", LIFT, ["weightlifter weightlifting gym_goer bench_press"], 1, { story: PAIN_W, blockBefore: "avoid* avoids avoiding stop stopped" });
+    rule("mechanism", THROW, ["phenk* फेंक* throw* throwing", "gend गेंद ball cricket"], 4);
+    rule("aggravating", ACROSS, ["reach* reaching", "seat_belt seatbelt"], 4);
+    rule("aggravating", BEHIND, ["worse worsens worst", "reach* reaching", "behind behind_back"], 4, { reliefKills: true });
+    rule("relieving", REST, ["rest resting rested", "arm shoulder"], 3, { ctx: "painOrArm", reliefKills: false });
+    // fragments: "Anterior shoulder pain. Overhead and lifting."
+    rule("aggravating", OH, ["overhead above_head"], 1, { story: PAIN_W, unless: "repeated repetitive paint* work* job swim* throw* bowl* sport* heavy" });
+    rule("aggravating", LIFT, ["lifting lift* carrying carry*"], 1, { story: PAIN_W, blockBefore: "after since following started began injured strained while when heavy avoid* avoids avoiding stop stopped", blockAfter: "arm arms haath हाथ side sideways", unless: "overhead_lift cannot cant unable" });
+    // "cannot lift the arm" + a fall or injury mentioned anywhere in the note
+    rule("redFlags", CANTLIFT, ["cant cannot unable couldnt nahi नहीं", "lift* raise* move* uthana उठ* utha* upar ऊपर", "arm haath हाथ shoulder kandha कंधा"], 8, { selfNeg: true, story: "fall fell fallen accident injury injured trauma hit slipped tripped gir गिर chot चोट" });
     // the shared 24-hour-pattern rules
     patternRules({ rule, O });
   },

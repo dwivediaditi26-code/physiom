@@ -156,6 +156,8 @@ const RULE_MAX_TOKENS = 400; // a real note is a few dozen words; a huge paste m
  *                     words (e.g. "Cancer history" is not suggested for "my mother had cancer")
  *   hinglish, deva    extra spelling clean-ups [[regex, replacement]] for this region's body-part words
  *   rules(api)        registers the word-order rules; api = { rule, O, g, W }
+ *                     rule flag  story: "words" -- besides the groups, one of these words must appear SOMEWHERE in the whole note,
+ *                     even in another sentence (a negated word such as "no injury" does not count)
  */
 export function createPhraseMatcher({ phrases, singleChoiceFields = ["pattern"], noneOptions = {}, ownWords, foreignWords,
   optionGuards = {}, guardExempt = [], hinglish = [], deva = [], rules: registerRules }) {
@@ -239,7 +241,7 @@ export function createPhraseMatcher({ phrases, singleChoiceFields = ["pattern"],
   const rule = (field, option, groups, win, o = {}) => {
     if (!phrases[field] || !phrases[field][option]) throw new Error(`rule for unknown option: ${field} / ${option}`);
     RULES.push({ field, option, groups: groups.map(g), win, selfNeg: false, ...o, src: groups, srcFlags: o,
-      noComma: !!o.noComma, unless: o.unless ? g(o.unless) : null, block: o.block ? g(o.block) : null, blockBefore: o.blockBefore ? g(o.blockBefore) : null, blockAfter: o.blockAfter ? g(o.blockAfter) : null, ctx: o.ctx || null });
+      noComma: !!o.noComma, story: o.story ? g(o.story) : null, unless: o.unless ? g(o.unless) : null, block: o.block ? g(o.block) : null, blockBefore: o.blockBefore ? g(o.blockBefore) : null, blockAfter: o.blockAfter ? g(o.blockAfter) : null, ctx: o.ctx || null });
   };
   const O = (field, i) => Object.keys(phrases[field])[i];
   registerRules({ rule, O, g, W: WORDS });
@@ -249,20 +251,20 @@ export function createPhraseMatcher({ phrases, singleChoiceFields = ["pattern"],
   const GUARDS = new Map(Object.entries(optionGuards).map(([k, words]) => [k, g(words)]));
   const OTHERS = g(WORDS.OTHERS);
 
-  function understandByRules(allTokens, allCommaBefore, fields) {
+  function understandByRules(allTokens, allCommaBefore, fields, storyTokens) {
     const tokens = allTokens.slice(0, RULE_MAX_TOKENS), commaBefore = allCommaBefore.slice(0, RULE_MAX_TOKENS);
-    if (tokens.length <= RULE_CHUNK) return understandByRulesChunk(tokens, commaBefore, fields);
+    if (tokens.length <= RULE_CHUNK) return understandByRulesChunk(tokens, commaBefore, fields, storyTokens);
     const seen = new Set(); const out = [];
     for (let s = 0; s < tokens.length; s += RULE_CHUNK / 2) {
       const part = tokens.slice(s, s + RULE_CHUNK);
-      for (const r of understandByRulesChunk(part, commaBefore.slice(s, s + RULE_CHUNK), fields)) {
+      for (const r of understandByRulesChunk(part, commaBefore.slice(s, s + RULE_CHUNK), fields, storyTokens)) {
         const key = r.field + "|" + r.option; if (!seen.has(key)) { seen.add(key); out.push({ ...r, s: r.s + s, e: r.e + s }); }
       }
       if (s + RULE_CHUNK >= tokens.length) break;
     }
     return out;
   }
-  function understandByRulesChunk(tokens, commaBefore, fields) {
+  function understandByRulesChunk(tokens, commaBefore, fields, storyTokens) {
     if (!RULES.length) return [];
     const out = [];
     const wordsBefore = (idx, n) => {
@@ -278,6 +280,8 @@ export function createPhraseMatcher({ phrases, singleChoiceFields = ["pattern"],
       if (r.ctx === "pain" && !hasPain) continue;
       if (r.ctx === "painOrArm" && !hasPain && !hasOwn) continue;
       if (r.unless && anyWord(tokens, r.unless)) continue;
+      // story: one of these words must appear SOMEWHERE in the whole note (a clinician writes "Sudden. After a fall. Cannot lift the arm.")
+      if (r.story && !(storyTokens && anyWord(storyTokens, r.story))) continue;
       const lists = r.groups.map((grp) => groupHits(tokens, grp));
       if (lists.some((l) => !l.length)) continue;
       const span = bestSpan(lists, r.win);
@@ -299,7 +303,7 @@ export function createPhraseMatcher({ phrases, singleChoiceFields = ["pattern"],
     return out;
   }
 
-  function understandClause(rawTokens, fields, { bareAllowed }) {
+  function understandClause(rawTokens, fields, { bareAllowed, storyTokens }) {
     const { words: tokens, commaBefore } = wordsAndCommas(rawTokens);
     // "my back hurts when I lift", "neck pain is worse at night": about another body part, no own word -> not ours.
     const aboutOtherPart = anyWord(tokens, FOREIGN) && !anyWord(tokens, OWN);
@@ -356,7 +360,7 @@ export function createPhraseMatcher({ phrases, singleChoiceFields = ["pattern"],
       prev = results[results.length - 1];
     }
     const fromPhrases = results.filter((r) => !r.negated);
-    const fromRules = understandByRules(tokens, commaBefore, fields)
+    const fromRules = understandByRules(tokens, commaBefore, fields, storyTokens)
       .map((x) => ({ c: { field: x.field, option: x.option, key: x.phrase }, s: x.s, e: x.e }));
     let all = [...fromPhrases, ...fromRules];
     if (aboutOtherPart) all = all.filter((r) => EXEMPT.has(r.c.field + "|" + r.c.option));
@@ -378,9 +382,18 @@ export function createPhraseMatcher({ phrases, singleChoiceFields = ["pattern"],
     const clauses = []; let cur = [];
     for (const t of tokens) { if (CLAUSE_BREAKS.has(t)) { if (cur.length) clauses.push(cur); cur = []; } else cur.push(t); }
     if (cur.length) clauses.push(cur);
+    // Words from the whole note that a rule's "story" flag may use -- not a negated one ("no injury", "without any injury", "koi chot nahi").
+    const storyTokens = tokens.filter((t, i) => {
+      if (CLAUSE_BREAKS.has(t)) return false;
+      for (let j = i - 1; j >= Math.max(0, i - 3); j--) {
+        if (CLAUSE_BREAKS.has(tokens[j]) || tokens[j] === ",") break;
+        if (NEGATORS.has(tokens[j])) return false;
+      }
+      return !(i + 1 < tokens.length && NEGATORS_AFTER.has(tokens[i + 1]));
+    });
     const seen = new Set(); const suggestions = [];
     for (const clause of clauses) {
-      for (const r of understandClause(clause, fields, { bareAllowed })) {
+      for (const r of understandClause(clause, fields, { bareAllowed, storyTokens })) {
         const k = r.c.field + "|" + r.c.option;
         if (seen.has(k)) continue;
         seen.add(k);
