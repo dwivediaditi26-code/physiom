@@ -1,4 +1,4 @@
-// regionPhraseMapTyping.test.js -- the matchers "in real time" for Shoulder, Knee, Hip and Ankle/Foot (the Elbow
+// regionPhraseMapTyping.test.js -- the matchers "in real time" for Shoulder, Knee, Hip, Ankle/Foot and the spine regions (the Elbow
 // version is elbowPhraseMapTyping.test.js): every messy test sentence is typed one keystroke at a time, the way a
 // student types into the box, and the matcher runs after each keystroke. Checks: it is fast enough to run on every
 // keystroke, it ends in the same place as reading the finished sentence in one go, and chips do not flash up and
@@ -8,16 +8,19 @@ import * as shoulder from "../shoulderPhraseMap.js";
 import * as knee from "../kneePhraseMap.js";
 import * as hip from "../hipPhraseMap.js";
 import * as ankleFoot from "../ankleFootPhraseMap.js";
+import * as thoracic from "../thoracicPhraseMap.js";
 import { SHOULDER_A, SHOULDER_B, SHOULDER_C } from "./shoulderWildSets.js";
 import { KNEE_A, KNEE_B, KNEE_C } from "./kneeWildSets.js";
 import { HIP_A, HIP_B, HIP_C } from "./hipWildSets.js";
 import { ANKLE_FOOT_A, ANKLE_FOOT_B, ANKLE_FOOT_C } from "./ankleFootWildSets.js";
+import { THORACIC_A, THORACIC_B, THORACIC_C } from "./thoracicWildSets.js";
 
 const REGIONS = [
   { key: "Shoulder", mod: shoulder, rows: [...SHOULDER_A, ...SHOULDER_B, ...SHOULDER_C] },
   { key: "Knee", mod: knee, rows: [...KNEE_A, ...KNEE_B, ...KNEE_C] },
   { key: "Hip", mod: hip, rows: [...HIP_A, ...HIP_B, ...HIP_C] },
   { key: "Ankle/Foot", mod: ankleFoot, rows: [...ANKLE_FOOT_A, ...ANKLE_FOOT_B, ...ANKLE_FOOT_C] },
+  { key: "Thoracic", mod: thoracic, rows: [...THORACIC_A, ...THORACIC_B, ...THORACIC_C] },
 ];
 const key = (s) => `${s.field}|${s.option}`;
 

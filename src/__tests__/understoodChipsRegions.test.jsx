@@ -1,4 +1,4 @@
-// "We understood: ... tap to add" for Shoulder, Knee, Hip and Ankle/Foot (the Elbow version is in
+// "We understood: ... tap to add" for Shoulder, Knee, Hip, Ankle/Foot and Thoracic (the Elbow version is in
 // understoodChips.test.jsx). Same behaviour: nothing is ticked until a chip is tapped; typed words that meant the
 // tapped answer are replaced by it; each region loads only its own matcher, and only when someone types.
 import React from "react";
@@ -24,9 +24,11 @@ const FIELD_CASES = [
   ["hip", "mechanical", "snapping on the outside of the hip", "External snapping (lateral, IT band)", "External snapping (lateral, IT band)"],
   ["ankleFoot", "location", "outer ankle", "Lateral ankle ligaments", "Lateral ankle ligaments"],
   ["ankleFoot", "swelling", "no swelling", "None", "None"],
+  ["thoracic", "location", "between the shoulder blades", "Interscapular — central", "Interscapular — central"],
+  ["thoracic", "aggMovements", "pain on coughing", "Coughing", "Coughing"],
 ];
 
-describe.each(["shoulder", "knee", "hip", "ankleFoot"])("%s: chips under one question's box", (key) => {
+describe.each(["shoulder", "knee", "hip", "ankleFoot", "thoracic"])("%s: chips under one question's box", (key) => {
   it.each(FIELD_CASES.filter((c) => c[0] === key))("%s / %s: typing %j offers %s", async (_k, id, typed, offered, passes) => {
     const onPick = vi.fn();
     render(<Field k={key} id={id} value={typed} onPick={onPick} />);
@@ -79,6 +81,12 @@ describe("chips under the free-story box, region by region", () => {
     expect(await screen.findByRole("button", { name: /Swelling: Moderate/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Pain location: Plantar heel \/ arch/ })).toBeInTheDocument();
   });
+  it("Thoracic: location, what helps and red flags are offered as their own questions", async () => {
+    render(<Story k="thoracic" text="pain between the shoulder blades, heat helps, history of cancer" />);
+    expect(await screen.findByRole("button", { name: /Primary pain location: Interscapular — central/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /What helps\?: Heat/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Red flag screen: Cancer history/ })).toBeInTheDocument();
+  });
   it("skips answers already ticked in the questions below", async () => {
     render(<Story k="shoulder" text="pain when I reach up and lying on that shoulder" regionData={{ aggravating: "Overhead reaching" }} />);
     expect(await screen.findByRole("button", { name: /Lying on the shoulder/ })).toBeInTheDocument();
@@ -101,9 +109,9 @@ describe("chips under the free-story box, region by region", () => {
 });
 
 describe("which screens get chips", () => {
-  it("every region the form can show maps onto a matcher, except the spine regions that have none yet", () => {
-    const withChips = ["shoulder", "upperArm", "elbow", "forearm", "wrist", "hand", "hip", "thigh", "knee", "leg", "ankle", "foot"];
+  it("every region the form can show maps onto a matcher, except the spine regions that have none yet (Cervical and Lumbar/SI)", () => {
+    const withChips = ["shoulder", "upperArm", "elbow", "forearm", "wrist", "hand", "hip", "thigh", "knee", "leg", "ankle", "foot", "thoracic"];
     for (const id of withChips) expect(PHRASE_FIELDS[contentKeyForRegion({ id })], id).toBeTruthy();
-    for (const id of ["cervical", "thoracic", "lumbar", "sacrum", "pelvis"]) expect(PHRASE_FIELDS[contentKeyForRegion({ id })], id).toBeUndefined();
+    for (const id of ["cervical", "lumbar", "sacrum", "pelvis"]) expect(PHRASE_FIELDS[contentKeyForRegion({ id })], id).toBeUndefined();
   });
 });

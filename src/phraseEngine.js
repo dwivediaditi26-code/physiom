@@ -82,7 +82,7 @@ export const WORDS = {
   SIDE: "side taraf wala wale wali तरफ वाला वाले वाली ओर border edge",
   OTHERS: "friend friends colleague colleagues neighbour neighbor dost cousin cousins",
   // A relative's illness is not the patient's own history.
-  FAMILY: "mother father family mom dad mummy mumma mama sister brother uncle aunt grandmother grandfather grandma grandpa relative relatives wife husband son daughter maa मां माँ माता माताजी papa पापा पिता पिताजी pitaji pita baap बाप bhai भाई behen बहन dada dadi nana nani दादा दादी नाना नानी चाचा चाची ताऊ मामा मौसी बुआ patni पत्नी pati पति beta बेटा beti बेटी biwi बीवी",
+  FAMILY: "mother father family mom dad mummy mumma mama sister brother uncle aunt grandmother grandfather grandma grandpa relative relatives wife husband son daughter maa मां माँ माता माताजी papa पापा पिता पिताजी pitaji pita baap बाप bhai भाई behen बहन dada dadi nana nani दादा दादी नाना नानी चाचा चाची ताऊ मामा मौसी बुआ patni पत्नी pati पति beta बेटा beti बेटी biwi बीवी chacha chachi bhabhi saas sasur devar jeth nanad jija mausi mausa bua fufa mami tai tau भाभी सास ससुर देवर जेठ ननद जीजा",
 };
 
 function patMatchAt(tokens, i, alt) {
