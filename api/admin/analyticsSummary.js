@@ -8,7 +8,7 @@
 // "I'm an admin" flag (see AdminAnalyticsPage.jsx's client gate, which is
 // UX-only, same as AdminReportsPage.jsx's).
 import { createClient } from '@supabase/supabase-js';
-import { resolveRange, distinctUsersSince, buildInsights, buildUserDailyActivity, buildCumulativeSeries, computeProfileCompleteness, buildPageStats, buildAssessmentStats } from './_lib/analyticsMath.js';
+import { resolveRange, distinctUsersSince, buildInsights, buildUserDailyActivity, buildCumulativeSeries, computeProfileCompleteness, buildPageStats, buildAssessmentStats, buildSpeedStats } from './_lib/analyticsMath.js';
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://gkhcysvayjrkrufcnqvz.supabase.co';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -132,7 +132,7 @@ export default async function handler(req, res) {
 
   const featureCounts = {};
   for (const e of events) {
-    if (e.event_name === 'client_error') continue; // shown separately below, not mixed into "most-used features"
+    if (e.event_name === 'client_error' || e.event_name === 'app_loaded') continue; // shown separately, not mixed into "most-used features"
     featureCounts[e.event_name] = (featureCounts[e.event_name] || 0) + 1;
   }
 
@@ -246,6 +246,7 @@ export default async function handler(req, res) {
     eventsTruncated: !!eventsTruncated,
     pageStats: buildPageStats(events),
     assessmentStats: buildAssessmentStats(events),
+    speedStats: buildSpeedStats(events),
     userActivity,
     growth,
     errors,

@@ -126,10 +126,11 @@ export function hasSessionKey() { return !!_key; }
 export function openedWithOldKey() { return _openedWithOld; }
 
 function bufToBase64(buf) {
-  let binary = "";
+  // In slices: one character at a time is slow for the several MB a few documents add up to.
   const bytes = new Uint8Array(buf);
-  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-  return btoa(binary);
+  const parts = [];
+  for (let i = 0; i < bytes.length; i += 0x8000) parts.push(String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)));
+  return btoa(parts.join(""));
 }
 function base64ToBuf(b64) {
   const binary = atob(b64);

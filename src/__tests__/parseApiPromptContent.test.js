@@ -124,8 +124,9 @@ describe("/api/parse system prompt: round-4 fixes", () => {
 
   test("implements a genuine second-call verification stage, not just more same-pass instructions", () => {
     expect(src).toContain("verifierSystem");
-    expect(src).toContain("extractResp");
-    expect(src).toContain("verifyResp");
+    // two separate AI calls: the extraction, then the independent verification
+    expect(src.match(/await chatJson\(/g)).toHaveLength(2);
+    expect(src).toContain("const verified = await chatJson");
     expect(src).toMatch(/STAGE 2/);
   });
 

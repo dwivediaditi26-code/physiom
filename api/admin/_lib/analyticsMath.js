@@ -300,3 +300,49 @@ export function buildInsights(currentEvents, previousEvents) {
     return { label, current, previous, changePct, text: `${label} ${direction} ${Math.abs(changePct)}% compared with the previous period (${previous} → ${current}).` };
   });
 }
+
+// How fast the app opened for real students (the "app_loaded" event, see src/analytics/loadTimer.js).
+// Times are in milliseconds from the start of the page load. "slow" means the signed-in app took
+// more than SLOW_OPEN_MS to appear. Only times and the connection type are used: no patient data.
+export const SLOW_OPEN_MS = 5000;
+
+function percentile(sortedAscending, p) {
+  if (!sortedAscending.length) return null;
+  const index = Math.min(sortedAscending.length - 1, Math.max(0, Math.ceil((p / 100) * sortedAscending.length) - 1));
+  return sortedAscending[index];
+}
+
+function summariseLoads(rows) {
+  const opened = rows.map((r) => r.properties.appReadyMs).sort((a, b) => a - b);
+  const patients = rows.map((r) => r.properties.patientsReadyMs).filter(Number.isFinite).sort((a, b) => a - b);
+  return {
+    loads: rows.length,
+    students: new Set(rows.map((r) => r.user_id).filter(Boolean)).size,
+    medianOpenMs: percentile(opened, 50),
+    p90OpenMs: percentile(opened, 90),
+    slowPct: rows.length ? Math.round((opened.filter((ms) => ms > SLOW_OPEN_MS).length / rows.length) * 100) : null,
+    medianPatientsMs: percentile(patients, 50),
+    p90PatientsMs: percentile(patients, 90),
+    patientsNotReady: rows.filter((r) => !Number.isFinite(r.properties.patientsReadyMs)).length,
+    patientsFailed: rows.filter((r) => r.properties.patientsFailed).length,
+  };
+}
+
+export function buildSpeedStats(events) {
+  const loads = (events || []).filter((e) => e.event_name === 'app_loaded' && Number.isFinite(e.properties?.appReadyMs));
+  if (!loads.length) return { total: null, byConnection: [], byVisit: [] };
+  const group = (keyOf) => {
+    const groups = new Map();
+    for (const e of loads) {
+      const key = keyOf(e.properties) || 'unknown';
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(e);
+    }
+    return Array.from(groups, ([key, rows]) => ({ key, ...summariseLoads(rows) })).sort((a, b) => b.loads - a.loads);
+  };
+  return {
+    total: summariseLoads(loads),
+    byConnection: group((p) => p.connection),
+    byVisit: group((p) => p.visit),
+  };
+}
