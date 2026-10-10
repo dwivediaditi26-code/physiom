@@ -2401,7 +2401,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                                     containing that exact substring to 1 column below
                                     400px width. */}
                                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:10,marginBottom:18}}>
-                                  {STREAMS.filter(s=>["ortho_new","neuro","cardio","sports"].includes(s.id)).map(st=>{
+                                  {STREAMS.filter(s=>["ortho_new","neuro","cardio"].includes(s.id)).map(st=>{
                                     const clickable = st.live || st.id === "cardio";
                                     const { Icon, bg } = STREAM_ICONS[st.id];
                                     return (
@@ -2420,8 +2420,8 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                                       </button>
                                     );
                                   })}
-                                  {/* 2026-10-10, Aditi: AI gets its own square box next to
-                                      Sports instead of a small AI badge on Ortho. Same entry
+                                  {/* 2026-10-10, Aditi: AI gets its own square box (Sports removed
+                                      from this grid) instead of a small AI badge on Ortho. Same entry
                                       as Home's "AI Assessment" tile (ortho wizard, AI intake). */}
                                   <button type="button" data-testid="assessment-ai-card"
                                     onClick={()=>startOrthoEntry("ai")}
@@ -2432,7 +2432,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                                       display:"flex",alignItems:"center",justifyContent:"center"}}>
                                       <Sparkles size={22} color="#fff" strokeWidth={1.75}/>
                                     </div>
-                                    <span style={{fontWeight:800,fontSize:"0.92rem",color:"#111827",marginTop:12}}>AI</span>
+                                    <span style={{fontWeight:800,fontSize:"0.92rem",color:"#111827",marginTop:12}}>AI Ortho Assessment</span>
                                   </button>
                                 </div>
                                 <button onClick={()=>setShowSpecialtyPicker(true)}
