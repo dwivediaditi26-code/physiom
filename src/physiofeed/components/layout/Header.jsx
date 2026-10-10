@@ -5,6 +5,7 @@ import { Search, Bell, MessageSquare, ChevronDown, ChevronLeft, Home, Briefcase,
 import Avatar from "../shared/Avatar.jsx";
 import { initialsOf, PRO_NAV } from "../shared/constants.js";
 import { useAppData } from "../../context/AppDataContext.jsx";
+import { useTabActive } from "../../context/TabActiveContext.jsx";
 
 // Mobile/tablet section switcher (2026-09-25 redesign, Aditi: "scrollable"):
 // a row of independent, left-aligned pills instead of the previous fixed
@@ -153,8 +154,22 @@ export default function Header() {
   // separate sticky bars stacked here made iPhone Safari shake the header
   // while scrolling. Anywhere that slot doesn't exist (tests, other
   // shells) the row stays in this header as before.
+  //
+  // Two bugs came from looking the slot up once, on mount (2026-10-10, Aditi:
+  // the row showed on Clinical, and sometimes was missing on PhysioFeed):
+  //  - PhysioFeed stays mounted while hidden, so the row kept appearing in the
+  //    top bar on Home/Clinical. It now draws there only while PhysioFeed is
+  //    the tab on screen.
+  //  - The top bar is removed while a full-screen assessment is open and comes
+  //    back as a NEW element. The remembered one was gone, so the row was drawn
+  //    into nothing and PhysioFeed had no section row at all. The slot is now
+  //    looked up again after every render.
+  const tabActive = useTabActive();
   const [subnavSlot, setSubnavSlot] = useState(null);
-  useLayoutEffect(() => { setSubnavSlot(document.getElementById("pm-mobile-subnav")); }, []);
+  useLayoutEffect(() => {
+    const slot = tabActive ? document.getElementById("pm-mobile-subnav") : null;
+    setSubnavSlot((prev) => (prev === slot ? prev : slot));
+  });
   const { notifications, profile, people, unreadMessages, canGoBack, goBack } = useAppData();
   const navigate = useNavigate();
 

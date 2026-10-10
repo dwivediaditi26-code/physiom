@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { MemoryRouter, useLocation, useNavigate } from "react-router-dom";
 import { AppDataProvider, useAppData } from "./context/AppDataContext.jsx";
 import { DemoConversationsProvider } from "./context/DemoConversationsContext.jsx";
+import { TabActiveProvider } from "./context/TabActiveContext.jsx";
 import PhysioFeedRoutes from "./PhysioFeedRoutes.jsx";
 import "./physiofeed.css";
 
@@ -138,21 +139,23 @@ function ScreenTrackerBridge() {
   return null;
 }
 
-export default function PhysioFeedEntry({ jumpTo, backRef }) {
+export default function PhysioFeedEntry({ jumpTo, backRef, isActive = true }) {
   return (
     <div className="physiofeed-root">
-      <MemoryRouter initialEntries={[JUMPABLE_TABS.has(jumpTo?.pfTab) ? `/${jumpTo.pfTab}` : "/feed"]}>
-        <AppDataProvider>
-          <DemoConversationsProvider>
-            <JumpBridge jumpTo={jumpTo}/>
-            <BackBridge backRef={backRef}/>
-            <ShareBridge jumpTo={jumpTo}/>
-            <CreatePanelBridge jumpTo={jumpTo}/>
-            <ScreenTrackerBridge/>
-            <PhysioFeedRoutes/>
-          </DemoConversationsProvider>
-        </AppDataProvider>
-      </MemoryRouter>
+      <TabActiveProvider value={isActive}>
+        <MemoryRouter initialEntries={[JUMPABLE_TABS.has(jumpTo?.pfTab) ? `/${jumpTo.pfTab}` : "/feed"]}>
+          <AppDataProvider>
+            <DemoConversationsProvider>
+              <JumpBridge jumpTo={jumpTo}/>
+              <BackBridge backRef={backRef}/>
+              <ShareBridge jumpTo={jumpTo}/>
+              <CreatePanelBridge jumpTo={jumpTo}/>
+              <ScreenTrackerBridge/>
+              <PhysioFeedRoutes/>
+            </DemoConversationsProvider>
+          </AppDataProvider>
+        </MemoryRouter>
+      </TabActiveProvider>
     </div>
   );
 }

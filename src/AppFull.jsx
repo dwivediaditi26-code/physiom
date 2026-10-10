@@ -2112,7 +2112,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           {mountedTabs.has("physiofeed") && (
             <div className="pm-bleed" style={{display: active==="physiofeed" ? "block" : "none"}}>
               <Suspense fallback={<div style={{textAlign:"center",padding:"48px 20px",color:"#6B7280"}}>Loading PhysioFeed…</div>}>
-                <LazyPhysioFeedEntry key={physioFeedResetKey} jumpTo={active==="physiofeed"?navContext:undefined} backRef={physioFeedBackRef}/>
+                <LazyPhysioFeedEntry key={physioFeedResetKey} jumpTo={active==="physiofeed"?navContext:undefined} backRef={physioFeedBackRef} isActive={active==="physiofeed"}/>
               </Suspense>
             </div>
           )}
