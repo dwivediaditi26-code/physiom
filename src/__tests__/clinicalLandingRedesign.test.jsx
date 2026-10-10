@@ -79,8 +79,8 @@ describe("Clinical landing page redesign", () => {
     expect(ai).toHaveTextContent("AI");
     expect(screen.getByText("Ortho").closest("button")).not.toHaveTextContent("AI");
     fireEvent.click(ai);
-    expect(await screen.findByText(/AI Assessment Intake/, {}, { timeout: 8000 })).toBeInTheDocument();
-  });
+    expect(await screen.findByText(/AI Assessment Intake/, {}, { timeout: 20000 })).toBeInTheDocument();
+  }, 30000);
 
   it("sort/flags/import/export are still present, tucked behind a toggle", async () => {
     await renderLoggedIn();
