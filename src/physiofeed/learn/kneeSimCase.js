@@ -3,9 +3,19 @@
 // confirmed is clinically right -- nothing here was written by the app's
 // developer. Review the wording before relying on it.
 //
-// Not in the mockup, so not built: the 5th stage, and a "why" for the right
-// answers of stages 2-4 (only stage 1 shows one). A correct answer for stages
-// 2-4 is the option whose reply the mockup shows next.
+// Stages 5-7 (findings, clinical reasoning, summary) come from her later
+// mockup. Where the mockup does not show something, it is left out or shown as
+// "not available" -- nothing is invented:
+//  - a "why" for the right answers of stages 2-6 (only stage 1 shows one);
+//  - findings for Special Tests and the Patellofemoral assessment;
+//  - Learning Points and References;
+//  - marks/points per question.
+// The right answer of stages 2-6 is the option the mockup follows or marks.
+//
+// Pictures: an existing app picture (Cloudinary id) is only used where the app
+// really has one for that assessment (rom_kflex, rom_kext, mmt_quad). The app
+// has none for knee observation, sit-to-stand or a physio examining a patient,
+// so those show no picture.
 
 export const SIM_PATIENTS = [
   { id: "knee", art: "patient-1", title: "Knee Pain", tag: "Orthopaedics", sub: "45 y/o male", line: "Difficulty with stairs", live: true },
@@ -82,6 +92,17 @@ export const KNEE_CASE = {
       },
     },
     {
+      historyDone: {
+        patient: "As I told you, my knee is stiff for about 10 minutes in the morning. It gets easier after I start moving. If I walk for 20–30 minutes or climb stairs, the pain increases. Getting up from a low chair is difficult, so I avoid stairs when possible.",
+        bot: "Great! You've gathered the patient's history. Now let's decide what to examine.",
+        infoTitle: "Patient information (from your questions)",
+        info: [
+          ["clock", "Morning stiffness", "~ 10 minutes"],
+          ["walk", "Worse with", "Walking, stairs"],
+          ["leaf", "Better with", "Rest"],
+          ["person", "Functional limitations", "Difficulty low chair, avoids stairs"],
+        ],
+      },
       ask: "You are now ready for the physical examination. What is the best initial approach?",
       options: [
         "Perform Lachman test and anterior drawer immediately.",
@@ -91,5 +112,56 @@ export const KNEE_CASE = {
       ],
       correct: 1,
     },
+    {
+      kind: "findings",
+      examTitle: "Select an examination to perform",
+      exams: [
+        { id: "obs", label: "Observation & Swelling", icon: "eye", findings: ["Mild swelling around the joint", "No redness or warmth", "Normal skin appearance", "Mild varus alignment (visual observation)"] },
+        { id: "rom", label: "Knee Range of Motion", icon: "move", images: ["rom_kflex", "rom_kext"], findings: ["Flexion slightly reduced"] },
+        { id: "mmt", label: "Muscle Strength (MMT)", icon: "dumbbell", images: ["mmt_quad"], findings: ["Quadriceps mild weakness"] },
+        { id: "func", label: "Functional Test (Sit to Stand)", icon: "person", findings: ["Difficulty sit to stand"] },
+        { id: "special", label: "Special Tests", icon: "flask" },
+        { id: "pf", label: "Patellofemoral Assessment", icon: "knee" },
+      ],
+      ask: "Based on the findings so far, which is the most appropriate next examination to assess functional impact?",
+      options: [
+        "Assess knee range of motion (flexion and extension).",
+        "Perform muscle strength testing of quadriceps.",
+        "Assess functional task such as sit to stand or step up.",
+        "Perform a McMurray test immediately.",
+      ],
+      correct: 2,
+    },
+    {
+      kind: "reasoning",
+      ask: "What is the most likely clinical impression based on the history and examination findings in this case?",
+      options: [
+        "Knee osteoarthritis (degenerative knee joint changes)",
+        "Patellofemoral pain syndrome",
+        "Medial meniscus tear",
+        "Rheumatoid arthritis",
+      ],
+      correct: 0,
+    },
   ],
+  summary: {
+    level: "Intermediate",
+    clinical: [
+      ["person", "45 y/o male", "Knee pain, difficulty with stairs"],
+      ["clock", "Morning stiffness", "~ 10 minutes"],
+      ["walk", "Worse with", "Walking, stairs, prolonged activity"],
+      ["leaf", "Better with", "Rest"],
+      ["person", "Functional limitations", "Difficulty low chair, avoids stairs"],
+    ],
+    findings: [
+      ["eye", "Observation", "Mild swelling, mild varus alignment"],
+      ["move", "Range of Motion", "Flexion slightly reduced"],
+      ["dumbbell", "Muscle Strength", "Quadriceps mild weakness"],
+      ["person", "Functional Test", "Difficulty sit to stand"],
+    ],
+    tutor: "Well done! You used a structured approach, gathered the key information and interpreted the findings logically. Remember: this is a clinical impression based on the available data, not a confirmed diagnosis.",
+    // Not in the mockup, so those two tabs say "not available yet".
+    learningPoints: null,
+    references: null,
+  },
 };
