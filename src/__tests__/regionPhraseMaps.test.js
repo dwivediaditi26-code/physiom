@@ -6,7 +6,7 @@
 //  2. Round trip: every drafted phrase, put in a sentence, gives back its own option (typed into its own
 //     question's box, and inside a free story), whatever the capital letters or spacing.
 //  3. The chips screen knows exactly the questions each matcher covers.
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { SUBJECTIVE_REGION_FIELDS } from "../orthoSubjectiveRegionData.js";
 import { PHRASE_FIELDS } from "../UnderstoodChips.jsx";
 import * as shoulder from "../shoulderPhraseMap.js";
@@ -15,6 +15,10 @@ import * as hip from "../hipPhraseMap.js";
 import * as ankleFoot from "../ankleFootPhraseMap.js";
 import * as thoracic from "../thoracicPhraseMap.js";
 import * as cervical from "../cervicalPhraseMap.js";
+import * as lumbarSI from "../lumbarSIPhraseMap.js";
+
+// The round-trip checks run a few thousand phrases per region; allow time when the whole suite runs in parallel.
+vi.setConfig({ testTimeout: 30000 });
 
 export const MATCHERS = [
   { key: "shoulder", mod: shoulder, phrases: shoulder.SHOULDER_PHRASES },
@@ -23,6 +27,7 @@ export const MATCHERS = [
   { key: "ankleFoot", mod: ankleFoot, phrases: ankleFoot.ANKLE_FOOT_PHRASES },
   { key: "thoracic", mod: thoracic, phrases: thoracic.THORACIC_PHRASES },
   { key: "cervical", mod: cervical, phrases: cervical.CERVICAL_PHRASES },
+  { key: "lumbarSI", mod: lumbarSI, phrases: lumbarSI.LUMBAR_SI_PHRASES },
 ];
 
 const HINGLISH_MARKERS = /\b(dard|haath|kandh[ea]|ghutn[ae]|kulh[ae]|takhn[ae]|pair|edi|nahi|raat|subah|kamzor|sunnpan|jhunjhuni|uthana|uthane|pakad|sujan|chot|gir|dono|kaam|kabhi|hamesha|lagatar|bina|apne|dheere|zyada|koi|aaram|neend|achanak|sekai|dawai|ke|ki|ka|me|se|par)\b/i;

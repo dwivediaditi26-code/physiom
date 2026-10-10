@@ -140,6 +140,7 @@ function wordsAndCommas(tokens) {
 // "twisted my knee playing football, ... , it gives way on stairs" is still a twisting injury.
 const GUARD_RADIUS = 8;
 const RULE_CHUNK = 80;
+const MAX_TEXT_CHARS = 8000;
 const RULE_MAX_TOKENS = 400; // a real note is a few dozen words; a huge paste must not slow the screen
 
 /**
@@ -366,7 +367,8 @@ export function createPhraseMatcher({ phrases, singleChoiceFields = ["pattern"],
   }
 
   function runUnderstanding(text, fields, bareAllowed) {
-    let canonical = canon(text);
+    // A real note is a few hundred words; a huge paste must not freeze the screen, so only the start is read.
+    let canonical = canon(String(text ?? "").slice(0, MAX_TEXT_CHARS));
     if (PROTECTED.length) {
       canonical = " " + canonical + " ";
       for (const p of PROTECTED) canonical = canonical.split(" " + p.key + " ").join(" " + p.glued + " ");
