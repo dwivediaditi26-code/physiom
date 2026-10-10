@@ -26,9 +26,11 @@ const FIELD_CASES = [
   ["ankleFoot", "swelling", "no swelling", "None", "None"],
   ["thoracic", "location", "between the shoulder blades", "Interscapular — central", "Interscapular — central"],
   ["thoracic", "aggMovements", "pain on coughing", "Coughing", "Coughing"],
+  ["cervical", "location", "left side of the neck", "Lateral neck (L)", "Lateral neck (L)"],
+  ["cervical", "redFlagsVbi", "double vision", "Diplopia (double vision)", "Diplopia (double vision)"],
 ];
 
-describe.each(["shoulder", "knee", "hip", "ankleFoot", "thoracic"])("%s: chips under one question's box", (key) => {
+describe.each(["shoulder", "knee", "hip", "ankleFoot", "thoracic", "cervical"])("%s: chips under one question's box", (key) => {
   it.each(FIELD_CASES.filter((c) => c[0] === key))("%s / %s: typing %j offers %s", async (_k, id, typed, offered, passes) => {
     const onPick = vi.fn();
     render(<Field k={key} id={id} value={typed} onPick={onPick} />);
@@ -87,6 +89,13 @@ describe("chips under the free-story box, region by region", () => {
     expect(screen.getByRole("button", { name: /What helps\?: Heat/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Red flag screen: Cancer history/ })).toBeInTheDocument();
   });
+  it("Cervical: a story gives answers for several questions, including the single-choice ones", async () => {
+    render(<Story k="cervical" text="pain on the left side of the neck going down the left arm, looking down makes it worse, dizzy when I turn my head" />);
+    expect(await screen.findByRole("button", { name: /Primary pain location: Lateral neck \(L\)/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Arm \/ hand symptoms present\?: Yes — unilateral \(L\)/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Movements aggravate: Flexion — looking down/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /VBI/ })).toBeInTheDocument();
+  });
   it("skips answers already ticked in the questions below", async () => {
     render(<Story k="shoulder" text="pain when I reach up and lying on that shoulder" regionData={{ aggravating: "Overhead reaching" }} />);
     expect(await screen.findByRole("button", { name: /Lying on the shoulder/ })).toBeInTheDocument();
@@ -109,9 +118,9 @@ describe("chips under the free-story box, region by region", () => {
 });
 
 describe("which screens get chips", () => {
-  it("every region the form can show maps onto a matcher, except the spine regions that have none yet (Cervical and Lumbar/SI)", () => {
-    const withChips = ["shoulder", "upperArm", "elbow", "forearm", "wrist", "hand", "hip", "thigh", "knee", "leg", "ankle", "foot", "thoracic"];
+  it("every region the form can show maps onto a matcher, except the spine regions that have none yet (Lumbar/SI)", () => {
+    const withChips = ["shoulder", "upperArm", "elbow", "forearm", "wrist", "hand", "hip", "thigh", "knee", "leg", "ankle", "foot", "thoracic", "cervical"];
     for (const id of withChips) expect(PHRASE_FIELDS[contentKeyForRegion({ id })], id).toBeTruthy();
-    for (const id of ["cervical", "lumbar", "sacrum", "pelvis"]) expect(PHRASE_FIELDS[contentKeyForRegion({ id })], id).toBeUndefined();
+    for (const id of ["lumbar", "sacrum", "pelvis"]) expect(PHRASE_FIELDS[contentKeyForRegion({ id })], id).toBeUndefined();
   });
 });

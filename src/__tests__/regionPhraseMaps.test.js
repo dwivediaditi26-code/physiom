@@ -14,6 +14,7 @@ import * as knee from "../kneePhraseMap.js";
 import * as hip from "../hipPhraseMap.js";
 import * as ankleFoot from "../ankleFootPhraseMap.js";
 import * as thoracic from "../thoracicPhraseMap.js";
+import * as cervical from "../cervicalPhraseMap.js";
 
 export const MATCHERS = [
   { key: "shoulder", mod: shoulder, phrases: shoulder.SHOULDER_PHRASES },
@@ -21,6 +22,7 @@ export const MATCHERS = [
   { key: "hip", mod: hip, phrases: hip.HIP_PHRASES },
   { key: "ankleFoot", mod: ankleFoot, phrases: ankleFoot.ANKLE_FOOT_PHRASES },
   { key: "thoracic", mod: thoracic, phrases: thoracic.THORACIC_PHRASES },
+  { key: "cervical", mod: cervical, phrases: cervical.CERVICAL_PHRASES },
 ];
 
 const HINGLISH_MARKERS = /\b(dard|haath|kandh[ea]|ghutn[ae]|kulh[ae]|takhn[ae]|pair|edi|nahi|raat|subah|kamzor|sunnpan|jhunjhuni|uthana|uthane|pakad|sujan|chot|gir|dono|kaam|kabhi|hamesha|lagatar|bina|apne|dheere|zyada|koi|aaram|neend|achanak|sekai|dawai|ke|ki|ka|me|se|par)\b/i;
@@ -70,9 +72,10 @@ for (const { key, mod, phrases } of MATCHERS) {
 
     it("no non-bare phrase is listed twice across the whole list", () => {
       const seen = new Map(); const dups = [];
+      // (two questions may have an answer with the very same label, e.g. "Combined flexion + rotation": that is fine)
       for (const p of mod.allPhrases().filter((x) => !x.bare)) {
         const prior = seen.get(p.key);
-        if (prior && (prior.field !== p.field || prior.option !== p.option)) dups.push(`"${p.key}" -> ${prior.field}/${prior.option} AND ${p.field}/${p.option}`);
+        if (prior && !(p.label && prior.label) && (prior.field !== p.field || prior.option !== p.option)) dups.push(`"${p.key}" -> ${prior.field}/${prior.option} AND ${p.field}/${p.option}`);
         seen.set(p.key, p);
       }
       expect(dups).toEqual([]);

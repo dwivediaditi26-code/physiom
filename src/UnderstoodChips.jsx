@@ -17,6 +17,7 @@ export const PHRASE_FIELDS = {
   hip: ["location", "locationPattern", "mechanism", "aggravating", "pattern", "mechanical", "redFlags"],
   ankleFoot: ["location", "radiation", "mechanism", "aggravating", "pattern", "swelling", "redFlags"],
   thoracic: ["location", "radiation", "mechanismType", "aggMovements", "relTreatments", "pattern", "redFlags", "fnAdl"],
+  cervical: ["location", "radiation", "mechanismType", "armPresent", "lhermitte", "aggMovements", "relMovements", "overallPattern", "haPresent", "redFlagsMyelopathy", "redFlagsVbi", "redFlagsInstability", "redFlagsOther", "fractureScreen", "fnAdl"],
 };
 // How to load each region's matcher (a separate chunk, fetched on first use).
 const MATCHER_LOADERS = {
@@ -26,6 +27,7 @@ const MATCHER_LOADERS = {
   hip: () => import("./hipPhraseMap.js"),
   ankleFoot: () => import("./ankleFootPhraseMap.js"),
   thoracic: () => import("./thoracicPhraseMap.js"),
+  cervical: () => import("./cervicalPhraseMap.js"),
 };
 export const hasPhrases = (contentKey, fieldId) => !!PHRASE_FIELDS[contentKey]?.includes(fieldId);
 const hasRegionPhrases = (contentKey) => !!PHRASE_FIELDS[contentKey];

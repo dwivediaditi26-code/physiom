@@ -198,12 +198,22 @@ export function createPhraseMatcher({ phrases, singleChoiceFields = ["pattern"],
   // the option's own text works. One- and two-word labels ("Constant", "Lifting", "None")
   // are bare: they only count inside that question's own box.
   const SEEN = new Set(COMPILED.map((c) => c.field + "|" + c.option + "|" + c.key));
+  // An option whose own text holds a sentence-break word ("Yes — concurrent but possibly unrelated") could never be matched,
+  // because typed text is cut at "but". Its exact text is therefore glued into one word before the cut.
+  const PROTECTED = [];
   for (const field of FIELDS) {
     for (const option of Object.keys(phrases[field])) {
-      const tokens = canon(option).split(" ").filter((t) => t && t !== ",");
+      let tokens = canon(option).split(" ").filter((t) => t && t !== ",");
       const key = tokens.join(" ");
       if (!tokens.length || SEEN.has(field + "|" + option + "|" + key)) continue;
-      COMPILED.push({ field, option, bare: tokens.length <= 2, tokens, selfNegating: tokens.some((t) => NEGATORS.has(t)), key });
+      const selfNegating = tokens.some((t) => NEGATORS.has(t));
+      const bare = tokens.length <= 2;
+      if (tokens.some((t) => CLAUSE_BREAKS.has(t))) {
+        const glued = tokens.join("_");
+        if (!PROTECTED.some((p) => p.key === key)) PROTECTED.push({ key, glued });
+        tokens = [glued];
+      }
+      COMPILED.push({ field, option, bare, tokens, selfNegating, key, label: true });
     }
   }
   // Longest phrase first, so "thumb side of the wrist" wins over "thumb".
@@ -356,7 +366,12 @@ export function createPhraseMatcher({ phrases, singleChoiceFields = ["pattern"],
   }
 
   function runUnderstanding(text, fields, bareAllowed) {
-    const tokens = canon(text).split(" ").filter(Boolean);
+    let canonical = canon(text);
+    if (PROTECTED.length) {
+      canonical = " " + canonical + " ";
+      for (const p of PROTECTED) canonical = canonical.split(" " + p.key + " ").join(" " + p.glued + " ");
+    }
+    const tokens = canonical.split(" ").filter(Boolean);
     const clauses = []; let cur = [];
     for (const t of tokens) { if (CLAUSE_BREAKS.has(t)) { if (cur.length) clauses.push(cur); cur = []; } else cur.push(t); }
     if (cur.length) clauses.push(cur);
@@ -383,7 +398,7 @@ export function createPhraseMatcher({ phrases, singleChoiceFields = ["pattern"],
     PHRASE_COUNT: COMPILED.length,
     RULE_COUNT: RULES.length,
     phrasesFor: (field, option) => (phrases[field]?.[option] || []).map((p) => (p.startsWith("~") ? p.slice(1) : p)),
-    allPhrases: () => COMPILED.map((c) => ({ field: c.field, option: c.option, bare: c.bare, key: c.key, selfNegating: c.selfNegating })),
+    allPhrases: () => COMPILED.map((c) => ({ field: c.field, option: c.option, bare: c.bare, key: c.key, selfNegating: c.selfNegating, label: !!c.label })),
     // For the review sheet: each rule in words (original word lists, not the compiled form).
     describeRules: () => RULES.map((r) => ({ field: r.field, option: r.option, groups: r.src, window: r.win, flags: r.srcFlags })),
     // The student typed into ONE question's own box: bare words count.
