@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import {
   ChevronLeft, ChevronRight, ChevronsRight, RotateCcw, Check, X, AlertCircle,
   Clock, Footprints, Leaf, PersonStanding, Eye, Move, Dumbbell, FlaskConical, Activity,
-  Target, Trophy, Timer, BarChart3, Star,
+  Target, Timer, BarChart3, Star,
 } from "lucide-react";
 import { KNEE_CASE, SIM_PATIENTS } from "./kneeSimCase.js";
 import StudyImage from "./StudyImage.jsx";
@@ -85,16 +85,18 @@ function Hero({ face, bubbles, bot, className = "" }) {
   const portrait = face === "patient-1";
   return (
     <div data-testid="sim-hero" className={`rounded-3xl overflow-hidden border border-sky-100 bg-gradient-to-b from-sky-100 via-sky-50 to-violet-50 mb-3 ${className}`}>
-      <div className="relative" style={{ minHeight: bot ? 330 : 300 }}>
-        <img src={img(face)} alt="" className={`absolute left-0 bottom-0 object-contain object-bottom ${portrait ? "h-[300px]" : "h-[230px]"} w-auto max-w-[56%]`}/>
-        <div className="relative ml-auto w-[47%] pt-4 pr-3 pb-3 space-y-2">{bubbles}</div>
-      </div>
-      {bot && (
-        <div className="flex items-end gap-2 px-3 pb-3 pt-2 bg-white/60">
-          <Bubble className="flex-1 !bg-emerald-50 border-emerald-200 text-[13px]">{bot.text}</Bubble>
-          <Bot pose={bot.pose} size={72}/>
+      <div className="relative flex" style={{ minHeight: bot ? 400 : 300 }}>
+        <img src={img(face)} alt="" className={`absolute left-0 bottom-0 object-contain object-bottom ${portrait ? "h-[300px]" : "h-[230px]"} w-auto max-w-[50%]`}/>
+        <div className="relative ml-auto w-[52%] pt-4 pr-3 pb-3 flex flex-col gap-2">
+          {bubbles}
+          {bot && (
+            <div className="mt-auto flex items-end gap-1.5" data-testid="sim-hero-bot">
+              <Bubble className="flex-1 !bg-emerald-50 border-emerald-200 text-[12px] !px-2.5">{bot.text}</Bubble>
+              <Bot pose={bot.pose} size={60}/>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -188,15 +190,9 @@ function Summary({ c, answers, score, mins, onReplay, onNext }) {
   const TABS = [["summary", "Case Summary"], ["answers", "Your Answers"], ["learning", "Learning Points"], ["refs", "References"]];
   return (
     <div data-testid="sim-finished">
-      {/* celebration scene: the same patient, the student and the PM bot */}
-      <div className="relative rounded-3xl bg-gradient-to-b from-amber-50 via-sky-50 to-violet-50 border border-sky-100 mb-3 overflow-hidden" style={{ minHeight: 250 }}>
-        <span aria-hidden="true" className="absolute inset-0 text-[18px] leading-none pointer-events-none select-none opacity-70" style={{ letterSpacing: "1.1rem", wordBreak: "break-all", lineHeight: "1.6rem" }}>🎉 ✨ 🎊 ✨ 🎉 ✨ 🎊 ✨ 🎉 ✨ 🎊 ✨</span>
-        <img src={img("expr-happy")} alt="" className="absolute left-0 bottom-0 h-[210px] w-auto"/>
-        <img src={img("student-happy")} alt="" className="absolute right-0 bottom-0 h-[210px] w-auto"/>
-        <div className="relative flex flex-col items-center pt-3">
-          <Bubble className="mb-1 text-center !px-3 !py-1.5"><span className="flex items-center justify-center gap-1 font-extrabold text-rose-600 text-[14px]"><Trophy size={15}/> Case Completed!</span><span className="text-[12px] text-slate-500">Great work!</span></Bubble>
-          <Bot pose="celebrating" size={120}/>
-        </div>
+      {/* celebration scene: the patient, the PM bot and the therapist (cut from Aditi's mockup) */}
+      <div data-testid="sim-celebration" className="rounded-3xl overflow-hidden border border-sky-100 mb-3">
+        <img src={img("knee-complete-scene")} alt="Case completed: the patient, the PM bot and the therapist celebrating" className="w-full h-auto block"/>
       </div>
 
       <div className="flex gap-2 mb-3">
@@ -355,10 +351,9 @@ function Play({ onExit }) {
 
           {st.kind === "findings" && (
             <>
-              <div data-testid="sim-hero" className="relative rounded-3xl overflow-hidden border border-sky-100 bg-gradient-to-b from-sky-100 via-sky-50 to-violet-50 mb-3" style={{ minHeight: 280 }}>
-                <img src={img("patient-1")} alt="" className="absolute left-0 bottom-0 h-[270px] w-auto object-contain object-bottom"/>
-                <img src={img("student-explaining")} alt="" className="absolute right-0 bottom-0 h-[210px] w-auto object-contain object-bottom rounded-tl-3xl"/>
-                <Bubble className="absolute top-3 left-[40%] right-3 text-[12.5px] font-semibold">Choose what to examine, then read the findings.</Bubble>
+              <div data-testid="sim-hero" className="rounded-3xl overflow-hidden border border-sky-100 mb-3 bg-sky-50">
+                <img src={img("knee-exam-scene")} alt="The therapist examining the patient's knee" className="w-full block object-cover" style={{ maxHeight: 330, objectPosition: "50% 62%" }}/>
+                <p className="text-[12.5px] font-semibold text-slate-700 px-3 py-2">Choose what to examine, then read the findings.</p>
               </div>
               <ExamPanel stage={st} exam={exam} setExam={setExam}/>
             </>

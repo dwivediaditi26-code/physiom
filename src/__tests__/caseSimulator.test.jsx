@@ -82,7 +82,7 @@ describe("Case Simulator", () => {
     answer(S[2], good(S[2]));
     expect(screen.getByText("Key information")).toBeInTheDocument();
     goNext(2);
-    expect(screen.getByText(S[3].historyDone.bot)).toBeInTheDocument();
+    expect(within(screen.getByTestId("sim-hero-bot")).getByText(S[3].historyDone.bot)).toBeInTheDocument(); // the PM bot stands beside the patient
     expect(screen.getByText(S[3].historyDone.infoTitle)).toBeInTheDocument();
     expect(screen.getByText(S[3].ask)).toBeInTheDocument();
   });
@@ -91,6 +91,7 @@ describe("Case Simulator", () => {
     start();
     S.slice(0, 4).forEach((st, k) => { answer(st, good(st)); goNext(k); });
     const f = S[4];
+    expect(screen.getByAltText(/therapist examining/)).toBeInTheDocument();
     expect(screen.queryByTestId("sim-findings")).not.toBeInTheDocument();
     fireEvent.click(screen.getByText("Observation & Swelling"));
     expect(screen.getByText("Mild swelling around the joint")).toBeInTheDocument();
@@ -131,6 +132,7 @@ describe("Case Simulator", () => {
   it("all right: summary shows 100%, 6/6, level, time and the case summary; result is remembered", () => {
     start();
     playAll();
+    expect(screen.getByAltText(/patient, the PM bot and the therapist/)).toBeInTheDocument();
     expect(screen.getByTestId("sim-pct")).toHaveTextContent("100%");
     expect(screen.getByTestId("sim-correct")).toHaveTextContent("6/6");
     expect(screen.getByTestId("sim-level")).toHaveTextContent("Intermediate");
