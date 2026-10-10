@@ -380,6 +380,14 @@ export function SubjectiveSection({ data, setData, selectedRegions = [], setSele
         setRegions={(next) => set("regions", next)}
         regionLabelOf={regionLabelOf}
       />
+
+      <RegionSubjectiveTabs
+        selectedRegions={selectedRegions}
+        regionLabelOf={regionLabelOf}
+        regions={d.regions || {}}
+        setRegions={(next) => set("regions", next)}
+      />
+      {/* Aditi (2026-10-10): these history questions come AFTER the region-specific subjective block, not before it. */}
       <TextArea label="Previous treatment" value={d.previousTreatment} onChange={(v) => set("previousTreatment", v)} placeholder="Prior physio, injections, medication, surgery..." />
       <TextArea label="Relevant medical history" value={d.medicalHistory} onChange={(v) => set("medicalHistory", v)} />
       <TextField label="Medication" value={d.medication} onChange={(v) => set("medication", v)} />
@@ -388,13 +396,6 @@ export function SubjectiveSection({ data, setData, selectedRegions = [], setSele
       <TextArea label="Socio-economic history" value={d.socioEconomicHistory} onChange={(v) => set("socioEconomicHistory", v)} placeholder="Living situation, occupation demands, financial/support factors relevant to care..." />
       <TextArea label="Functional limitations" value={d.functionalLimitations} onChange={(v) => set("functionalLimitations", v)} placeholder="What the patient can no longer do..." />
       <TextArea label="Patient goals" value={d.patientGoals} onChange={(v) => set("patientGoals", v)} placeholder="What matters most to the patient right now" />
-
-      <RegionSubjectiveTabs
-        selectedRegions={selectedRegions}
-        regionLabelOf={regionLabelOf}
-        regions={d.regions || {}}
-        setRegions={(next) => set("regions", next)}
-      />
     </>
   );
 }
