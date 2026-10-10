@@ -75,6 +75,17 @@ describe("Knee: chips under Chief complaint / Onset / Duration", () => {
     expect(chipTexts().join("|")).toMatch(/First steps in the morning/);
   });
 
+  it("with several regions picked, only the regions that understood something get a heading", async () => {
+    render(<Harness regions={[{ id: "hip", label: "Hip" }, { id: "knee", label: "Knee" }, { id: "ankle", label: "Ankle" }]} />);
+    type(chiefBox(), "Deep anterior hip pain on sitting for long periods. They also rolled the ankle inwards, outer ankle swollen.");
+    await waitFor(() => expect(chipTexts().join("|")).toMatch(/Inversion sprain/), { timeout: 15000 });
+    const titles = [...document.querySelectorAll(".understood-title")].map((t) => t.textContent);
+    expect(titles.some((t) => /^Hip — We understood/.test(t))).toBe(true);
+    expect(titles.some((t) => /^Ankle — We understood/.test(t))).toBe(true);
+    expect(titles.some((t) => /^Knee/.test(t))).toBe(false); // Knee understood nothing: no empty heading
+    expect([...document.querySelectorAll(".understood-title")].every((t) => /We understood/.test(t.textContent))).toBe(true);
+  });
+
   it("other regions do not show these chips yet", async () => {
     render(<Harness regions={[{ id: "shoulder", label: "Shoulder" }]} />);
     type(chiefBox(), "They twisted on a planted foot and the knee gave way.");

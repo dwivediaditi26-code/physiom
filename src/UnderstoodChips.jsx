@@ -79,7 +79,7 @@ const isAlreadyChosen = (field, value, option) =>
  * mode "field": typed into ONE question's own box.  props: field, value (what is in the box), onPick(newValue)
  * mode "story": a free story under the region heading. props: fields (all of the region's), regionData, onPick(fieldId, newValue)
  */
-export default function UnderstoodChips({ mode = "field", contentKey, field, value, fields, regionData, text, onPick }) {
+export default function UnderstoodChips({ mode = "field", contentKey, field, value, fields, regionData, text, onPick, heading }) {
   const typedNow = String(mode === "story" ? text ?? "" : value ?? "");
   const typed = useDebounced(typedNow, PAUSE_MS); // what to understand: after a pause
   const matcher = useMatcher(contentKey, typedNow.trim().length >= 3 && hasRegionPhrases(contentKey));
@@ -107,7 +107,7 @@ export default function UnderstoodChips({ mode = "field", contentKey, field, val
   };
   return (
     <div className="understood-row" data-testid="understood-chips">
-      <div className="understood-title">We understood — tap to add:</div>
+      <div className="understood-title">{heading ? `${heading} — ` : ""}We understood — tap to add:</div>
       {chips.map((c) => (
         <button type="button" key={c.field.id + "|" + c.option} className="understood-chip" onClick={() => pick(c)}>
           ＋ {mode === "story" ? `${c.field.label}: ` : ""}{c.option}

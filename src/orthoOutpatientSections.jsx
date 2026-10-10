@@ -212,9 +212,9 @@ function ChiefComplaintChips({ text, selectedRegions, regions, setRegions, regio
     <>
       {eligible.map((r) => (
         <div key={r.id} data-testid="chief-complaint-chips">
-          {eligible.length > 1 && <div className="understood-title">{regionLabelOf(r)}</div>}
           <UnderstoodChips
             mode="story"
+            heading={eligible.length > 1 ? regionLabelOf(r) : undefined}
             contentKey={contentKeyForRegion(r)}
             text={text}
             fields={subjectiveFieldsForRegion(r)}
