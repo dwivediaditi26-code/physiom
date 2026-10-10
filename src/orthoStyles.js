@@ -150,6 +150,10 @@ export function orthoStyles() {
         .lr-select { width: 100%; border: 1px solid ${BRAND.border}; border-radius: 8px; padding: 5px 4px; font-size: 11.5px; background: #fff; }
 
         .collapsible-head { width: 100%; display: flex; align-items: center; justify-content: space-between; background: ${BRAND.purpleFaint}; border: 1px solid ${BRAND.border}; border-radius: 10px; padding: 9px 12px; margin-bottom: 10px; font-weight: 700; font-size: 13px; color: ${BRAND.purpleDark}; cursor: pointer; font-family: inherit; }
+        .collapsible-head-main { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; flex: 1; text-align: left; }
+        .collapsible-head-sub { font-weight: 500; font-size: 11px; color: ${BRAND.gray}; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+        .star-more { margin-top: 4px; }
+        .star-more summary { cursor: pointer; font-weight: 700; font-style: normal; color: ${BRAND.purpleDark}; }
         .collapsible-chevron { transition: transform 0.15s; }
         .collapsible-chevron.open { transform: rotate(180deg); }
 

@@ -1,7 +1,7 @@
 import { ClinicalInterpretationSection } from "./clinicalInterpretation.jsx";
 import React, { useState, Suspense } from "react";
 import { lazy } from "./lazyReload.js";
-import { SectionIntro, TextField, SelectField, Segmented, TextArea, NumberField, Stepper, Hint, useSectionData, fmtVal, FieldShell } from "./orthoFieldKit.jsx";
+import { SectionIntro, TextField, SelectField, Segmented, TextArea, NumberField, Stepper, Hint, useSectionData, fmtVal, FieldShell, splitMultiValue } from "./orthoFieldKit.jsx";
 import { RedFlagFields } from "./orthoRedFlagScreen.jsx";
 import { subjectiveFieldsForRegion, sectionedFieldsForRegion, isMatchingRelevant, contentKeyForRegion } from "./orthoSubjectiveRegionData.js";
 import UnderstoodChips from "./UnderstoodChips.jsx";
@@ -51,10 +51,22 @@ function RegionSubjectiveGroup({ title, fields, open, onToggle, region, regionDa
     const v = regionData[f.id];
     return Array.isArray(v) ? v.length > 0 : !!v;
   }).length;
+  // Aditi (2026-10-10): a collapsed group should show what is filled in, not just "(1/3)". One short line, cut off with "…" if long.
+  const filledText = fields
+    .map((f) => {
+      const v = regionData[f.id];
+      const parts = Array.isArray(v) ? v : f.type === "single" ? (v ? [String(v)] : []) : splitMultiValue(v, f.options || []);
+      return parts.join(", ");
+    })
+    .filter(Boolean)
+    .join(" · ");
   return (
     <div>
       <button type="button" className="collapsible-head" onClick={onToggle}>
-        <span>{title}{answeredCount > 0 ? ` (${answeredCount}/${fields.length})` : ""}</span>
+        <span className="collapsible-head-main">
+          <span>{answeredCount > 0 ? "✓ " : ""}{title}{answeredCount > 0 ? ` (${answeredCount}/${fields.length})` : ""}</span>
+          {!open && filledText && <span className="collapsible-head-sub" title={filledText} data-testid="group-filled-summary">{filledText}</span>}
+        </span>
         <span className={"collapsible-chevron" + (open ? " open" : "")}>⌄</span>
       </button>
       {open && fields.map((f) => (
@@ -93,13 +105,17 @@ function RegionSubjectiveTabs({ selectedRegions, regionLabelOf, regions, setRegi
           Subjective (chief complaint, onset ...) was ignored, and was shown even for the spine regions where EVERY question counts.
           What is true today: the starred answers drive the suggestions; the Chief complaint / Onset text above is only read for a few
           keywords (the spine and Elbow read words from Onset, Shoulder from the Chief complaint; Knee, Hip and Ankle/Foot read neither). */}
+      {/* Aditi (2026-10-10): the full paragraph "takes too much space". Two short lines show; the rest is one tap away. */}
       <Hint>
-        {sections.every((sec) => sec.fields.every((f) => isMatchingRelevant(region, f.id)))
-          ? '⭐ = this answer changes which conditions "AI Objective Assessment" suggests. In this region every question below does. '
-          : '⭐ = this answer changes which conditions "AI Objective Assessment" suggests. Answers without a star are saved in your notes but do not change the suggestions. '}
-        What you typed in Chief complaint and Onset above is only lightly read (a few keywords), so the answers below are what really drive the suggestions.
-        The suggestions appear only once Chief complaint, Onset or Duration, and at least 2 ⭐ answers are filled in.
-        {CHIEF_COMPLAINT_CHIP_REGIONS.has(contentKeyForRegion(region)) && ' For this region, tap the “We understood” chips under Duration to turn what you typed into ticks.'}
+        ⭐ = this answer changes which conditions "AI Objective Assessment" suggests. It ranks once Chief complaint, Onset or Duration and 2 ⭐ answers are filled in.
+        <details className="star-more">
+          <summary>More</summary>
+          {sections.every((sec) => sec.fields.every((f) => isMatchingRelevant(region, f.id)))
+            ? "In this region every question below counts. "
+            : "Answers without a star are saved in your notes but do not change the suggestions. "}
+          What you typed in Chief complaint and Onset above is only lightly read (a few keywords), so the answers below are what really drive the suggestions.
+          {CHIEF_COMPLAINT_CHIP_REGIONS.has(contentKeyForRegion(region)) && " For this region, tap the “We understood” chips under Duration to turn what you typed into ticks."}
+        </details>
       </Hint>
       <div className="region-tab-row-wrap">
         <div className="region-tab-row">

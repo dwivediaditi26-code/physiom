@@ -29,7 +29,7 @@ describe("the star hint under Region-specific subjective", () => {
   it("Cervical, Thoracic and Lumbar: every question counts", () => {
     for (const id of ["cervical", "thoracic", "lumbar"]) {
       const el = show(id);
-      expect(el.textContent).toMatch(/In this region every question below does/);
+      expect(el.textContent).toMatch(/In this region every question below counts/);
       expect(el.textContent).not.toMatch(/Answers without a star/);
     }
   });
@@ -48,6 +48,6 @@ describe("the star hint under Region-specific subjective", () => {
 
   it("tells the student when the suggestions appear (the story rule)", () => {
     const el = show("knee");
-    expect(el.textContent).toMatch(/appear only once Chief complaint, Onset or Duration, and at least 2 ⭐ answers are filled in/);
+    expect(el.textContent).toMatch(/ranks once Chief complaint, Onset or Duration and 2 ⭐ answers are filled in/);
   });
 });
