@@ -38,6 +38,7 @@ describe("Learn tab", () => {
       expect(screen.getByText("Practical Skills")).toBeTruthy();
     }, { timeout: 10_000 });
     expect(screen.getByText("Clinical Cases")).toBeTruthy();
+    expect(screen.getByText("Case Simulator")).toBeTruthy();
     for (const name of ["Test", "BPT", "Exam Ready"]) {
       const card = screen.getByText(name, { selector: "span.cl-display" }).closest("button");
       expect(card.disabled, name).toBe(true);
