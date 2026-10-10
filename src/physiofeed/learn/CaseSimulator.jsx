@@ -30,6 +30,12 @@ function Ico({ name, i = 0, size = 18 }) {
   return <span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${ICON_TINT[i % ICON_TINT.length]}`}><I size={size} strokeWidth={2}/></span>;
 }
 
+// A stage's `correct` is one option index, or a list when several answers are
+// acceptable (the findings stage: ROM, strength and the functional test are all
+// valid next examinations).
+const isCorrect = (st, k) => (Array.isArray(st.correct) ? st.correct.includes(k) : k === st.correct);
+const correctList = (st) => (Array.isArray(st.correct) ? st.correct : [st.correct]);
+
 function readLast() { try { return JSON.parse(localStorage.getItem(STORE_KEY) || "null"); } catch { return null; } }
 function writeLast(v) { try { localStorage.setItem(STORE_KEY, JSON.stringify(v)); } catch { /* private mode */ } }
 
@@ -37,8 +43,16 @@ function Bubble({ children, className = "" }) {
   return <div className={`rounded-2xl bg-white/95 border border-slate-200 px-3 py-2 text-[13.5px] leading-snug text-slate-800 shadow-sm ${className}`}>{children}</div>;
 }
 
+// If a picture ever fails to load, show a plain tile instead of the browser's
+// broken-image icon.
+function SafeImg({ src, className, style, fallback = "🤖" }) {
+  const [bad, setBad] = useState(false);
+  if (bad) return <span className={`${className} flex items-center justify-center text-2xl`} style={style} aria-hidden="true">{fallback}</span>;
+  return <img src={src} alt="" className={className} style={style} onError={() => setBad(true)}/>;
+}
+
 function Bot({ pose, size = 64 }) {
-  return <img src={img(`bot-${pose}`)} alt="" className="shrink-0 rounded-2xl object-cover bg-sky-50 shadow-sm" style={{ width: size, height: size * 1.1 }}/>;
+  return <SafeImg src={img(`bot-${pose}`)} className="shrink-0 rounded-2xl object-cover bg-sky-50 shadow-sm" style={{ width: size, height: size * 1.1 }}/>;
 }
 
 function Tracker({ current, doneThrough }) {
@@ -218,7 +232,7 @@ function Summary({ c, answers, score, mins, onReplay, onNext }) {
         <div data-testid="sim-answers" className="space-y-2.5 mb-3">
           {c.stages.map((st, n) => {
             const got = answers[n];
-            const ok = got === st.correct;
+            const ok = got != null && isCorrect(st, got);
             return (
               <div key={n} className="rounded-2xl bg-white border border-slate-200 p-3 shadow-sm">
                 <div className="flex items-start gap-2">
@@ -226,7 +240,7 @@ function Summary({ c, answers, score, mins, onReplay, onNext }) {
                   <div className="text-[13px] leading-snug">
                     <div className="font-bold text-slate-900">Question {n + 1}: {st.ask}</div>
                     <div className="text-slate-700 mt-1">Your answer: {got == null ? "—" : st.options[got]}</div>
-                    {!ok && <div className="text-emerald-700 mt-0.5">Right answer: {st.options[st.correct]}</div>}
+                    {!ok && <div className="text-emerald-700 mt-0.5">{correctList(st).length > 1 ? "Right answers: " : "Right answer: "}{correctList(st).map((k) => st.options[k]).join(" / ")}</div>}
                   </div>
                 </div>
               </div>
@@ -273,14 +287,14 @@ function Play({ onExit }) {
   useEffect(() => { try { endRef.current?.scrollIntoView?.({ behavior: "smooth", block: "end" }); } catch { /* old browsers */ } }, [i, done, finished]);
 
   const st = stages[i];
-  const right = done && picked === st.correct;
-  const score = answers.filter((a, n) => a === stages[n]?.correct).length;
+  const right = done && isCorrect(st, picked);
+  const score = answers.filter((a, n) => a != null && isCorrect(stages[n], a)).length;
 
   const submit = () => { setDone(true); setAnswers((a) => { const n = [...a]; n[i] = picked; return n; }); };
   const next = () => {
     if (i + 1 >= total) {
       const m = Math.max(1, Math.round((Date.now() - startRef.current) / 60000));
-      const correct = answers.filter((a, n) => a === stages[n]?.correct).length;
+      const correct = answers.filter((a, n) => a != null && isCorrect(stages[n], a)).length;
       setMins(m); setFinished(true);
       writeLast({ correct, total, pct: Math.round((correct / total) * 100), mins: m, at: Date.now() });
       return;
@@ -365,7 +379,7 @@ function Play({ onExit }) {
           <div className="space-y-2 mb-3">
             {st.options.map((t, k) => {
               const isPicked = picked === k;
-              const isRight = done && k === st.correct;
+              const isRight = done && isCorrect(st, k);
               const isWrong = done && isPicked && !isRight;
               return (
                 <button key={t} type="button" disabled={done} onClick={() => setPicked(k)}
@@ -390,7 +404,7 @@ function Play({ onExit }) {
           {done && (
             <div className="space-y-3">
               <div className={`rounded-2xl p-3.5 text-sm leading-relaxed ${right ? "bg-emerald-50 text-emerald-900" : "bg-rose-50 text-rose-900"}`}>
-                <div className="font-extrabold mb-0.5 flex items-center gap-1.5">{right ? <><Check size={16}/> Correct!</> : <><X size={16}/> Not quite. The right answer is marked in green.</>}</div>
+                <div className="font-extrabold mb-0.5 flex items-center gap-1.5">{right ? <><Check size={16}/> Correct!</> : <><X size={16}/> Not quite. {correctList(st).length > 1 ? "The right answers are" : "The right answer is"} marked in green.</>}</div>
                 {st.explain && right && st.explain}
               </div>
               {st.reply?.checklist && (
