@@ -4,10 +4,11 @@ import {
   Search, Bell, Hand, Move,
   Dumbbell, FlaskConical, Brain, BarChart3, Footprints, Link2,
   Activity, ChevronLeft, ChevronRight,
-  BookOpen, ClipboardCheck, Stethoscope, Target,
+  BookOpen, ClipboardCheck, Stethoscope, Target, Gamepad2,
 } from "lucide-react";
 import StudyMode from "./learn/StudyMode.jsx";
 import ClinicalLearning from "./learn/ClinicalLearning.jsx";
+import CaseSimulator from "./learn/CaseSimulator.jsx";
 import { DisplayFont } from "./learn/learnTheme.jsx";
 import "./physiofeed.css";
 import { usePreviewFeaturesForCurrentUser } from "../featureFlags.js";
@@ -145,6 +146,7 @@ const ALL_ITEMS = [...ASSESSMENT_LIBRARY, ...ADVANCED_ASSESSMENT, ...EXERCISE];
 const HOME_CARDS = [
   { id: "practical", label: "Practical Skills", desc: "ROM • MMT • Assessment", icon: Hand, tint: "amber", count: ALL_ITEMS.length },
   { id: "clinical", label: "Clinical Cases", desc: "Learn through real-life patient cases", icon: Stethoscope, tint: "rose" },
+  { id: "sim", label: "Case Simulator", desc: "Meet the patient • Answer • Learn", icon: Gamepad2, tint: "violet" },
   { id: "test", label: "Test", desc: "MCQs • Image questions", icon: ClipboardCheck, tint: "blue", soon: true },
   { id: "bpt", label: "BPT", desc: "1st–4th year subjects", icon: BookOpen, tint: "violet", soon: true },
   { id: "exam", label: "Exam Ready", desc: "Revision • Mock tests", icon: Target, tint: "indigo", soon: true },
@@ -218,6 +220,16 @@ export default function LearnTabEntry({ onNav }) {
         <style>{".pm-shell{background:#fff !important}"}</style>
       <DisplayFont/>
         <ClinicalLearning onBack={() => setView("home")}/>
+      </div>
+    );
+  }
+
+  if (view === "sim") {
+    return (
+      <div className="physiofeed-root max-w-2xl lg:max-w-4xl mx-auto">
+        <style>{".pm-shell{background:#fff !important}"}</style>
+        <DisplayFont/>
+        <CaseSimulator onBack={() => setView("home")}/>
       </div>
     );
   }
