@@ -11,7 +11,7 @@
 import { createPhraseMatcher, WORDS } from "./phraseEngine.js";
 import { PATTERN_PHRASES, patternRules, extendPhrases } from "./phrasePattern.js";
 
-export const KNEE_PHRASES = {
+const KNEE_BASE = {
   location: {
     "Anterior / diffuse": [
       "~anterior knee", "front of the knee", "front of knee", "anterior knee pain", "pain in the front of my knee",
@@ -27,7 +27,7 @@ export const KNEE_PHRASES = {
     ],
     "Below the kneecap (patellar tendon)": [
       "below the kneecap", "below my kneecap", "under the kneecap", "just below the knee cap", "beneath the kneecap",
-      "patellar tendon", "patella tendon", "jumpers knee", "jumper's knee", "pain below the kneecap", "tendon below the kneecap",
+      "patellar tendon", "patella tendon", "bottom of the kneecap", "bottom of the knee cap", "lower pole of the patella", "jumpers knee", "jumper's knee", "pain below the kneecap", "tendon below the kneecap",
       "katori ke niche dard", "katori ke neeche dard", "ghutne ki katori ke niche", "ghutne ki chakri ke niche dard",
       "कटोरी के नीचे दर्द", "घुटने की कटोरी के नीचे", "कटोरी के नीचे की नस में दर्द", "घुटने की चक्की के नीचे दर्द",
     ],
@@ -38,19 +38,19 @@ export const KNEE_PHRASES = {
       "कटोरी के ऊपर दर्द", "घुटने की कटोरी के ऊपर", "कटोरी के ऊपर की तरफ", "घुटने की चक्की के ऊपर दर्द",
     ],
     "Medial joint line": [
-      "medial joint line", "medial knee", "inner knee", "inner side of the knee", "inner side of knee", "inside of the knee joint line",
+      "medial joint line", "medial knee", "inside of the knee joint line",
       "inner joint line", "pain on the inner side of my knee", "inside edge of the knee",
       "ghutne ke andar ki taraf", "ghutne ke andruni hisse me dard", "ghutne ka andar wala hissa", "ghutne ke andar ki taraf dard",
       "घुटने के अंदर की तरफ", "घुटने के अंदरूनी हिस्से में दर्द", "घुटने का अंदर वाला हिस्सा", "घुटने के अंदर की तरफ दर्द",
     ],
     "Lateral joint line": [
-      "lateral joint line", "lateral knee", "outer knee", "outer side of the knee", "outer side of knee", "outside of the knee",
+      "lateral joint line", "lateral knee",
       "outer joint line", "pain on the outer side of my knee", "outside edge of the knee",
       "ghutne ke bahar ki taraf", "ghutne ke bahari hisse me dard", "ghutne ka bahar wala hissa", "ghutne ke bahar ki taraf dard",
       "घुटने के बाहर की तरफ", "घुटने के बाहरी हिस्से में दर्द", "घुटने का बाहर वाला हिस्सा", "घुटने के बाहर की तरफ दर्द",
     ],
     "Behind the knee (popliteal)": [
-      "behind the knee", "back of the knee", "back of my knee", "popliteal", "popliteal fossa", "knee pit", "hollow of the knee",
+      "behind the knee", "back of the knee", "back of my knee", "popliteal", "popliteal fossa", "posterior knee", "posterior knee pain", "knee pit", "hollow of the knee",
       "pain behind the knee", "pain at the back of the knee",
       "ghutne ke peeche dard", "ghutne ke piche", "ghutne ke pichhe ki taraf", "ghutne ke peeche ki jagah me dard",
       "घुटने के पीछे दर्द", "घुटने के पीछे की तरफ", "घुटने के पिछले हिस्से में दर्द", "घुटने के पीछे की जगह में दर्द",
@@ -186,6 +186,9 @@ export const KNEE_PHRASES = {
       "knee pain at night", "pain in the knee wakes me at night", "pain when i lie down at night", "cannot sleep because of knee pain",
       "raat ko ghutne me dard", "raat ko ghutna dukhta hai", "रात को घुटने में दर्द", "रात को घुटना दुखता है",
     ],
+    "Improves through the day": [
+      "eases as they warm up", "as they warm up", "eases as it warms up", "eases as it warms", "improves as they warm up", "settles as they warm up",
+    ],
     "Worse in morning": [
       "knee stiff when i get up", "knee stiff in the morning", "stiff knee first thing", "stiffness after waking",
       "subah ghutna akad jata hai", "subah uthte hi ghutna jakad jata hai", "सुबह घुटना अकड़ जाता है", "सुबह उठते ही घुटना जकड़ जाता है",
@@ -234,13 +237,79 @@ export const KNEE_PHRASES = {
   },
 };
 
+// Added from the clinician-voice "everyday words" sheet (PhysioMind-Knee-Everyday-Words-DRAFT.pdf): what a clinician types ABOUT the
+// patient ("the patient", "they"), in English, Hinglish and Hindi. See kneeSheetSet.test.js.
+const SHEET_PHRASES = {
+  mechanism: {
+    "Insidious / overuse": [
+      "too much too soon", "overload", "overloaded", "sudden increase in training", "sudden increase in running", "sudden jump in activity",
+      "training suddenly increased", "increase in training", "lots of jumping", "a lot of jumping", "jump a lot", "jumping again and again",
+      "repeated jumping", "training spike", "more training than usual", "running more than usual", "doing more than usual", "did more than usual",
+      "built up slowly", "built up gradually", "crept up", "crept up gradually", "crept up over the years", "slowly over the years", "slowly over months or years", "slowly over months",
+      "wear and tear", "no fall or injury", "years of squatting", "years of squatting or kneeling", "years of squatting and sitting on the floor",
+      "used their knees a lot", "used the knees a lot", "high mileage", "more distance than before", "longer distances than before", "lots of running",
+      "running or cycling a lot", "running more than usual lately", "new gym plan", "after a heavy week of jumping", "heavy week of jumping or training",
+      "increased weekly mileage", "increased mileage", "mileage increase", "sudden mileage increase", "increase in mileage", "increase in weekly mileage", "gradual with no injury", "gradual no injury", "gradual onset with no injury",
+      "saalon se dheere dheere", "mahino se dheere dheere", "dheere dheere dard badh raha hai", "koi chot nahi", "dheere dheere koi chot nahi", "achanak zyada daudna", "zyada daudna", "baar baar kudna", "training achanak badha dena",
+      "training achanak badhana", "mahino ya saalon mein dheere dheere", "saalon mein dheere dheere", "mahino mein dheere dheere", "ghisaav", "ghisav",
+      "pehle se zyada doori", "zyada kaam ya exercise ke baad shuru hua", "exercise ke baad shuru hua",
+      "कोई चोट नहीं", "धीरे धीरे कोई चोट नहीं", "अचानक ज्यादा दौड़ना", "ज्यादा दौड़ना", "बार बार कूदना", "ट्रेनिंग अचानक बढ़ा देना",
+      "महीनों या सालों में धीरे धीरे", "सालों में धीरे धीरे", "सालों से धीरे धीरे", "महीनों से धीरे धीरे", "धीरे धीरे दर्द बढ़ रहा है", "घिसाव", "पहले से ज्यादा दूरी", "ज्यादा काम या कसरत के बाद शुरू हुआ", "कसरत के बाद शुरू हुआ",
+    ],
+    "Non-contact twisting": [
+      "twisted it", "they twisted it", "twisted on a fixed foot", "twisted on a planted foot", "twist with foot fixed", "twisted over a planted foot",
+      "body twisted over a planted foot", "turned on a foot that was not moving", "foot was stuck and they turned", "foot stuck and they turned",
+      "foot stuck and turned", "turned on a fixed foot", "after a twist", "after twisting", "twist in football", "twist in football or skiing", "twist in skiing", "twist playing football", "twisted while squatting low", "twisted playing football", "sudden twist",
+      "achanak mudne par", "football khelte mudte waqt", "khelte mudte waqt",
+      "अचानक मुड़ने पर", "फुटबॉल खेलते मुड़ते समय", "खेलते मुड़ते समय",
+    ],
+    "Direct blow": [
+      "dashboard", "डैशबोर्ड", "moment of the hit", "moment of the blow", "at the time of the hit", "when they were hit", "when it was hit", "was tackled", "got tackled", "in a tackle", "tackled from the side",
+      "tackled", "was hit", "got hit by",
+      "chot lagte hi", "ghutne par maara gaya", "ghutne ke andar maara gaya", "ghutne ke bahar maara", "taang ke bahar maara",
+      "घुटने के अंदर मारा गया", "घुटने या टांग के बाहर मारा", "टांग के बाहर मारा",
+    ],
+    "Landing from a jump": [
+      "collapsed on landing", "knee collapsed inwards on landing", "collapsed inwards on landing", "jumped for a ball", "came down after a jump", "came down awkwardly after a jump",
+      "kood kar galat landing", "kood kar galat landing hui", "galat landing hui", "galat landing", "kood kar galat tarah se utara",
+      "कूदकर गलत तरह से उतरा", "कूदकर गलत लैंडिंग", "गलत लैंडिंग हुई", "गलत तरह से उतरा",
+    ],
+  },
+  givingWay: {
+    // Only wording that itself says "any time / no trigger". A plain "keeps giving way" does not say there is no trigger, so it is left to the student.
+    "Yes — unpredictable / no clear trigger": [
+      "ghutna kabhi bhi dhokha deta hai", "घुटना कभी भी धोखा देता है",
+    ],
+  },
+  locking: {
+    "Yes — momentary / pseudo-locking": [
+      "catches or gets stuck", "gets stuck and has to be wiggled free", "wiggled free", "has to be wiggled free", "sticks halfway", "stuck halfway",
+      "sticks halfway like something is stuck inside", "shake it to get it moving", "have to shake it to get it moving", "felt it catch", "feels it catch",
+      "catching or locking", "catching and locking", "clicking and catching", "catching and clicking", "clicks and catching", "keeps catching on and off", "sticking comes back",
+    ],
+  },
+};
+const mergePhrases = (base, extra) => {
+  const out = { ...base };
+  for (const [field, opts] of Object.entries(extra)) out[field] = extendPhrases(out[field], opts);
+  return out;
+};
+export const KNEE_PHRASES = mergePhrases(KNEE_BASE, SHEET_PHRASES);
+
 const { PAIN: PAIN_W } = WORDS;
 // Words that say a sentence is about this region / about another one.
 const OWN_W = "knee* kneecap patella leg legs thigh shin ghutn* ghutna katori कटोरी chakri चक्की टोपी घुटन* घुटना टांग taang पैर";
 const FOREIGN_W = "shoulder* elbow* wrist* hand hands neck back_pain back_aches back_ache back_hurts back_hurt back_stiff back_stiffness pain_in_back backache lower_back upper_back low_back hip* ankle* groin headache jaw toe* tooth teeth eye* ear throat stomach chest kandha kohni kalai gardan kamar कंधा कोहनी कलाई गर्दन कमर पेट सिर टखना एड़ी";
 // A relative's illness is not the patient's cancer history.
 const FAMILY_W = WORDS.FAMILY;
-const GIVE_W = "give* gave giving goes_from_under went_from_under goes_out went_out buckle* buckles buckled collapse* collapsed jawab जवाब fasak* फिसल* dhokha धोखा latak* dagmag* डगमग*";
+const GIVE_W = "give* gave giving goes_from_under went_from_under goes_out went_out buckle* buckles buckled collapse* collapsed jawab जवाब fasak* फिसल* dhokha धोखा latak* dagmag* डगमग* let_them_down lets_them_down letting_them_down let_down lets_down fold folds folded folding";
+// Present-tense giving way ("gives way when I turn") describes the giving way; past tense ("twisted ... and the knee gave way") is the injury story.
+const GIVE_PRES = "give gives giving buckle buckles buckling collapse collapses collapsing goes_out goes_from_under jawab जवाब fasak* फिसल* dhokha धोखा latak* dagmag* डगमग* let_them_down lets_them_down letting_them_down fold folds folding";
+// What a blow comes from or lands on ("hit on the outside of the knee" is the blow, not the place the pain is).
+const HIT_W = "hit hits hitting knock knocks knocked blow blows kick kicks kicked kicking struck strike tackle tackled tackling tackles bump bumped bumping smash smashed bang banged slam slammed from force valgus varus";
+// inside the span between "outside" and "knee": also Hinglish / Hindi words for a blow
+const HIT_IN = HIT_W + " se से maara mara marna maar laat मारा मार लात";
+const HIT_AFTER = "maara mara marna maar laat laga lagi मारा मार लात";
 
 const matcher = createPhraseMatcher({
   phrases: KNEE_PHRASES,
@@ -251,8 +320,10 @@ const matcher = createPhraseMatcher({
   optionGuards: {
     "redFlags|Cancer history": FAMILY_W,
     // "gives way when I turn" describes the giving way, not how the injury happened
-    "mechanism|Pivoting / cutting movement": GIVE_W,
-    "mechanism|Non-contact twisting": GIVE_W,
+    "mechanism|Pivoting / cutting movement": GIVE_PRES,
+    "mechanism|Non-contact twisting": GIVE_PRES,
+    // "the knee still lets them down now and then" is giving way, not how the pain behaves
+    "pattern|Intermittent": GIVE_W,
   },
   hinglish: [
     [/\b(ghutna|ghutne|ghutno|ghutnon|ghutana|ghutane|ghuta|gutna|gutne)\b/g, "ghutna"],
@@ -277,6 +348,8 @@ const matcher = createPhraseMatcher({
     [/\b(achanak|acchanak|achanak se)\b/g, "achanak"],
     [/\b(paer|pair|pao|pav)\b/g, "pair"],
     [/\b(aas paas|aaspaas|aaspas|aas pas)\b/g, "aaspaas"],
+    // "ghutna peeche ya bahar ki taraf mud gaya" = the knee bent the wrong way, not a pain place
+    [/\bghutna peeche(?: ya (?:bahar|andar))?(?: ki taraf)? mod\b/g, "ghutna ulta mod"],
   ],
   deva: [
     [/घुटन(ा|े|ों|ो)?/g, "घुटना"],
@@ -286,6 +359,7 @@ const matcher = createPhraseMatcher({
     [/सीध(ा|ी|े)/g, "सीधा"],
     [/जवाब/g, "जवाब"],
     [/मिनट(ों|ो)?/g, "मिनट"],
+    [/घुटना पीछे(?: या (?:बाहर|अंदर))?(?: की तरफ)? मुड/g, "घुटना उल्टा मुड"],
   ],
   rules: ({ rule, O }) => {
     const L = (i) => O("location", i);
@@ -298,23 +372,38 @@ const matcher = createPhraseMatcher({
     rule("location", BELOW, ["below under beneath niche नीचे", CAP], 4, { unless: "bump bony ubhri ubhaar उभरी उभार tuberosity osgood" });
     rule("location", TUBER, ["bump bumps lump bony ubhri ubhaar उभरी उभार उभरा", "below under beneath niche नीचे", KNEE], 9);
     rule("location", ABOVE, ["above upar ऊपर", CAP], 4);
-    rule("location", MEDIAL, ["inner inside_of medial andruni अंदरूनी andar अंदर", KNEE], 5, { unless: "deep" });
-    rule("location", LATERAL, ["outer outside lateral bahar bahari बाहर बाहरी", KNEE], 5);
-    rule("location", POPL, ["back behind peeche पीछे", "ghutna घुटना knee"], 4, { unless: "kneecap knee_cap patella katori कटोरी chakri चक्की" });
+    rule("location", MEDIAL, ["inner inside_of medial andruni अंदरूनी andar अंदर", KNEE], 5, { unless: "deep", block: HIT_IN, blockBefore: HIT_W, blockAfter: HIT_AFTER });
+    rule("location", MEDIAL, ["inside inner medial", "sore tender painful hurts hurting aching"], 3, { ctx: "painOrArm", block: HIT_W, blockBefore: HIT_W });
+    rule("location", LATERAL, ["outer outside lateral bahar bahari बाहर बाहरी", KNEE], 5, { block: HIT_IN, blockBefore: HIT_W, blockAfter: HIT_AFTER });
+    rule("location", LATERAL, ["outside outer lateral", "sore tender painful hurts hurting aching"], 3, { ctx: "painOrArm", block: HIT_W, blockBefore: HIT_W });
+    rule("location", MEDIAL, ["pain ache aching", "on_inside on_the_inside"], 3, { ctx: "painOrArm", block: HIT_W, blockBefore: HIT_W });
+    rule("location", LATERAL, ["pain ache aching", "on_outside on_the_outside"], 3, { ctx: "painOrArm", block: HIT_W, blockBefore: HIT_W });
+    rule("location", LATERAL, ["bahar bahari बाहर बाहरी", "taraf तरफ ओर hissa हिस्से", PAIN_W], 6, { ctx: "painOrArm", block: HIT_IN, blockAfter: HIT_AFTER });
+    rule("location", POPL, ["back behind peeche पीछे", "ghutna घुटना knee"], 4, { unless: "kneecap knee_cap patella katori कटोरी chakri चक्की", block: "bent bend bends bending mod mudd mud मुड़" });
     rule("location", ANT, ["front anterior samne सामने aage आगे", KNEE], 4);
     rule("location", DIFFUSE, ["whole entire all_over all_around everywhere poore पूरे saare सारे", KNEE, PAIN_W], 6);
     // mechanism
     const M = (i) => O("mechanism", i);
     const [INSID, TWIST, DIRECT, HYPER, LAND, PIVOT, POSTOP] = [0, 1, 2, 3, 4, 5, 6].map(M);
     rule("mechanism", TWIST, ["after during playing while_playing", "twisting twisted"], 3);
-    rule("mechanism", TWIST, ["twisted moch मोच mud_gaya mud_gayi mud_gaye mud_gya मुड़_गया मुड़_गई घूम_गया", KNEE + " leg"], 4);
+    rule("mechanism", TWIST, ["twisted moch मोच mud_gaya mud_gayi mud_gaye mud_gya मुड़_गया मुड़_गई घूम_गया", KNEE + " leg"], 4, { unless: "ulta ulti उल्टा उल्टी peeche पीछे backwards" });
     rule("mechanism", DIRECT, ["hit banged bashed knocked bumped kicked struck smashed slammed crashed collided dashboard laat लात", KNEE], 4);
-    rule("mechanism", DIRECT, ["fell fall fallen landed gir गिर", "on_knee on_knees onto_knee on_kneecap on_knee_cap on_patella ghutna_par ghutna_pe ghutna_ke_bal घुटना_पर घुटना_के_बल"], 4);
+    rule("mechanism", DIRECT, ["hit hits knock knocks knocked blow blows kick kicks kicked struck tackle tackled bumped smash smashed bang banged slam slammed", KNEE + " leg side"], 6);
+    rule("mechanism", DIRECT, ["hit hits knock knocked blow kick kicked struck tackle tackled bumped smash smashed", "outside inside outer inner side"], 4);
+    rule("mechanism", DIRECT, [KNEE + " taang टांग", "maara mara marna maar laat मारा मार लात"], 6);
+    rule("mechanism", DIRECT, ["fell fall fallen landed gir गिर", "on_knee on_bent_knee on_knees onto_knee on_kneecap on_knee_cap on_patella ghutna_par ghutna_pe ghutna_ke_bal घुटना_पर घुटना_के_बल"], 4);
     rule("mechanism", HYPER, ["hyperextend* hyperextension hyper_extension hyper_extended overextend* over_extended over_extend"], 1, { ctx: "painOrArm" });
     rule("mechanism", HYPER, ["backwards backward ulta उल्टा ulti उल्टी peeche पीछे", KNEE, "bend* bent bending mod mudd मुड़ मुड़ा"], 6, { unless: "dard दर्द pain" });
-    rule("mechanism", LAND, ["land* landed landing utarte उतरते utar उतर niche_aaya niche_aate niche_aana niche_aayi", "jump* kood कूद* hop"], 6);
+    rule("mechanism", LAND, ["land* landed landing utarte उतरते utar उतर niche_aaya niche_aate niche_aana niche_aayi", "jump* kood कूद* hop"], 9, { blockAfter: "sprint* sprinting running run" });
     rule("mechanism", PIVOT, ["pivoted pivoting pivot cutting sidestep* sidestepped side_step swerve* change_of_direction changing_direction changed_direction direction_change direction_badalte", ], 1, { ctx: "painOrArm", unless: "gives gave give buckle* buckles collapse* jawab जवाब" });
     rule("mechanism", PIVOT, ["foot_planted planted_foot planted_my_foot pair_jama"], 1, { ctx: "painOrArm" });
+    rule("mechanism", PIVOT, ["cutting cut", "turn turns turning"], 3);
+    // "twisted" (a twist that happened) -- not "pain when twisting"
+    rule("mechanism", TWIST, ["twisted"], 1);
+    rule("mechanism", TWIST, ["sudden sharp awkward violent forceful bad", "twist twisting"], 3, { ctx: "painOrArm" });
+    rule("mechanism", TWIST, ["twist twisted twisting", "foot pair fixed planted stuck jama"], 6, { ctx: "painOrArm", unless: "pain hurts sore dard" });
+    rule("mechanism", TWIST, ["achanak अचानक sudden suddenly", "mudne mudte mudna मुड़ने मुड़ते मुड़ना twist* turn*"], 3, { unless: "dard दर्द pain hurts" });
+    rule("mechanism", TWIST, ["khelte खेलते football फुटबॉल cricket क्रिकेट खेल", "mudne mudte mudna मुड़ने मुड़ते मुड़ना"], 4, { unless: "dard दर्द pain hurts" });
     rule("mechanism", POSTOP, ["surgery operation operated arthroscopy replacement tkr ऑपरेशन सर्जरी", "after post since following baad बाद"], 6);
     rule("mechanism", POSTOP, ["operation surgery ऑपरेशन सर्जरी", "hua tha हुआ था"], 5, { ctx: "painOrArm" });
     rule("mechanism", POSTOP, ["replace* replacement implant*", KNEE + " joint"], 5, { unless: "fell fall tripped" });
@@ -328,9 +417,10 @@ const matcher = createPhraseMatcher({
     // locking
     const Lk = (i) => O("locking", i);
     const [LKNO, LKTRUE, LKMOM] = [0, 1, 2].map(Lk);
-    rule("locking", LKTRUE, ["lock locks locked locking jam jammed stuck atak लॉक जाम अटक", "straighten* extend* seedha सीधा bent mudi mod मुड़ी unlock* wiggle*"], 8, { selfNeg: true });
+    rule("locking", LKTRUE, ["lock locks locked locking jam jammed stuck atak लॉक जाम अटक", "straighten* extend* seedha सीधा bent mudi mod मुड़ी unlock* wiggle*"], 8, { selfNeg: true, blockBefore: "pair paer foot zameen पैर ज़मीन जमीन", block: "gaya gayi gaye gya गया गयी गई" });
     rule("locking", LKTRUE, ["lock locks locked jam jammed atak लॉक जाम अटक", "khulta khulti khul खुल*", "nahi नहीं"], 10, { selfNeg: true });
     rule("locking", LKNO, ["lock locks locking jam atak लॉक जाम अटक*", "never no not dont doesnt didnt nahi नहीं"], 4, { selfNeg: true, block: "seedha सीधा straighten* khulta खुल*" });
+    rule("locking", LKMOM, ["atak_jata atak_jati atak_jaata अटक_जाता अटक_जाती अटक_जाते"], 3, { blockBefore: "pair paer foot zameen पैर ज़मीन जमीन" });
     rule("locking", LKMOM, ["catch* caught atak click* clicks", "momentary momentarily brief* second* seconds sec thodi_der kuch_second pal पल सेकंड free frees freed khul खुल"], 6);
     // red flags
     const R = (i) => O("redFlags", i);

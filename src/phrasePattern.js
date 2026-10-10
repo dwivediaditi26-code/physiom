@@ -61,7 +61,7 @@ export function patternRules({ rule, O }) {
     rule("pattern", OPT("pattern", 0), [PAIN_W, "all_day all_time whole_day entire_day whole_time day_and_night 24_hours constantly never_stops never_stop nonstop non_stop din_bhar pura_din poora_din पूरा_दिन पूरे_दिन har_waqt har_samay हर_समय हर_वक्त lagatar लगातार din_raat दिन_रात"], 8,
     { selfNeg: true, noComma: true, block: "after when while during from if only jab जब" });
   rule("pattern", OPT("pattern", 0), ["never", "away stops ends eases go goes", PAIN_W], 6, { selfNeg: true });
-  rule("pattern", OPT("pattern", 1), ["sometimes occasionally some_days on_some_days kabhi_kabhi कभी_कभी at_times now_and_then", PAIN_W], 6);
+  rule("pattern", OPT("pattern", 1), ["sometimes occasionally some_days on_some_days kabhi_kabhi कभी_कभी at_times now_and_then", PAIN_W], 6, { blockAfter: "at_first" });
   rule("pattern", OPT("pattern", 2), ["morning subah सुबह wake* uthte uthne", "worse worst most mostly stiff* zyada ज्यादा akdan akad* अकड* jakad* jakdan जकड़* first pehle पहले"], 6, { ctx: "pain", reliefKills: true });
   rule("pattern", OPT("pattern", 2), ["out_of_bed get_up getting_up", "first most worst worse mostly"], 8, { ctx: "pain", reliefKills: true });
   rule("pattern", OPT("pattern", 2), ["morning mornings subah सुबह uthte uthne wake*", "stiff* akdan akad* अकड* jakad* jakdan जकड़* jam jaam"], 7, { reliefKills: true, noComma: true });

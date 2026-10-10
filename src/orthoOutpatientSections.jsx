@@ -98,6 +98,7 @@ function RegionSubjectiveTabs({ selectedRegions, regionLabelOf, regions, setRegi
           ? '⭐ = this answer changes which conditions "AI Objective Assessment" suggests. In this region every question below does. '
           : '⭐ = this answer changes which conditions "AI Objective Assessment" suggests. Answers without a star are saved in your notes but do not change the suggestions. '}
         What you typed in Chief complaint and Onset above is only lightly read (a few keywords), so the answers below are what really drive the suggestions.
+        {CHIEF_COMPLAINT_CHIP_REGIONS.has(contentKeyForRegion(region)) && ' For this region, tap the “We understood” chips under Duration to turn what you typed into ticks.'}
       </Hint>
       <div className="region-tab-row-wrap">
         <div className="region-tab-row">
@@ -191,6 +192,36 @@ export function RedFlagScreenSection({ data, setData }) {
     <>
       <SectionIntro icon="🚩" title="Red Flag Screen" info="A quick systemic screen — not a diagnosis, just a prompt to escalate or refer when indicated." />
       <RedFlagFields d={d} set={set} />
+    </>
+  );
+}
+
+// Regions whose everyday-phrase matcher has been checked on how a CLINICIAN writes about a patient ("the patient", "they", short notes)
+// -- English, Hinglish and Hindi (kneeSheetSet.test.js). Only these show the "We understood" chips under Chief complaint / Onset / Duration.
+// Add a region here once its sheet has been done and tested.
+const CHIEF_COMPLAINT_CHIP_REGIONS = new Set(["knee"]);
+
+// "We understood -- tap to add" under the general story boxes. What the clinician typed in Chief complaint, Onset and Duration is read
+// by the picked region's matcher; tapping a chip ticks that answer in the region's own checklist (the same answers the AI Objective
+// Assessment ranks from). Suggest-only: nothing is ticked until tapped. No AI, no network, no cost.
+function ChiefComplaintChips({ text, selectedRegions, regions, setRegions, regionLabelOf }) {
+  const eligible = selectedRegions.filter((r) => CHIEF_COMPLAINT_CHIP_REGIONS.has(contentKeyForRegion(r)));
+  if (!eligible.length || String(text || "").trim().length < 3) return null;
+  return (
+    <>
+      {eligible.map((r) => (
+        <div key={r.id} data-testid="chief-complaint-chips">
+          {eligible.length > 1 && <div className="understood-title">{regionLabelOf(r)}</div>}
+          <UnderstoodChips
+            mode="story"
+            contentKey={contentKeyForRegion(r)}
+            text={text}
+            fields={subjectiveFieldsForRegion(r)}
+            regionData={regions[r.id] || {}}
+            onPick={(fieldId, value) => setRegions({ ...regions, [r.id]: { ...(regions[r.id] || {}), [fieldId]: value } })}
+          />
+        </div>
+      ))}
     </>
   );
 }
@@ -325,6 +356,13 @@ export function SubjectiveSection({ data, setData, selectedRegions = [], setSele
           orphaned alone in a half-empty row. */}
       <SelectField label="Onset" type="single" options={["Sudden", "Gradual", "Insidious", "Post-exercise", "Post-injury"]} value={d.onset} onChange={(v) => set("onset", v)} />
       <TextField label="Duration" value={d.duration} onChange={(v) => set("duration", v)} placeholder="e.g. 3 weeks" />
+      <ChiefComplaintChips
+        text={[d.chiefComplaint, d.onset, d.duration].filter(Boolean).join(". ")}
+        selectedRegions={selectedRegions}
+        regions={d.regions || {}}
+        setRegions={(next) => set("regions", next)}
+        regionLabelOf={regionLabelOf}
+      />
       <TextArea label="Previous treatment" value={d.previousTreatment} onChange={(v) => set("previousTreatment", v)} placeholder="Prior physio, injections, medication, surgery..." />
       <TextArea label="Relevant medical history" value={d.medicalHistory} onChange={(v) => set("medicalHistory", v)} />
       <TextField label="Medication" value={d.medication} onChange={(v) => set("medication", v)} />
