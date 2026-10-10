@@ -13,6 +13,7 @@
 // Left / right answers (L) / (R) are built with sided() from phraseSides.js.
 import { createPhraseMatcher, WORDS } from "./phraseEngine.js";
 import { SIDE_HINGLISH, SIDE_DEVA, LEFT_W, RIGHT_W, BOTH_W, sided } from "./phraseSides.js";
+import { extendPhrases } from "./phrasePattern.js";
 
 const SI = sided([
   "{e} si joint", "{e} sacroiliac joint", "pain over the {e} si joint", "{e} sacroiliac pain", "{e} sided si joint pain", "pain at the {e} sacroiliac joint", "{e} si joint is sore",
@@ -85,7 +86,7 @@ const SIDE_LYING = sided([
   "{d} करवट पर सोने से दर्द", "{d} तरफ लेटकर दर्द", "{d} साइड पर लेटने से दर्द", "{d} करवट लेना मुश्किल",
 ]);
 
-export const LUMBAR_SI_PHRASES = {
+const LUMBAR_BASE = {
   location: {
     "Upper lumbar (L1-L2)": [
       "~upper lumbar", "upper part of the lower back", "top of the lower back", "l1 l2", "l1 to l2", "upper lumbar spine", "pain in the upper lumbar region", "just below the ribs at the back",
@@ -146,9 +147,10 @@ export const LUMBAR_SI_PHRASES = {
 
   radiation: {
     "No radiation — local only": [
+      "nothing in the legs", "nothing in the leg", "nothing in legs",
       "no radiation", "pain is local", "stays in the back", "does not spread", "doesnt spread anywhere", "pain doesnt travel", "only in the lower back", "does not go down the leg", "back only",
       "dard sirf kamar me hai", "dard kahin aur nahi jata", "dard failta nahi", "pair me kuch nahi hota", "dard kamar tak hi rehta hai",
-      "दर्द सिर्फ कमर में है", "दर्द कहीं और नहीं जाता", "दर्द फैलता नहीं", "पैर में कुछ नहीं होता", "दर्द कमर तक ही रहता है",
+      "दर्द सिर्फ कमर में है", "दर्द कहीं और नहीं जाता", "दर्द फैलता नहीं", "दर्द कमर तक ही रहता है", "पैर में कुछ नहीं होता",
     ],
     "Across lower back (belt distribution)": [
       "pain spreads across the lower back", "across the back like a belt", "pain goes from side to side across the back", "spreads across the waist", "radiates across the low back", "pain across the belt line",
@@ -927,6 +929,77 @@ export const LUMBAR_SI_PHRASES = {
   },
 };
 
+// Added from the clinician-voice "everyday words" sheet (PhysioMind-Lumbar-Everyday-Words-DRAFT.pdf): what a clinician types ABOUT the
+// patient ("the patient", "they"), in English, Hinglish and Hindi. See lumbarSISheetSet.test.js.
+const SHEET_PHRASES = {
+  radiation: {
+    "No radiation — local only": [
+      "no leg pain", "nothing goes into the leg", "nothing goes down the leg", "no pain or tingling down either leg", "stays in the back",
+      "pair mein koi dard nahi", "pair mein dard nahi", "पैर में कोई दर्द नहीं", "पैर में दर्द नहीं",
+    ],
+  },
+  neuroPresent: {
+    "No leg neurological symptoms": ["no neuro", "no neurology", "neuro normal"],
+  },
+  mechanismType: {
+    "Coughing / sneezing — onset": ["sneezing sent a jolt", "sneeze sent a jolt", "cough sent a jolt"],
+    "No clear mechanism — insidious onset": ["gradual onset", "insidious", "crept in", "no injury", "no particular event", "koi chot nahi", "कोई चोट नहीं", "dheere dheere shuru hua", "धीरे धीरे शुरू हुआ"],
+    "Twisting without lifting": ["twist", "awkward twist", "ghumne par", "achanak ghumne par", "अचानक घूमने पर", "घूमने पर"],
+    "Fall onto back / buttocks": [
+      "fall on the buttock", "fell on the buttock", "landed on the buttock", "landed hard on the buttock", "landed on the bottom", "hard landing on the bottom", "fall onto the buttocks",
+      "fell on the bottom", "chutad ke bal girne", "चूतड़ के बल गिरने", "चूतड़ पर गिरने", "chutad par girne",
+    ],
+    "Sport — specific (notes)": ["gymnastics", "gymnast", "fast bowling", "fast bowler", "cricket season", "extension sport", "athlete", "jimnastik", "जिम्नास्टिक", "फास्ट बॉलिंग", "खेल में"],
+    "Sustained poor posture over time": ["poor posture", "bad posture", "desk job", "long hours of sitting", "galat posture", "गलत पोस्चर", "der tak baithkar kaam", "देर तक बैठकर काम"],
+    "Bending forward without lifting": ["repeated bending forward", "lots of bending forward", "repetitive flexion", "bending forward all day", "baar baar aage jhukna", "बार बार आगे झुकना"],
+  },
+  aggPostures: {
+    "Driving (duration — specify in notes)": ["लंबी ड्राइव", "लंबी ड्राइव के बाद", "ड्राइव के बाद", "long drive", "after a long drive"],
+  },
+  relPostures: {
+    "Leaning forward on trolley / counter (stenosis pattern)": ["easier cycling than walking", "better cycling than walking", "cycling is easier", "bent forward over the handlebars"],
+    "Lying with knees bent (crook lying)": ["crook lying", "better crook lying", "lie with the knees bent", "lying with the knees bent", "ghutne mod kar letne", "घुटने मोड़कर लेटने"],
+  },
+  redFlagsCauda: {
+    "Sexual dysfunction — new onset": ["unable to have sex", "cannot have sex", "cant have sex", "sexual problems since", "sex nahi kar paa raha", "यौन संबंध नहीं बना पा रहा"],
+    "Bladder retention — cannot urinate": [
+      "cannot pass urine", "cant pass urine", "cannot pass water", "unable to pass urine", "not able to pass urine", "has not been able to pass urine", "have not been able to pass urine", "not been able to pass urine", "difficulty passing urine",
+      "peshaab nahi aa raha", "peshab nahi aa raha", "पेशाब नहीं आ रहा", "पेशाब नहीं आता",
+    ],
+  },
+  redFlagsFracture: {
+    "Point bone tenderness on spinous process": ["pain on pressing the spinous process", "pressing the spinous process", "spinous process tenderness", "tender spinous process", "point tenderness", "bony tenderness"],
+    "Long-term corticosteroid use": ["on steroids", "takes steroids", "steroid use", "long term steroids", "long term steroid use", "steroid ka sevan", "स्टेरॉइड का सेवन"],
+    "Minor trauma + known osteoporosis": ["minor trauma osteoporosis", "osteoporosis", "haddi kamzori", "हड्डी कमज़ोरी", "हड्डी कमजोरी"],
+  },
+  redFlagsInflammatory: {
+    "Family history of AS / psoriasis / IBD / uveitis": [
+      "fh of as", "fh of ankylosing spondylitis", "family history of as", "family history of ankylosing spondylitis", "father has ankylosing spondylitis", "ankylosing spondylitis in the family",
+      "parivaar mein reedh ki sujan ka itihas", "परिवार में रीढ़ की सूजन का इतिहास",
+    ],
+    "Uveitis / iritis — personal history": ["red painful eye", "painful red eye", "red eye", "uveitis", "iritis"],
+    "Psoriasis — personal history": ["history of psoriasis", "has psoriasis", "psoriasis"],
+    "Age of onset <45": ["young patient", "young man", "young woman", "age under 45", "in their twenties", "in their thirties", "kam umar mein", "कम उम्र में"],
+    "Stiffness improves with movement / exercise": ["improves with exercise", "better with exercise", "loosens up when they exercise", "kasrat se kam hota hai", "कसरत से कम होती है", "कसरत से कम होता है"],
+  },
+  overallPattern: {
+    "Worse second half of night (AS inflammatory pattern)": [
+      "second half of the night", "early hours", "wakes in the early hours", "wake around three in the morning", "3 in the morning", "3am",
+      "raat ke doosre hisse mein", "रात के दूसरे हिस्से में",
+    ],
+  },
+  redFlagsSerious: {
+    "History of cancer — any": ["hx cancer", "h o cancer", "cancer ka itihas", "कैंसर का इतिहास"],
+    "Unexplained weight loss": ["weight loss", "lost weight", "lost 6 kg without trying", "wazan kam hua", "wazan bhi kam hua", "वज़न कम हुआ", "वज़न भी कम हुआ", "वजन कम हुआ", "वजन भी कम हुआ"],
+  },
+};
+const mergePhrases = (base, extra) => {
+  const out = { ...base };
+  for (const [field, opts] of Object.entries(extra)) out[field] = extendPhrases(out[field], opts);
+  return out;
+};
+export const LUMBAR_SI_PHRASES = mergePhrases(LUMBAR_BASE, SHEET_PHRASES);
+
 const { PAIN: PAIN_W, NERVE: NERVE_W } = WORDS;
 // Words that say a sentence is about the low back / pelvis / leg, or about another body part.
 const OWN_W = "lbp back lower_back low_back lumbar lumbosacral kamar कमर sacrum sacral sacroiliac si_joint si pelvis pelvic buttock* buttocks gluteal glute coccyx tailbone chutad चूतड़ nitamb नितंब leg legs pair पैर thigh* jaangh जांघ calf pindli पिंडली foot toes toe sciatica sciatic groin hip hips spine reedh रीढ़ disc";
@@ -946,6 +1019,8 @@ const EXEMPT = [
   "redFlagsSerious|Pain radiating to flank / loin (renal / ureteric)",
   "redFlagsInflammatory|Peripheral joint involvement",
   "redFlagsInflammatory|Uveitis / iritis — personal history",
+  "redFlagsInflammatory|Psoriasis — personal history",
+  "redFlagsInflammatory|IBD (Crohn's / colitis) — personal history",
   "redFlagsInflammatory|Family history of AS / psoriasis / IBD / uveitis",
   "redFlagsSerious|Fever / systemically unwell with back pain",
 ];
@@ -983,6 +1058,7 @@ const matcher = createPhraseMatcher({
   },
   hinglish: [
     ...SIDE_HINGLISH,
+    [/\bon and off\b/g, "intermittent"],
     [/\b(kamar|kamer|kmar|kamr)\b/g, "kamar"],
     [/\b(peeth|pith|peith|peet|pitth|peetha)\b/g, "peeth"],
     [/\b(reedh|reed|ridh|rirh|reerh|reedhh|redh)\b/g, "reedh"],
@@ -1066,7 +1142,7 @@ const matcher = createPhraseMatcher({
     rule("location", LLOW, ["bottom", "back"], 4, { unless: "upper top mid middle thigh leg" });
     rule("location", LLOW, ["belt_line beltline belt_wali बेल्ट_वाली"], 2);
     rule("location", LSJ, ["lumbosacral", "junction joint jod जोड़"], 3);
-    rule("location", LCEN, ["central centre center midline beech बीच middle", "spine reedh रीढ़ lower_back kamar कमर"], 4, { ctx: "pain", unless: "lumbar l1 l2 l3 l4 l5 level" });
+    rule("location", LCEN, ["central centre center midline beech बीच middle", "spine reedh रीढ़ lower_back kamar कमर"], 4, { ctx: "pain", unless: "lumbar l1 l2 l3 l4 l5 level of_midline right_of left_of" });
     rule("location", LPARL, [LEFT_W, "paraspinal spine reedh रीढ़ lower_back low_back kamar कमर"], 5, { ctx: "painOrArm", block: "at in where into from radiat* spread* leg legs thigh calf foot toes buttock si_joint sacroiliac pair पैर jaangh pindli chutad down going goes", blockAfter: "leg legs thigh pair पैर buttock chutad" });
     rule("location", LPARR, [RIGHT_W, "paraspinal spine reedh रीढ़ lower_back low_back kamar कमर"], 5, { ctx: "painOrArm", block: "at in where into from radiat* spread* leg legs thigh calf foot toes buttock si_joint sacroiliac pair पैर jaangh pindli chutad down going goes", blockAfter: "leg legs thigh pair पैर buttock chutad" });
     rule("location", LBAND, ["whole entire across poori पूरी dono दोनों both", "lower_back low_back kamar कमर back"], 4, { ctx: "pain", unless: "leg legs" });
@@ -1105,8 +1181,8 @@ const matcher = createPhraseMatcher({
     rule("radiation", RATL, [LEFT_W, "front_of_thigh anterior_thigh"], 4);
     rule("radiation", RATR, [RIGHT_W, "front_of_thigh anterior_thigh"], 4);
     rule("radiation", RLAT, ["outer outside lateral bahar बाहर bahari बाहरी side", "thigh jaangh जांघ"], 3, { ctx: "painOrArm", unless: "shin calf lower_leg hip" });
-    rule("radiation", RKNL, [LEFT_W, "knee ghutna घुटना"], 7, { ctx: "painOrArm" });
-    rule("radiation", RKNR, [RIGHT_W, "knee ghutna घुटना"], 7, { ctx: "painOrArm" });
+    rule("radiation", RKNL, [LEFT_W, "knee ghutna घुटना"], 7, { ctx: "painOrArm", unless: "below_knee below_the_knee under_knee" });
+    rule("radiation", RKNR, [RIGHT_W, "knee ghutna घुटना"], 7, { ctx: "painOrArm", unless: "below_knee below_the_knee under_knee" });
     rule("radiation", RCAL, [LEFT_W, "calf pindli पिंडली"], 5, { ctx: "painOrArm" });
     rule("radiation", RCAR, [RIGHT_W, "calf pindli पिंडली"], 5, { ctx: "painOrArm" });
     rule("radiation", RL5, ["outer outside lateral bahar बाहर side", "shin lower_leg taang टांग pindli पिंडली leg legs"], 5, { ctx: "painOrArm", unless: "inner inside medial andar अंदर thigh jaangh जांघ" });
@@ -1127,7 +1203,7 @@ const matcher = createPhraseMatcher({
     rule("mechanismType", MLROT, [LIFTW, "twist* twisted twisting rotat* turn* turning side ghum* घूम* mud* मुड़* mod"], 6, { unless: "bend* bending bent jhuk* झुक* cant cannot unable avoid" });
     rule("mechanismType", MLFLOOR, [LIFTW, "floor ground zameen जमीन farsh फर्श deadlift off_the_floor"], 6, { unless: "cant cannot unable avoid" });
     rule("mechanismType", MTWIST, ["twisted twist twisting spun turned ghum* घूम* mud* मुड़* mod", BACK], 10, { ctx: "painOrArm", unless: "lift* lifting lifted uthana उठाना bend* jhuk* झुक* cant cannot unable" });
-    rule("mechanismType", MBEND, ["bend* bending bent leaned jhuk* झुक*", "forward over down aage आगे sink shoes pen", "felt caught went pulled snapped twinge suddenly started began shuru शुरू"], 10, { unless: "lift* lifting lifted twist* twisting cant cannot unable" });
+    rule("mechanismType", MBEND, ["bend* bending bent leaned jhuk* झुक*", "forward over down aage आगे sink shoes pen", "felt caught went pulled snapped twinge suddenly started began shuru शुरू"], 10, { unless: "lift* lifting lifted pick* picked picking twist* twisting cant cannot unable" });
     rule("mechanismType", MSTUMBLE, ["missed miss", "step stair stairs"], 4);
     rule("mechanismType", MLFLOOR, ["deadlift deadlifts deadlifting"], 1);
     rule("mechanismType", MPOST, ["driving driver lorry truck taxi", "years hours long ghante घंटे"], 6, { unless: "cant cannot unable" });
@@ -1194,7 +1270,7 @@ const matcher = createPhraseMatcher({
     rule("relPostures", PELBOW, ["elbows elbow kohni कोहनी kohniyon कोहनियों", "prone propped propping press_up up उठ sphinx tek टेक", HELP], 10, NOTHING);
     rule("relPostures", PELBOW, ["elbows kohni कोहनी kohniyon कोहनियों", HELP], 8, { ...NOTHING, unless: "tennis" });
     rule("relPostures", PSUPPORT, ["lumbar_support lumbar_roll back_support rolled_towel cushion_behind", HELP], 8, NOTHING);
-    rule("relPostures", PFIRM, ["firm hard sakht सख्त kadak कड़क kadi कड़ी", "chair seat kursi कुर्सी surface", HELP], 8, NOTHING);
+    rule("relPostures", PFIRM, ["firm hard sakht सख्त kadak कड़क kadi कड़ी", "chair seat kursi कुर्सी surface", HELP], 8, { ...NOTHING, unless: "hurts hurt painful" });
     rule("relPostures", PSHIFT, ["shifting shifted shift changing badalne बदलने weight wazan वजन bhaar भार", "leg foot pair पैर stool position", HELP], 10, NOTHING);
     rule("relPostures", PWALK, ["walking walk strolling stroll tahalne टहलने chalne चलने", "slow slowly gentle easy dheere धीरे halka हल्का", HELP], 8, NOTHING);
     rule("relPostures", PALL4, ["all_fours hands_and_knees haath_ghutne crawling chaar_pairon", HELP], 8, NOTHING);
@@ -1231,11 +1307,12 @@ const matcher = createPhraseMatcher({
     const NP = (i) => O("neuroPresent", i);
     const [NNO, NL, NR, NBIL] = Array.from({ length: 4 }, (_, i) => NP(i));
     const LEGP = LEG + " foot feet toes toe";
-    const NSYMP = NERVE_W + " weak* weakness heavy numb* tingl* pins sunn* सुन्न* jhunjhuni झनझनाहट kamzor कमजोर dropfoot foot_drop";
-    rule("neuroPresent", NL, [LEFT_W, LEGP, NSYMP], 10, { unless: "both dono दोनों bilateral" });
-    rule("neuroPresent", NR, [RIGHT_W, LEGP, NSYMP], 10, { unless: "both dono दोनों bilateral" });
+    const NSYMP = NERVE_W + " weak* weakness heavy numb* tingl* pins sunn* सुन्न* jhunjhuni झुनझुनी झनझनाहट kamzor कमजोर dropfoot foot_drop";
+    rule("neuroPresent", NL, [LEFT_W, LEGP, NSYMP], 12, { unless: "both dono दोनों bilateral" });
+    rule("neuroPresent", NR, [RIGHT_W, LEGP, NSYMP], 12, { unless: "both dono दोनों bilateral" });
     rule("neuroPresent", NBIL, [BOTH_W, LEGP + " feet", NSYMP], 8);
-    rule("neuroPresent", NNO, ["no without nahi नहीं koi कोई", LEGP, "symptom symptoms tingling numbness numb pins pins_and_needles weakness jhunjhuni झनझनाहट sunn सुन्न dikkat दिक्कत takleef"], 6, { selfNeg: true });
+    rule("neuroPresent", NNO, ["no without nahi नहीं koi कोई", LEGP, "symptom symptoms tingling numbness numb pins pins_and_needles weakness jhunjhuni झनझनाहट sunn सुन्न dikkat दिक्कत takleef"], 6, { selfNeg: true, unless: "legs_going legs_getting legs_go legs_get leg_going leg_getting" });
+    rule("neuroPresent", NBIL, [BOTH_W, "legs_going legs_getting legs_go legs_get", NSYMP], 8, { selfNeg: true });
 
     // ───── bladder / bowel baseline (one answer) ─────
     const BB = (i) => O("bladderBaseline", i);
@@ -1249,7 +1326,7 @@ const matcher = createPhraseMatcher({
     // ───── cauda equina screen ─────
     const CE = (i) => O("redFlagsCauda", i);
     const [CNO, CWEAK, CSADDLE, CRET, CINCB, CINCW, CTONE, CSEX, CPROG, CBISC] = Array.from({ length: 10 }, (_, i) => CE(i));
-    rule("redFlagsCauda", CWEAK, [BOTH_W + " legs", "legs leg pair पैर", "weak* weakness gave_way giving_way heavy kamzor कमजोर jawab जवाब"], 8);
+    rule("redFlagsCauda", CWEAK, [BOTH_W + " legs", "legs leg pair पैर", "weak* weakness gave_way giving_way kamzor कमजोर jawab जवाब"], 8, { unless: "walk* chalne चलने stand* khade खड़े claudication" });
     rule("redFlagsCauda", CSADDLE, ["saddle perineum perineal genitals genital private_part inner_thighs between_legs jaangh_ke_beech जांघ_के_बीच", "numb* sunn* सुन्न* anaesthesia anesthesia feeling touch mehsoos महसूस"], 8);
     rule("redFlagsCauda", CRET, ["pass passing empty emptying urinate urinating void retention", "cant cannot unable difficulty trouble struggle straining no_urge nothing_comes"], 7, { selfNeg: true, unless: "leak* incontinen* control" });
     rule("redFlagsCauda", CRET, ["peshab पेशाब", "nahi नहीं ruk रुक band बंद rok रोक dikkat दिक्कत takleef तकलीफ mushkil मुश्किल"], 4, { selfNeg: true, unless: "control kantrol कंट्रोल nikal निकल leak pehle पहले purani पुरानी se_hi" });
@@ -1264,9 +1341,9 @@ const matcher = createPhraseMatcher({
     // ───── fracture indicators ─────
     const FR = (i) => O("redFlagsFracture", i);
     const [FRNO, FRHIGH, FROSTEO, FR70, FRSTER, FRPREV, FRPOINT, FRSEV, FRPM] = Array.from({ length: 9 }, (_, i) => FR(i));
-    rule("redFlagsFracture", FRHIGH, ["high_energy high_speed tez_raftaar major severe serious bhayankar भयंकर badi बड़ी gambhir गंभीर", "accident crash collision trauma mva fall takkar टक्कर chot चोट"], 6);
+    rule("redFlagsFracture", FRHIGH, ["high_energy high_speed tez_raftaar major severe serious bhayankar भयंकर badi बड़ी gambhir गंभीर", "accident crash collision trauma mva fall takkar टक्कर chot चोट"], 6, { blockAfter: "pain ache back", unless: "small minor trivial little" });
     rule("redFlagsFracture", FROSTEO, ["osteoporosis osteoporotic weak_bones brittle_bones thin_bones kamzor_haddi कमजोर_हड्डी", "minor small trivial little halki हल्की chhoti छोटी mamuli मामूली fall fell slip slipped gir* गिर* bump* knock* chot चोट"], 8);
-    rule("redFlagsFracture", FR70, ["elderly old older bujurg बुजुर्ग budhape बुढ़ापे 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 seventy eighty sattar सत्तर", "minor small trivial little halki हल्की chhoti छोटी mamuli मामूली fall fell slip slipped tripped gir* गिर* bump chot चोट"], 10);
+    rule("redFlagsFracture", FR70, ["elderly old older bujurg बुजुर्ग budhape बुढ़ापे 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 seventy eighty sattar सत्तर", "minor small trivial little halki हल्की chhoti छोटी mamuli मामूली fall fell slip slipped tripped gir* गिर* bump chot चोट"], 10, { unless: "old_injury old_back_injury old_fall" });
     rule("redFlagsFracture", FRSTER, ["steroid steroids prednisolone corticosteroid* prednisone steroid", "long_term long years months lambe लंबे saalon सालों kaafi कितने"], 8);
     rule("redFlagsFracture", FRPREV, ["previous prior earlier old before ago years_ago pehle पहले history", "vertebral spinal spine compression vertebra reedh रीढ़ kamar कमर", "fracture fractured broke broken tooti टूटी toot"], 10);
     rule("redFlagsFracture", FRPOINT, ["point pinpoint localised localized one single one_spot ek_hi_jagah", "tender* tenderness dabane दबाने chhune छूने", "spinous spine vertebra l1 l2 l3 l4 l5 t12 reedh रीढ़ bone"], 10);
@@ -1352,6 +1429,64 @@ const matcher = createPhraseMatcher({
     rule("workImpact", WUNEMP, ["lost laid_off redundant dismissed sacked nikal निकाल chhoot छूट chali_gayi चली_गई", "job naukri नौकरी work employment"], 8);
     rule("workImpact", WUNEMP, ["unemployed berozgar बेरोजगार"], 1);
     rule("workImpact", WUNABLE, ["cannot cant unable never nahi नहीं", "return go_back back wapas वापस previous old purani पुरानी pehle पहले", "job occupation work naukri नौकरी kaam काम"], 10, { selfNeg: true });
+
+    // ── clinician-voice notes ("the patient", "they", short fragments; see lumbarSISheetSet.test.js) ──
+    const NOLEG = "no nothing nahi नहीं koi कोई";
+    rule("radiation", RNONE, [NOLEG, "leg legs pair पैर", "pain symptoms dard दर्द goes going down"], 9, { selfNeg: true });
+    // "pair mein kuch nahi" / "पैरों में कुछ नहीं" (nothing in the legs) -- a rule, because the same words are already a phrase for the neurological "No"
+    rule("radiation", RNONE, ["kuch_nahi कुछ_नहीं", "pair paer पैर पैरों"], 4, { selfNeg: true });
+    rule("neuroPresent", NNO, [NOLEG, "leg legs pair पैर neuro neurological", "pain symptoms dard दर्द tingling numbness neuro neurological sciatica goes going down"], 7, { selfNeg: true, unless: "cannot cant unable can_t couldnt" });
+    rule("radiation", RCAL, [LEFT_W, "calf pindli पिंडली"], 9, { ctx: "painOrArm", block: "right dayen दायां" });
+    rule("radiation", RCAR, [RIGHT_W, "calf pindli पिंडली"], 9, { ctx: "painOrArm", block: "left bayen बायां" });
+    rule("radiation", RBIL, ["both dono दोनों bilateral", "legs leg pair पैर pairon", "pain dard दर्द goes going down radiat* spread* tak तक"], 6, { unless: "numb* tingl* sunn* सुन्न* weak* sciatica" });
+    rule("mechanismType", MLBOTH, [LIFTW, "flexion flexed", "rotation rotated"], 8);
+    rule("mechanismType", MFALLB, ["fell fall fallen slipped landed landing gir* गिर*", "buttock buttocks bottom chutad चूतड़"], 6);
+    rule("mechanismType", MBEND, ["repeated repetitive lots_of baar_baar बार_बार all_day", "bend* bending bent flexion jhuk* झुक*"], 6, { unless: "lift* lifting lifted pick* carry*" });
+    rule("mechanismType", MPOST, ["poor bad galat गलत", "posture poscher पोस्चर"], 3);
+    rule("mechanismType", MPOST, ["sits sit sitting baith* बैठ*", "hours ghante घंटे ghanto घंटों der देर long lamba लंबा"], 8, { unless: "worse worsens aggravat* flares flare cant cannot unable badh* बढ़* badhta बढ़ता" });
+    rule("aggPostures", ASTAND, [STANDW, PAINX + " " + TRIG + " most"], 7, { reliefKills: true, unless: "minutes minute mins min half_hour hour hours ghanta घंटा ghante घंटे ghanto घंटों मिनट long prolonged lamba लंबा der देर" });
+    rule("aggPostures", ABENT, ["straighten* seedha सीधा सीधे coming_up come_up comes_up come_back_up coming_back_up", "bend* bending bent jhuk* झुक* tying shoes flexion"], 7);
+    rule("relPostures", PCROOK, ["knees knee ghutna घुटने घुटना", "bent mod* मोड़* flexed up raised", "lie lying lay let लेट* sleep"], 8, NOTHING);
+    rule("relPostures", PLEAN, ["eased relieved better relief aaram आराम improves helps", "lean* leaning", "forward aage आगे jhuk"], 8);
+    rule("relPostures", PLEAN, ["trolley ट्रॉली", "forward aage आगे jhuk* झुक* lean*"], 6);
+    rule("redFlagsInflammatory", IFMOVE, ["exercise exercising workout walk* kasrat कसरत movement moving", "loosen* better improves improve* eases ease kam कम aaram आराम"], 7, { unless: "rest resting" });
+    rule("redFlagsInflammatory", IFINS, ["insidious gradual gradually crept slowly dheere धीरे", "week weeks month months mahine महीने hafte हफ्ते"], 6, { blockAfter: "improvement improving improved better recovery relief easing eased settling" });
+    rule("redFlagsInflammatory", IFFAM, ["father mother brother sister uncle aunt family parivaar परिवार fh", "ankylosing spondylitis as psoriasis uveitis sujan सूजन"], 6);
+    rule("redFlagsFracture", FRSTER, ["steroid steroids corticosteroid* prednisolone prednisone स्टेरॉइड"], 1, { blockBefore: "no without never" });
+    rule("redFlagsSerious", SNIGHT, ["constant continuous lagatar लगातार", "night nights raat रात", "pain ache dard दर्द"], 8, { selfNeg: true });
+    rule("location", LPARR, ["right dayen दायां", "of_midline of_spine right_of_spine reedh_ke_paas रीढ़_के_पास next_to_the_spine next_to_spine beside_the_spine beside_spine"], 4, { ctx: "painOrArm", block: "left bayen बायां" });
+    rule("location", LPARL, ["left bayen बायां", "of_midline of_spine left_of_spine reedh_ke_paas रीढ़_के_पास next_to_the_spine next_to_spine beside_the_spine beside_spine"], 4, { ctx: "painOrArm", block: "right dayen दायां" });
+    rule("location", LCEN, ["central", "lbp back_pain low_back_pain lower_back_pain"], 2);
+    rule("location", LSIR, [RIGHT_W, "sij esi एसआई si_jt"], 4);
+    rule("location", LSIL, [LEFT_W, "sij esi एसआई si_jt"], 4);
+    rule("location", LBULL, [LEFT_W, "chutad चूतड़ buttock", "lower niche नीचे nichla निचले निचला"], 4);
+    rule("location", LBURL, [RIGHT_W, "chutad चूतड़ buttock", "lower niche नीचे nichla निचले निचला"], 4);
+    rule("aggPostures", ASIT, ["sit sitting baith* बैठ*", "even", "minutes minute mins"], 6, { reliefKills: true });
+    rule("mechanismType", MINS, ["dheere_dheere धीरे_धीरे"], 2, { blockAfter: "theek ठीक improv* kam कम" });
+    // "Gradual." written alone in the Onset box, but not "gradual improvement"
+    rule("mechanismType", MINS, ["insidious"], 1);
+    rule("mechanismType", MINS, ["gradual gradually"], 1, { blockAfter: "improvement improving improved improve better recovery recovering relief healing" });
+    rule("location", LPARL, [LEFT_W, "muscle muscles maspeshi* मांसपेश*", "back kamar कमर lower_back"], 10, { block: "right dayen दायां leg legs pair पैर thigh calf buttock buttocks chutad चूतड़" });
+    rule("location", LPARR, [RIGHT_W, "muscle muscles maspeshi* मांसपेश*", "back kamar कमर lower_back"], 10, { block: "left bayen बायां leg legs pair पैर thigh calf buttock buttocks chutad चूतड़" });
+    rule("redFlagsInflammatory", IFAGE, ["man woman male female", "twenty twenties thirty thirties"], 4);
+    // fresh clinician exam (lumbarSISheetSetFresh.js)
+    rule("location", LCEN, ["central", "low_back lower_back backache back_ache"], 3);
+    rule("relPostures", PWALK, ["walking_about walk_about walking_around walk_around", "eases easier better relief improves helps"], 6);
+    rule("aggPostures", ASIT, ["sit sitting baith* बैठ*", "worse hurts hurt painful pain"], 5, { reliefKills: true });
+    rule("mechanismType", MBEND, ["bend* bending bent jhuk* झुक*", "sudden sharp suddenly"], 8, { unless: "lift* lifting lifted pick* carry*" });
+    rule("overallPattern", PMORN, ["stiff* sore akda*", "getting_out_of_bed get_out_of_bed out_of_bed getting_up morning"], 8);
+    rule("mechanismType", MCOUGH, ["sneez* cough*", "sent set brought triggered jolt locked caused"], 6);
+    rule("redFlagsInflammatory", IFAGE, ["twenty twenties thirty thirties", "year_old years_old yo"], 4);
+    rule("redFlagsInflammatory", IFAGE, ["pandrah solah satrah atharah unnis bees ikkis baais teis chaubis pachchis panchis chhabbis sattais atthais untis tees battis tentis chauntis paintis chhattis saintis adtis chalis पंद्रह सोलह सत्रह अठारह उन्नीस बीस इक्कीस बाईस तेईस चौबीस पच्चीस छब्बीस सत्ताईस अट्ठाईस उनतीस तीस इकतीस बत्तीस तैंतीस चौंतीस पैंतीस छत्तीस सैंतीस अड़तीस उनतालीस चालीस", "saal साल"], 3);
+    rule("redFlagsInflammatory", IFMOVE, ["tahalne tahalna टहलने kasrat कसरत", "kam कम aaram आराम"], 5);
+    rule("redFlagsInflammatory", IFPERI, ["heel heels knee knees ankle wrist elbow shoulder", "as_well_as along_with also too bhi भी"], 8, { unless: "knees_up knees_bent bent_knees knee_up knees_flexed" });
+    rule("redFlagsFracture", FRHIGH, ["fell fall fallen jumped", "ladder roof scaffold tree height metres feet"], 8, { unless: "small minor little trivial" });
+    rule("adlRestrictions", DVAC, ["vacuum vacuuming mop mopping hoover sweeping jhadu झाड़ू pocha पोछा", "struggle* difficult hard trouble difficulty cant cannot unable"], 8);
+    rule("adlRestrictions", DOUTBED, ["out_of_bed get_out_of_bed getting_out_of_bed", "struggle* difficult ages slow hard trouble difficulty cant cannot unable"], 7);
+    rule("adlRestrictions", DDRIVE, ["drive drives driving", "stop stops stopping break breaks", "half_hour every"], 8);
+    rule("adlRestrictions", DDRIVE, ["stop stops stopping break breaks pull_over", "every half_hour hour"], 6, { story: "drive drives driving drove" });
+    rule("workImpact", WLONG, ["not_worked not_working hasnt_worked has_not_worked", "4 5 6 7 8 9 10 11 12 four five six seven eight nine ten", "month months mahine महीने"], 8, { selfNeg: true });
+    rule("mechanismType", MSPORT, ["gymnast gymnasts gymnastics cricket bowler bowls bowling athlete athletes sport sports khel खेल जिम्नास्ट* बॉलिंग"], 1, { blockBefore: "no without never" });
   },
 });
 

@@ -83,6 +83,13 @@ describe("Knee: chips under Chief complaint / Onset / Duration", () => {
     expect(chipTexts().join("|")).toMatch(/Lying on the shoulder/);
   });
 
+  it("Lumbar / SI works the same way", async () => {
+    render(<Harness regions={[{ id: "lumbar", label: "Lumbar" }]} />);
+    type(chiefBox(), "The patient has low back pain, worse sitting for long periods, with pins and needles down the right leg.");
+    await waitFor(() => expect(chipTexts().join("|")).toMatch(/Yes — unilateral \(R\)/), { timeout: 15000 });
+    expect(chipTexts().join("|")).toMatch(/Sitting/);
+  });
+
   it("with several regions picked, only the regions that understood something get a heading", async () => {
     render(<Harness regions={[{ id: "hip", label: "Hip" }, { id: "knee", label: "Knee" }, { id: "ankle", label: "Ankle" }]} />);
     type(chiefBox(), "Deep anterior hip pain on sitting for long periods. They also rolled the ankle inwards, outer ankle swollen.");
