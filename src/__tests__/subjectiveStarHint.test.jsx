@@ -45,4 +45,9 @@ describe("the star hint under Region-specific subjective", () => {
     expect(el.textContent).not.toMatch(/doesn't currently feed|valuable documentation/);
     expect(el.textContent).toMatch(/Chief complaint and Onset above is only lightly read/);
   });
+
+  it("tells the student when the suggestions appear (the story rule)", () => {
+    const el = show("knee");
+    expect(el.textContent).toMatch(/appear only once Chief complaint, Onset or Duration, and at least 2 ⭐ answers are filled in/);
+  });
 });

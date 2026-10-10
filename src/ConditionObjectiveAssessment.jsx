@@ -43,6 +43,7 @@ import { romRichItem, specialRichItem, mmtRichItem, GradeSelect } from "./orthoR
 import { kcRichItem, cpaRichItem, fmaRichItem, GradeSelect as ObserveSelect, FMA_HELPS, FMA_GRADE_COLOR } from "./orthoAdvancedTools.jsx";
 import { KC_REGIONS, NKT_REGIONS, FMA_DATA, CYRIAX_REGIONS_DATA } from "./orthoAdvancedLibrary.js";
 import PhotoSlots from "./PhotoSlots.jsx";
+import { storyGate } from "./storyGate.js";
 import { kcImageIds, fmaImageIds } from "./kcImages.js";
 import { uploadImage, uploadErrorMessage } from "./services/cloudinary.js";
 import { FmaIcon, poseForJoint } from "./fmaIcons.jsx";
@@ -827,7 +828,7 @@ function combinedMatchPct(m, obj) {
   return Math.round(base + headroom * (obj.matched / obj.total));
 }
 
-function ConditionTabs({ conditions, order, matchById, objSupportById, activeId, onSelect, hasMatchEvidence = true }) {
+function ConditionTabs({ conditions, order, matchById, objSupportById, activeId, onSelect, hasMatchEvidence = true, storyOk = true }) {
   return (
     <div className="obj-match-row">
       {order.map((id, i) => {
@@ -837,7 +838,7 @@ function ConditionTabs({ conditions, order, matchById, objSupportById, activeId,
         const pct = combinedMatchPct(m, objSupportById?.[id]);
         // Nothing matched yet and nothing confirmed on the Objective tabs: a dash,
         // not a row of "0%" that reads like a result.
-        const noEvidenceYet = !hasMatchEvidence && !objSupportById?.[id]?.matched;
+        const noEvidenceYet = !storyOk || (!hasMatchEvidence && !objSupportById?.[id]?.matched);
         const isActive = id === activeId;
         return (
           <button
@@ -881,13 +882,13 @@ const TIER_TEXT = { high: "High", med: "Med", low: "Low" };
 // "remove this upper [grid] only three comming... make the 2nd below it
 // permanant"). Now just the one always-visible list, no top grid, no
 // Customize toggle.
-function HypothesisGrid({ conditions, order, matchById, objSupportById, activeId, onSelect, hasMatchEvidence }) {
+function HypothesisGrid({ conditions, order, matchById, objSupportById, activeId, onSelect, hasMatchEvidence, storyOk = true }) {
   return (
     <div>
       <div className="obj-hypo-head">
         <span className="obj-hypo-label">Target Hypotheses</span>
       </div>
-      <ConditionTabs conditions={conditions} order={order} matchById={matchById} objSupportById={objSupportById} activeId={activeId} onSelect={onSelect} hasMatchEvidence={hasMatchEvidence} />
+      <ConditionTabs conditions={conditions} order={order} matchById={matchById} objSupportById={objSupportById} activeId={activeId} onSelect={onSelect} hasMatchEvidence={hasMatchEvidence} storyOk={storyOk} />
     </div>
   );
 }
@@ -1856,8 +1857,11 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
     return out;
   }, [engineResult, config]);
 
+  // No story, no ranking (Aditi, 2026-10-10): see storyGate.js. Red flags below are never gated.
+  const gate = useMemo(() => storyGate(data?.subjective, regions.filter(config.matchesRegion)), [data?.subjective, regions, config]);
+
   const rankedIds = useMemo(() => {
-    if (!engineResult) return [];
+    if (!engineResult || !gate.ok) return [];
     const ids = !config.matchByName
       ? engineResult.conditions.filter((c) => c.matchTier !== "Unlikely").map((c) => c.id)
       : Object.entries(matchById).filter(([, m]) => m.matchTier !== "Unlikely").map(([id]) => id);
@@ -1868,7 +1872,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
     // percentage to less match percentage"). Conditions with no percentage
     // (matchTier-only, e.g. "Insufficient data") sort last, not first.
     return ids.slice().sort((a, b) => (conditionMatchPct(matchById[b]) ?? -1) - (conditionMatchPct(matchById[a]) ?? -1));
-  }, [engineResult, config, matchById]);
+  }, [engineResult, config, matchById, gate.ok]);
 
   const baseOrder = useMemo(() => (config.orderFor ? config.orderFor(regions) : config.order), [config, regions]);
   const order = useMemo(
@@ -1964,7 +1968,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
   // How many conditions have at least one Subjective answer supporting them. Zero
   // means nothing useful was ticked (typed text and age alone do not match anything).
   const matchedCount = engineResult ? engineResult.conditions.filter((c) => (c.supportingMatched || []).length > 0).length : 0;
-  const hasMatchEvidence = matchedCount > 0;
+  const hasMatchEvidence = gate.ok && matchedCount > 0;
   const cyriaxResistedTests = cyriaxTestsFor(config.key, "resistedTests");
   const cyriaxPassiveTests = cyriaxTestsFor(config.key, "passiveROM");
   const hasCyriaxCatalogue = cyriaxResistedTests.length > 0 || cyriaxPassiveTests.length > 0;
@@ -2002,13 +2006,17 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
             </div>
             {reanalyzedAt && (
               <div className="obj-diag-banner-done" role="status" data-testid="reanalyzed-note">
-                {hasMatchEvidence && rankedIds[0]
+                {!gate.ok
+                  ? `✓ Re-analyzed just now — still not enough information to rank. Still needed: ${gate.missing.join(" · ")}.`
+                  : hasMatchEvidence && rankedIds[0]
                   ? `✓ Re-analyzed just now from your Subjective answers — best match: ${config.conditions[rankedIds[0]]?.name}${conditionMatchPct(matchById[rankedIds[0]]) != null ? ` (${conditionMatchPct(matchById[rankedIds[0]])}%)` : ""}.`
                   : "✓ Re-analyzed just now — nothing matches yet. Tick answers in Subjective (the ⭐ ones matter most), then press Re-analyze again."}
               </div>
             )}
-            <div className="obj-diag-banner-sub">
-              {hasMatchEvidence
+            <div className="obj-diag-banner-sub" data-testid={gate.ok ? undefined : "story-gate-note"}>
+              {!gate.ok
+                ? `Not enough information yet to rank conditions, so no percentages are shown. Still needed: ${gate.missing.join(" · ")}.`
+                : hasMatchEvidence
                 ? `Matches your Subjective answers — ${config.label}: ${matchedCount} condition${matchedCount === 1 ? "" : "s"} matched.`
                 : `Nothing to match yet — tick the answers in the Subjective step (the ⭐ ones matter most) to see which ${config.label} conditions fit best.`}
             </div>
@@ -2035,10 +2043,11 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
               activeId={selectedId}
               onSelect={setActiveId}
               hasMatchEvidence={hasMatchEvidence}
+              storyOk={gate.ok}
             />
           </div>
 
-          {matchedCondition && (
+          {gate.ok && matchedCondition && (
             <div style={{ fontSize: "0.74rem", color: BRAND.gray, marginBottom: 6 }}>
               {matchedCondition.matchTier} · {matchedCondition.supportingMatched.length}/{matchedCondition.supportingTotal} supporting signs from Subjective
             </div>

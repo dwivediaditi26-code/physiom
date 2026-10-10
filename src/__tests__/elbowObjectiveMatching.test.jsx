@@ -34,7 +34,7 @@ const tennisAnswers = {
   neuro: "None",
   redFlags: "None of the above",
 };
-const withAnswers = (regions) => ({ demographics: { age: "35" }, subjective: { chiefComplaint: "Outer elbow pain", regions } });
+const withAnswers = (regions) => ({ demographics: { age: "35" }, subjective: { chiefComplaint: "Outer elbow pain", onset: "Gradual", regions } });
 const tennisElbow = withAnswers({ elbow: tennisAnswers });
 
 const cardNames = () => [...document.querySelectorAll(".obj-match-card .obj-match-name")].map((n) => n.textContent);
@@ -105,7 +105,8 @@ describe("AI Objective Assessment page for Elbow", () => {
 
   it("with nothing ticked it says so plainly: no 'Live Match', no 0% cards", () => {
     render(<Harness initialData={{ demographics: { age: "35" }, subjective: { chiefComplaint: "Outer elbow pain for 3 weeks, worse when gripping" } }} selectedRegions={ELBOW} />);
-    expect(screen.getByText(/Nothing to match yet/i)).toBeInTheDocument();
+    // a Chief complaint alone is not a story yet (storyGate.js): no ranking, and it says what is missing
+    expect(screen.getByTestId("story-gate-note").textContent).toMatch(/Not enough information yet.*Onset or Duration/);
     expect(screen.queryByText("Live Match")).not.toBeInTheDocument();
     expect(screen.queryByText("0%")).not.toBeInTheDocument();
     // The conditions are still there to open and examine.

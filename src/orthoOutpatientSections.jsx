@@ -98,6 +98,7 @@ function RegionSubjectiveTabs({ selectedRegions, regionLabelOf, regions, setRegi
           ? '⭐ = this answer changes which conditions "AI Objective Assessment" suggests. In this region every question below does. '
           : '⭐ = this answer changes which conditions "AI Objective Assessment" suggests. Answers without a star are saved in your notes but do not change the suggestions. '}
         What you typed in Chief complaint and Onset above is only lightly read (a few keywords), so the answers below are what really drive the suggestions.
+        The suggestions appear only once Chief complaint, Onset or Duration, and at least 2 ⭐ answers are filled in.
         {CHIEF_COMPLAINT_CHIP_REGIONS.has(contentKeyForRegion(region)) && ' For this region, tap the “We understood” chips under Duration to turn what you typed into ticks.'}
       </Hint>
       <div className="region-tab-row-wrap">

@@ -14,7 +14,7 @@ const { default: OrthoOutpatientAssessment } = await import("../OrthoOutpatientA
 const CERVICAL = [{ id: "cervical", label: "Cervical" }];
 // A textbook radiculopathy case (the same fixture the ranking test in conditionObjectiveAssessment.test.jsx uses).
 const RADICULOPATHY = {
-  subjective: { regions: { cervical: {
+  subjective: { chiefComplaint: "Neck pain with tingling into the right arm", onset: "Gradual", regions: { cervical: {
     location: "Neck, Right upper trapezius", radiation: "Radiates into right arm/hand", dermatomal: "C6 — thumb/index finger",
     mechanismType: "No clear mechanism — insidious onset", armPresent: "Yes — unilateral (R)", armNeuro: "Objective numbness on testing",
     aggMovements: "Extension — looking up, Combined extension + rotation (right) — quadrant position",
@@ -63,11 +63,12 @@ describe("Re-analyze on the AI Objective Assessment page", () => {
     expect(note.textContent).toMatch(/\(\d+%\)/);
   });
 
-  it("when the Subjective answers were cleared, it says nothing matches yet instead of naming a condition", () => {
+  it("when the Subjective answers were cleared, it says there is not enough information instead of naming a condition", () => {
     render(<Harness initialData={RADICULOPATHY} />);
     fireEvent.click(screen.getByRole("button", { name: "test-clear-subjective" }));
     fireEvent.click(screen.getByRole("button", { name: "test-reanalyze" }));
-    expect(screen.getByTestId("reanalyzed-note").textContent).toMatch(/nothing matches yet/i);
+    expect(screen.getByTestId("reanalyzed-note").textContent).toMatch(/not enough information/i);
+    expect(screen.getByTestId("reanalyzed-note").textContent).not.toMatch(/best match/i);
   });
 
   it("the confirmation fades away by itself", () => {

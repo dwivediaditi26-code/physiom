@@ -78,6 +78,8 @@ describe("ConditionObjectiveAssessment — Cervical", () => {
     // percentages, not just whatever tier they defaulted to.
     const data = {
       subjective: {
+        // the story the ranking needs (storyGate.js): Chief complaint, Onset and at least two starred answers
+        chiefComplaint: "Neck pain with tingling into the right arm", onset: "Gradual",
         regions: {
           cervical: {
             location: "Neck, Right upper trapezius",
