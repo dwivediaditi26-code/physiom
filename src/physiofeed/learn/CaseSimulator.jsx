@@ -1,13 +1,37 @@
 import { useState, useRef, useEffect } from "react";
-import { ChevronLeft, ChevronRight, ChevronsRight, RotateCcw, Check, X, AlertCircle } from "lucide-react";
+import {
+  ChevronLeft, ChevronRight, ChevronsRight, RotateCcw, Check, X, AlertCircle,
+  Clock, Footprints, Leaf, PersonStanding, Eye, Move, Dumbbell, FlaskConical, Activity,
+  Target, Trophy, Timer, BarChart3, Star,
+} from "lucide-react";
 import { KNEE_CASE, SIM_PATIENTS } from "./kneeSimCase.js";
+import StudyImage from "./StudyImage.jsx";
 
 // Case Simulator (Learn). Pick a patient, then play the case: the patient
 // talks, the PM bot asks what you would do next, you answer, and the bot
-// reacts. The case wording lives in kneeSimCase.js (Aditi's own mockup text);
-// the pictures are cut from her character sheet (public/sim/).
+// reacts; then findings, a clinical-reasoning question and a summary.
+// All case wording lives in kneeSimCase.js (Aditi's own mockup text, nothing
+// written by the developer). Pictures: the characters are cut from her sheet
+// (public/sim/); clinical pictures are the app's existing ones (Cloudinary
+// ids named in kneeSimCase.js).
 
 const img = (name) => `${import.meta.env.BASE_URL || "/"}sim/${name}.webp`;
+const STORE_KEY = "pm_sim_knee_v1";
+
+const TRACK = ["History", "Red Flags", "Symptom Behaviour", "Examination", "Findings", "Clinical Reasoning", "Summary"];
+
+const ICONS = {
+  clock: Clock, walk: Footprints, leaf: Leaf, person: PersonStanding, eye: Eye,
+  move: Move, dumbbell: Dumbbell, flask: FlaskConical, knee: Activity,
+};
+const ICON_TINT = ["bg-rose-100 text-rose-500", "bg-sky-100 text-sky-600", "bg-emerald-100 text-emerald-600", "bg-violet-100 text-violet-600", "bg-amber-100 text-amber-600"];
+function Ico({ name, i = 0, size = 18 }) {
+  const I = ICONS[name] || Activity;
+  return <span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${ICON_TINT[i % ICON_TINT.length]}`}><I size={size} strokeWidth={2}/></span>;
+}
+
+function readLast() { try { return JSON.parse(localStorage.getItem(STORE_KEY) || "null"); } catch { return null; } }
+function writeLast(v) { try { localStorage.setItem(STORE_KEY, JSON.stringify(v)); } catch { /* private mode */ } }
 
 function Bubble({ children, className = "" }) {
   return <div className={`rounded-2xl bg-white/95 border border-slate-200 px-3 py-2 text-[13.5px] leading-snug text-slate-800 shadow-sm ${className}`}>{children}</div>;
@@ -17,7 +41,50 @@ function Bot({ pose, size = 64 }) {
   return <img src={img(`bot-${pose}`)} alt="" className="shrink-0 rounded-2xl object-cover bg-sky-50 shadow-sm" style={{ width: size, height: size * 1.1 }}/>;
 }
 
+function Tracker({ current, doneThrough }) {
+  return (
+    <div className="flex items-start justify-between mb-3 relative" aria-label="Case progress">
+      <div className="absolute left-[7%] right-[7%] top-[11px] h-[3px] bg-slate-200 rounded"/>
+      <div className="absolute left-[7%] top-[11px] h-[3px] bg-emerald-500 rounded transition-all" style={{ width: `${(Math.min(doneThrough, TRACK.length - 1) / (TRACK.length - 1)) * 86}%` }}/>
+      {TRACK.map((t, k) => {
+        const isDone = k < doneThrough || (k === doneThrough && doneThrough >= TRACK.length - 1);
+        const isNow = k === current;
+        return (
+          <div key={t} className="relative flex-1 flex flex-col items-center text-center min-w-0" data-state={isNow ? "now" : isDone ? "done" : "todo"}>
+            <span className={`w-[24px] h-[24px] rounded-full text-[11px] font-bold flex items-center justify-center border-2 ${isNow ? "bg-blue-600 border-blue-300 text-white ring-2 ring-blue-100" : isDone ? "bg-emerald-500 border-emerald-500 text-white" : "bg-white border-slate-300 text-slate-400"}`}>
+              {isDone && !isNow ? <Check size={13} strokeWidth={3}/> : k + 1}
+            </span>
+            <span className={`mt-1 text-[8.5px] leading-tight px-0.5 ${isNow ? "font-extrabold text-blue-700" : "text-slate-500"}`}>{t}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// Big scene panel like the mockup: the patient fills the left side, speech
+// bubbles sit on top of the scene on the right, and the PM bot (optional)
+// stands at the bottom-right with its own bubble.
+function Hero({ face, bubbles, bot, className = "" }) {
+  const portrait = face === "patient-1";
+  return (
+    <div data-testid="sim-hero" className={`rounded-3xl overflow-hidden border border-sky-100 bg-gradient-to-b from-sky-100 via-sky-50 to-violet-50 mb-3 ${className}`}>
+      <div className="relative" style={{ minHeight: bot ? 330 : 300 }}>
+        <img src={img(face)} alt="" className={`absolute left-0 bottom-0 object-contain object-bottom ${portrait ? "h-[300px]" : "h-[230px]"} w-auto max-w-[56%]`}/>
+        <div className="relative ml-auto w-[47%] pt-4 pr-3 pb-3 space-y-2">{bubbles}</div>
+      </div>
+      {bot && (
+        <div className="flex items-end gap-2 px-3 pb-3 pt-2 bg-white/60">
+          <Bubble className="flex-1 !bg-emerald-50 border-emerald-200 text-[13px]">{bot.text}</Bubble>
+          <Bot pose={bot.pose} size={72}/>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PatientList({ onPick, onBack }) {
+  const last = readLast();
   return (
     <div>
       <div className="flex items-center gap-1.5 mb-1">
@@ -39,6 +106,7 @@ function PatientList({ onPick, onBack }) {
               <span className="inline-block text-[11px] font-bold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 my-1">{p.tag}</span>
               <span className="block text-xs text-slate-600">{p.sub}</span>
               <span className="block text-xs text-slate-500">{p.line}</span>
+              {p.live && last && <span data-testid="sim-last" className="block text-[11px] font-bold text-emerald-700 mt-0.5">Last attempt: {last.correct}/{last.total} ({last.pct}%)</span>}
             </span>
             {p.live ? <ChevronRight size={18} className="text-sky-500 shrink-0"/> : <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 shrink-0">Soon</span>}
           </button>
@@ -48,46 +116,183 @@ function PatientList({ onPick, onBack }) {
   );
 }
 
+function ExamPanel({ stage, exam, setExam }) {
+  const ex = stage.exams.find((e) => e.id === exam);
+  return (
+    <div className="mb-3">
+      <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-2.5 mb-2.5">
+        <div className="font-extrabold text-[13px] text-slate-900 mb-2">{stage.examTitle}</div>
+        <div className="space-y-1.5">
+          {stage.exams.map((e, k) => (
+            <button key={e.id} type="button" onClick={() => setExam(e.id)} aria-pressed={exam === e.id}
+              className={`w-full text-left flex items-center gap-2.5 rounded-xl border px-2 py-1.5 text-[13px] ${exam === e.id ? "border-blue-500 bg-blue-50 font-bold text-blue-800" : "border-slate-200 bg-white text-slate-700"}`}>
+              <Ico name={e.icon} i={k} size={16}/> {e.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      {ex && (
+        <div data-testid="sim-findings" className="rounded-2xl bg-sky-50 border border-sky-100 p-3">
+          <div className="flex items-center gap-1.5 font-extrabold text-[13px] text-slate-900 mb-2"><Eye size={15} className="text-sky-600"/> Findings <span className="font-semibold text-slate-500">({ex.label})</span></div>
+          <div className="flex gap-3 items-start">
+            {ex.images && (
+              <div className="w-[44%] shrink-0 space-y-1.5">
+                {ex.images.map((id) => <div key={id} className="rounded-lg overflow-hidden bg-white border border-slate-200"><StudyImage name={id} full/></div>)}
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              {ex.findings ? (
+                <ul className="space-y-1.5">
+                  {ex.findings.map((f) => <li key={f} className="flex gap-2 text-[13.5px] text-slate-800 leading-snug"><span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-sky-500 shrink-0"/>{f}</li>)}
+                </ul>
+              ) : (
+                <p className="text-[13px] text-slate-500 italic">Not available in this case yet.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Summary({ c, answers, score, mins, onReplay, onNext }) {
+  const total = c.stages.length;
+  const pct = Math.round((score / total) * 100);
+  const [tab, setTab] = useState("summary");
+  const tabsRef = useRef(null);
+  const S = c.summary;
+  const metric = (Icon, tint, value, label, tid) => (
+    <div className="flex-1 min-w-0 rounded-2xl bg-white border border-slate-200 p-2.5 text-center shadow-sm">
+      <span className={`mx-auto w-8 h-8 rounded-full flex items-center justify-center mb-1 ${tint}`}><Icon size={16}/></span>
+      <div data-testid={tid} className="font-extrabold text-[15px] text-slate-900 leading-tight">{value}</div>
+      <div className="text-[10.5px] text-slate-500">{label}</div>
+    </div>
+  );
+  const TABS = [["summary", "Case Summary"], ["answers", "Your Answers"], ["learning", "Learning Points"], ["refs", "References"]];
+  return (
+    <div data-testid="sim-finished">
+      {/* celebration scene: the same patient, the student and the PM bot */}
+      <div className="relative rounded-3xl bg-gradient-to-b from-amber-50 via-sky-50 to-violet-50 border border-sky-100 mb-3 overflow-hidden" style={{ minHeight: 250 }}>
+        <span aria-hidden="true" className="absolute inset-0 text-[18px] leading-none pointer-events-none select-none opacity-70" style={{ letterSpacing: "1.1rem", wordBreak: "break-all", lineHeight: "1.6rem" }}>🎉 ✨ 🎊 ✨ 🎉 ✨ 🎊 ✨ 🎉 ✨ 🎊 ✨</span>
+        <img src={img("expr-happy")} alt="" className="absolute left-0 bottom-0 h-[210px] w-auto"/>
+        <img src={img("student-happy")} alt="" className="absolute right-0 bottom-0 h-[210px] w-auto"/>
+        <div className="relative flex flex-col items-center pt-3">
+          <Bubble className="mb-1 text-center !px-3 !py-1.5"><span className="flex items-center justify-center gap-1 font-extrabold text-rose-600 text-[14px]"><Trophy size={15}/> Case Completed!</span><span className="text-[12px] text-slate-500">Great work!</span></Bubble>
+          <Bot pose="celebrating" size={120}/>
+        </div>
+      </div>
+
+      <div className="flex gap-2 mb-3">
+        {metric(Star, "bg-amber-100 text-amber-500", `${pct}%`, "Score", "sim-pct")}
+        {metric(Target, "bg-rose-100 text-rose-500", `${score}/${total}`, "Correct", "sim-correct")}
+        {metric(BarChart3, "bg-violet-100 text-violet-600", S.level, "Level", "sim-level")}
+        {metric(Timer, "bg-sky-100 text-sky-600", `${mins} min`, "Completion time", "sim-time")}
+      </div>
+
+      <div ref={tabsRef} className="flex gap-1.5 overflow-x-auto mb-3" role="tablist">
+        {TABS.map(([k, l]) => (
+          <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
+            className={`shrink-0 h-9 px-3 rounded-xl text-[12.5px] font-bold border ${tab === k ? "border-blue-500 bg-blue-50 text-blue-700" : "border-slate-200 bg-white text-slate-600"}`}>{l}</button>
+        ))}
+      </div>
+
+      {tab === "summary" && (
+        <div className="space-y-2.5 mb-3">
+          <div className="rounded-2xl bg-white border border-slate-200 p-3 shadow-sm">
+            <div className="font-extrabold text-[13px] text-sky-800 mb-2">Clinical Summary</div>
+            <div className="space-y-2">{S.clinical.map(([ic, k, v], n) => (
+              <div key={k + n} className="flex items-center gap-2.5"><Ico name={ic} i={n}/><div className="text-[13px] leading-tight"><div className="font-bold text-slate-900">{k}</div><div className="text-slate-600">{v}</div></div></div>
+            ))}</div>
+          </div>
+          <div className="rounded-2xl bg-white border border-slate-200 p-3 shadow-sm">
+            <div className="font-extrabold text-[13px] text-violet-800 mb-2">Examination Findings</div>
+            <div className="space-y-2">{S.findings.map(([ic, k, v], n) => (
+              <div key={k} className="flex items-center gap-2.5"><Ico name={ic} i={n + 1}/><div className="text-[13px] leading-tight"><div className="font-bold text-slate-900">{k}</div><div className="text-slate-600">{v}</div></div></div>
+            ))}</div>
+          </div>
+        </div>
+      )}
+
+      {tab === "answers" && (
+        <div data-testid="sim-answers" className="space-y-2.5 mb-3">
+          {c.stages.map((st, n) => {
+            const got = answers[n];
+            const ok = got === st.correct;
+            return (
+              <div key={n} className="rounded-2xl bg-white border border-slate-200 p-3 shadow-sm">
+                <div className="flex items-start gap-2">
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-white ${ok ? "bg-emerald-500" : "bg-rose-500"}`}>{ok ? <Check size={13}/> : <X size={13}/>}</span>
+                  <div className="text-[13px] leading-snug">
+                    <div className="font-bold text-slate-900">Question {n + 1}: {st.ask}</div>
+                    <div className="text-slate-700 mt-1">Your answer: {got == null ? "—" : st.options[got]}</div>
+                    {!ok && <div className="text-emerald-700 mt-0.5">Right answer: {st.options[st.correct]}</div>}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {tab === "learning" && (
+        <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4 text-[13px] text-slate-500 mb-3">{S.learningPoints ? S.learningPoints : "Learning points are not available for this case yet."}</div>
+      )}
+      {tab === "refs" && (
+        <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4 text-[13px] text-slate-500 mb-3">{S.references ? S.references : "References are not available for this case yet."}</div>
+      )}
+
+      <div className="flex items-start gap-3 rounded-2xl bg-sky-50 border border-sky-100 p-3 mb-3">
+        <Bot pose={score === total ? "celebrating" : "correct"} size={56}/>
+        <div className="text-[13px] leading-snug text-slate-800"><div className="font-extrabold text-sky-900 mb-0.5">PhysioMind Tutor</div>{S.tutor}</div>
+      </div>
+
+      <div className="flex gap-2">
+        <button type="button" onClick={() => { setTab("answers"); try { tabsRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" }); } catch { /* old browsers */ } }}
+          className="flex-1 h-11 rounded-xl bg-white border border-blue-200 text-blue-700 font-bold text-[13px]">Review My Answers</button>
+        <button type="button" onClick={onReplay} className="flex-1 h-11 rounded-xl bg-white border border-blue-200 text-blue-700 font-bold text-[13px] flex items-center justify-center gap-1"><RotateCcw size={13}/> Replay Case</button>
+        <button type="button" onClick={onNext} className="flex-1 h-11 rounded-xl bg-blue-600 text-white font-bold text-[13px] flex items-center justify-center gap-1">Next Patient <ChevronRight size={14}/></button>
+      </div>
+    </div>
+  );
+}
+
 function Play({ onExit }) {
-  const stages = KNEE_CASE.stages;
+  const c = KNEE_CASE;
+  const stages = c.stages;
   const total = stages.length;
   const [i, setI] = useState(0);
   const [picked, setPicked] = useState(null);
   const [done, setDone] = useState(false);
-  const [score, setScore] = useState(0);
+  const [answers, setAnswers] = useState([]);
   const [finished, setFinished] = useState(false);
+  const [exam, setExam] = useState(null);
+  const [mins, setMins] = useState(1);
+  const startRef = useRef(Date.now());
   const endRef = useRef(null);
   useEffect(() => { try { endRef.current?.scrollIntoView?.({ behavior: "smooth", block: "end" }); } catch { /* old browsers */ } }, [i, done, finished]);
 
   const st = stages[i];
   const right = done && picked === st.correct;
-  const progress = finished ? total : i + (done ? 1 : 0);
+  const score = answers.filter((a, n) => a === stages[n]?.correct).length;
 
-  const submit = () => { setDone(true); if (picked === st.correct) setScore((n) => n + 1); };
+  const submit = () => { setDone(true); setAnswers((a) => { const n = [...a]; n[i] = picked; return n; }); };
   const next = () => {
-    if (i + 1 >= total) { setFinished(true); return; }
-    setI(i + 1); setPicked(null); setDone(false);
+    if (i + 1 >= total) {
+      const m = Math.max(1, Math.round((Date.now() - startRef.current) / 60000));
+      const correct = answers.filter((a, n) => a === stages[n]?.correct).length;
+      setMins(m); setFinished(true);
+      writeLast({ correct, total, pct: Math.round((correct / total) * 100), mins: m, at: Date.now() });
+      return;
+    }
+    setI(i + 1); setPicked(null); setDone(false); setExam(null);
   };
-  const restart = () => { setI(0); setPicked(null); setDone(false); setScore(0); setFinished(false); };
+  const restart = () => { setI(0); setPicked(null); setDone(false); setAnswers([]); setFinished(false); setExam(null); startRef.current = Date.now(); };
 
-  // What the patient is saying right now: the stage's own lines, or the reply
-  // after answering.
   const lines = done && st.reply?.patient ? st.reply.patient : st.patient;
   const face = done ? (right ? "expr-happy" : "expr-concerned") : "patient-1";
-
-  if (finished) {
-    return (
-      <div data-testid="sim-finished" className="text-center pt-6">
-        <div className="flex justify-center"><Bot pose={score === total ? "celebrating" : "talking"} size={120}/></div>
-        <div className="cl-display text-2xl font-extrabold text-slate-900 mt-4">Case complete</div>
-        <p className="text-sm text-slate-600 mt-1">You got {score} of {total} right.</p>
-        <div className="flex gap-2 mt-6">
-          <button type="button" onClick={restart} className="flex-1 h-11 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold text-sm flex items-center justify-center gap-1.5"><RotateCcw size={14}/> Play again</button>
-          <button type="button" onClick={onExit} className="flex-1 h-11 rounded-xl bg-slate-900 text-white font-bold text-sm">Choose a patient</button>
-        </div>
-      </div>
-    );
-  }
+  const current = finished ? total : i;
+  const doneThrough = finished ? total : i + (done ? 1 : 0);
 
   return (
     <div data-testid="sim-play">
@@ -95,95 +300,131 @@ function Play({ onExit }) {
         <button type="button" aria-label="Back to patients" onClick={onExit} className="p-1.5 -ml-1.5 rounded-lg hover:bg-slate-50">
           <ChevronLeft size={22} className="text-slate-600"/>
         </button>
-        <div className="flex-1 text-center cl-display font-extrabold text-slate-900 text-[15px]">{KNEE_CASE.title}</div>
-        <div className="text-sm font-bold text-slate-500 w-10 text-right" data-testid="sim-count">{i + 1}/{total}</div>
+        <div className="flex-1 text-center cl-display font-extrabold text-slate-900 text-[15px]">{c.title}</div>
+        {!finished && <div className="text-sm font-bold text-slate-500 w-10 text-right" data-testid="sim-count">{i + 1}/{total}</div>}
+        {finished && <div className="w-10"/>}
       </div>
-      <div className="h-2 rounded-full bg-slate-100 overflow-hidden mb-3" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={progress}>
-        <div className="h-full rounded-full bg-gradient-to-r from-sky-500 to-blue-600 transition-all" style={{ width: `${(progress / total) * 100}%` }}/>
-      </div>
+      <Tracker current={current} doneThrough={doneThrough}/>
 
-      {/* The patient and what they say */}
-      <div className="flex items-end gap-2 rounded-3xl bg-gradient-to-br from-sky-50 to-violet-50 border border-sky-100 p-3 mb-3 min-h-[150px]">
-        <img src={img(face)} alt="" className={`shrink-0 object-cover bg-white/60 ${face === "patient-1" ? "w-[112px] h-[144px] rounded-2xl" : "w-[112px] h-[112px] rounded-2xl"}`}/>
-        <div className="flex-1 space-y-1.5 min-w-0">
-          {done && right && st.goodChoice && <Bubble className="font-extrabold">{st.goodChoice} 👍</Bubble>}
-          {done && right && st.goodLine && <Bubble className="text-slate-600 text-[12.5px]">{st.goodLine}</Bubble>}
-          {!(done && right && st.goodChoice) && (lines || []).map((t) => <Bubble key={t}>{t}</Bubble>)}
-        </div>
-      </div>
+      {finished ? (
+        <Summary c={c} answers={answers} score={score} mins={mins} onReplay={restart} onNext={onExit}/>
+      ) : (
+        <>
+          {/* The patient and what they say */}
+          {st.kind !== "findings" && st.kind !== "reasoning" && (
+            <Hero
+              face={face}
+              bubbles={<>
+                {done && right && st.goodChoice && <Bubble className="font-extrabold">{st.goodChoice} 👍</Bubble>}
+                {done && right && st.goodLine && <Bubble className="text-slate-600 text-[12.5px]">{st.goodLine}</Bubble>}
+                {st.historyDone && !done && <Bubble className="text-[13px]">{st.historyDone.patient}</Bubble>}
+                {!st.historyDone && !(done && right && st.goodChoice) && (lines || []).map((t) => <Bubble key={t}>{t}</Bubble>)}
+              </>}
+              bot={st.historyDone && !done ? { pose: "talking", text: st.historyDone.bot } : null}
+            />
+          )}
 
-      {st.notice && !done && (
-        <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 mb-3 text-[13px] text-amber-900">
-          <AlertCircle size={16} className="mt-0.5 shrink-0 text-amber-500"/> {st.notice}
-        </div>
-      )}
+          {st.historyDone && (
+            <>
+              <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-3 mb-3">
+                <div className="font-extrabold text-[13px] text-slate-900 mb-2">{st.historyDone.infoTitle}</div>
+                <div className="grid grid-cols-2 gap-2">
+                  {st.historyDone.info.map(([ic, k, v], n) => (
+                    <div key={k} className="flex items-center gap-2 rounded-xl bg-slate-50 p-2"><Ico name={ic} i={n} size={16}/><div className="text-[12px] leading-tight min-w-0"><div className="font-bold text-slate-900">{k}</div><div className="text-slate-600">{v}</div></div></div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
 
-      {/* The question */}
-      <div className="flex items-start gap-3 mb-2">
-        <Bot pose={done ? (right ? "correct" : "incorrect") : "thinking"}/>
-        <Bubble className="flex-1 !bg-sky-50 border-sky-100 font-semibold">{st.ask}</Bubble>
-      </div>
-      <div className="space-y-2 mb-3">
-        {st.options.map((t, k) => {
-          const isPicked = picked === k;
-          const isRight = done && k === st.correct;
-          const isWrong = done && isPicked && !isRight;
-          return (
-            <button key={t} type="button" disabled={done} onClick={() => setPicked(k)}
-              className={`w-full text-left flex items-start gap-3 rounded-xl border px-3 py-2.5 text-sm transition-colors ${isRight ? "border-emerald-400 bg-emerald-50" : isWrong ? "border-rose-300 bg-rose-50" : isPicked ? "border-sky-500 bg-sky-50" : "border-slate-200 bg-white"}`}>
-              <span className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center shrink-0 ${isRight ? "bg-emerald-500 text-white" : isWrong ? "bg-rose-500 text-white" : isPicked ? "bg-sky-500 text-white" : "bg-slate-100 text-slate-600"}`}>
-                {isRight ? <Check size={13}/> : isWrong ? <X size={13}/> : "ABCD"[k]}
-              </span>
-              <span className="text-slate-800 leading-snug">{t}</span>
-            </button>
-          );
-        })}
-      </div>
+          {st.kind === "findings" && (
+            <>
+              <div data-testid="sim-hero" className="relative rounded-3xl overflow-hidden border border-sky-100 bg-gradient-to-b from-sky-100 via-sky-50 to-violet-50 mb-3" style={{ minHeight: 280 }}>
+                <img src={img("patient-1")} alt="" className="absolute left-0 bottom-0 h-[270px] w-auto object-contain object-bottom"/>
+                <img src={img("student-explaining")} alt="" className="absolute right-0 bottom-0 h-[210px] w-auto object-contain object-bottom rounded-tl-3xl"/>
+                <Bubble className="absolute top-3 left-[40%] right-3 text-[12.5px] font-semibold">Choose what to examine, then read the findings.</Bubble>
+              </div>
+              <ExamPanel stage={st} exam={exam} setExam={setExam}/>
+            </>
+          )}
 
-      {!done && (
-        <button type="button" disabled={picked === null} onClick={submit}
-          className={`w-full h-11 rounded-xl font-bold text-sm flex items-center justify-center ${picked !== null ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-400"}`}>
-          Submit
-        </button>
-      )}
+          {st.notice && !done && (
+            <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 mb-3 text-[13px] text-amber-900">
+              <AlertCircle size={16} className="mt-0.5 shrink-0 text-amber-500"/> {st.notice}
+            </div>
+          )}
 
-      {/* After answering */}
-      {done && (
-        <div className="space-y-3">
-          <div className={`rounded-2xl p-3.5 text-sm leading-relaxed ${right ? "bg-emerald-50 text-emerald-900" : "bg-rose-50 text-rose-900"}`}>
-            <div className="font-extrabold mb-0.5 flex items-center gap-1.5">{right ? <><Check size={16}/> Correct!</> : <><X size={16}/> Not quite. The right answer is marked in green.</>}</div>
-            {st.explain && right && st.explain}
+          {/* The question */}
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="flex items-center gap-1 text-[12px] font-extrabold text-sky-800 bg-sky-100 rounded-full px-2.5 py-1"><span className="w-4 h-4 rounded-full bg-sky-600 text-white text-[10px] flex items-center justify-center">Q</span> Question {i + 1}</span>
           </div>
-          {st.reply?.checklist && (
-            <div className="rounded-2xl bg-emerald-50 border border-emerald-200 p-3.5">
-              <div className="font-extrabold text-emerald-900 mb-2 text-sm">{st.reply.checklistTitle}</div>
-              <ul className="space-y-1.5">
-                {st.reply.checklist.map((t) => (
-                  <li key={t} className="flex items-center gap-2 text-sm text-slate-800"><span className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0"><Check size={12}/></span>{t}</li>
-                ))}
-              </ul>
+          <div className="flex items-start gap-3 mb-2">
+            <Bot pose={done ? (right ? "correct" : "incorrect") : "thinking"}/>
+            <Bubble className="flex-1 !bg-sky-50 border-sky-100 font-semibold">{st.ask}</Bubble>
+          </div>
+          <div className="space-y-2 mb-3">
+            {st.options.map((t, k) => {
+              const isPicked = picked === k;
+              const isRight = done && k === st.correct;
+              const isWrong = done && isPicked && !isRight;
+              return (
+                <button key={t} type="button" disabled={done} onClick={() => setPicked(k)}
+                  className={`w-full text-left flex items-start gap-3 rounded-xl border px-3 py-2.5 text-sm transition-colors ${isRight ? "border-emerald-400 bg-emerald-50" : isWrong ? "border-rose-300 bg-rose-50" : isPicked ? "border-sky-500 bg-sky-50" : "border-slate-200 bg-white"}`}>
+                  <span className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center shrink-0 ${isRight ? "bg-emerald-500 text-white" : isWrong ? "bg-rose-500 text-white" : isPicked ? "bg-sky-500 text-white" : "bg-slate-100 text-slate-600"}`}>
+                    {isRight ? <Check size={13}/> : isWrong ? <X size={13}/> : "ABCD"[k]}
+                  </span>
+                  <span className="text-slate-800 leading-snug">{t}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {!done && (
+            <button type="button" disabled={picked === null} onClick={submit}
+              className={`w-full h-11 rounded-xl font-bold text-sm flex items-center justify-center ${picked !== null ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-400"}`}>
+              Submit Answer
+            </button>
+          )}
+
+          {/* After answering */}
+          {done && (
+            <div className="space-y-3">
+              <div className={`rounded-2xl p-3.5 text-sm leading-relaxed ${right ? "bg-emerald-50 text-emerald-900" : "bg-rose-50 text-rose-900"}`}>
+                <div className="font-extrabold mb-0.5 flex items-center gap-1.5">{right ? <><Check size={16}/> Correct!</> : <><X size={16}/> Not quite. The right answer is marked in green.</>}</div>
+                {st.explain && right && st.explain}
+              </div>
+              {st.reply?.checklist && (
+                <div className="rounded-2xl bg-emerald-50 border border-emerald-200 p-3.5">
+                  <div className="font-extrabold text-emerald-900 mb-2 text-sm">{st.reply.checklistTitle}</div>
+                  <ul className="space-y-1.5">
+                    {st.reply.checklist.map((t) => (
+                      <li key={t} className="flex items-center gap-2 text-sm text-slate-800"><span className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0"><Check size={12}/></span>{t}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {st.reply?.info && (
+                <div className="rounded-2xl bg-sky-50 border border-sky-100 p-3.5">
+                  <div className="font-extrabold text-sky-900 mb-2 text-sm">{st.reply.infoTitle}</div>
+                  <dl className="space-y-1.5">
+                    {st.reply.info.map(([k, v]) => (
+                      <div key={k} className="text-sm"><dt className="inline font-bold text-slate-900">{k}: </dt><dd className="inline text-slate-700">{v}</dd></div>
+                    ))}
+                  </dl>
+                </div>
+              )}
+              {st.reply?.bot && (
+                <div className="flex items-start gap-3">
+                  <Bot pose="talking" size={56}/>
+                  <Bubble className="flex-1 !bg-emerald-50 border-emerald-200">{st.reply.bot}</Bubble>
+                </div>
+              )}
+              <button type="button" onClick={next} className="w-full h-11 rounded-xl bg-blue-600 text-white font-bold text-sm flex items-center justify-center gap-1.5">
+                {i + 1 >= total ? "See my summary" : "Next"} <ChevronsRight size={16}/>
+              </button>
             </div>
           )}
-          {st.reply?.info && (
-            <div className="rounded-2xl bg-sky-50 border border-sky-100 p-3.5">
-              <div className="font-extrabold text-sky-900 mb-2 text-sm">{st.reply.infoTitle}</div>
-              <dl className="space-y-1.5">
-                {st.reply.info.map(([k, v]) => (
-                  <div key={k} className="text-sm"><dt className="inline font-bold text-slate-900">{k}: </dt><dd className="inline text-slate-700">{v}</dd></div>
-                ))}
-              </dl>
-            </div>
-          )}
-          {st.reply?.bot && (
-            <div className="flex items-start gap-3">
-              <Bot pose="talking" size={56}/>
-              <Bubble className="flex-1 !bg-emerald-50 border-emerald-200">{st.reply.bot}</Bubble>
-            </div>
-          )}
-          <button type="button" onClick={next} className="w-full h-11 rounded-xl bg-blue-600 text-white font-bold text-sm flex items-center justify-center gap-1.5">
-            {i + 1 >= total ? "Finish" : "Next"} <ChevronsRight size={16}/>
-          </button>
-        </div>
+        </>
       )}
       <div ref={endRef} className="h-6"/>
     </div>
