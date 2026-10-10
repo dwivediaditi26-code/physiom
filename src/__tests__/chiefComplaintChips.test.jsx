@@ -61,6 +61,13 @@ describe("Knee: chips under Chief complaint / Onset / Duration", () => {
     expect(screen.queryByTestId("understood-chips")).toBeNull();
   });
 
+  it("Hip works the same way", async () => {
+    render(<Harness regions={[{ id: "hip", label: "Hip" }]} />);
+    type(chiefBox(), "Deep anterior hip pain on sitting for long periods, worse getting out of the car.");
+    await waitFor(() => expect(chipTexts().join("|")).toMatch(/Getting out of a car/), { timeout: 15000 });
+    expect(chipTexts().join("|")).toMatch(/Prolonged sitting/);
+  });
+
   it("other regions do not show these chips yet", async () => {
     render(<Harness regions={[{ id: "shoulder", label: "Shoulder" }]} />);
     type(chiefBox(), "They twisted on a planted foot and the knee gave way.");

@@ -10,8 +10,9 @@
 //
 // "~word" = a bare word that only counts when typed INTO that question's own box.
 import { createPhraseMatcher, WORDS } from "./phraseEngine.js";
+import { extendPhrases } from "./phrasePattern.js";
 
-export const HIP_PHRASES = {
+const HIP_BASE = {
   location: {
     "Anterior groin": [
       "~groin", "groin pain", "pain in the groin", "pain in my groin", "pain at the groin", "pain deep in the groin", "groin ache", "in the groin", "at the groin",
@@ -387,6 +388,39 @@ export const HIP_PHRASES = {
   },
 };
 
+// Added from the clinician-voice "everyday words" sheet (PhysioMind-Hip-Everyday-Words-DRAFT.pdf): what a clinician types ABOUT the
+// patient ("the patient", "they"), in English, Hinglish and Hindi. See hipSheetSet.test.js.
+const SHEET_PHRASES = {
+  location: {
+    "Anterior groin": ["जांघ के जोड़ में गहरा दर्द", "ग्रोइन में गहरा दर्द"],
+    "Ischial tuberosity": ["baithne ki haddi", "baithne ki haddi par dard", "बैठने की हड्डी", "बैठने की हड्डी पर दर्द", "बैठने की हड्डी पर गहरा दर्द"],
+  },
+  mechanism: {
+    "Insidious onset / overuse": [
+      "no real injury", "no single event", "crept up slowly", "crept up", "crept up over the years", "built up slowly", "slowly over months", "slowly over months or years",
+      "repetitive hip flexion", "repetitive hip flexion and rotation", "repetitive hip movements", "increased weekly mileage", "increased mileage", "mileage increase",
+      "sudden increase in running", "sudden increase in training", "too much too soon", "overload",
+      "koi chot nahi", "dheere dheere koi chot nahi", "mahino ya saalon mein dheere dheere", "saalon mein dheere dheere", "mahino mein dheere dheere",
+      "कोई चोट नहीं", "धीरे धीरे कोई चोट नहीं", "महीनों या सालों में धीरे धीरे", "सालों में धीरे धीरे", "महीनों में धीरे धीरे",
+    ],
+    "Age-related degenerative": ["ghisaav", "ghisav", "घिसाव"],
+    "Twisting / pivoting mechanism": ["after a twist", "after twisting", "bad twist", "twist on the hip", "after a twist on the hip"],
+    "Kicking mechanism": ["laat maarna", "laat maarne", "लात मारना", "लात मारने"],
+    "Return to sport after time off": ["started running again", "started playing again", "started exercising again", "began running again"],
+  },
+  mechanical: {
+    "Catching sensation": ["click or catch", "clicks or catches", "clicking or catching", "clicking catching", "click ya atak", "क्लिक या अटकना", "क्लिक या अटक"],
+    "Internal snapping (anterior, iliopsoas)": ["kulhe ke aage chatakne ki awaaz", "कूल्हे के आगे चटकने की आवाज़", "कूल्हे के आगे चटकने की आवाज"],
+    "External snapping (lateral, IT band)": ["kulhe ke bahar chatakne ki awaaz", "कूल्हे के बाहर चटकने की आवाज़", "कूल्हे के बाहर चटकने की आवाज"],
+  },
+};
+const mergePhrases = (base, extra) => {
+  const out = { ...base };
+  for (const [field, opts] of Object.entries(extra)) out[field] = extendPhrases(out[field], opts);
+  return out;
+};
+export const HIP_PHRASES = mergePhrases(HIP_BASE, SHEET_PHRASES);
+
 const { PAIN: PAIN_W } = WORDS;
 // Words that say a sentence is about this region / about another one.
 const OWN_W = "hip* groin buttock* glute* gluteal thigh* pelvis pelvic trochanter* trochanteric adductor* si_joint sacroiliac ischial tailbone sit_bone pubic pubis symphysis kulh* कूल्ह* कूल्हा jaangh* जांघ nitamb नितंब chutad चूतड़ leg legs";
@@ -401,6 +435,10 @@ const matcher = createPhraseMatcher({
   foreignWords: FOREIGN_W,
   optionGuards: {
     "redFlags|Cancer history": FAMILY_W,
+    // a relative's operation is not the patient's
+    "mechanism|Post hip replacement": FAMILY_W,
+    // "now and then it clicks or catches" describes the clicking, not how the pain behaves
+    "pattern|Intermittent — activity-related": "click clicks clicking catch catches catching snap snaps snapping lock locks locking",
     // "subah kulha jam jata hai" is morning stiffness, not a locking hip
     "mechanical|Locking — intermittent": "subah सुबह morning mornings uthte उठते akdan अकड़न stiff stiffness jakdan जकड़न",
   },
@@ -448,10 +486,12 @@ const matcher = createPhraseMatcher({
     const [GROIN, FLEXOR, LATERAL, POST, ISCH, ADD, PUBIC, SIJ] = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => O("location", i));
     rule("location", GROIN, ["groin jaangh_ke_jod", PAIN_W], 6);
     rule("location", GROIN, ["groin"], 1, { ctx: "pain" });
+    rule("location", GROIN, ["जांघ_के_जोड़", PAIN_W], 6);
     rule("location", FLEXOR, ["front anterior samne सामने aage आगे", HIPW], 4);
     rule("location", LATERAL, ["outer outside lateral side bahar bahari बाहर बाहरी bagal बगल", HIPW], 4, { unless: "front back" });
     rule("location", POST, ["back behind posterior peeche पीछे", HIPW], 4, { unless: "front bend* bending", block: "and aur or ya" });
     rule("location", POST, ["buttock buttocks glute glutes gluteal bum chutad चूतड़ nitamb नितंब", PAIN_W], 5);
+    rule("location", POST, ["buttock buttocks glute glutes gluteal chutad चूतड़ nitamb नितंब", "gehra गहरा deep"], 9, { ctx: "pain" });
     rule("location", ISCH, ["sit_bone sitting_bone ischial", PAIN_W], 5);
     rule("location", ADD, ["inner inside adductor andruni अंदरूनी andar अंदर", "thigh jaangh जांघ"], 4);
     rule("location", PUBIC, ["pubic pubis symphysis", PAIN_W], 5);
@@ -469,6 +509,8 @@ const matcher = createPhraseMatcher({
     const [INSID, AGE, TWIST, FALL, KICK, LUNGE, FAST, RETURN, POSTPARTUM, THR] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(M);
     rule("mechanism", TWIST, ["turned turn", "sharply quickly suddenly awkwardly abruptly"], 2, { ctx: "painOrArm" });
     rule("mechanism", TWIST, ["twisted twisting pivoted pivot* moch मोच mud_gaya mud_gayi mud_gaye मुड़_गया मुड़_गई घूम_गया", HIPW + " leg"], 5);
+    rule("mechanism", TWIST, ["after following", "twist twisting"], 3);
+    rule("mechanism", TWIST, ["bad sudden sharp awkward violent forceful", "twist twisting"], 3);
     rule("mechanism", FALL, ["fell fall fallen slipped slipping tripped tripping phisal फिसल"], 1, { ctx: "painOrArm", unless: "asleep sleep ill sick love apart nearly almost" });
     rule("mechanism", FALL, ["gir गिर"], 1, { unless: "nearly almost" });
     rule("mechanism", KICK, ["kick* laat लात kick किक"], 1, { ctx: "painOrArm", unless: "kickstart" });
@@ -481,7 +523,7 @@ const matcher = createPhraseMatcher({
     rule("mechanism", THR, ["replace* replacement thr", HIPW + " joint"], 5, { unless: "fell fall tripped" });
     rule("mechanism", THR, ["operation surgery ऑपरेशन सर्जरी operated", HIPW], 5, { unless: "scheduled planned upcoming next" });
     // aggravating
-    const AGG_W = PAIN_W + " worse worsens worsen worst aggravate*";
+    const AGG_W = PAIN_W + " worse worsens worsen worst aggravate* badhta badhti badhte बढ़ता बढ़ती बढ़ते";
     const STIFF_W = AGG_W + " stiff stiffness akad* अकड़* jakad* जकड़* tight";
     const A = { reliefKills: true, reliefAfter: true, block: "weak* kamzor कमजोर all_day every_day daily din_bhar roz रोज" };
     const G = (i) => O("aggravating", i);
@@ -496,10 +538,13 @@ const matcher = createPhraseMatcher({
     rule("aggravating", PSIT, ["sits sitting sit baithna baithta बैठ*", "long prolonged hours der देर ghanton घंटों lamba lambi lambe लंबे"], 3, { ctx: "pain", reliefKills: true });
     rule("aggravating", PSIT, [STIFF_W, "sitting sit baithna बैठ*", "long prolonged hours flight der देर ghanton घंटों lamba lambi lambe लंबे"], 9, A);
     rule("aggravating", HARD, [AGG_W, "sitting sit baithna बैठ*", "hard sakht सख्त kadak कड़क kadi कड़ी bench floor"], 10, A);
-    rule("aggravating", LYING, [PAIN_W, "sleep* lie lying lay letna लेट* sona सोन* karwat करवट turn_over rolling_over", "side taraf तरफ on_hip on_that_hip on_that_side affected haddi_pe haddi_par kulha_pe kulha_par"], 10, A);
+    rule("aggravating", LYING, [PAIN_W, "sleep* lie lying lay letna लेट* sona सोन* karwat करवट turn_over rolling_over roll_onto rolls_onto rolling_onto roll_over", "side taraf तरफ on_hip on_that_hip on_that_side affected haddi_pe haddi_par kulha_pe kulha_par"], 10, A);
+    rule("aggravating", LYING, ["wakes_them woke_them wake_them wakes_him wakes_her waking_them", "roll_over rolls_over rolling_over turn_over turning_over roll_onto"], 7, { block: "better" });
     rule("aggravating", LYING, ["cannot cant unable", "sleep* lie lying lay letna लेट* sona सोन*", "side taraf तरफ on_hip on_that_hip affected"], 7, { block: "better" });
-    rule("aggravating", WALK, [AGG_W, "walk* chalna चल* limp* langda लंगड़*"], 6, A);
-    rule("aggravating", STAIRS, [AGG_W, "stairs staircase steps upstairs downstairs seedhiyan सीढी zeena जीना"], 8, A);
+    rule("aggravating", WALK, [AGG_W, "walk* chalna चलना चलने चलते चलता चलती limp* langda लंगड़*"], 6, A);
+    rule("aggravating", STAIRS, [AGG_W, "stairs staircase steps upstairs downstairs seedhiyan सीढी zeena जीना"], 11, A);
+    rule("aggravating", CAR, ["get_out getting_out gets_out get_out_of getting_out_of", "car gaadi गाड़ी कार taxi auto"], 6, { ctx: "painOrArm", reliefKills: true, reliefAfter: true });
+    rule("aggravating", HARD, ["hard sakht सख्त kadak कड़क bench floor", "seat seats chair chairs surface surfaces sitting sit baithna बैठ* jagah जगह"], 4, { ctx: "painOrArm", reliefKills: true });
     rule("aggravating", CAR, [AGG_W, "car gaadi गाड़ी कार taxi auto", "out_of get_out getting_out utarte उतरते nikalte निकलते exit* stepping_out bahar बाहर"], 9, A);
     // pattern (own answers)
     const P = (i) => O("pattern", i);
@@ -511,7 +556,7 @@ const matcher = createPhraseMatcher({
     rule("pattern", CONST, ["never", "away stops ends eases go goes", PAIN_W], 6, { selfNeg: true });
     rule("pattern", NIGHT, ["night raat रात", "worse worst more zyada ज्यादा badh बढ़ bad"], 7, { ctx: "pain", reliefKills: true });
     rule("pattern", NIGHT, ["wakes_me woke_me waking_me wake_me jag jaag जाग* disturb* neend नींद sleep", PAIN_W], 8, { reliefKills: true, noComma: true, unless: "morning mornings subah सुबह first_thing out_of_bed get_up" });
-    rule("pattern", NIGHT, ["night raat रात", PAIN_W], 4, { reliefKills: true, noComma: true });
+    rule("pattern", NIGHT, ["night raat रात", PAIN_W], 5, { reliefKills: true, noComma: true });
     rule("pattern", NIGHT, ["wakes_me woke_me waking_me wake_me", "every_night nightly each_night"], 4);
     rule("pattern", MORN, ["morning mornings subah सुबह uthte uthne wake* waking", "stiff* akdan akad* अकड* jakad* jakdan जकड़* jam jaam जाम"], 7, { reliefKills: true, noComma: true });
     rule("pattern", MORN, ["morning subah सुबह wake* uthte uthne", "worse worst most mostly first pehle पहले zyada ज्यादा"], 6, { ctx: "pain", reliefKills: true, unless: "evening shaam शाम" });
@@ -520,14 +565,15 @@ const matcher = createPhraseMatcher({
     // mechanical symptoms
     const MX = (i) => O("mechanical", i);
     const [MNONE, CLICKOK, CLICKPAIN, CATCH, GIVEWAY, LOCK, INTSNAP, EXTSNAP, CREP] = [0, 1, 2, 3, 4, 5, 6, 7, 8].map(MX);
-    rule("mechanical", CLICKOK, ["click* clicks clicking", "painless no_pain without_pain bina_dard बिना_दर्द doesnt_hurt harmless"], 8, { selfNeg: true });
-    rule("mechanical", CLICKPAIN, ["click* clicks clicking", "hurts painful pain dard दर्द sharp"], 5, { block: "no without painless nahi नहीं bina बिना" });
+    rule("mechanical", CLICKOK, ["click* clicks clicking क्लिक", "painless no_pain without_pain bina_dard बिना_दर्द doesnt_hurt harmless"], 8, { selfNeg: true });
+    rule("mechanical", CLICKPAIN, ["click* clicks clicking क्लिक", "hurts painful pain dard दर्द sharp"], 5, { block: "no without painless nahi नहीं bina बिना", blockAfter: "bina बिना nahi नहीं" });
     rule("mechanical", CATCH, ["catch catches catching atak"], 1, { ctx: "painOrArm" });
-    rule("mechanical", GIVEWAY, ["give* gave buckle* buckles collapse* jawab जवाब dhokha धोखा", HIPW + " leg"], 5);
+    rule("mechanical", CATCH, ["click clicks clicking क्लिक", "catch catches catching atak अटक*"], 4);
+    rule("mechanical", GIVEWAY, ["give* gave giving buckle* buckles buckling collapse* collapsing jawab जवाब dhokha धोखा", HIPW + " leg"], 5);
     rule("mechanical", LOCK, ["lock locks locked locking jam लॉक जाम", HIPW], 5, { unless: "no not never nahi नहीं subah सुबह morning mornings uthte उठते akdan अकड़न stiff stiffness" });
-    rule("mechanical", INTSNAP, ["snap* clunk* tak_ki_awaaz", "front anterior groin iliopsoas aage आगे samne सामने"], 6);
-    rule("mechanical", EXTSNAP, ["snap* pop* pops clunk*", "outer outside lateral side it_band bahar बाहर bagal बगल"], 6);
-    rule("mechanical", CREP, ["grind* grinding grate* grating crepitus crunch* crunchy ragad* रगड़* kirkiri किरकिरी ghis* घिस*"], 1, { ctx: "painOrArm" });
+    rule("mechanical", INTSNAP, ["snap* clunk* tak_ki_awaaz chatak* चटक*", "front anterior groin iliopsoas aage आगे samne सामने"], 6);
+    rule("mechanical", EXTSNAP, ["snap* pop* pops clunk* chatak* चटक*", "outer outside lateral side it_band trochanter* trochanteric greater_trochanter bahar बाहर bagal बगल"], 6);
+    rule("mechanical", CREP, ["grind* grinding grate* grating crepitus crunch* crunchy ragad* रगड़* kirkiri किरकिरी ghisne ghisti ghista घिसने घिसती घिसता"], 1, { ctx: "painOrArm" });
     rule("mechanical", CREP, ["grinding crunching grating crunchy kar_kar कर_कर kirkiri किरकिरी", "sound noise feeling sensation awaaz आवाज"], 5);
     // red flags
     const R = (i) => O("redFlags", i);
@@ -544,7 +590,7 @@ const matcher = createPhraseMatcher({
     rule("redFlags", PROGR, ["unrelenting relentless unremitting"], 1, { ctx: "pain" });
     rule("redFlags", PROGR, ["constant* continuous* unrelenting relentless lagatar लगातार", "progressive* worsening increasing getting_worse badh बढ़ every_day roz daily", PAIN_W], 9, { block: "when while if after" });
     rule("redFlags", ABDO, ["abdomen abdominal stomach tummy lower_tummy pet पेट belly", PAIN_W, "hip* kulha कूल्हा groin jaangh जांघ"], 10);
-    rule("redFlags", GYNAE, ["period periods menstrual menstruation mahavari माहवारी pcod pcos endometriosis fibroid* ovarian uterus uterine gynae gynaecological bachchedani बच्चेदानी", PAIN_W], 8);
+    rule("redFlags", GYNAE, ["period periods menstrual menstruation mahavari माहवारी pcod pcos endometriosis fibroid* ovarian uterus uterine gynae gynaecological bachchedani बच्चेदानी", PAIN_W], 8, { block: "long prolonged extended short sitting standing hours" });
     rule("redFlags", GYNAE, ["ovarian pcod pcos endometriosis fibroid* gynae gynaecolog* hysterectomy"], 1);
     rule("redFlags", TESTIC, ["testicle testicles testicular testis scrotum scrotal andkosh अंडकोष", PAIN_W + " swelling swollen lump sujan सूजन"], 6);
     rule("redFlags", CANCER, ["cancer cancers tumor tumour tumors malignan* carcinoma lymphoma leukemia myeloma kainsar कैंसर cancerous", "history had diagnosed treated treatment survivor chemo chemotherapy radiotherapy past previous earlier before tha था hua हुआ ilaaj इलाज"], 6);

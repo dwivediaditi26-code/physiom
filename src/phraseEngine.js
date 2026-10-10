@@ -178,7 +178,8 @@ export function createPhraseMatcher({ phrases, singleChoiceFields = ["pattern"],
     for (const [re, to] of hinglish) s = s.replace(re, to);
     for (const [re, to] of DEVA) s = s.replace(re, to);
     for (const [re, to] of deva) s = s.replace(re, to);
-    s = s.replace(/\b(the|my|a|an)\b/g, " ");   // "back of my elbow" == "back of the elbow"
+    // "back of my elbow" == "back of the elbow" == "back of their elbow" (a clinician writes about the patient: their / his / her)
+    s = s.replace(/\b(the|my|a|an|their|his|her)\b/g, " ");
     return s.replace(/\s+/g, " ").trim();
   }
 
