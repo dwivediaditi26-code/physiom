@@ -1,0 +1,122 @@
+// cervicalSheetSetFresh.js -- a SECOND, fresh exam in the clinician's voice ("the patient", "they", short notes), written AFTER the Cervical
+// matcher had been fixed for the sheet's own sentences (cervicalSheetSet.js). None of these sentences was used to tune the matcher before
+// their first run was recorded. Row = [lang, text, must, may] -- same meaning as in cervicalSheetSet.js. The answer keys are DRAFTS written
+// by Claude for Aditi to check.
+import { KEYS } from "./cervicalWildSets.js";
+
+const { SUBOCC, LATL, LATR, POSTN, TRAPL, TRAPR, SCM, SCAL, LEVAT, LOWERC, ROCC, REYE, RTEMP, RSHTOP, RSHL, RSHR, RARML, RARMR, RHANDL, RHANDR, RBIL, RBLADE, RNONE,
+  MINS, MREAR, MSIDE, MFLROT, MHEXT, MDIRECT, MDIVE, MPOST, MSLEEP, MLIFT, ANO, AL, AR, ABIL, LYES, GFLEX, GEXT, GROTL, GROTR, GQL, GQR, GSUST, GQUICK, GALL,
+  VCHIN, VEXT, VFLEX, VELEV, VARM, VSTRETCH, VSHOWER, PCONST, PCONSTVAR, PINTTRIG, PINTUNP, PACT, PPOS, PMORN, PEVE, PNIGHT, PFLARE, PWARM,
+  HNO, HPRIM, HSEC, HCONC, HPREV, MYHAND, MYFINE, MYGAIT, MYFALL, MYLEG, MYHYPER, MYBAB, MYHOFF, MYBLAD, MYPROG, MYLHER,
+  VNO, VDIZ, VDIP, VDROP, VDYS, VDYSP, VNAUS, VNUMB, VTHUN, VHORN, INDOWN, INTRAUMA, INFUSION, INUNST, INSPASM, INFLEX,
+  OTDISS, OTTHUN, OTCA, OTHIGH, OTCONST, FRHIGH, FRAXIAL, FRSPASM, FRSPLINT, FRNEURO, FRODON, FRFACET,
+  NDRIVE, NSHOULDER, NCOMP, NREAD, NTV, NSLEEP, NHAIR, NOVER, NCARRY, NSPORT, NWORK, NCHILD, NCONC, NSOCIAL } = KEYS;
+
+export const CERVICAL_SHEET_FRESH = [
+  // Mechanical / non-specific neck pain
+  ["en", "Stiff, achy neck at the end of the working day, loosens up with a walk.", [PEVE, PWARM], [PPOS, PACT, POSTN]],
+  ["en", "Pain when they look down to read, better with the head back.", [GFLEX, VEXT], [NREAD]],
+  ["en", "Slept on the wrong side and woke with a crick in the neck.", [MSLEEP], [PMORN, MINS]],
+  ["en", "Sore at the back of the neck and across both shoulders, no arm symptoms.", [POSTN, ANO], [TRAPL, TRAPR, RNONE]],
+  ["hi", "Gardan ke peeche dard, der tak baithne ke baad badhta hai.", [POSTN], [PPOS, MPOST, GSUST]],
+  ["de", "गर्दन के पीछे दर्द, देर तक बैठने के बाद बढ़ता है।", [POSTN], [PPOS, MPOST, GSUST]],
+  // Radiculopathy
+  ["en", "Sharp pain from the neck into the left shoulder blade and down the arm to the thumb.", [RBLADE, RHANDL, AL], [RARML, RSHL]],
+  ["en", "Tingling in the left index and middle finger, worse at night.", [AL, RHANDL, PNIGHT], []],
+  ["en", "Looking up brings on the arm pain; a chin tuck eases it.", [GEXT, VCHIN], []],
+  ["en", "Better with the hand placed on top of the head.", [VARM], []],
+  ["hi", "Daayein haath mein ungliyon tak jhunjhuni, gardan ghumane par badhti hai.", [AR, RHANDR], []],
+  ["de", "बाएं हाथ में उंगलियों तक झुनझुनी, रात को ज़्यादा।", [AL, RHANDL, PNIGHT], []],
+  // Facet
+  ["en", "Catching pain on the right when looking over the shoulder to reverse the car.", [GROTR], [LATR, NDRIVE, NSHOULDER, GQR]],
+  ["en", "Locked on the left side after a sudden turn of the head.", [], [LATL, GROTL, GQUICK, INSPASM, FRSPLINT, MFLROT, MINS]],
+  ["en", "Referred pain to the top of the right shoulder.", [RSHTOP], [RSHR]],
+  ["en", "Tilting the head back is the worst.", [GEXT], []],
+  ["hi", "Gardan mein daayein taraf dard, peeche jhukne par badhta hai.", [GEXT], [LATR]],
+  ["de", "गर्दन में दाईं तरफ दर्द, पीछे झुकने पर बढ़ता है।", [GEXT], [LATR]],
+  // Cervicogenic headache
+  ["en", "Headaches start in the neck and spread over the left side of the head to behind the eye.", [HSEC, REYE], [RTEMP, ROCC, SUBOCC, LATL]],
+  ["en", "One-sided headache triggered by turning the neck.", [HSEC], [GROTL, GROTR]],
+  ["en", "Neck stiffness with headaches several times a week.", [HSEC], [HCONC, PINTUNP, PFLARE]],
+  ["en", "Has migraines separately, unrelated to the neck pain.", [HCONC], [HPREV]],
+  ["hi", "Sir dard gardan se shuru hota hai, kanpati tak jata hai.", [HSEC, RTEMP], []],
+  ["de", "सिरदर्द गर्दन से शुरू होता है, कनपटी तक जाता है।", [HSEC, RTEMP], []],
+  // Whiplash
+  ["en", "Car was hit on the driver's side by a van, neck pain since.", [MSIDE], [FRHIGH, OTHIGH, INTRAUMA]],
+  ["en", "Whiplash from a rear shunt at low speed.", [MREAR], []],
+  ["en", "Dizzy and nauseated when they turn the head quickly since the crash.", [VDIZ, VNAUS], [GQUICK, GROTL, GROTR]],
+  ["en", "Cannot concentrate at work since the accident.", [NCONC], [NWORK]],
+  ["en", "Everything is sore after the crash, no movement is free.", [GALL], [PCONST]],
+  ["hi", "Bike par peeche se truck ne takkar maari, gardan jam gayi.", [MREAR], [INSPASM, FRHIGH, INTRAUMA, OTHIGH]],
+  ["de", "बाइक पर पीछे से ट्रक ने टक्कर मारी, गर्दन जाम हो गई।", [MREAR], [INSPASM, FRHIGH, INTRAUMA, OTHIGH]],
+  // Strain / torticollis
+  ["en", "Strained it carrying a heavy water can.", [MLIFT], []],
+  ["en", "Spasm in the muscle along the side of the neck, on the left.", [LATL], [SCM, SCAL, INSPASM, LEVAT]],
+  ["en", "Heat pack and gentle stretching help.", [VSTRETCH], [VSHOWER]],
+  ["hi", "Subah uthne par gardan akdi hui thi, garam paani se nahane par kam hui.", [PMORN, VSHOWER], [MSLEEP]],
+  ["de", "सुबह उठने पर गर्दन अकड़ी हुई थी, गर्म पानी से नहाने पर कम हुई।", [PMORN, VSHOWER], [MSLEEP]],
+  // Spondylosis / myelopathy
+  ["en", "Dropping things and struggling to hold a pen.", [MYFINE], [MYHAND]],
+  ["en", "Legs feel stiff and unsteady on stairs, a few near falls.", [MYLEG, MYGAIT], [MYFALL]],
+  ["en", "Electric shock down the back on bending the head forward, once or twice a week.", [LYES], [MYLHER, GFLEX]],
+  ["en", "Bladder urgency is new.", [MYBLAD], []],
+  ["en", "Numbness is spreading quickly, much worse than a month ago.", [MYPROG], []],
+  ["en", "Hoffmann's sign is positive on the right.", [MYHOFF], []],
+  ["en", "Brisk reflexes in the legs and an upgoing toe.", [MYHYPER, MYBAB], []],
+  ["hi", "Dono haathon mein sunnpan, button lagana mushkil.", [ABIL, MYHAND, MYFINE], [RBIL]],
+  ["de", "चलते समय संतुलन बिगड़ता है, दो बार गिर चुके हैं।", [MYGAIT, MYFALL], []],
+  // Burner / stinger
+  ["en", "Stinger on the right during a tackle, whole arm numb for a minute.", [AR], [RARMR, RHANDR, MDIRECT]],
+  ["en", "Burning from neck to fingertips on the left side, brief.", [RHANDL, AL], []],
+  ["en", "Happens only in contact games, never at rest.", [PACT], [PINTTRIG]],
+  ["hi", "Khel ke dauran baayein haath mein achanak jalan, kuch minute baad theek.", [AL], [PACT, RHANDL, NSPORT]],
+  ["de", "खेल के दौरान दाएं हाथ में अचानक जलन, कुछ मिनट बाद ठीक।", [AR], [PACT, RHANDR, NSPORT]],
+  // Entrapment
+  ["en", "Night-time numbness in both hands, they shake them to wake them up.", [ABIL, PNIGHT], [RBIL, MYHAND]],
+  ["en", "Tingling in the ring and little fingers on the left when leaning on the elbow.", [AL, RHANDL], []],
+  ["en", "The neck is fine, it is all in the wrist.", [], []],
+  ["en", "Pain in the hand when gripping, nothing in the neck.", [], []],
+  // Myofascial
+  ["en", "Tender knots in the right upper trapezius, refers to the temple.", [TRAPR, RTEMP], [RSHTOP]],
+  ["en", "Constant dull ache across the shoulders, worse with stress.", [PCONST], [TRAPL, TRAPR, PCONSTVAR]],
+  ["en", "Eases when they shrug and roll the shoulders.", [VELEV], [VSTRETCH]],
+  ["en", "Cannot keep up with a full day at the desk.", [NWORK], [NCOMP, NREAD]],
+  ["en", "Wakes with pain, has to keep changing pillows.", [NSLEEP], [PMORN]],
+  ["hi", "Computer par kaam karte waqt gardan aur kandhe mein khichav.", [NCOMP], [MPOST, PACT]],
+  ["de", "कंप्यूटर पर काम करते समय गर्दन और कंधे में खिंचाव।", [NCOMP], [MPOST, PACT]],
+  // Red flags
+  ["en", "Fell off a motorbike at speed, helmet cracked, neck pain right away.", [FRHIGH, OTHIGH], [FRSPASM, INTRAUMA, MDIRECT]],
+  ["en", "Cannot move the neck at all after the dive.", [FRSPLINT, MDIVE], [FRHIGH, FRAXIAL]],
+  ["en", "Pins and needles in both arms and legs from the moment of the injury.", [FRNEURO], [ABIL, MYHAND, MYLEG]],
+  ["en", "Older patient, fell backwards down two steps and hit the head.", [FRODON], [FRHIGH, MDIRECT, FRAXIAL]],
+  ["en", "Bilateral facet dislocation on the X-ray.", [FRFACET], []],
+  ["en", "Slurred speech and trouble swallowing since this morning.", [VDYS, VDYSP], []],
+  ["en", "Eyelid droops on the left with a small pupil.", [VHORN], []],
+  ["en", "Sudden worst headache with a stiff neck.", [VTHUN, OTTHUN], [OTDISS, HPRIM, HSEC, HCONC, INSPASM]],
+  ["en", "Sharp pain on bending the neck forward and a feeling that the head is loose.", [INUNST], [INFLEX, GFLEX]],
+  ["en", "Down syndrome.", [INDOWN], []],
+  ["en", "Previous C5-C6 fusion.", [INFUSION], []],
+  ["en", "Had a lump in the neck with night sweats and weight loss.", [OTCONST], [OTCA]],
+  ["en", "Dizzy, double vision and a drop attack last week.", [VDIP, VDROP], [VDIZ]],
+  ["en", "Face is numb on one side.", [VNUMB], []],
+  ["hi", "Achanak sabse tez sir dard, gardan akdi hui.", [VTHUN, OTTHUN], [OTDISS, HPRIM, HSEC, HCONC, INSPASM]],
+  ["de", "आँखों के सामने दोहरा दिखता है, चक्कर आते हैं।", [VDIP], [VDIZ]],
+  // Functional limits
+  ["en", "Cannot check the blind spot when driving.", [NSHOULDER], [NDRIVE]],
+  ["en", "Struggles to look up at shelves and hang the washing.", [NOVER], []],
+  ["en", "Stopped playing badminton because of the neck.", [NSPORT], []],
+  ["en", "Lifting the toddler hurts.", [NCHILD], [NCARRY]],
+  ["en", "Avoids going out with friends.", [NSOCIAL], []],
+  ["en", "Reading and watching TV in bed is difficult.", [NREAD, NTV], [NSLEEP]],
+  ["hi", "Bachche ko godi mein uthana mushkil hai.", [NCHILD], [NCARRY]],
+  ["de", "बाल धोना और सुखाना मुश्किल है।", [NHAIR], []],
+  // must stay silent
+  ["en", "Patient is a retired teacher from Pune.", [], []],
+  ["en", "Medical history: hypertension, on amlodipine.", [], []],
+  ["en", "Pain score is 7 out of 10 today.", [], []],
+  ["en", "She was referred by her GP.", [], []],
+  ["en", "He wants to get back to the gym.", [], []],
+  ["en", "Wife accompanied the patient.", [], []],
+  ["hi", "Mareez pichle mahine bhi aaye the.", [], []],
+  ["de", "मरीज़ की उम्र पैंतालीस साल है।", [], []],
+];

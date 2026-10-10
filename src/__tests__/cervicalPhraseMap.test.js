@@ -36,7 +36,7 @@ describe("realistic stories", () => {
     ["EN-19 fever torticollis", "Stiff neck with a high fever", [K.OTTORT]],
     ["EN-20 none", "No other red flags", [K.OTNO]],
     ["EN-21 fracture", "Landed on my head", [K.FRAXIAL]],
-    ["EN-22 function", "Difficulty driving, cannot turn to check my blind spot", [K.NDRIVE]],
+    ["EN-22 function", "Difficulty driving, cannot turn to check my blind spot", [K.NDRIVE, K.NSHOULDER]], // a blind-spot check IS looking over the shoulder (changed with the clinician-voice sheet)
     ["HI-01", "gardan ke peeche dard hai", [K.POSTN]],
     ["HI-02", "gardan ke bayen taraf dard hota hai", [K.LATL]],
     ["HI-03", "dono haathon me sunnpan", [K.RBIL, K.ABIL, K.MYHAND]],

@@ -13,6 +13,7 @@
 // Left / right answers (L) / (R) are built with sided() from phraseSides.js.
 import { createPhraseMatcher, WORDS } from "./phraseEngine.js";
 import { SIDE_HINGLISH, SIDE_DEVA, LEFT_W, RIGHT_W, BOTH_W, sided } from "./phraseSides.js";
+import { extendPhrases } from "./phrasePattern.js";
 
 const LAT_NECK = sided([
   "{e} side of the neck", "pain on the {e} side of my neck", "{e} neck pain", "neck pain on the {e}", "{e} sided neck pain", "pain in the {e} side of the neck", "{e} lateral neck",
@@ -66,7 +67,7 @@ const REL_ROT = sided([
   "{d} तरफ गर्दन घुमाने से आराम", "{d} तरफ मुड़ने से दर्द कम होता है", "{d} देखने से आराम मिलता है", "गर्दन {d} घुमाने से राहत",
 ]);
 
-export const CERVICAL_PHRASES = {
+const CERVICAL_BASE = {
   location: {
     "Suboccipital / base of skull": [
       "~suboccipital", "base of the skull", "where the neck meets the head", "back of the head at the neck", "just below the skull at the back", "pain at the base of my skull", "under the back of the skull",
@@ -838,6 +839,18 @@ export const CERVICAL_PHRASES = {
   },
 };
 
+
+// Added for the way a CLINICIAN types about a patient ("the patient", "they", short notes) -- see cervicalSheetSet.js. Kept apart from the
+// base lists so the order of the answers (which the tests index by position) never changes.
+const SHEET_PHRASES = {
+};
+const mergePhrases = (base, extra) => {
+  const out = { ...base };
+  for (const [field, opts] of Object.entries(extra)) out[field] = extendPhrases(out[field], opts);
+  return out;
+};
+export const CERVICAL_PHRASES = mergePhrases(CERVICAL_BASE, SHEET_PHRASES);
+
 const { PAIN: PAIN_W, NERVE: NERVE_W } = WORDS;
 // Words that say a sentence is about the neck / about another body part.
 const OWN_W = "neck* gardan गर्दन cervical cervico cervicothoracic nape occiput skull head sir सिर khopdi खोपड़ी trapezius trap traps levator scm scalene shoulder* kandha कंधा arm arms bazu बाजू haath हाथ hand hands finger fingers ungli उंगली elbow* kohni कोहनी leg legs pair पैर tango टांगों walking gait balance jaw jabda जबड़े ear kaan कान eye eyes aankh आंख face chehra चेहरा dizzy dizziness headache";
@@ -881,6 +894,13 @@ const matcher = createPhraseMatcher({
     "redFlagsInstability|Down syndrome / trisomy 21": FAMILY_W,
   },
   hinglish: [
+    [/\s,\s+(?=(?:[^\s,|]+\s+){0,8}(?:better|eases|eased|relieved|helps|helped|improves|aaram|आराम|rahat|राहत)(?=\s|$))/g, " | "], // "worse looking up, and putting the hand on the head eases it" = two statements
+    [/\bright (after|away|now|then|here|before)\b/g, "right_$1"],
+    [/\b(taang|taango|taangon|taangein|tange|tango)\b/g, "tango"],
+    [/\b(peshaab|peshab|pesab|pishab|pesaab)\b/g, "peshab"],
+    [/\b(baanh|baah|banh|bahu|baahu)\b/g, "baanh"],
+    [/\b(seedhi|sidhi|seedhee|sidhee)\b/g, "seedhi"],
+    [/\bsirdard\b/g, "sir dard"],
     ...SIDE_HINGLISH,
     [/\b(gardan|gardhan|gardn|gardaan)\b/g, "gardan"],
     [/\b(kandha|kandhe|kandhon|kanda|kande|kandho)\b/g, "kandha"],
@@ -918,6 +938,7 @@ const matcher = createPhraseMatcher({
     [/\b(potty|potti|pakhana|shauch)\b/g, "potty"],
   ],
   deva: [
+    [/मांसपेशि(यों|यां|यां|याँ|यो)/g, "मांसपेशी"],
     ...SIDE_DEVA,
     [/कंध(ा|े|ों|ो)/g, "कंधा"],
     [/बाजू(ओं|ए|एं|ऐं|ओ)?/g, "बाजू"],
@@ -932,7 +953,7 @@ const matcher = createPhraseMatcher({
   rules: ({ rule, O }) => {
     // ───── shared word lists ─────
     const NECK = "neck* gardan गर्दन cervical";
-    const ARM = "arm arms bazu बाजू";
+    const ARM = "arm arms baanh बांह bazu बाजू";
     const HAND = "hand hands finger fingers fingertips thumb palm ungli उंगली panja पंजा haath हाथ";
     const SHOULDER = "shoulder shoulders upper_arm kandha कंधा";
     const SPREAD = "goes go going radiat* spread* travel* shoots shoot refer* down jata जाता utarta उतरता failta फैलता aata आता";
@@ -940,22 +961,24 @@ const matcher = createPhraseMatcher({
     const TRIG = "set_off set_it_off sets_it_off sets_off brings_it_on bring_it_on brought_it_on triggers triggered trigger brings_on aggravates aggravated worsens worsened flares flare flared makes_it_worse make_it_worse hurts hurt bothers";
     const WHEN = "when whenever while on during with every each par पर jab जब";
     const HELP = "help helps helped helping takes_pressure_off take_pressure_off takes_off takes_away take_away took_away gets_rid relax relaxes relaxed loosen loosens relief relieve relieves relieved ease eases eased settle settles settled calm calms soothe soothes better improves improved works worked aaram आराम rahat राहत fayda फायदा kam कम";
-    const SYMP = PAIN_W + " " + NERVE_W + " weak* weakness heavy tingling numb* pins sunn* सुन्न* jhunjhuni झनझनाहट kamzor कमजोर takleef तकलीफ";
-    const CANT = "cant cannot unable no_longer not_possible impossible afraid scared fear dar डर difficulty difficult trouble hard mushkil मुश्किल dikkat दिक्कत nahi नहीं stop* stopped quit given_up give_up gave_up giving_up avoid* band बंद struggle struggling";
+    const SYMP = PAIN_W + " " + NERVE_W + " weak* weakness heavy burner burners stinger tingling tingle tingles tingled paraesthesia paresthesia numb* pins sunn* सुन्न* jhunjhuni झुनझुनी झनझनाहट kamzor कमजोर takleef तकलीफ";
+    const CANT = "struggles cant cannot unable no_longer not_possible impossible afraid scared fear dar डर difficulty difficult trouble hard mushkil मुश्किल dikkat दिक्कत nahi नहीं stop* stopped quit given_up give_up gave_up giving_up avoid* band बंद struggle struggling";
     const CANTP = CANT + " " + PAIN_W + " problem problems";
+    const HW = "headache* migraine* sir_dard सिर_दर्द सिरदर्द sirdard";
+    const DIFFW = "worse worst hurts hurt painful pain hard harder difficult difficulty struggle struggles struggling trouble limited limits cant cannot unable dikkat दिक्कत mushkil मुश्किल badh* बढ़* aggravat* khichav खिंचाव strain tension";
     const FN = (extra = {}) => ({ selfNeg: true, blockAfter: "nahi नहीं", blockBefore: "koi कोई kisi किसी", ...extra, unless: "started began start onset " + (extra.unless || "") });
 
     // ───── location ─────
     const L = (i) => O("location", i);
     const [SUBOCC, UPPERC, MIDC, LOWERC, ANTN, POSTN, LATL, LATR, CTJ, TRAPL, TRAPR, LEVAT, SCM, SCAL] = Array.from({ length: 14 }, (_, i) => L(i));
     rule("location", SUBOCC, ["base bottom aadhar आधार jod जोड़ neeche niche नीचे under below beneath", "skull khopdi खोपड़ी occiput sir सिर head"], 5, { ctx: "painOrArm", unless: "upper mid middle lower" });
-    rule("location", UPPERC, ["upper upari upar ऊपरी ऊपर top high_up", NECK], 5, { unless: "mid middle lower back" });
+    rule("location", UPPERC, ["upper upari upar ऊपरी ऊपर top high_up", NECK], 5, { unless: "mid middle lower back", block: "shoulder shoulders kandha कंधा", blockAfter: "of_the shoulder shoulders kandha कंधा" });
     rule("location", MIDC, ["mid middle beech बीच centre center madhya मध्य", NECK], 3, { unless: "upper lower back" });
     rule("location", LOWERC, ["lower bottom niche नीचे nichla निचला", NECK], 3, { unless: "upper mid middle back skull sir head" });
     rule("location", ANTN, ["front anterior aage आगे samne सामने", NECK], 3, { ctx: "pain", unless: "head sir back" });
     rule("location", POSTN, ["back posterior peeche पीछे nape pichle", NECK], 3, { ctx: "pain", blockAfter: "karne करने karna kar कर", unless: "head sir skull front shoulder blade lower_back" });
-    rule("location", LATL, [LEFT_W, NECK], 5, { ctx: "pain", block: "arm arms hand hands finger fingers shoulder bazu बाजू haath हाथ kandha कंधा elbow kohni going radiating spreading turn* turning rotat* rotating look* looking tilt* tilting bend* bending ghum* mud* mod dekh* movement", blockBefore: "turn* turning rotat* rotating look* looking tilt* tilting bend* bending ghum* mud* mod dekh* jhuk* झुक* movement", blockAfter: "arm arms hand hands finger fingers bazu बाजू haath हाथ trap traps trapezius kandha कंधा shoulder ghum* mud* mod jhuk* dekh* turn* look* tilt* bend*", unless: "right dayen दायां" });
-    rule("location", LATR, [RIGHT_W, NECK], 5, { ctx: "pain", block: "arm arms hand hands finger fingers shoulder bazu बाजू haath हाथ kandha कंधा elbow kohni going radiating spreading turn* turning rotat* rotating look* looking tilt* tilting bend* bending ghum* mud* mod dekh* movement", blockBefore: "turn* turning rotat* rotating look* looking tilt* tilting bend* bending ghum* mud* mod dekh* jhuk* झुक* movement", blockAfter: "arm arms hand hands finger fingers bazu बाजू haath हाथ trap traps trapezius kandha कंधा shoulder ghum* mud* mod jhuk* dekh* turn* look* tilt* bend*", unless: "left bayen बायां" });
+    rule("location", LATL, [LEFT_W, NECK], 5, { ctx: "pain", block: "arm arms hand hands finger fingers fingertips shoulder bazu बाजू haath हाथ kandha कंधा elbow kohni going radiating spreading turn* turning rotat* rotating look* looking tilt* tilting bend* bending ghum* mud* mod dekh* movement", blockBefore: "turn* turning rotat* rotating look* looking tilt* tilting bend* bending ghum* mud* mod dekh* jhuk* झुक* movement", blockAfter: "arm arms hand hands finger fingers bazu बाजू haath हाथ trap traps trapezius kandha कंधा shoulder ghum* mud* mod jhuk* dekh* turn* look* tilt* bend*", unless: "right dayen दायां" });
+    rule("location", LATR, [RIGHT_W, NECK], 5, { ctx: "pain", block: "arm arms hand hands finger fingers fingertips shoulder bazu बाजू haath हाथ kandha कंधा elbow kohni going radiating spreading turn* turning rotat* rotating look* looking tilt* tilting bend* bending ghum* mud* mod dekh* movement", blockBefore: "turn* turning rotat* rotating look* looking tilt* tilting bend* bending ghum* mud* mod dekh* jhuk* झुक* movement", blockAfter: "arm arms hand hands finger fingers bazu बाजू haath हाथ trap traps trapezius kandha कंधा shoulder ghum* mud* mod jhuk* dekh* turn* look* tilt* bend*", unless: "left bayen बायां" });
     rule("location", CTJ, ["junction base bottom aadhar आधार jod जोड़", NECK, "back peeth पीठ shoulders shoulder"], 7, { ctx: "painOrArm", unless: "skull head" });
     rule("location", TRAPL, [LEFT_W, "trapezius trap traps upper_trap"], 4);
     rule("location", TRAPR, [RIGHT_W, "trapezius trap traps upper_trap"], 4);
@@ -974,28 +997,28 @@ const matcher = createPhraseMatcher({
     rule("radiation", REYE, ["behind peeche पीछे", "eye eyes eyeball aankh आंख"], 3, { ctx: "painOrArm" });
     rule("radiation", RTEMP, ["temple temples temporal kanpati कनपटी"], 1, { ctx: "painOrArm" });
     rule("radiation", RJAW, ["jaw jabda जबड़े tmj"], 1, { ctx: "painOrArm" });
-    rule("radiation", REAR, ["ear kaan कान"], 1, { ctx: "painOrArm", unless: "earlier year years near hear" });
-    rule("radiation", RSHTOP, ["top tip nok नोक upar ऊपर", "shoulder* kandha कंधा"], 4, { ctx: "painOrArm", unless: "maspeshi मांसपेशी muscle trapezius trap" });
-    rule("radiation", RSHL, [LEFT_W, "shoulder upper_arm kandha कंधा"], 4, { ctx: "painOrArm", unless: "right dayen दायां top_of tip_of upar ऊपर look looking over turn* turning", block: "trapezius trap", blockAfter: "blade blades scapula" });
-    rule("radiation", RSHR, [RIGHT_W, "shoulder upper_arm kandha कंधा"], 4, { ctx: "painOrArm", unless: "left bayen बायां top_of tip_of upar ऊपर look looking over turn* turning", block: "trapezius trap", blockAfter: "blade blades scapula" });
-    rule("radiation", RARML, [LEFT_W, ARM], 4, { ctx: "painOrArm", unless: "upper_arm" });
-    rule("radiation", RARMR, [RIGHT_W, ARM], 4, { ctx: "painOrArm", unless: "upper_arm" });
-    rule("radiation", RHANDL, [LEFT_W, HAND], 4, { ctx: "painOrArm" });
-    rule("radiation", RHANDR, [RIGHT_W, HAND], 4, { ctx: "painOrArm" });
-    rule("radiation", RSHL, [LEFT_W, NECK, SPREAD, "shoulder upper_arm kandha कंधा"], 10, { unless: "right dayen दायां" });
-    rule("radiation", RSHR, [RIGHT_W, NECK, SPREAD, "shoulder upper_arm kandha कंधा"], 10, { unless: "left bayen बायां" });
+    rule("radiation", REAR, ["ear kaan कान"], 1, { ctx: "painOrArm", unless: "earlier year years near hear phone mobile holding held toward towards tilt* drop* dropping lean* leaning" });
+    rule("radiation", RSHTOP, ["top tip nok नोक upar ऊपर", "shoulder* kandha कंधा"], 4, { ctx: "painOrArm", unless: "maspeshi मांसपेशी muscle trapezius trap knots knot bands band trigger both dono दोनों" });
+    rule("radiation", RSHL, [LEFT_W, "shoulder upper_arm kandha कंधा"], 4, { ctx: "painOrArm", unless: "right dayen दायां top_of tip_of upar ऊपर look looking over turn* turning toward towards tilt* bend* bending drop* dropping lean* leaning", block: "trapezius trap", blockAfter: "blade blades scapula" });
+    rule("radiation", RSHR, [RIGHT_W, "shoulder upper_arm kandha कंधा"], 4, { ctx: "painOrArm", unless: "left bayen बायां top_of tip_of upar ऊपर look looking over turn* turning toward towards tilt* bend* bending drop* dropping lean* leaning", block: "trapezius trap", blockAfter: "blade blades scapula" });
+    rule("radiation", RARML, [LEFT_W, ARM], 4, { ctx: "painOrArm", unless: "upper_arm", block: "right dayen दायां दाएं daayein", blockBefore: "turn* turning rotate* tilt* tilting bend* bending lean* leaning look* looking away toward towards" });
+    rule("radiation", RARMR, [RIGHT_W, ARM], 4, { ctx: "painOrArm", unless: "upper_arm", block: "left bayen बायां बाएं baayein", blockBefore: "turn* turning rotate* tilt* tilting bend* bending lean* leaning look* looking away toward towards" });
+    rule("radiation", RHANDL, [LEFT_W, HAND], 4, { ctx: "painOrArm", block: "right dayen दायां दाएं daayein", blockBefore: "turn* turning rotate* tilt* tilting bend* bending lean* leaning look* looking away toward towards" });
+    rule("radiation", RHANDR, [RIGHT_W, HAND], 4, { ctx: "painOrArm", block: "left bayen बायां बाएं baayein", blockBefore: "turn* turning rotate* tilt* tilting bend* bending lean* leaning look* looking away toward towards" });
+    rule("radiation", RSHL, [LEFT_W, NECK, SPREAD, "shoulder upper_arm kandha कंधा"], 10, { blockAfter: "blade blades scapula", unless: "right dayen दायां" });
+    rule("radiation", RSHR, [RIGHT_W, NECK, SPREAD, "shoulder upper_arm kandha कंधा"], 10, { blockAfter: "blade blades scapula", unless: "left bayen बायां" });
     rule("radiation", RARML, [LEFT_W, NECK, SPREAD, ARM], 10, { unless: "right dayen दायां upper_arm" });
     rule("radiation", RARMR, [RIGHT_W, NECK, SPREAD, ARM], 10, { unless: "left bayen बायां upper_arm" });
     rule("radiation", RHANDL, [LEFT_W, NECK, SPREAD, "hand hands finger fingers fingertips ungli उंगली"], 12, { unless: "right dayen दायां" });
     rule("radiation", RHANDR, [RIGHT_W, NECK, SPREAD, "hand hands finger fingers fingertips ungli उंगली"], 12, { unless: "left bayen बायां" });
-    rule("radiation", RBIL, [BOTH_W, "arms hands bazu बाजू haath हाथ upper_limbs upper_limb", SYMP], 9, { unless: "legs leg pair पैर feet" });
+    rule("radiation", RBIL, [BOTH_W, "arm arms hand hands bazu बाजू haath हाथ baanh बांह upper_limbs upper_limb", SYMP], 9, { unless: "legs leg pair पैर feet" });
     rule("radiation", RCHEST, [SPREAD, "chest chhati छाती seena सीना"], 7);
     rule("radiation", RBLADE, [SPREAD, "shoulder_blade shoulder_blades blade blades scapula interscapular kandhon_ke_beech"], 6);
 
     // ───── mechanism ─────
     const M = (i) => O("mechanismType", i);
     const [MINS, MREAR, MFRONT, MSIDE, MHFLEX, MHEXT, MFLROT, MDIRECT, MDIVE, MPOST, MSLEEP, MLIFT, MSURG, MILL] = Array.from({ length: 14 }, (_, i) => M(i));
-    const CRASH = "accident crash collision collided smashed rammed ploughed ran_into takkar टक्कर takra टकरा thok ठोक mva";
+    const CRASH = "accident crash collision collided smashed rammed ploughed ran_into takkar टक्कर takra टकरा thok ठोक mva rta rtc impact";
     const VEH = "car gaadi गाड़ी bike scooter vehicle lorry truck bus motorbike motorcycle";
     rule("mechanismType", MREAR, ["rear rear_ended rear_end behind peeche_se पीछे_से", CRASH], 6, { unless: "front head_on side" });
     rule("mechanismType", MREAR, ["rear_ended rear_end shunted"], 2);
@@ -1010,8 +1033,8 @@ const matcher = createPhraseMatcher({
     rule("mechanismType", MDIVE, ["dive diving dived swimming pool shallow", "water pool hit bottom sir सिर takra टकरा"], 8);
     rule("mechanismType", MDIVE, ["dive dived diving", "shallow water pool end"], 6);
     rule("mechanismType", MPOST, ["posture slouch* hunch* desk laptop computer mobile phone screen", "hours years long ghante घंटे ghanto घंटों der देर lambe लंबे"], 8, { unless: "cant cannot unable possible brings_it_on brings_on makes_it_worse make_it_worse worse worsens aggravates triggers set_it_off" });
-    rule("mechanismType", MSLEEP, ["slept sleeping sleep woke so सो sote सोते sone सोने", "awkward wrong bad pillow position sofa twisted stiff crick galat गलत takiye तकिये"], 8, { ctx: "painOrArm" });
-    rule("mechanismType", MLIFT, ["lift* lifted lifting carry carrying carried uthane उठाने uthate उठाते", "heavy weight box bag suitcase bhaari भारी wazan वजन bojh बोझ"], 8, { ctx: "painOrArm", unless: "cant cannot unable avoid" });
+    rule("mechanismType", MSLEEP, ["slept sleeping sleep woke wake waking uthte उठते so सो sote सोते sone सोने", "awkward wrong bad pillow position sofa twisted stiff crick galat गलत ajeeb अजीब draught draft akdan अकड़न अकड़ी locked stuck atak अटक jam जाम takiye तकिये"], 8, { ctx: "painOrArm", unless: "and_so" });
+    rule("mechanismType", MLIFT, ["lift* lifted lifting carry carrying carried uthane उठाने uthate उठाते", "heavy weight box bag suitcase sack bori बोरी bhaari भारी wazan वजन bojh बोझ"], 8, { ctx: "painOrArm", unless: "cant cannot unable avoid" });
     rule("mechanismType", MSURG, ["surgery operation operated ऑपरेशन सर्जरी fusion", "after post since following baad बाद"], 6);
     rule("mechanismType", MILL, ["viral flu fever infection cold bukhar बुखार bimari बीमारी", "after post following baad बाद"], 6, { unless: "with_fever" });
     rule("mechanismType", MINS, ["gradual gradually slowly slow dheere धीरे", "start* began onset shuru शुरू come came badh बढ़ worse worsen* worsened increas*"], 6, { ctx: "painOrArm", selfNeg: true, unless: "improv* better theek ठीक kam कम settl*" });
@@ -1022,12 +1045,12 @@ const matcher = createPhraseMatcher({
     // ───── arm / hand symptoms (one answer) ─────
     const AP = (i) => O("armPresent", i);
     const [ANO, AL, AR, ABIL] = Array.from({ length: 4 }, (_, i) => AP(i));
-    rule("armPresent", AL, [LEFT_W, ARM + " " + HAND, SYMP], 14, { unless: "both dono दोनों" });
-    rule("armPresent", AR, [RIGHT_W, ARM + " " + HAND, SYMP], 14, { unless: "both dono दोनों" });
+    rule("armPresent", AL, [LEFT_W, ARM + " " + HAND, SYMP], 14, { unless: "both dono दोनों", block: "right dayen दायां दाएं daayein jhuk* झुक* bend* bending tilt* tilting", blockBefore: "turn* turning rotate* tilt* tilting bend* bending lean* leaning look* looking away toward towards" });
+    rule("armPresent", AR, [RIGHT_W, ARM + " " + HAND, SYMP], 14, { unless: "both dono दोनों right_after right_away right_now right_then", block: "left bayen बायां बाएं baayein jhuk* झुक* bend* bending tilt* tilting", blockBefore: "turn* turning rotate* tilt* tilting bend* bending lean* leaning look* looking away toward towards" });
     rule("armPresent", AL, [LEFT_W, NECK, SPREAD, ARM + " " + HAND], 12, { unless: "right dayen दायां" });
     rule("armPresent", AR, [RIGHT_W, NECK, SPREAD, ARM + " " + HAND], 12, { unless: "left bayen बायां" });
-    rule("armPresent", ABIL, [BOTH_W, "arms hands bazu बाजू haath हाथ", SYMP], 9, { unless: "legs leg pair पैर feet" });
-    rule("armPresent", ANO, ["no without nahi नहीं koi कोई", "arm arms hand hands bazu बाजू haath हाथ", "symptom symptoms tingling numbness numb pins pins_and_needles pain weakness jhunjhuni झनझनाहट sunn सुन्न dikkat दिक्कत takleef"], 6, { selfNeg: true });
+    rule("armPresent", ABIL, [BOTH_W, "arm arms hand hands bazu बाजू haath हाथ baanh बांह", SYMP], 9, { unless: "legs leg pair पैर feet" });
+    rule("armPresent", ANO, ["no without nahi नहीं koi कोई", "arm arms hand hands bazu बाजू haath हाथ", "symptom symptoms tingling numbness numb pins pins_and_needles pain weakness jhunjhuni झनझनाहट sunn सुन्न dikkat दिक्कत takleef"], 6, { selfNeg: true, unless: "difference farak फर्क फरक change changes changed alter alters altered" });
 
     // ───── Lhermitte's sign (one answer) ─────
     const LH = (i) => O("lhermitte", i);
@@ -1044,14 +1067,14 @@ const matcher = createPhraseMatcher({
     const [AFLEX, AEXT, AROTL, AROTR, ASBL, ASBR, AQL, AQR, AFLROT, ASUST, AQUICK, AALL] = Array.from({ length: 12 }, (_, i) => A(i));
     aggRule(AFLEX, ["looking look bending bend flex* jhuk* झुक* dekh* देख* chin", "down niche नीचे forward aage आगे phone mobile reading screen"], 4, { ctx: "pain", block: "up upar ऊपर back backwards peeche पीछे turn* rotat* ghum*" , reliefKills: true, reliefAfter: true });
     aggRule(AFLEX, ["looking_down look_down bending_forward bending_down flexing phone mobile reading", PAINX + " " + TRIG], 8, { reliefKills: true, reliefAfter: true });
-    aggRule(AEXT, ["looking look tilt* bend* bending extend* extension head_back dekh* देख*", "up upar ऊपर back backwards peeche पीछे ceiling chhat"], 4, { ctx: "painOrArm", block: "down niche नीचे turn* rotat* ghum*", blockAfter: "left right bayen dayen बायां दायां", reliefKills: true, reliefAfter: true });
+    aggRule(AEXT, ["looking look tilt* bend* bending extend* extension head_back dekh* देख* jhuk* झुक*", "up upar ऊपर back backwards peeche पीछे ceiling chhat"], 4, { ctx: "painOrArm", unless: "forward forwards aage आगे down_back", block: "down niche नीचे turn* rotat* ghum*", blockAfter: "left right bayen dayen बायां दायां", reliefKills: true, reliefAfter: true });
     aggRule(AROTL, [LEFT_W, "turn* turning rotat* look* looking ghum* घूम* mud* मुड़* mod dekh* देख*"], 6, { ctx: "painOrArm", unless: "extend* extension up upar ऊपर back backwards peeche tilt* bend* jhuk* झुक* side_bend arm arms hand" , reliefKills: true, reliefAfter: true });
     aggRule(AROTR, [RIGHT_W, "turn* turning rotat* look* looking ghum* घूम* mud* मुड़* mod dekh* देख*"], 6, { ctx: "painOrArm", unless: "extend* extension up upar ऊपर back backwards peeche tilt* bend* jhuk* झुक* side_bend arm arms hand" , reliefKills: true, reliefAfter: true });
-    aggRule(ASBL, [LEFT_W, "side_bend tilt* tilting bend* bending jhuk* झुक* ear kaan कान"], 6, { ctx: "painOrArm", unless: "turn* rotat* ghum* look* looking extension" , reliefKills: true, reliefAfter: true });
-    aggRule(ASBR, [RIGHT_W, "side_bend tilt* tilting bend* bending jhuk* झुक* ear kaan कान"], 6, { ctx: "painOrArm", unless: "turn* rotat* ghum* look* looking extension" , reliefKills: true, reliefAfter: true });
+    aggRule(ASBL, [LEFT_W, "side_bend tilt* tilting bend* bending jhuk* झुक* ear kaan कान lean* leaning leaned"], 6, { blockNext: "haath हाथ bazu बाजू baanh बांह kandha कंधा arm arms hand hands", ctx: "painOrArm", unless: "turn* rotat* ghum* look* looking extension elbow kohni कोहनी wrist peeche पीछे backward backwards" , reliefKills: true, reliefAfter: true });
+    aggRule(ASBR, [RIGHT_W, "side_bend tilt* tilting bend* bending jhuk* झुक* ear kaan कान lean* leaning leaned"], 6, { blockNext: "haath हाथ bazu बाजू baanh बांह kandha कंधा arm arms hand hands", ctx: "painOrArm", unless: "turn* rotat* ghum* look* looking extension elbow kohni कोहनी wrist peeche पीछे backward backwards" , reliefKills: true, reliefAfter: true });
     aggRule(AQL, [LEFT_W, "up upar ऊपर back backwards peeche पीछे extension quadrant", "turn* turned rotat* ghum* घूम* mud* मुड़* mod dekh* देख* look* looking"], 9, { reliefKills: true, reliefAfter: true });
     aggRule(AQR, [RIGHT_W, "up upar ऊपर back backwards peeche पीछे extension quadrant", "turn* turned rotat* ghum* घूम* mud* मुड़* mod dekh* देख* look* looking"], 9, { reliefKills: true, reliefAfter: true });
-    aggRule(AFLEX, ["sir सिर head gardan गर्दन", "jhuk* झुक*", PAIN_W], 6, { unless: "side tedhi peeche back backwards" });
+    aggRule(AFLEX, ["sir सिर head gardan गर्दन", "jhuk* झुक*", PAIN_W], 6, { unless: "side tedhi peeche back backwards taraf तरफ left right bayen dayen बायां दायां" });
     aggRule(AFLROT, ["down niche नीचे forward aage आगे jhuk* झुक* flexion bend* bending", "turn* turning rotat* twist* ghum* घूम* mud* मुड़* mod"], 6, { unless: "twisted rotated extension up upar ऊपर back backwards peeche" , reliefKills: true, reliefAfter: true });
     aggRule(ASUST, ["same one single sustained prolonged ek_hi एक_ही long der देर lambe लंबे", "position posture mudra मुद्रा sthiti स्थिति holding keeping rakhne रखने"], 8, { ctx: "pain" , reliefKills: true, reliefAfter: true });
     aggRule(AQUICK, ["sudden suddenly quick quickly jerky jerk jerks abrupt jolt achanak अचानक jhatke झटके tezi तेजी", "movement movements motion turn* harkat हरकत hilne हिलने ghum*"], 6, { ctx: "painOrArm" , reliefKills: true, reliefAfter: true });
@@ -1063,23 +1086,23 @@ const matcher = createPhraseMatcher({
     const RM = (i) => O("relMovements", i);
     const [RCHIN, RRETR, REXT, RFLEX, RROTL, RROTR, RMCK, RSCAP, RELEV, RARM, RSTRETCH, RSHOWER] = Array.from({ length: 12 }, (_, i) => RM(i));
     rule("relMovements", RCHIN, ["chin_tuck chin_tucks chin_in thuddi", HELP], 6, { blockAfter: "nothing none" });
-    rule("relMovements", RRETR, ["retraction retract* pulling_head sir_ko_peeche", HELP], 10, { blockAfter: "nothing none" });
+    rule("relMovements", RRETR, ["retraction retract* pulling_head sir_ko_peeche", HELP], 10, { blockAfter: "nothing none", unless: "scapular scapula shoulder_blade shoulder_blades blade blades" });
     rule("relMovements", REXT, ["looking_up tilting_back head_back bending_backwards neck_extension upar_dekhne ऊपर_देखने peeche_jhukne", HELP], 7, { blockAfter: "nothing none" });
     rule("relMovements", RFLEX, ["looking_down bending_forward neck_flexion chin_to_chest neeche_dekhne नीचे_देखने aage_jhukne", HELP], 7, { blockAfter: "nothing none" });
     rule("relMovements", RROTL, [LEFT_W, "turn* turning rotat* look* looking ghum* घूम* mud* मुड़* dekh* देख*", HELP], 9, { blockAfter: "nothing none" });
     rule("relMovements", RROTR, [RIGHT_W, "turn* turning rotat* look* looking ghum* घूम* mud* मुड़* dekh* देख*", HELP], 9, { blockAfter: "nothing none" });
     rule("relMovements", RMCK, ["direction disha दिशा mckenzie preference", HELP], 8, { blockAfter: "nothing none" });
-    rule("relMovements", RSCAP, ["shoulder_blade shoulder_blades scapular kandhe_peeche कंधे_पीछे shoulders_back pulling_shoulders squeeze squeezing", HELP], 8, { blockAfter: "nothing none" });
-    rule("relMovements", RELEV, ["shrug shrugging shrugs raising_shoulder shoulders_up kandhe_upar कंधे_ऊपर ucchkane उचकाने sikodne सिकोड़ने", HELP], 8, { blockAfter: "nothing none" });
+    rule("relMovements", RSCAP, ["shoulder_blade shoulder_blades scapular kandhe_peeche कंधे_पीछे shoulders_back pulling_shoulders squeeze squeezing pinch pinching शोल्डर_ब्लेड", HELP], 14, { blockAfter: "nothing none" });
+    rule("relMovements", RELEV, ["shrug shrugging shrugs raising_shoulder shoulders_up kandhe_upar कंधे_ऊपर ucchkane uchkane उचकाने sikodne सिकोड़ने", HELP], 14, { blockAfter: "nothing none" });
     rule("relMovements", RARM, ["hand arm haath हाथ bazu बाजू", "overhead head sir सिर top upar ऊपर", HELP], 9, { blockAfter: "nothing none" });
-    rule("relMovements", RSTRETCH, ["stretch* khichav खिंचाव tanne तानने", HELP], 8, { blockAfter: "nothing none" });
-    rule("relMovements", RSHOWER, ["shower hot_water garam_paani गरम_पानी nahane नहाने", "neck gardan गर्दन", HELP], 10, { blockAfter: "nothing none" });
-    rule("relMovements", RSHOWER, ["shower hot_shower nahane नहाने", HELP], 6, { blockAfter: "nothing none" });
+    rule("relMovements", RSTRETCH, ["stretch* स्ट्रेच* khichav खिंचाव tanne तानने", HELP], 14, { blockAfter: "nothing none" });
+    rule("relMovements", RSHOWER, ["shower hot_water garam_paani गरम_पानी गर्म_पानी nahane नहाने", "neck gardan गर्दन", HELP], 10, { blockAfter: "nothing none" });
+    rule("relMovements", RSHOWER, ["shower hot_shower hot_water garam_paani गरम_पानी गर्म_पानी nahane नहाने", HELP], 12, { blockAfter: "nothing none" });
 
     // ───── 24-hour pattern ─────
     const P = (i) => O("overallPattern", i);
     const [PCONST, PCONSTVAR, PINTTRIG, PINTUNP, PACT, PPOS, PMORN, PEVE, PNIGHT, PFLARE, PWARM, PGONE] = Array.from({ length: 12 }, (_, i) => P(i));
-    rule("overallPattern", PCONST, [PAIN_W, "all_day all_time whole_day entire_day whole_time day_and_night 24_hours constantly never_stops nonstop non_stop din_bhar pura_din poora_din पूरा_दिन पूरे_दिन har_waqt har_samay हर_समय lagatar लगातार din_raat दिन_रात"], 8, { selfNeg: true, noComma: true, block: "after when while during from if only jab जब" });
+    rule("overallPattern", PCONST, [PAIN_W, "all_day all_time whole_day entire_day whole_time day_and_night 24_hours constantly never_stops nonstop non_stop din_bhar pura_din poora_din पूरा_दिन पूरे_दिन har_waqt har_samay हर_समय lagatar लगातार din_raat दिन_रात"], 8, { selfNeg: true, noComma: true, block: "after when while during from if only jab जब", unless: "badh* बढ़* builds build building" });
     rule("overallPattern", PCONST, ["never", "away stops ends eases go goes", PAIN_W], 6, { selfNeg: true });
     rule("overallPattern", PINTUNP, ["unpredictable random randomly no_pattern out_of_nowhere no_reason", PAIN_W + " pain episodes episode attacks attack"], 6, { selfNeg: true });
     rule("overallPattern", PINTUNP, ["comes_and_goes on_and_off intermittent come_and_go", "no_pattern random unpredictable no_reason"], 8, { selfNeg: true });
@@ -1088,48 +1111,50 @@ const matcher = createPhraseMatcher({
     rule("overallPattern", PPOS, ["depends depend dependent", "hold holding position posture"], 6);
     rule("overallPattern", PINTTRIG, ["certain specific particular khaas खास", "things activities movements harkat हरकत kaam काम"], 4, { ctx: "pain" });
     rule("overallPattern", PACT, ["only sirf सिर्फ", "activity activities exercise kaam काम work working"], 7);
+    rule("overallPattern", PACT, ["only sirf सिर्फ", "game games sport sports playing play match contact training"], 6);
     rule("overallPattern", PMORN, ["morning subah सुबह uthte उठते", PAIN_W + " stiff* akdan akad* अकड़* jakad* जकड़*"], 6, { noComma: true });
     rule("overallPattern", PEVE, ["evening shaam शाम end_of_day by_evening din_dhalte दिन_ढलते", "worse worst more zyada ज्यादा badh बढ़ " + PAINX], 6, { reliefKills: true, noComma: true });
     rule("overallPattern", PNIGHT, ["night raat रात", "worse worst wakes woke jaga जगा khul खुल badh बढ़ zyada ज्यादा"], 6, { ctx: "pain", reliefKills: true, unless: "sweats sweat sweating sweaty" });
-    rule("overallPattern", PNIGHT, ["night raat रात", PAIN_W], 6, { reliefKills: true, noComma: true, block: "only_when only_if only_while when while if jab जब sweats sweat sweating" });
-    rule("overallPattern", PWARM, ["warm* loosen* ease* eases improve* better aaram आराम rahat राहत kam कम", "moving move movement hilne हिलने chalne चलने once_i_get_going"], 8, { unless: "worse" });
+    rule("overallPattern", PNIGHT, ["night raat रात", PAIN_W], 6, { reliefKills: true, noComma: true, block: "only_when only_if only_while when while if jab जब sweats sweat sweating began started start came" });
+    rule("overallPattern", PWARM, ["warm* loosen* ease* eases improve* better aaram आराम rahat राहत kam कम", "moving move movement walk walking walks hilne हिलने chalne चलने once_i_get_going"], 8, { unless: "worse" });
     rule("overallPattern", PGONE, ["gone nothing fine ok okay symptom_free pain_free normal bilkul_nahi बिल्कुल_नहीं kuch_nahi कुछ_नहीं", "between beech बीच episodes episode attacks attack flare_ups daure दौरे"], 8, { selfNeg: true });
     rule("overallPattern", PFLARE, ["flare flares flared flare_ups episodes episode attacks daura दौरा", "constant background always hamesha हमेशा lagatar लगातार baseline ongoing"], 8, { ctx: "pain" });
 
     // ───── headache (one answer) ─────
     const HP = (i) => O("haPresent", i);
     const [HNO, HPRIM, HSEC, HCONC, HPREV] = Array.from({ length: 5 }, (_, i) => HP(i));
-    rule("haPresent", HNO, ["no without nahi नहीं", "headache* migraine* sir_dard सिर_दर्द"], 4, { selfNeg: true });
-    rule("haPresent", HPRIM, ["headache* sir_dard सिर_दर्द", "main primary mukhya मुख्य biggest worst_part worst_thing sabse_badi सबसे_बड़ी mostly zyadatar ज्यादातर complaint problem"], 6);
-    rule("haPresent", HSEC, ["headache* sir_dard सिर_दर्द", "neck gardan गर्दन"], 7, { unless: "no not nahi नहीं without unrelated separate" });
-    rule("haPresent", HCONC, ["headache* migraine* sir_dard सिर_दर्द", "unrelated separate alag अलग also too bhi भी concurrent"], 7);
-    rule("haPresent", HPREV, ["headache* sir_dard सिर_दर्द", "past previous previously used_to before pehle पहले years_ago purane पुराने"], 7, { selfNeg: true });
+    rule("haPresent", HNO, ["no without dont doesnt never nahi नहीं", HW], 4, { selfNeg: true });
+    rule("haPresent", HPRIM, [HW, "main primary mukhya मुख्य biggest worst_part worst_thing sabse_badi सबसे_बड़ी mostly mainly most bother* bothers zyadatar ज्यादातर complaint problem"], 6);
+    rule("haPresent", HSEC, [HW, "neck gardan गर्दन"], 7, { unless: "no not nahi नहीं without unrelated separate main primary chief mukhya मुख्य minor" });
+    rule("haPresent", HCONC, [HW, "unrelated separate alag अलग also too bhi भी concurrent"], 7);
+    rule("haPresent", HPREV, [HW, "past previous previously used_to before pehle पहले years_ago purane पुराने"], 7, { selfNeg: true });
 
     // ───── myelopathy screen ─────
     const MY = (i) => O("redFlagsMyelopathy", i);
     const [MYNO, MYHAND, MYFINE, MYGAIT, MYFALL, MYLEG, MYHYPER, MYBAB, MYHOFF, MYBLAD, MYBOW, MYLHER, MYPROG] = Array.from({ length: 13 }, (_, i) => MY(i));
     rule("redFlagsMyelopathy", MYHAND, [BOTH_W, "hand hands haath हाथ fingers grip", "numb* clumsy weak* tingl* pins pins_and_needles sunn* सुन्न* pakad पकड़ drop* gir* गिर* jhunjhuni झनझनाहट kamzor कमजोर"], 9);
-    rule("redFlagsMyelopathy", MYFINE, ["button buttons writing handwriting write likhne लिखने dexterity fine_motor fine_movements", "difficulty trouble hard cant cannot unable dikkat दिक्कत mushkil मुश्किल worse clumsy fumbl* nahi नहीं"], 8, { selfNeg: true, blockAfter: "nahi नहीं", blockBefore: "koi कोई" });
+    rule("redFlagsMyelopathy", MYFINE, ["button buttons writing handwriting write pen pencil spoon dropping drops dropped likhne लिखने dexterity fine_motor fine_movements", "difficulty difficult struggle struggles struggling trouble hard cant cannot unable dikkat दिक्कत mushkil मुश्किल worse clumsy fumbl* nahi नहीं"], 8, { selfNeg: true, blockAfter: "nahi नहीं", blockBefore: "koi कोई" });
     rule("redFlagsMyelopathy", MYFINE, ["fine_motor fine_finger dexterity"], 2);
     rule("redFlagsMyelopathy", MYGAIT, ["unsteady staggering stagger* wobbl* off_balance unbalanced ladkhada* लड़खड़ा* santulan संतुलन ataxi* wide_based", "walk walking gait chalne चलने chalte चलते feet foot"], 8);
-    rule("redFlagsMyelopathy", MYFALL, ["fall falls falling fell gir* गिर*", "unexplained no_reason without_reason repeated repeatedly keeps frequent often baar_baar बार_बार bina_wajah बिना_वजह several"], 7, { selfNeg: true });
-    rule("redFlagsMyelopathy", MYLEG, [BOTH_W + " legs", "legs leg pair पैर tango टांगों", "weak* weakness stiff* heavy heaviness spastic kamzor कमजोर akdan जकड़न sakht सख्त bhaari भारी"], 8);
-    rule("redFlagsMyelopathy", MYLEG, ["pair पैर tango टांगों legs leg", "weak* weakness stiff* heavy heaviness spastic kamzor कमजोर akdan जकड़न sakht सख्त bhaari भारी"], 5, { unless: "left right bayen dayen बायां दायां one_leg ek एक single" });
-    rule("redFlagsMyelopathy", MYGAIT, ["unsteady unbalanced off_balance staggering wobbly"], 2);
+    rule("redFlagsMyelopathy", MYFALL, ["fall falls falling fell fallen gir* गिर*", "unexplained no_reason without_reason repeated repeatedly keeps frequent often baar_baar बार_बार bina_wajah बिना_वजह several twice thrice couple times baar बार x2 x3 multiple"], 7, { selfNeg: true });
+    rule("redFlagsMyelopathy", MYLEG, [BOTH_W + " legs", "legs leg pair पैर tango टांगों", "weak* weakness stiff* heavy heaviness spastic kamzor कमजोर akdan अकड़न जकड़न sakht सख्त bhaari भारी"], 8);
+    rule("redFlagsMyelopathy", MYLEG, ["pair पैर tango टांगों legs leg", "weak* weakness stiff* heavy heaviness spastic kamzor कमजोर akdan अकड़न जकड़न sakht सख्त bhaari भारी"], 5, { unless: "left right bayen dayen बायां दायां one_leg ek एक single" });
+    rule("redFlagsMyelopathy", MYGAIT, ["unsteady unbalanced off_balance staggering wobbly"], 2, { unless: "head neck gardan गर्दन sir सिर" });
     rule("redFlagsMyelopathy", MYPROG, ["progress* progressing worsening deteriorating", "weak* numb* sunn* symptoms neurological"], 8);
-    rule("redFlagsMyelopathy", MYBLAD, ["bladder urine peshab पेशाब urinary", "new difficulty control leak* incontinen* retention urgency nayi नई rokne रोकने dikkat दिक्कत"], 8);
+    rule("redFlagsMyelopathy", MYBLAD, ["bladder urine peshab पेशाब urinary", "new difficulty cant cannot hold holding control leak* incontinen* retention urgency nayi नई rokne रोकने dikkat दिक्कत"], 8);
     rule("redFlagsMyelopathy", MYBOW, ["bowel bowels stool potty पॉटी faecal fecal", "new difficulty control leak* incontinen* constipation nayi नई rokne रोकने dikkat दिक्कत kabz कब्ज"], 8);
     rule("redFlagsMyelopathy", MYPROG, ["rapid* quickly fast tezi तेजी", "progress* worsen* worse deteriorat* badh बढ़ kharab खराब bigad बिगड़"], 6);
     rule("redFlagsMyelopathy", MYBAB, ["babinski babinskis", "positive present"], 4);
+    rule("redFlagsMyelopathy", MYBAB, ["upgoing up_going extensor", "toe toes plantar response"], 4);
     rule("redFlagsMyelopathy", MYHOFF, ["hoffman hoffmans hoffmann hoffmanns", "positive present"], 4);
-    rule("redFlagsMyelopathy", MYLHER, ["lhermitte lhermittes", "sign positive present hai"], 4);
+    rule("redFlagsMyelopathy", MYLHER, ["lhermitte lhermittes", "sign positive present hai yes"], 4);
     rule("redFlagsMyelopathy", MYLHER, ["shock shocks karant करंट bijli बिजली zap zaps zapping electric electricity electrical", "spine back reedh रीढ peeth पीठ down", "neck gardan गर्दन flex* bend* look* chin niche नीचे jhuk झुक dekh देख"], 12, { unless: "no not nahi नहीं never", selfNeg: true });
 
     // ───── VBI screen ─────
     const VB = (i) => O("redFlagsVbi", i);
     const [VNO, VDIZ, VDIP, VDROP, VDYS, VDYSP, VATAX, VNAUS, VNYS, VNUMB, VTHUN, VHORN] = Array.from({ length: 12 }, (_, i) => VB(i));
-    rule("redFlagsVbi", VDIZ, ["dizzy dizziness giddy giddiness vertigo lightheaded chakkar चक्कर spinning", "neck head gardan गर्दन sir सिर turn* rotat* look* ghum* घूम* movement move moving hilane हिलाने"], 8);
-    rule("redFlagsVbi", VDIP, ["double diplopia do_do दो_दो", "vision see* seeing look looks looking dikh* दिख* images"], 4);
+    rule("redFlagsVbi", VDIZ, ["dizzy dizziness giddy giddiness vertigo lightheaded faint woozy swim swims swimming chakkar चक्कर spinning", "neck head gardan गर्दन sir सिर turn* rotat* look* ghum* घूम* movement move moving hilane हिलाने"], 8);
+    rule("redFlagsVbi", VDIP, ["double doubles doubled doubling diplopia dohra दोहरा do_do दो_दो", "vision see* seeing look looks looking dikh* दिख* images"], 4);
     rule("redFlagsVbi", VDROP, ["drop dropped collapse* collapsed legs_give_way gir* गिर*", "suddenly sudden no_warning without_warning achanak अचानक bina_warning"], 8, { selfNeg: true });
     rule("redFlagsVbi", VDYS, ["slurred slur* dysarthri* ladkhada* लड़खड़ा*", "speech speak speaking words bolne बोलने zubaan जुबान"], 6);
     rule("redFlagsVbi", VDYSP, ["swallow* nigalne निगलने nivala निवाला dysphagi*", "difficulty difficult trouble hard stuck stick sticks atak अटक takleef तकलीफ dikkat दिक्कत mushkil मुश्किल painful cant cannot"], 8);
@@ -1148,7 +1173,7 @@ const matcher = createPhraseMatcher({
     rule("redFlagsInstability", INDOWN, ["downs down_syndrome trisomy"], 2);
     rule("redFlagsInstability", INTRAUMA, ["recent recently haal हाल last_week days_ago yesterday pichle पिछले kal कल", "trauma injury accident fall fell chot चोट crash"], 8);
     rule("redFlagsInstability", INFUSION, ["fusion fused acdf plates plate", "cervical neck gardan गर्दन surgery operation"], 8);
-    rule("redFlagsInstability", INUNST, ["head sir सिर", "unstable loose wobbl* heavy_for fall_off hold_up sambhal संभाल dhila ढीला", "neck gardan गर्दन"], 8);
+    rule("redFlagsInstability", INUNST, ["head sir सिर", "unstable loose wobbl* hilta हिलता heavy_for fall_off hold_up sambhal संभाल dhila ढीला", "neck gardan गर्दन"], 8);
     rule("redFlagsInstability", INOCC, ["constant lagatar लगातार relentless unrelenting unrelieved never_settles", "occipital suboccipital base_of_skull base_of_skull khopdi खोपड़ी sir_ke_peeche सिर_के_पीछे"], 8, { selfNeg: true });
     rule("redFlagsInstability", INSPASM, ["spasm spasms spasming guarding rigid clamped kas_gayi कस_गई kas_gayin sakht सख्त", "severe tez तेज bahut बहुत muscles muscle maspeshi मांसपेशी", "neck gardan गर्दन"], 8);
     rule("redFlagsInstability", INFLEX, ["sharp stabbing knife tez तेज chubhne चुभने", "flexion looking_down bend_forward bending_forward jhuk* झुक* dekh* देख* niche नीचे chin down forward", PAIN_W], 8, { unless: "left right side sideways bayen dayen बायां दायां" });
@@ -1159,7 +1184,7 @@ const matcher = createPhraseMatcher({
     rule("redFlagsOther", OTDISS, ["dissection dissected", "carotid vertebral artery arterial dhamni धमनी"], 8);
     rule("redFlagsOther", OTTHUN, ["thunderclap explosive worst_headache worst_headache_ever sudden_worst_headache", "headache sir_dard सिर_दर्द"], 6);
     rule("redFlagsOther", OTTHUN, ["thunderclap explosive"], 1);
-    rule("redFlagsOther", OTCA, ["cancer tumor tumour malignan* carcinoma lymphoma myeloma metastas* kainsar कैंसर", "history had diagnosed treated known spine neck gardan गर्दन reedh रीढ cervical ilaaj इलाज"], 8);
+    rule("redFlagsOther", OTCA, ["cancer tumor tumour growth malignan* carcinoma lymphoma myeloma metastas* kainsar कैंसर", "history had diagnosed treated known spine neck gardan गर्दन reedh रीढ cervical ilaaj इलाज"], 8);
     rule("redFlagsOther", OTHIGH, ["high_energy major serious bhayankar भयंकर badi बड़ी tez_raftaar", "trauma accident crash collision injury chot चोट takkar टक्कर fall height oonchai ऊंचाई"], 8, { ctx: "painOrArm" });
     rule("redFlagsOther", OTTORT, ["fever bukhar बुखार temperature", "torticollis stiff_neck wry_neck neck_stiffness gardan_akad गर्दन_अकड़ gardan_jam गर्दन_जाम gardan_tedhi गर्दन_टेढ़ी"], 8);
     rule("redFlagsOther", OTCONST, ["weight wazan वजन sweats night_sweats pasina पसीना unwell tired fatigue thakan थकान", "loss lost losing ghat घट* kam कम dropping sweats unexplained"], 8);
@@ -1168,13 +1193,13 @@ const matcher = createPhraseMatcher({
     const FR = (i) => O("fractureScreen", i);
     const [FRNA, FRHIGH, FRAXIAL, FRSPASM, FRSPLINT, FRNEURO, FRODON, FRNEXUS, FRCAN, FRFACET, FRCLAY] = Array.from({ length: 11 }, (_, i) => FR(i));
     rule("fractureScreen", FRHIGH, ["high_energy high_speed tez_raftaar major severe serious bhayankar भयंकर", "accident crash collision trauma mva fall takkar टक्कर"], 6);
-    rule("fractureScreen", FRHIGH, ["fell fall fallen gir* गिर*", "height metre meter ladder roof tree oonchai ऊंचाई"], 8);
+    rule("fractureScreen", FRHIGH, ["fell fall fallen gir* गिर*", "height metre meter ladder seedhi सीढ़ी roof tree oonchai ऊंचाई"], 8);
     rule("fractureScreen", FRHIGH, ["dive dived diving", "shallow water pool"], 6);
     rule("fractureScreen", FRNA, ["no without", "fracture", "concern risk"], 6, { selfNeg: true });
     rule("fractureScreen", FRAXIAL, ["head sir सिर", "landed hit struck fell_on fell_onto top headfirst head_first gira गिरा lag लग", "top upar ऊपर bal बल headfirst"], 6, { unless: "car accident collision" });
     rule("fractureScreen", FRSPASM, ["immediate immediately instant instantly straight_away turant तुरंत ek_dum एक_दम chot_lagte", "severe terrible agonising tez तेज bahut बहुत", "spasm spasms locked kas कस akdan अकड़न"], 10);
     rule("fractureScreen", FRSPLINT, ["cant cannot unable nahi नहीं", "move turn* hila हिला", "neck gardan गर्दन head sir सिर", "at_all bilkul बिल्कुल completely totally"], 9, { selfNeg: true });
-    rule("fractureScreen", FRNEURO, ["numb* tingl* sunn* सुन्न* weak* kamzor कमजोर jhunjhuni झनझनाहट pins", "injury accident fall chot चोट time moment immediately straight_after right_after turant तुरंत"], 9);
+    rule("fractureScreen", FRNEURO, ["numb* tingl* sunn* सुन्न* weak* kamzor कमजोर jhunjhuni झनझनाहट pins", "injury accident fall chot चोट moment immediately straight_after right_after turant तुरंत"], 14);
     rule("fractureScreen", FRODON, ["elderly old older bujurg बुजुर्ग boodhe बूढ़े budhape बुढ़ापे 80 75 70 85 90", "fall fell fallen gir* गिर*"], 8);
     rule("fractureScreen", FRODON, ["odontoid dens peg"], 1);
     rule("fractureScreen", FRNEXUS, ["nexus"], 1);
@@ -1185,7 +1210,7 @@ const matcher = createPhraseMatcher({
     // ───── limited activities ─────
     const N = (i) => O("fnAdl", i);
     const [NNONE, NDRIVE, NSHOULDER, NCOMP, NREAD, NTV, NSLEEP, NHAIR, NOVER, NCARRY, NSPORT, NWORK, NCHILD, NSEX, NCONC, NSOCIAL] = Array.from({ length: 16 }, (_, i) => N(i));
-    rule("fnAdl", NDRIVE, [CANTP, "drive driving gaadi गाड़ी chalane चलाने reverse reversing"], 9, FN());
+    rule("fnAdl", NDRIVE, [CANTP, "drive driving gaadi गाड़ी chalane चलाने chala चला chalana चलाना reverse reversing"], 9, FN());
     rule("fnAdl", NSHOULDER, [CANTP, "shoulder_check over_shoulder blind_spot blind_spots", "safe safely unsafe road traffic"], 9, FN());
     rule("fnAdl", NSHOULDER, ["unsafe worried worry khatra खतरा", "shoulder_check over_shoulder blind_spot blind_spots traffic_behind"], 8);
     rule("fnAdl", NCOMP, [CANTP, "computer laptop screen screens phone mobile typing keyboard"], 9, FN());
@@ -1194,15 +1219,104 @@ const matcher = createPhraseMatcher({
     rule("fnAdl", NSLEEP, [CANTP, "sleep sleeping so सो sone sona sote neend नींद comfortable wake waking"], 9, FN({ unless: "khul खुल jati जाती wakes woke jaga जगा" }));
     rule("fnAdl", NHAIR, [CANTP, "hair baal बाल dry drying comb combing dhone धोने sukhane सुखाने"], 9, FN());
     rule("fnAdl", NOVER, [CANTP, "overhead above_head over_head reach reaching shelf shelves hanging_washing hang_washing hang_clothes hanging_clothes washing_line"], 9, FN());
-    rule("fnAdl", NCARRY, [CANTP, "lift* carry carrying uthana उठाना utha उठा bag bags shopping rucksack"], 9, FN({ unless: "child baby toddler kids bachcha बच्चा bachche बच्चे" }));
+    rule("fnAdl", NCARRY, [CANTP, "lift* carry carrying uthana उठाना utha उठा bag bags shopping rucksack"], 9, FN({ unless: "child baby toddler kids bachcha बच्चा bachche बच्चे waqt वक्त achanak अचानक sudden suddenly" }));
     rule("fnAdl", NSPORT, [CANTP, "gym sport sports football cricket running jogging workout* exercise exercising khel* खेल* jim जिम yoga swimming swim tennis badminton"], 9, FN());
-    rule("fnAdl", NWORK, [CANTP, "work job duties kaam काम naukri नौकरी office duty"], 9, FN({ unless: "computer laptop screen typing" }));
+    rule("fnAdl", NWORK, [CANTP, "work job duties kaam काम naukri नौकरी office duty"], 9, FN({ unless: "computer laptop screen typing कंप्यूटर after_work evening" }));
     rule("fnAdl", NCHILD, [CANTP, "child children baby toddler kids bachcha बच्चा bachche बच्चे bachcho बच्चों childcare"], 9, FN());
     rule("fnAdl", NSEX, [CANTP, "sex sexual intimacy intimate sambandh संबंध"], 9, FN());
     rule("fnAdl", NCONC, ["brain_fog foggy poor_concentration cant_concentrate difficulty_concentrating"], 2);
     rule("fnAdl", NWORK, ["cut reduced reduce", "hours"], 3, FN());
     rule("fnAdl", NCONC, [CANTP, "concentrate concentrating concentration focus dhyan ध्यान memory fog foggy"], 9, FN());
     rule("fnAdl", NSOCIAL, [CANTP, "social socially socialising parties party outings going_out bahar_jana बाहर_जाना milna मिलना"], 9, FN());
+
+    // ───── added for the way a CLINICIAN types about a patient (cervicalSheetSet.js) ─────
+    const OPPL = "left bayen बायां बाएं baayein", OPPR = "right dayen दायां दाएं daayein";
+    const MOVEB = "turn* turning rotate* tilt* tilting bend* bending lean* leaning look* looking away toward towards";
+    // location
+    rule("location", SUBOCC, ["suboccipital sub_occipital"], 1);
+    rule("location", LATL, [LEFT_W, NECK, "spasm spasms tight tightness stiffness muscle knot"], 8, { block: "arm arms hand hands finger fingers fingertips shoulder going radiating spreading turn* turning rotat* rotating look* looking tilt* tilting bend* bending" });
+    rule("location", LATR, [RIGHT_W, NECK, "spasm spasms tight tightness stiffness muscle knot"], 8, { block: "arm arms hand hands finger fingers fingertips shoulder going radiating spreading turn* turning rotat* rotating look* looking tilt* tilting bend* bending" });
+    rule("location", TRAPL, [BOTH_W, "trapezius trap traps upper_trap upper_traps"], 6);
+    rule("location", TRAPR, [BOTH_W, "trapezius trap traps upper_trap upper_traps"], 6);
+    rule("location", TRAPL, [BOTH_W, "shoulders kandha कंधा", "bands band knots knot gaanth गांठ trigger"], 9);
+    rule("location", TRAPR, [BOTH_W, "shoulders kandha कंधा", "bands band knots knot gaanth गांठ trigger"], 9);
+    rule("location", TRAPL, [BOTH_W, "kandha कंधा shoulders", "maspeshi मांसपेशी muscle muscles", "upar ऊपर top"], 9);
+    rule("location", TRAPR, [BOTH_W, "kandha कंधा shoulders", "maspeshi मांसपेशी muscle muscles", "upar ऊपर top"], 9);
+    // radiation
+    rule("radiation", REYE, ["retro_orbital retroorbital orbital"], 1);
+    rule("radiation", ROCC, [SPREAD, "back_of_head behind_head"], 14);
+    rule("radiation", ROCC, [SPREAD, "behind peeche पीछे", "head sir सिर khopdi"], 14, { ctx: "painOrArm" });
+    rule("radiation", RHANDL, [LEFT_W, ARM, "finger fingers fingertips hand hands thumb ungli उंगली"], 8, { ctx: "painOrArm", block: OPPR, blockBefore: MOVEB });
+    rule("radiation", RHANDR, [RIGHT_W, ARM, "finger fingers fingertips hand hands thumb ungli उंगली"], 8, { ctx: "painOrArm", block: OPPL, blockBefore: MOVEB });
+    rule("radiation", RHANDL, [LEFT_W, "finger fingers pinky thumb ring little", SYMP], 12, { block: OPPR, blockBefore: MOVEB });
+    rule("radiation", RHANDR, [RIGHT_W, "finger fingers pinky thumb ring little", SYMP], 12, { block: OPPL, blockBefore: MOVEB });
+    // how it started
+    rule("mechanismType", MREAR, ["ran_into hit crashed_into rammed bumped", "back rear behind", VEH], 9, { unless: "front head_on side" });
+    rule("mechanismType", MREAR, ["rear", "shunt shunts shunted"], 3);
+    rule("mechanismType", MSIDE, ["side", "hit hits struck rammed crashed", VEH + " van"], 8, { unless: "rear behind front head_on" });
+    rule("mechanismType", MFRONT, ["ahead front in_front", "hit hits ran_into crashed collided rammed", VEH], 8, { unless: "rear behind side" });
+    rule("mechanismType", MLIFT, ["lift* lifted lifting carry carrying carried", "heavy weight box bag suitcase sack bori बोरी bhaari भारी"], 6, { unless: "cant cannot unable avoid difficulty" });
+    rule("mechanismType", MLIFT, ["lift* lifted lifting", "strain strained pulled sudden suddenly achanak अचानक khichav खिंचाव"], 5, { unless: "cant cannot unable avoid difficulty" });
+    rule("mechanismType", MSLEEP, ["woke woken wake waking uthte उठते", "stiff locked stuck atak अटक akdan अकड़* jam जाम torticollis", NECK], 8);
+    rule("mechanismType", MSLEEP, ["waking woke wake", "torticollis"], 4);
+    rule("mechanismType", MDIVE, ["dive dived diving"], 2, { unless: "scuba" });
+    // arm / hand
+    rule("armPresent", AL, [LEFT_W, ARM + " " + HAND, SYMP], 14, { unless: "both dono दोनों", block: OPPR + " jhuk* झुक* bend* bending tilt* tilting", blockBefore: MOVEB });
+    // Lhermitte
+    rule("lhermitte", LYES, ["lhermitte lhermittes", "present positive yes sign"], 4, { unless: "no not negative absent nahi नहीं" });
+    // movements that make it worse (fragments such as "Worse: extension, right rotation.")
+    const WORSEW = "worse worst worsens worsened aggravates aggravated aggravating triggers triggered set_off sets_off set_it_off sets_it_off brings_on brings_it_on makes_it_worse make_it_worse";
+    aggRule(AEXT, ["extension extend* extending", WORSEW], 5);
+    aggRule(AFLEX, ["flexion flexing flexed", WORSEW], 5, { unless: "side lateral" });
+    aggRule(AEXT, ["looking look tip tilt* extend* dekh* देख*", "up upar ऊपर back backwards", "or ya या and aur और"], 6, { ctx: "painOrArm", block: "down niche नीचे" });
+    aggRule(AROTL, [LEFT_W, "rotation rotating rotate turn* turning", WORSEW], 9, { unless: "extension up upar ऊपर back backwards tilt* bend* side_bend arm arms hand" });
+    aggRule(AROTR, [RIGHT_W, "rotation rotating rotate turn* turning", WORSEW], 9, { unless: "extension up upar ऊपर back backwards tilt* bend* side_bend arm arms hand" });
+    aggRule(ASBL, [LEFT_W, "side_flexion lateral_flexion side_bend", WORSEW], 9);
+    aggRule(ASBR, [RIGHT_W, "side_flexion lateral_flexion side_bend", WORSEW], 9);
+    aggRule(AQUICK, ["sudden suddenly quick quickly jerk jerks jerky abrupt achanak अचानक", "head neck sir सिर gardan गर्दन", "turn turns turning ghum* घूम* movement movements harkat हरकत jerk jerks hilane हिलाने"], 7, { ctx: "painOrArm" });
+    aggRule(AALL, ["everything anything whatever", "neck* head gardan गर्दन sir सिर", PAINX + " " + TRIG], 8);
+    aggRule(AALL, ["no none", "movement movements direction directions", "free painfree pain_free"], 5, { selfNeg: true });
+    aggRule(ASUST, ["same one single sustained prolonged ek_hi एक_ही long der देर lambe लंबे", "position posture mudra मुद्रा sthiti स्थिति holding holds keeping rakhne रखने"], 8, { ctx: "painOrArm" });
+    // movements that ease it
+    rule("relMovements", RFLEX, ["look looking looks bend* bending drop* dropping flexion flexing", "down forward neeche नीचे aage आगे", HELP], 8, { blockAfter: "nothing none" });
+    rule("relMovements", RFLEX, ["flexion", HELP], 3, { blockAfter: "nothing none" });
+    rule("relMovements", REXT, ["look looking looks tilt* tilting", "up upar ऊपर back backwards peeche पीछे", HELP], 8, { blockAfter: "nothing none" });
+    rule("relMovements", RELEV, ["lift* rais* elevat* shrug*", "shoulders kandhe कंधे कंधा", HELP], 14, { blockAfter: "nothing none" });
+    // pattern over 24 hours
+    rule("overallPattern", PNIGHT, ["night nights raat रात", "worst worse zyada ज्यादा sabse सबसे"], 3, { reliefKills: true });
+    rule("overallPattern", PNIGHT, ["night nights raat रात", "disturb* disturbance interrupted interrupts sleepless"], 3);
+    rule("overallPattern", PNIGHT, ["nocturnal nighttime night_time"], 1);
+    rule("overallPattern", PNIGHT, ["night nights raat रात", NERVE_W + " tingle tingles tingling tingled numb* jhunjhuni झुनझुनी paraesthesia paresthesia"], 8, { reliefKills: true, noComma: true, block: "only_when only_if only_while when while if jab जब sweats sweat sweating" });
+    rule("overallPattern", PCONST, ["doesnt dont does_not do_not never", "let_up lets_up letting_up stop stops ease eases easing"], 4, { selfNeg: true, ctx: "painOrArm" });
+    rule("overallPattern", PEVE, ["evening evenings shaam शाम", "dominant predominantly zyada ज्यादा worst most sabse सबसे"], 4);
+    rule("overallPattern", PEVE, ["end", "working_day day workday"], 4, { ctx: "painOrArm" });
+    rule("overallPattern", PEVE, ["evening evenings shaam शाम by_evening", PAIN_W + " badly"], 10, { noComma: true, reliefKills: true });
+    // headache
+    rule("haPresent", HSEC, ["from came comes begins begin starts start originates arises", NECK], 4, { story: HW, unless: "no not nahi नहीं without unrelated separate" });
+    // myelopathy / VBI / instability / other
+    rule("redFlagsVbi", VTHUN, ["worst sabse सबसे", "life ever zindagi जिंदगी", HW], 8);
+    rule("redFlagsVbi", VTHUN, ["sudden suddenly achanak अचानक", "worst sabse सबसे", HW], 8);
+    rule("redFlagsVbi", VDROP, ["drop_attack drop_attacks"], 2);
+    rule("redFlagsOther", OTTHUN, ["worst sabse सबसे", "life ever zindagi जिंदगी", HW], 8);
+    rule("redFlagsOther", OTTHUN, ["sudden suddenly achanak अचानक", "worst sabse सबसे", HW], 8);
+    rule("redFlagsInstability", INRA, ["ra"], 1, { unless: "right left arm arms hand shoulder elbow bayen dayen" });
+    rule("redFlagsInstability", INUNST, ["sense feel feels feeling mehsoos महसूस", "instability unstable wobbly loose dhila ढीला hilta हिलता"], 5, { ctx: "painOrArm", unless: "feet foot walk walking legs leg pair पैर balance" });
+    rule("redFlagsOther", OTTORT, ["fever bukhar बुखार temperature", "locked stuck atak अटक jam जाम", NECK], 14);
+    rule("fractureScreen", FRAXIAL, ["headfirst head_first sir_ke_bal सिर_के_बल"], 3);
+    rule("fractureScreen", FRHIGH, ["fell fall fallen thrown crash crashed", "motorbike motorcycle bike scooter horse speed"], 8, { unless: "slipped" });
+    rule("redFlagsOther", OTHIGH, ["fell fall fallen thrown crash crashed", "motorbike motorcycle bike scooter horse speed"], 8, { unless: "slipped" });
+    rule("fractureScreen", FRHIGH, ["ladder seedhi सीढ़ी roof scaffold height", "came_down fell fall landed headfirst head_first"], 8);
+    rule("fractureScreen", FRAXIAL, ["fall fell fallen gir* गिर*", "onto landed", "head sir सिर"], 8);
+    rule("redFlagsInstability", INFUSION, ["fusion fused acdf"], 2);
+    // limited activities
+    rule("fnAdl", NCOMP, ["computer laptop screen screens typing keyboard कंप्यूटर", DIFFW], 14, FN());
+    rule("fnAdl", NWORK, ["desk office daftar दफ्तर", "work kaam काम job duties duty naukri नौकरी", DIFFW + " keep_up"], 10, FN());
+    rule("fnAdl", NWORK, ["at_work", DIFFW], 6, FN());
+    rule("fnAdl", NDRIVE, ["driving drive", "out impossible off"], 3, FN());
+    rule("fnAdl", NSHOULDER, [CANTP, "blind_spot blind_spots shoulder_check over_shoulder"], 6, FN());
+    rule("fnAdl", NWORK, ["desk shift", "full_day whole_day all_day day", "keep_up cope coping manage managing cant cannot unable"], 10, FN());
+    rule("fnAdl", NSLEEP, ["pillow pillows takiya takiye तकिये", "chang* keep_changing adjust* swap* toss*"], 6);
+    rule("fnAdl", NDRIVE, ["gaadi गाड़ी", "chala* चला* chalane चलाने", "nahi नहीं cant cannot"], 6, { selfNeg: true });
   },
 });
 

@@ -14,8 +14,8 @@ export const SIDE_DEVA = [
   [/दायीं|दाईं|दायां|दायें|दाएं|दाया|दाये|दाहिना|दाहिनी|दाहिने|दाहिन/g, "दायां"],
 ];
 // Word lists for the word-order rules.
-export const LEFT_W = "left bayen बायां";
-export const RIGHT_W = "right dayen दायां";
+export const LEFT_W = "left l bayen बायां";
+export const RIGHT_W = "right r dayen दायां";
 // Both sides together, for "both arms" kinds of phrases.
 export const BOTH_W = "both dono दोनों bilateral bilaterally either_side";
 

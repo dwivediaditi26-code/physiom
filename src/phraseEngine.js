@@ -13,6 +13,7 @@
 // Common Hinglish spellings -> one form. Phrases and typed text both go through this,
 // so a phrase written one way still matches the same word spelled another way.
 const HINGLISH = [
+  [/\b(with|and|meeting|meet|seeing|see) (friends?|colleagues?)\b/g, "$1 company"], // "avoids going out with friends" is about the patient, not about a friend
   [/\b(kehni|kuhni|kohnee|kohani|kohni)\b/g, "kohni"],
   [/\b(darad|dardd|dard)\b/g, "dard"],
   [/\b(nahin|nahi|nhi|nahee)\b/g, "nahi"],
@@ -158,6 +159,8 @@ const RULE_MAX_TOKENS = 400; // a real note is a few dozen words; a huge paste m
  *   rules(api)        registers the word-order rules; api = { rule, O, g, W }
  *                     rule flag  story: "words" -- besides the groups, one of these words must appear SOMEWHERE in the whole note,
  *                     even in another sentence (a negated word such as "no injury" does not count)
+ *     rule flag  blockNext: "words" -- the rule is dropped when the very NEXT word after the matched words is one of these
+ *                     ("daayein jhukane par baayein haath": the side word before "haath" belongs to the hand, not to the bend)
  */
 export function createPhraseMatcher({ phrases, singleChoiceFields = ["pattern"], noneOptions = {}, ownWords, foreignWords,
   optionGuards = {}, guardExempt = [], hinglish = [], deva = [], rules: registerRules }) {
@@ -241,7 +244,7 @@ export function createPhraseMatcher({ phrases, singleChoiceFields = ["pattern"],
   const rule = (field, option, groups, win, o = {}) => {
     if (!phrases[field] || !phrases[field][option]) throw new Error(`rule for unknown option: ${field} / ${option}`);
     RULES.push({ field, option, groups: groups.map(g), win, selfNeg: false, ...o, src: groups, srcFlags: o,
-      noComma: !!o.noComma, story: o.story ? g(o.story) : null, unless: o.unless ? g(o.unless) : null, block: o.block ? g(o.block) : null, blockBefore: o.blockBefore ? g(o.blockBefore) : null, blockAfter: o.blockAfter ? g(o.blockAfter) : null, ctx: o.ctx || null });
+      noComma: !!o.noComma, story: o.story ? g(o.story) : null, unless: o.unless ? g(o.unless) : null, block: o.block ? g(o.block) : null, blockBefore: o.blockBefore ? g(o.blockBefore) : null, blockAfter: o.blockAfter ? g(o.blockAfter) : null, blockNext: o.blockNext ? g(o.blockNext) : null, ctx: o.ctx || null });
   };
   const O = (field, i) => Object.keys(phrases[field])[i];
   registerRules({ rule, O, g, W: WORDS });
@@ -291,6 +294,7 @@ export function createPhraseMatcher({ phrases, singleChoiceFields = ["pattern"],
       if (r.block && groupHits(inside, r.block).length) continue;
       if (r.blockBefore && groupHits(wordsBefore(span.s, 3), r.blockBefore).length) continue;
       if (r.blockAfter && groupHits(wordsAfter(span.e, 3), r.blockAfter).length) continue;
+      if (r.blockNext && groupHits(wordsAfter(span.e, 1), r.blockNext).length) continue;
       if (!r.selfNeg) {
         if (inside.some((t) => NEGATORS.has(t))) continue;
         if (wordsBefore(span.s, 4).some((t) => NEGATORS.has(t))) continue;
