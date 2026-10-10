@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, createContext, useContext } from "react";
+import React, { useState, useRef, useEffect, useLayoutEffect, createContext, useContext } from "react";
 import { createPortal } from "react-dom";
 import { FieldLabel, SectionTitle } from "./assessmentTypography.jsx";
 import { uploadImage, uploadErrorMessage } from "./services/cloudinary.js";
@@ -724,16 +724,34 @@ export function VitalRow({ label, value, onChange, unit, howTo, richItem, slider
   );
 }
 
-export function TextArea({ label, value, onChange, placeholder, hint, howTo, info }) {
+// Aditi (2026-10-10): "chief complaint should show fully" -- a 2-row box scrolled inside itself, so a long AI-filled narrative was
+// cut off. autoGrow makes the box as tall as its text (and re-fits when the screen width changes). Off by default so the other
+// 70+ text areas keep their fixed 2-row size.
+function GrowingTextarea({ value, placeholder, onChange }) {
+  const ref = useRef(null);
+  function fit() {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    const border = el.offsetHeight - el.clientHeight;
+    if (el.scrollHeight > 0) el.style.height = el.scrollHeight + border + "px";
+  }
+  useLayoutEffect(fit, [value]);
+  useEffect(() => {
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, []);
+  return <textarea ref={ref} className="textarea" rows={2} style={{ overflow: "hidden" }} value={value || ""} placeholder={placeholder || "Type here..."} onChange={(e) => onChange(e.target.value)} />;
+}
+
+export function TextArea({ label, value, onChange, placeholder, hint, howTo, info, autoGrow }) {
+  const classic = useKit().classicLayout;
+  const box = autoGrow
+    ? <GrowingTextarea value={value} placeholder={placeholder} onChange={onChange} />
+    : <textarea className="textarea" rows={2} value={value || ""} placeholder={placeholder || "Type here..."} onChange={(e) => onChange(e.target.value)} />;
   return (
     <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
-      {useKit().classicLayout ? (
-        <textarea className="textarea" rows={2} value={value || ""} placeholder={placeholder || "Type here..."} onChange={(e) => onChange(e.target.value)} />
-      ) : (
-        <div>
-          <textarea className="textarea" rows={2} value={value || ""} placeholder={placeholder || "Type here..."} onChange={(e) => onChange(e.target.value)} />
-        </div>
-      )}
+      {classic ? box : <div>{box}</div>}
     </FieldShell>
   );
 }
