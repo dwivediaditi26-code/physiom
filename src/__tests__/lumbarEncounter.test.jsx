@@ -115,6 +115,27 @@ describe("Lumbar Case 1 encounter — playing it", () => {
     expect(screen.queryByText(/Information added to your clinical record/)).not.toBeInTheDocument();
   });
 
+  it("the PM bot and the therapist are in the scenes: intro, feedback reaction, examination and the case report", () => {
+    mount();
+    expect(within(screen.getByTestId("hero-bot")).getByText(/I'm PM/)).toBeInTheDocument();
+    expect(screen.getByTestId("therapist")).toBeInTheDocument();
+    ask(E.topics[0].label); answer(E.topics[0].mcq);
+    expect(screen.getByTestId("feedback-bot").querySelector("img")).toHaveAttribute("src", expect.stringContaining("bot-correct"));
+    cont();
+    ask(E.topics[1].label); answer(E.topics[1].mcq, "A");
+    expect(screen.getByTestId("feedback-bot").querySelector("img")).toHaveAttribute("src", expect.stringContaining("bot-incorrect"));
+  });
+
+  it("the examination page shows the patient with the therapist; the report shows the patient, bot and therapist celebrating", () => {
+    mount();
+    playHistory(); cont("Move to the physical examination");
+    fireEvent.click(radio(E.exam.domains[0].label));
+    fireEvent.click(screen.getByText("Perform this examination"));
+    const scene = within(screen.getByTestId("exam-scene"));
+    expect(scene.getByAltText("The patient")).toBeInTheDocument();
+    expect(scene.getByAltText(/physiotherapist examining/)).toBeInTheDocument();
+  });
+
   it("asking a question shows only that patient response and adds only its facts to the record", () => {
     mount();
     ask(E.topics[0].label);
@@ -251,6 +272,10 @@ describe("Lumbar Case 1 encounter — playing it", () => {
     mount(exit);
     playHistory((q) => (q.id === "q_easing" ? "A" : q.correct)); playExam(); playRest();
     expect(count()).toBe("12/12");
+    const cel = within(screen.getByTestId("celebration"));
+    expect(cel.getByAltText("The patient")).toBeInTheDocument();
+    expect(cel.getByAltText(/physiotherapist celebrating/)).toBeInTheDocument();
+    expect(cel.getByText("Case Completed!")).toBeInTheDocument();
     expect(screen.getByTestId("completion")).toHaveTextContent("You have completed Lumbar Case 1. Review how your clinical reasoning developed from the initial complaint to the final management plan.");
     expect(within(screen.getByTestId("rep-asked")).getAllByRole("listitem").length).toBe(E.topics.length + 1);
     expect(within(screen.getByTestId("rep-record")).getByText(/Oswestry Disability Score: 72%/)).toBeInTheDocument();

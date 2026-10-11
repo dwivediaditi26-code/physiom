@@ -41,11 +41,11 @@ function IconTile({ name, i = 0, size = 16 }) {
   return <span className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${ICON_BG[i % ICON_BG.length]}`}><I size={size} strokeWidth={2}/></span>;
 }
 
-function SafeImg({ src, className, alt = "", fallback = false }) {
+function SafeImg({ src, className, alt = "", fallback = false, style }) {
   const [bad, setBad] = useState(false);
   if (bad && fallback) return null;
-  if (bad) return <span aria-hidden="true" className={`${className} flex items-center justify-center text-4xl bg-slate-100`}>🧑</span>;
-  return <img src={src} alt={alt} className={className} onError={() => setBad(true)}/>;
+  if (bad) return <span aria-hidden="true" className={`${className} flex items-center justify-center text-4xl bg-slate-100`} style={style}>🧑</span>;
+  return <img src={src} alt={alt} className={className} style={style} onError={() => setBad(true)}/>;
 }
 
 function Panel({ title, children, tone = "white", testid }) {
@@ -58,17 +58,43 @@ function Panel({ title, children, tone = "white", testid }) {
   );
 }
 
-// Picture + comic-style speech bubble on top of a clinic scene.
-function Hero({ art, quote, small = false }) {
+// The PM bot (from Aditi's character sheet): a guide that never says anything clinical.
+function BotPic({ pose, size = 60 }) {
+  return <SafeImg src={img(`bot-${pose}`)} alt="" className="shrink-0 rounded-2xl object-cover bg-sky-50 shadow-sm" style={{ width: size, height: size * 1.1 }} fallback/>;
+}
+// The treating physiotherapist, i.e. the student (white PhysioMind shirt, from the character sheet).
+function TherapistPic({ pose, w = 64, label = true }) {
   return (
-    <div data-testid="engine-hero" className={`relative rounded-2xl overflow-hidden border border-slate-200 bg-gradient-to-b from-sky-50 to-amber-50 flex ${small ? "min-h-[170px]" : "min-h-[250px]"}`}>
-      <SafeImg src={img(art)} alt="The patient" className={`self-end shrink-0 object-contain object-bottom ${small ? "w-[40%] max-h-[190px]" : "w-[46%] max-h-[270px]"}`}/>
-      <div className="flex-1 min-w-0 p-2.5 flex items-center">
-        <div data-testid="engine-quote" className="relative w-full rounded-2xl border-2 border-slate-800 bg-white px-3 py-2.5 text-[12.5px] leading-snug text-slate-800 shadow-sm">
-          <span aria-hidden="true" className="absolute -left-[9px] top-8 w-4 h-4 bg-white border-l-2 border-b-2 border-slate-800 rotate-45"/>
-          {quote}
+    <span className="shrink-0 flex flex-col items-center gap-0.5" data-testid="therapist">
+      <SafeImg src={img(`student-${pose}`)} alt="The physiotherapist (you)" className="rounded-xl object-cover shadow-sm" style={{ width: w, height: w * 1.3 }} fallback/>
+      {label && <span className="text-[9px] font-bold text-slate-500 leading-none">You</span>}
+    </span>
+  );
+}
+
+// Picture + comic-style speech bubble on top of a clinic scene. Optionally the
+// PM bot (with a guide line) and the therapist stand in the scene too.
+function Hero({ art, quote, small = false, bot = null, therapist = null }) {
+  const extra = bot || therapist;
+  return (
+    <div data-testid="engine-hero" className="rounded-2xl overflow-hidden border border-slate-200 bg-gradient-to-b from-sky-50 to-amber-50">
+      <div className={`relative flex ${small ? "min-h-[170px]" : "min-h-[250px]"}`}>
+        <SafeImg src={img(art)} alt="The patient" className={`self-end shrink-0 object-contain object-bottom ${small ? "w-[40%] max-h-[190px]" : "w-[46%] max-h-[270px]"}`}/>
+        <div className="flex-1 min-w-0 p-2.5 flex items-center">
+          <div data-testid="engine-quote" className="relative w-full rounded-2xl border-2 border-slate-800 bg-white px-3 py-2.5 text-[12.5px] leading-snug text-slate-800 shadow-sm">
+            <span aria-hidden="true" className="absolute -left-[9px] top-8 w-4 h-4 bg-white border-l-2 border-b-2 border-slate-800 rotate-45"/>
+            {quote}
+          </div>
         </div>
       </div>
+      {extra && (
+        <div className="flex items-end gap-2 px-2.5 py-2 bg-white/70 border-t border-slate-200" data-testid="hero-extra">
+          {bot && <BotPic pose={bot.pose || "talking"} size={52}/>}
+          {bot && <div data-testid="hero-bot" className="flex-1 min-w-0 rounded-2xl bg-emerald-50 border border-emerald-200 px-2.5 py-2 text-[12px] leading-snug text-slate-700">{bot.text}</div>}
+          {!bot && <span className="flex-1"/>}
+          {therapist && <TherapistPic pose={therapist} w={46}/>}
+        </div>
+      )}
     </div>
   );
 }
@@ -157,7 +183,8 @@ function Feedback({ mcq, state, keyPoint, children, onContinue, continueLabel = 
       <div role="status" className={`rounded-2xl border p-3 ${right ? "bg-emerald-50 border-emerald-200" : "bg-rose-50 border-rose-200"}`}>
         <div className={`flex items-center gap-2 font-extrabold text-[16px] ${right ? "text-emerald-800" : "text-rose-800"}`}>
           <span className={`w-7 h-7 rounded-full flex items-center justify-center text-white ${right ? "bg-emerald-500" : "bg-rose-500"}`}>{right ? <Check size={16}/> : <X size={16}/>}</span>
-          {right ? "Correct" : "Not quite"}
+          <span className="flex-1">{right ? "Correct" : "Not quite"}</span>
+          <span data-testid="feedback-bot"><BotPic pose={right ? "correct" : "incorrect"} size={46}/></span>
         </div>
         {!right && <p className="text-[12.5px] text-slate-800 mt-1.5"><span className="font-bold">The best answer is {best.id}:</span> {best.text}</p>}
         <p data-testid={`why-${mcq.id}-${best.id}`} className="text-[12.5px] leading-snug text-slate-700 mt-1.5">{plain(best.why)}</p>
@@ -333,7 +360,7 @@ export default function EncounterEngine({ data, onExit, exitLabel = "Return to L
         <>
           <Title>{first ? "1. Meet Your Patient" : "What would you like to ask next?"}</Title>
           {first && <p className="text-[12.5px] text-slate-500 leading-snug">{data.intro.instruction}</p>}
-          <Hero art={data.intro.art} quote={first ? data.intro.quote : "What else would you like to know about my pain?"} small={!first}/>
+          <Hero art={data.intro.art} quote={first ? data.intro.quote : "What else would you like to know about my pain?"} small={!first} therapist="listening" bot={first ? { pose: "talking", text: "Hi, I'm PM. Pick a question below, then tap Ask this question." } : null}/>
           {first && (
             <Panel title="Patient information" tone="lilac"><ul className="space-y-2 list-none p-0 m-0">{data.intro.info.map(([ic, k, v], n) => <li key={k} className="flex items-center gap-2.5"><IconTile name={ic} i={n}/><span className="text-[12.5px]"><span className="font-bold text-slate-900">{k}: </span><span className="text-slate-700">{v}</span></span></li>)}</ul></Panel>
           )}
@@ -371,7 +398,7 @@ export default function EncounterEngine({ data, onExit, exitLabel = "Return to L
       <>
         {!safetyDone && <BackLink to={{ name: "hub" }}/>}
         <Title>Safety Screening</Title>
-        <Hero art={data.intro.art} quote={sf.bubble} small/>
+        <Hero art={data.intro.art} quote={sf.bubble} small bot={{ pose: "thinking", text: "Open a topic to see what to ask in a real consultation." }}/>
         <ChoiceList items={sf.topics.map((x) => ({ id: x.id, label: x.label, icon: "shield" }))} value={pick} onChange={setPick} doneIds={st.safetyViewed}/>
         <PrimaryButton disabled={!pick} onClick={() => { set((s) => ({ safetyViewed: s.safetyViewed.includes(pick) ? s.safetyViewed : [...s.safetyViewed, pick] })); setSafetyOpen(pick); }}>Ask this question</PrimaryButton>
         {open && (
@@ -418,10 +445,12 @@ export default function EncounterEngine({ data, onExit, exitLabel = "Return to L
       <>
         {!(d.mcq && done(d.mcq)) && <BackLink to={{ name: "examHub" }}/>}
         <Title>{d.findingsTitle}</Title>
-        <div className="rounded-2xl border border-slate-200 bg-gradient-to-b from-sky-50 to-amber-50 flex overflow-hidden min-h-[170px]">
-          <SafeImg src={img(d.art || data.intro.art)} alt="The patient" className="self-end w-[36%] max-h-[200px] object-contain object-bottom shrink-0"/>
-          <div className="flex-1 p-3 flex items-center"><ul data-testid="exam-findings" className="list-none p-0 m-0 space-y-1.5">{d.findings.map((f, n) => <li key={n} className="flex gap-2 text-[13px] text-slate-800 leading-snug"><span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0"/><span>{f.text}<TagChip tag={f.tag}/></span></li>)}</ul></div>
+        <div data-testid="exam-scene" className="rounded-2xl border border-slate-200 bg-gradient-to-b from-sky-50 to-amber-50 flex items-end justify-between overflow-hidden min-h-[180px] px-2 pt-2">
+          <SafeImg src={img(d.art || data.intro.art)} alt="The patient" className="w-[34%] max-h-[190px] object-contain object-bottom shrink-0"/>
+          <span className="self-center text-[11.5px] font-semibold text-slate-600 text-center px-1 leading-snug">You examine the patient</span>
+          <SafeImg src={img("student-writing")} alt="The physiotherapist examining and recording" className="w-[30%] max-h-[185px] object-cover object-top rounded-t-2xl shrink-0"/>
         </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-3"><ul data-testid="exam-findings" className="list-none p-0 m-0 space-y-1.5">{d.findings.map((f, n) => <li key={n} className="flex gap-2 text-[13px] text-slate-800 leading-snug"><span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0"/><span>{f.text}<TagChip tag={f.tag}/></span></li>)}</ul></div>
         {d.mcq ? (
           <Question mcq={d.mcq} state={answers[d.mcq.id]} onPick={(id) => choose(d.mcq, id)} onSubmit={() => submit(d.mcq, { name: "feedback", id: d.mcq.id, kind: "exam", of: d.id })}/>
         ) : (
@@ -473,7 +502,7 @@ export default function EncounterEngine({ data, onExit, exitLabel = "Return to L
     body = (
       <>
         <Title>{mg.title}</Title>
-        <Hero art={data.intro.art} quote={mg.bubble} small/>
+        <Hero art={data.intro.art} quote={mg.bubble} small therapist="explaining" bot={{ pose: "thinking", text: "Choose the approach you think fits this patient best." }}/>
         <Question mcq={mg.mcq} state={answers[mg.mcq.id]} onPick={(id) => choose(mg.mcq, id)} onSubmit={() => submit(mg.mcq, { name: "feedback", id: mg.mcq.id, kind: "management" })}/>
       </>
     );
@@ -540,6 +569,15 @@ export default function EncounterEngine({ data, onExit, exitLabel = "Return to L
     body = (
       <>
         <Title>Case report</Title>
+        <div data-testid="celebration" className="relative rounded-2xl border border-sky-100 bg-gradient-to-b from-amber-50 via-sky-50 to-violet-50 overflow-hidden px-2 pt-3 flex items-end justify-between" style={{ minHeight: 210 }}>
+          <span aria-hidden="true" className="absolute inset-x-0 top-1 text-center text-[16px] opacity-70 select-none">🎉 ✨ 🎊 ✨ 🎉 ✨ 🎊</span>
+          <SafeImg src={img(data.intro.art)} alt="The patient" className="w-[30%] max-h-[190px] object-contain object-bottom"/>
+          <div className="flex flex-col items-center gap-1 pb-1">
+            <div className="rounded-2xl bg-white border border-slate-200 px-2.5 py-1 text-center shadow-sm"><div className="text-[12.5px] font-extrabold text-rose-600">Case Completed!</div><div className="text-[10.5px] text-slate-500">Great work!</div></div>
+            <BotPic pose="celebrating" size={84}/>
+          </div>
+          <SafeImg src={img("student-happy")} alt="The physiotherapist celebrating" className="w-[28%] max-h-[190px] object-cover object-top rounded-t-2xl"/>
+        </div>
         <p data-testid="completion" className="text-[13px] text-slate-700 leading-snug rounded-2xl bg-emerald-50 border border-emerald-200 p-3">{data.completion}</p>
         <Panel title="The questions you asked" tone="lilac" testid="rep-asked"><ol className="list-decimal pl-5 m-0 space-y-0.5">{askedTopics.map((t) => <li key={t.id} className="text-[12.5px] text-slate-700">{t.label}</li>)}{st.safetyViewed.map((id) => <li key={id} className="text-[12.5px] text-slate-700">Safety: {data.safety.topics.find((x) => x.id === id).label}</li>)}</ol></Panel>
         <Panel title="Documented answers you discovered" tone="lilac" testid="rep-record">
