@@ -38,4 +38,15 @@ describe("AI Objective Assessment has no big reference photo", () => {
     expect(screen.queryByText(/Reference photos/i)).toBeNull();
     expect(screen.queryByTestId("photo-slots-frame")).toBeNull();
   });
+
+  // 2026-10-10, Aditi (circled the small pose icon beside the title): "remove this circle svg".
+  it("Kinetic chain and Functional titles have no little pose icon beside them", () => {
+    render(<Harness />);
+    for (const topic of ["Kinetic chain", "Functional"]) {
+      openTopic(topic);
+      const rows = document.querySelectorAll(".movement-name-row");
+      expect(rows.length).toBeGreaterThan(0);
+      rows.forEach((row) => expect(row.querySelector('svg[viewBox="0 0 48 48"]')).toBeNull());
+    }
+  });
 });

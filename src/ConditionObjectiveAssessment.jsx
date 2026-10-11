@@ -47,7 +47,6 @@ import { useAiCredits, creditsEnforced, spendAnalysis } from "./aiCredits.js";
 import CreditsSheet from "./CreditsSheet.jsx";
 import { uploadImage, uploadErrorMessage } from "./services/cloudinary.js";
 import { useIsAdmin } from "./useIsAdmin.js";
-import { FmaIcon, poseForJoint } from "./fmaIcons.jsx";
 import { runCervicalDifferential, hasCervicalChecklistData } from "./orthoCervicalReasoning.js";
 import { runThoracicDifferential, hasThoracicChecklistData } from "./orthoThoracicReasoning.js";
 import { runLumbarDifferential, hasLumbarChecklistData } from "./orthoLumbarReasoning.js";
@@ -2658,7 +2657,6 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
             return (
             <ModuleCard label="Kinetic Chain" color="#4F46E5" defaultOpen={!condition.kineticChain.notApplicable}>
               <div className="movement-name-row">
-                {kcMatch && <FmaIcon pose={poseForJoint(kcMatch.joint)} size={22} />}
                 <span style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink }}>{condition.kineticChain.testName}</span>
                 <InfoButton title={condition.kineticChain.testName} richItem={kcMatch ? kcRichItem(kcMatch) : kcRichItemFor(condition.kineticChain.testName)} />
               </div>
@@ -2697,7 +2695,6 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                     <InfoButton imageTrigger size="lg" fallbackIcon="ti-link" title={condition.kineticChain.name} richItem={kcMatch ? kcRichItem(kcMatch) : kcRichItemFor(condition.kineticChain.name)} />
                     <div style={{ minWidth: 0 }}>
                       <div className="movement-name-row">
-                        {kcMatch && <FmaIcon pose={poseForJoint(kcMatch.joint)} size={22} />}
                         <span style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink }}>{condition.kineticChain.name}</span>
                         {!hasReal && <SuggestedBadge />}
                       </div>
@@ -2768,7 +2765,6 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
             return (
             <ModuleCard label="Functional Screen" color="#16A34A">
               <div className="movement-name-row">
-                {fmaMatch && <FmaIcon id={fmaMatch.id} size={22} />}
                 <span style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink }}>{condition.functionalScreen.testName}</span>
                 <InfoButton title={condition.functionalScreen.testName} richItem={functionalRichItem(condition.functionalScreen.testName, condition.functionalScreen.note, config.key)} />
               </div>
@@ -2833,7 +2829,6 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                     <InfoButton imageTrigger size="lg" fallbackIcon="ti-walk" title={condition.functionalScreen.name} richItem={functionalRichItem(condition.functionalScreen.name, condition.functionalScreen.note, config.key)} />
                     <div style={{ minWidth: 0 }}>
                       <div className="movement-name-row">
-                        {fmaMatch && <FmaIcon id={fmaMatch.id} size={22} />}
                         <span style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink }}>{condition.functionalScreen.name}</span>
                         {!hasReal && <SuggestedBadge />}
                       </div>
