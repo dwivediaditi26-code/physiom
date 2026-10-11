@@ -1,0 +1,126 @@
+// thoracicSheetSetFresh.js -- a SECOND, fresh exam in the clinician's voice ("the patient", "they", short notes), written AFTER the Thoracic
+// matcher had been fixed for the sheet's own sentences (thoracicSheetSet.js). None of these sentences was used to tune the matcher before
+// their first run was recorded. Row = [lang, text, must, may] -- same meaning as in thoracicSheetSet.js. The answer keys are DRAFTS written
+// by Claude for Aditi to check.
+import { KEYS } from "./thoracicWildSets.js";
+
+const { UPPER, MID, LOWER, CTJ, TLJ, ISC, ISL, ISR, COSTO, LATW, ANTW, STERN, BAND, PARA, RNONE, RWALL, RBLADE, RANT, RABD, RGROIN, RBILAT, RCARD,
+  MINS, MLIFT, MROT, MFALL, MMVA, MDESK, MPOST, MPP, MOSTEO, MVIRAL, MNONE, AROT, ASIDE, AEXT, AFLEX, ACOMB, AIN, AOUT, ACOUGH, ASNEEZE, ALAUGH, ASUST, AQUICK, ALIFT, AREACH,
+  THEAT, TICE, TMANIP, TMOB, TSTRETCH, TBREATH, TPOST, TTAPE, TNSAID, TPARA, TRELAX, TNONE, PMECH, PCONST, PBREATH, PACT, PNIGHT, PMORN, PINFL,
+  FNONE, FCONST, FNIGHT, FWORSE, FCARD, FCARDH, FRESP, FABD, FCA, FWT, FFEVER, FTRAUMA, FOSTEO, FLEGN, FLEGW, FAGE, FUNWELL,
+  NLIM, NBREATH, NCOUGH, NSIT, NDRIVE, NCOMP, NSPORT, NLIFT, NSLEEP, NWORK } = KEYS;
+
+export const THORACIC_SHEET_FRESH = [
+  // Facet / mechanical dysfunction
+  ["en", "Dull ache between the shoulder blades on the right, more when they turn to reach for the seat belt.", [ISR, AROT], [MID, PMECH, RNONE, NDRIVE]],
+  ["en", "Sore low in the thoracic spine, eases once they get moving.", [LOWER], [PINFL, PMECH, PACT, PMORN]],
+  ["en", "Mid back is stiff and achy after the long flight; arching backwards feels good.", [MID], [PMECH, MINS, MPOST]],
+  ["en", "Pain on the left side of the mid back when the patient reaches up to a high shelf.", [MID, AREACH], [ISL, PMECH, RNONE, LATW]],
+  ["hi", "Peeth ke beech mein daayein taraf dard, side mein jhukne par zyada.", [MID, ASIDE], [ISR, PMECH, RNONE]],
+  ["de", "पीठ के ऊपरी हिस्से में दर्द, पीछे की तरफ झुकने पर बढ़ता है।", [UPPER, AEXT], [PMECH, RNONE]],
+  ["en", "Catches in the mid back with a deep breath in and a twist together.", [MID, AIN], [AROT, ACOMB, PBREATH, PMECH]],
+  ["en", "Heat pack and a hot shower take the edge off.", [THEAT], []],
+  // Disc herniation / nerve root
+  ["en", "Band-like pain from the mid back round to the front of the chest on the left, with some burning.", [RWALL], [BAND, MID, RANT]],
+  ["en", "Sharp, shooting pain in the mid back after a heavy lift, it gets worse when they cough.", [MID, MLIFT, ACOUGH], [NCOUGH, ALIFT, PMECH]],
+  ["en", "Sneezing sends a jolt of pain around the ribs.", [ASNEEZE, RWALL], [BAND, NCOUGH, PMECH]],
+  ["en", "Pins and needles in the front of the chest wall on one side, no leg symptoms.", [ANTW], [RWALL, RANT, BAND]],
+  ["hi", "Kamar ke upar peeth mein dard, khansi karne par badhta hai.", [LOWER, ACOUGH], [NCOUGH, PMECH]],
+  ["de", "पसलियों के चारों तरफ दर्द फैलता है, छींकने पर बढ़ता है।", [RWALL, ASNEEZE], [BAND, NCOUGH]],
+  ["en", "Weakness in both legs and trouble controlling the bladder since the back pain started.", [FLEGW], [FLEGN]],
+  // Rib / costovertebral dysfunction
+  ["en", "Sharp pain beside the spine at rib level on the right, catches when they breathe in deeply.", [COSTO, AIN], [PBREATH, NBREATH, ISR, PMECH, LATW]],
+  ["en", "Pain on the side of the ribs on the left that is worse lying on that side at night.", [LATW, NSLEEP], [PNIGHT]],
+  ["en", "Felt a pop in the back of the ribs while twisting to throw a ball.", [MROT], [COSTO, AROT, LATW, NSPORT, PMECH]],
+  ["en", "Breathing deeply is painful, so they take shallow breaths.", [NBREATH, AIN], [PBREATH]],
+  ["hi", "Pasli ke paas peeth mein tez dard, gehri saans lene par badhta hai.", [COSTO, AIN], [PBREATH, NBREATH]],
+  ["de", "सोते समय करवट लेने पर पसली में दर्द होता है।", [NSLEEP], [LATW, COSTO, PNIGHT]],
+  ["en", "Manual therapy to the ribs released it for a few hours.", [], [TMANIP, TMOB]],
+  // Thoracic outlet syndrome
+  ["en", "Tingling in the ring and little finger when the arms are overhead, patient works at a computer.", [AREACH], [NCOMP, NWORK, UPPER]],
+  ["en", "Heaviness in the arm after carrying a bag on the shoulder, upper back and base of the neck ache.", [CTJ], [UPPER, NLIFT, ALIFT, MPOST]],
+  ["en", "Pain radiates from the base of the neck along the collar bone to the front of the chest.", [CTJ, RANT], [ANTW, UPPER]],
+  ["hi", "Haath upar karne par haath sunn ho jata hai aur gardan ke aadhar par dard.", [CTJ], [AREACH, UPPER]],
+  ["de", "लंबे समय तक हाथ ऊपर रखने पर दर्द और झुनझुनी।", [AREACH], [ASUST]],
+  // Scheuermann's disease
+  ["en", "Teenager with a fixed rounded upper back, stiff, aches after PE and long sitting.", [NSIT], [UPPER, MID, MINS, PMECH, MPOST, NSPORT, ASUST]],
+  ["en", "Wedged vertebrae on the x-ray in the mid thoracic spine, the patient is 16.", [MID], []],
+  ["en", "Doesn't straighten up when asked, the hump has been there for a couple of years.", [], [MINS, MPOST, MNONE, PMECH]],
+  ["hi", "Kishor ki peeth mein gol-pan aur beech mein dard, bhaari bag uthane par badhta hai.", [MID, ALIFT], [MPOST, MINS, NLIFT]],
+  ["de", "किशोर की पीठ झुकी हुई है, देर तक बैठने पर दर्द होता है।", [NSIT], [MPOST, MINS, PMECH, MID, ASUST]],
+  // Postural kyphosis
+  ["en", "Rounded shoulders and forward head, tight across the upper back by the evening.", [UPPER], [MDESK, MPOST, MINS, PACT, PMECH]],
+  ["en", "Slouches over the phone for hours; the pain goes away when they sit up straight.", [TPOST], [MPOST, MINS, MDESK, NSIT, PMECH]],
+  ["en", "Mid back ache gets going in the afternoon at work, gone by the next morning.", [MID], [NWORK, PACT, MDESK, MPOST, PMECH]],
+  ["hi", "Din bhar laptop par jhuk kar kaam, shaam tak upar ki peeth mein dard.", [UPPER], [NCOMP, MDESK, NWORK, MPOST, MINS, PACT]],
+  ["de", "लगातार मोबाइल देखने से पीठ में दर्द रहता है, सीधा बैठने पर आराम।", [TPOST], [MPOST, MINS, NSIT, PMECH]],
+  // Idiopathic scoliosis
+  ["en", "Curve noticed by the school nurse; no pain, just one shoulder higher.", [], []],
+  ["en", "Aching on the concave side of the curve, worse by the end of a long day.", [PACT], [PMECH, MINS, MPOST]],
+  ["en", "Teenager, right rib hump on forward bending, dull ache in the mid back after standing for a long time.", [MID], [ISR, AFLEX, ASUST, MINS, PMECH, PACT]],
+  ["hi", "Bachche ki peeth ek taraf se tedhi hai, beech mein halka dard rehta hai.", [MID], [MINS, PMECH]],
+  ["de", "रीढ़ में टेढ़ापन है और कभी कभी पीठ में दर्द होता है।", [], [MINS, PMECH, PACT]],
+  // Costochondritis / Tietze
+  ["en", "Tender swelling at the second rib next to the sternum, ache on deep breathing.", [ANTW, AIN], [STERN, PBREATH, NBREATH, COSTO]],
+  ["en", "Had a chest infection and a bad cough last month, now the front of the ribs hurts when pressed.", [MVIRAL, ANTW], [COSTO, STERN]],
+  ["en", "Sharp stabbing pain at the front of the chest, sometimes fleeting, ECG was normal.", [ANTW], [STERN, PBREATH, PMECH]],
+  ["hi", "Seene ke beech mein dabane par dard, gehri saans par aur badhta hai.", [STERN, AIN], [ANTW, PBREATH, NBREATH]],
+  ["de", "छाती के आगे पसलियों के जोड़ पर दर्द, खांसने पर बढ़ता है।", [ANTW, ACOUGH], [COSTO, STERN, NCOUGH]],
+  ["en", "Ibuprofen settles it within a couple of days.", [TNSAID], []],
+  ["en", "Laughing hurts the ribs.", [ALAUGH], [COSTO, LATW, ANTW]],
+  // Myofascial pain
+  ["en", "Tight, tender knots along the mid thoracic muscles on both sides.", [PARA, MID], [ISL, ISR]],
+  ["en", "Dull ache across the upper back and shoulder blades, trigger points are tender, massage helps.", [UPPER], [ISC, TMOB, TMANIP, PMECH]],
+  ["en", "Stress at work makes the upper back tighten up and the ache spreads towards the neck.", [UPPER], [NWORK, RNONE, CTJ, PACT]],
+  ["en", "Stretching the chest and upper back gives them relief.", [TSTRETCH], [UPPER]],
+  ["hi", "Peeth ke dono taraf mansapeshiyon mein kasavat aur dard.", [PARA], [PMECH]],
+  ["de", "तनाव में पीठ के ऊपर की मांसपेशियां अकड़ जाती हैं।", [UPPER], [PACT, PMECH]],
+  // Ankylosing spondylitis
+  ["en", "Young man, morning stiffness for over an hour that loosens up as the day goes on.", [PINFL], [PMORN, PACT]],
+  ["en", "Wakes in the second half of the night with a stiff upper back, has to get up and walk about.", [PNIGHT, PINFL], [PMORN, FNIGHT, UPPER, NSLEEP]],
+  ["en", "No relief with rest, pain is better after exercise.", [PINFL], [PACT, PMORN]],
+  ["en", "Alternating buttock pain and an ache in the mid back, tested HLA-B27 positive.", [MID], [PINFL, PMORN]],
+  ["en", "NSAIDs help a lot with the stiffness.", [TNSAID], [PINFL]],
+  ["hi", "Subah ki akdan ek ghante se zyada, chalne phirne se kam hoti hai.", [PINFL], [PMORN, PACT]],
+  ["de", "रात के दूसरे पहर में पीठ अकड़ जाती है, उठकर चलना पड़ता है।", [PNIGHT, PINFL], [FNIGHT, PMORN, NSLEEP]],
+  // Red flags
+  ["en", "Pain at rest and at night that nothing eases, with a loss of 6 kg in two months.", [FCONST, FNIGHT, FWT], [PCONST, PNIGHT, TNONE]],
+  ["en", "Known breast cancer survivor now with new mid back pain.", [FCA, MID], []],
+  ["en", "Fever and chills along with severe back pain over the last week.", [FFEVER], [FUNWELL]],
+  ["en", "Pain began after a fall from a ladder yesterday.", [FTRAUMA, MFALL], []],
+  ["en", "Known osteoporosis on alendronate and a sudden sharp pain after bending.", [FOSTEO], [MOSTEO, AFLEX]],
+  ["en", "Chest pain with breathlessness and a cough with blood.", [FRESP], [FCARD]],
+  ["en", "Pain after eating and recent weight loss.", [FABD, FWT], [RABD]],
+  ["en", "Heaviness in both legs and numbness below the waist, getting worse.", [FLEGN, FLEGW], [FWORSE]],
+  ["de", "सीने में दबाव और बाएं हाथ में दर्द फैलता है।", [FCARD, RCARD], [RANT]],
+  ["hi", "Pehle dil ka daura pad chuka hai, ab seene mein dard.", [FCARDH], [FCARD, ANTW]],
+  ["en", "Patient aged 62, first ever episode of mid back pain with no cause.", [FAGE, MNONE], [MID, MINS]],
+  ["en", "Generally unwell, tired and run down with the back ache.", [FUNWELL], []],
+  ["hi", "Pichle do mahine se dard badhta ja raha hai, dawai se bhi nahi ruk raha.", [FWORSE], [TNONE]],
+  ["en", "Constant, unremitting pain whatever the position.", [FCONST, PCONST], []],
+  // Functional limits
+  ["en", "Can't sit through a film.", [NSIT], []],
+  ["en", "Stopped swimming because of the back.", [NSPORT], []],
+  ["en", "Struggles to carry the shopping bags.", [NLIFT], []],
+  ["en", "Pain stops them sleeping through the night.", [NSLEEP], [PNIGHT]],
+  ["hi", "Gaadi chalane mein peeth mein dard hota hai.", [NDRIVE], []],
+  ["de", "कंप्यूटर पर काम करना मुश्किल है।", [NCOMP], [NWORK]],
+  // Places and spread
+  ["en", "Pain at the junction of the neck and back, with a bony prominence.", [CTJ], [UPPER, MPOST]],
+  ["en", "Ache at the level of the last rib, right where the back meets the lumbar spine.", [TLJ], [LOWER]],
+  ["en", "Pain on the left between the shoulder blade and the spine.", [ISL], [MID, UPPER]],
+  ["hi", "Peeth mein dono taraf reedh ke paas dard.", [PARA], []],
+  ["en", "Pain centred over the breastbone, nothing at the back.", [STERN], [ANTW]],
+  ["en", "Radiates to the groin on the same side from the lower thoracic spine.", [LOWER, RGROIN], []],
+  ["en", "Pain travels from the mid back to the front of the abdomen.", [MID, RABD], []],
+  // must stay silent
+  ["en", "Patient is a retired teacher from Nagpur.", [], []],
+  ["en", "Referred by the family doctor.", [], []],
+  ["en", "Pain score is 6 out of 10 today.", [], []],
+  ["en", "Lives with her husband and two children.", [], []],
+  ["en", "He would like to play tennis again.", [], []],
+  ["en", "Medical history: type 2 diabetes, on metformin.", [], []],
+  ["en", "Booked in for review next Tuesday.", [], []],
+  ["hi", "Mareez apne bete ke saath aaye hain.", [], []],
+  ["de", "मरीज़ का वज़न सत्तर किलो है।", [], []],
+];

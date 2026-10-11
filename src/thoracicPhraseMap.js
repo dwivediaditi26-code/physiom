@@ -10,9 +10,10 @@
 //
 // "~word" = a bare word that only counts when typed INTO that question's own box.
 import { createPhraseMatcher, WORDS } from "./phraseEngine.js";
-import { SIDE_HINGLISH, SIDE_DEVA, LEFT_W, RIGHT_W } from "./phraseSides.js";
+import { SIDE_HINGLISH, SIDE_DEVA, LEFT_W, RIGHT_W, BOTH_W } from "./phraseSides.js";
+import { extendPhrases } from "./phrasePattern.js";
 
-export const THORACIC_PHRASES = {
+const THORACIC_BASE = {
   location: {
     "Upper thoracic T1–T4": [
       "~upper back", "upper thoracic", "upper thoracic area", "level t2", "t2 level", "level t3", "t3 level", "level t4", "t4 level", "upper thoracic spine", "upper part of the back", "top of the back", "upper part of my back", "t1 to t4", "t1 t4",
@@ -556,6 +557,18 @@ export const THORACIC_PHRASES = {
   },
 };
 
+
+// Added for the way a CLINICIAN types about a patient ("the patient", "they", short notes) -- see thoracicSheetSet.js. Kept apart from the
+// base lists so the order of the answers (which the tests index by position) never changes.
+const SHEET_PHRASES = {
+};
+const mergePhrases = (base, extra) => {
+  const out = { ...base };
+  for (const [field, opts] of Object.entries(extra)) out[field] = extendPhrases(out[field], opts);
+  return out;
+};
+export const THORACIC_PHRASES = mergePhrases(THORACIC_BASE, SHEET_PHRASES);
+
 const { PAIN: PAIN_W } = WORDS;
 // Words that say a sentence is about the thoracic region / about another one.
 const OWN_W = "mid_back middle_back upper_back peeth पीठ thoracic rib* chest chhati छाती seena सीना spine reedh रीढ sternum breastbone scapula* shoulder_blade shoulder_blades blade blades interscapular paraspinal kandha कंधा chhatti pasli पसली";
@@ -588,9 +601,14 @@ const matcher = createPhraseMatcher({
     "redFlags|Cardiac history — pain reproduces cardiac pattern": FAMILY_W,
     // "pain goes round to the front of my chest" says where the pain GOES, not where it is
     "pattern|Morning stiffness": "better improves improve* eases ease loosen* loosens settles hilne हिलने theek ठीक kam कम movement moving",
+    // "stop slouching" is advice, not a movement that hurts
+    "aggMovements|Flexion": "stop stopped stopping correct correcting correction",
+    // "pain on the right between the shoulder blades" is the right-hand interscapular option, not the central one
+    "location|Interscapular — central": "on_right on_left right_sided left_sided right_side left_side",
     "location|Anterior chest wall": "goes go going radiat* spread* travel* shoots jata जाता failta फैलता aata आता through round",
   },
   hinglish: [
+    [/\bon (?:their |my |his |her |the )?feet\b/g, "standing"], // "a long time on their feet" is a standing posture; "feet" alone would read as another body part
     ...SIDE_HINGLISH,
     [/\b(peeth|pith|peith|peet|pitth|peetha)\b/g, "peeth"],
     [/\b(reedh|reed|ridh|rirh|reerh|reedhh|redh)\b/g, "reedh"],
@@ -626,7 +644,7 @@ const matcher = createPhraseMatcher({
   ],
   deva: [
     ...SIDE_DEVA,
-    [/पसली(यों|यां|या|यो)?/g, "पसली"],
+    [/पसल(ी|ि)(यों|यां|या|यो)?/g, "पसली"],
     [/सीन(ा|े)/g, "सीना"],
     [/कंध(ा|े|ों|ो)/g, "कंधा"],
     [/खांस(ी|ने|ना|ते|ता)/g, "खांसी"],
@@ -649,12 +667,12 @@ const matcher = createPhraseMatcher({
     const WHEN = "when whenever while on during with every each par पर jab जब";
     const SCAP = "shoulder_blade shoulder_blades shoulderblade shoulderblades blade blades scapula scapulae scapular kandha कंधा";
     // location
-    rule("location", UPPER, ["upper upari upar ऊपरी ऊपर high top", "back peeth पीठ thoracic"], 4, { unless: "lower mid middle beech बीच" });
+    rule("location", UPPER, ["upper upari upar ऊपरी ऊपर high top", "back peeth पीठ thoracic"], 4, { unless: "lower mid middle beech बीच abdomen abdominal stomach pet पेट kamar कमर" });
     rule("location", MID, ["mid middle beech बीच centre center madhya मध्य", "back peeth पीठ thoracic"], 6, { unless: "shoulder_blade shoulder_blades blades scapula kandha कंधा कंधों interscapular lower upper" });
     rule("location", ISC, ["between bw beech बीच interscapular", SCAP], 5);
-    rule("location", ISL, [LEFT_W, SCAP], 11, { ctx: "painOrArm", unless: "right dayen दायां" });
+    rule("location", ISL, [LEFT_W, SCAP], 11, { ctx: "painOrArm", unless: "right dayen दायां", blockBefore: "have has had having" });
     rule("location", ISR, [RIGHT_W, SCAP], 11, { ctx: "painOrArm", unless: "left bayen बायां" });
-    rule("location", COSTO, ["rib* pasli पसली", "spine reedh रीढ", "junction joint jod जोड़ meet* join* attach* near paas पास"], 7, { ctx: "pain" });
+    rule("location", COSTO, ["rib* pasli पसली", "spine reedh रीढ", "junction joint jod जोड़ meet* join* attach* near paas पास"], 7, { ctx: "pain", unless: "lumbar last_rib twelfth_rib" });
     rule("location", LATW, ["side bagal बगल sides", "rib* pasli पसली chest chhati छाती seena सीना"], 4, { ctx: "pain", unless: "spine reedh रीढ back peeth पीठ both dono दोनों" });
     rule("location", ANTW, ["front anterior aage आगे samne सामने", "chest chhati छाती seena सीना rib* pasli पसली"], 6, { ctx: "pain", unless: "goes go going radiat* spread* travel* comes through refer* जाता आता फैलता wrap* around charo चारों band belt girdle", blockBefore: "through" });
     rule("location", STERN, ["middle centre center beech बीच midline", "chest chhati छाती seena सीना sternum"], 3, { ctx: "pain", unless: "back peeth पीठ" });
@@ -662,17 +680,17 @@ const matcher = createPhraseMatcher({
     rule("location", MID, ["t5 t6 t7 t8"], 1);
     rule("location", LOWER, ["t9 t10 t11 t12"], 1, { unless: "l1" });
     rule("location", STERN, ["sternum sternal breastbone", PAIN_W + " tender tenderness"], 8, { unless: "goes go going radiat* spread* travel* through refer*" });
-    rule("location", BAND, ["band belt girdle patta patti पट्टी पट्टा wrap* wrapping charo चारों gher* घेर*", "chest ribs rib pasli पसली chhati छाती seena सीना"], 6);
+    rule("location", BAND, ["band belt girdle patta patti पट्टी पट्टा wrap* wrapping charo चारों gher* घेर*", "chest ribs rib pasli पसली chhati छाती seena सीना"], 6, { unless: "arm arms jaw jabda जबड़े haath हाथ" });
     rule("location", PARA, ["both dono दोनों either bilateral", "side sides taraf तरफ", "spine reedh रीढ paraspinal backbone"], 6, { ctx: "painOrArm" });
     // radiation
     const R = (i) => O("radiation", i);
     const [RNONE, RWALL, RBLADE, RANT, RABD, RGROIN, RBILAT, RCARD] = Array.from({ length: 8 }, (_, i) => R(i));
-    const SPREAD = "goes go going radiat* spread* travel* shoots shoot refer* jata जाता failta फैलता aata आता";
+    const SPREAD = "goes go going radiat* spread* travel* shoots shoot refer* runs run running extend* extends passes pass jata जाता failta फैलता aata आता";
     rule("radiation", RWALL, [SPREAD, "around round going_round charo चारों", "rib* pasli पसली chest chhati छाती"], 7);
     rule("radiation", RWALL, [SPREAD, "along follows following saath_saath साथ_साथ", "rib* pasli पसली"], 10);
     rule("radiation", RBLADE, [SPREAD, SCAP + " interscapular"], 5);
     rule("radiation", RANT, [SPREAD + " through aar आर", "front_of_chest front_chest chest chhati छाती seena सीना sternum breastbone"], 6, { unless: "left bayen बायां arm haath हाथ jaw jabda जबड़े" });
-    rule("radiation", RABD, [SPREAD, "stomach abdomen belly tummy pet पेट"], 5);
+    rule("radiation", RABD, [SPREAD, "stomach abdomen belly tummy pet पेट"], 8);
     rule("radiation", RGROIN, [SPREAD, "groin hip jaangh जांघ kulha कूल्हे kulhe"], 5);
     rule("radiation", RGROIN, ["groin jaangh जांघ", PAIN_W], 4, { blockBefore: "no without" });
     rule("radiation", RNONE, ["doesnt does_not dont not no never nahi नहीं", "travel* spread* radiat* shoot* jata जाता failta फैलता"], 3, { selfNeg: true });
@@ -681,16 +699,16 @@ const matcher = createPhraseMatcher({
     // mechanism
     const M = (i) => O("mechanismType", i);
     const [MINS, MLIFT, MROT, MFALL, MMVA, MDESK, MPOST, MPP, MOSTEO, MVIRAL, MNONE] = Array.from({ length: 11 }, (_, i) => M(i));
-    const ONSET = "started began start onset felt pop popped pulled strain strained strains injury injured twinge catch caught after hua हुआ aaya आया shuru शुरू khichav खिंचाव lag लग hurt";
+    const ONSET = "started began start onset achanak अचानक sudden suddenly went gave_way snapped felt pop popped pulled strain strained strains injury injured twinge catch caught after hua हुआ aaya आया shuru शुरू khichav खिंचाव lag लग hurt";
     const LOAD = "heavy weight box* bag* suitcase* luggage bhaari भारी wazan वजन bojh बोझ saman सामान luggage furniture suitcase cylinder bucket";
-    rule("mechanismType", MLIFT, ["lift* lifted lifting carry carrying carried uthate uthane uthaya उठाते उठाने उठाया", LOAD, ONSET], 9, { unless: "cant cannot unable avoid" });
-    rule("mechanismType", MDESK, ["computer laptop desk", "kaam काम work working typing"], 5, { ctx: "painOrArm", unless: "cant cannot unable stopped possible impossible difficulty hard" });
+    rule("mechanismType", MLIFT, ["lift* lifted lifting carry carrying carried uthate uthane uthaya उठाते उठाने उठाया", LOAD, ONSET], 9, { unless: "cant cannot unable avoid heaviness tingling tingly numbness numb" });
+    rule("mechanismType", MDESK, ["computer laptop desk कंप्यूटर", "kaam काम work working typing"], 5, { ctx: "painOrArm", unless: "cant cannot unable stopped possible impossible difficulty hard" });
     rule("mechanismType", MINS, ["gradual gradually slowly slow dheere धीरे", "start* began onset shuru शुरू come came badh बढ़ worse worsen* worsened increas*"], 6, { ctx: "painOrArm", selfNeg: true, unless: "improv* better theek ठीक kam कम settl*" });
     rule("mechanismType", MROT, ["twist* turned turning rotat* mod mud* ghum* घूम* मुड़*", "suddenly sharp catch jhatka झटका khichav खिंचाव kat awkwardly achanak अचानक quickly"], 6, { ctx: "painOrArm" });
-    rule("mechanismType", MFALL, ["fell fall fallen slipped gir* गिर*", "back peeth पीठ stairs bal बल ladder height roof tree horse bike scooter"], 5);
+    rule("mechanismType", MFALL, ["fell fall fallen slipped came_off thrown gir* गिर*", "back peeth पीठ stairs bal बल ladder height roof tree horse bike scooter"], 5);
     rule("mechanismType", MFALL, ["hit struck kicked banged blow punch maar मार laat लात", "back peeth पीठ"], 4, { unless: "car bike accident takkar टक्कर" });
     rule("mechanismType", MMVA, ["accident takkar टक्कर crash collision mva rta", "car bike road gaadi गाड़ी motorcycle truck bus vehicle scooter motorway highway rear"], 5);
-    rule("mechanismType", MDESK, ["desk computer laptop screen office", "hours ghante घंटे ghanto घंटों all_day long der देर zyada ज्यादा sitting baith* बैठ*"], 8, { unless: "cant cannot unable possible impossible difficulty hard minutes" });
+    rule("mechanismType", MDESK, ["desk computer laptop screen office कंप्यूटर", "hours ghante घंटे ghanto घंटों all_day long der देर zyada ज्यादा sitting baith* बैठ*"], 8, { unless: "cant cannot unable possible impossible difficulty hard minutes" });
     rule("mechanismType", MPOST, ["surgery operation operated ऑपरेशन सर्जरी thoracotomy", "after post since following baad बाद"], 6);
     rule("mechanismType", MPP, ["breastfeed* breast_feed* nursing feeding doodh दूध", "baby infant child bachcha bachche बच्चे बच्चा pilate पिलाते"], 6);
     rule("mechanismType", MPP, ["delivery childbirth birth janm जन्म", "after post since baad बाद"], 5);
@@ -717,8 +735,8 @@ const matcher = createPhraseMatcher({
     rule("aggMovements", AIN, ["deep deeply gehri गहरी", "breath breathe breathes breathing saans सांस"], 4, { ctx: "pain", unless: "out exhal* bahar बाहर chhod* छोड़* cant cannot unable difficulty trouble" });
     rule("aggMovements", AIN, ["inspiration inspiratory inhale inhaling inhalation", PAIN_W], 10, { unless: "cant cannot unable difficulty trouble" });
     rule("aggMovements", AOUT, ["breathe breathing breath saans सांस", "out exhal* expiration bahar बाहर chhod* छोड़* nikal* निकाल*"], 6, { ctx: "pain" });
-    rule("aggMovements", ACOUGH, ["cough* khansi खांसी khansne खांसने khasi", PAINX], 7, { blockBefore: "with have has had nasty bad", noComma: true });
-    rule("aggMovements", ACOUGH, [WHEN, "cough* khansi खांसी"], 3, { ctx: "pain", noComma: true });
+    rule("aggMovements", ACOUGH, ["cough* khansi खांसी khansne खांसने khasi", PAINX], 7, { blockBefore: "with have has had nasty bad", noComma: true, unless: "blood khoon खून haemoptysis hemoptysis" });
+    rule("aggMovements", ACOUGH, [WHEN, "cough* khansi खांसी"], 3, { ctx: "pain", noComma: true, unless: "blood khoon खून haemoptysis hemoptysis" });
     rule("aggMovements", ASNEEZE, ["sneeze sneezes sneezing chheenk छींक chheenkne छींकने", PAIN_W], 7, { noComma: true });
     rule("aggMovements", ASNEEZE, [WHEN, "sneeze sneezes sneezing chheenk छींक"], 3, { ctx: "pain", noComma: true });
     rule("aggMovements", ALAUGH, ["laugh laughs laughing hans हंस hasne", PAIN_W], 7, { noComma: true });
@@ -734,12 +752,12 @@ const matcher = createPhraseMatcher({
     // what helps
     const T = (i) => O("relTreatments", i);
     const [THEAT, TICE, TMANIP, TMOB, TSTRETCH, TBREATH, TPOST, TTAPE, TNSAID, TPARA, TRELAX, TNONE] = Array.from({ length: 12 }, (_, i) => T(i));
-    const HELP = "help helps helped helping relax relaxes relaxed loosen loosens relief relieve relieves relieved ease eases eased settle settles settled calm calms soothe soothes better improves improved works worked aaram आराम rahat राहत fayda फायदा kam कम";
-    rule("relTreatments", THEAT, ["heat hot warm garam गरम गर्म sekai सेकाई compress heating", HELP], 8, { unless: "cold ice thanda ठंडा baraf बर्फ", blockAfter: "nothing none" });
+    const HELP = "help helps helped helping relax relaxes relaxed loosen loosens relief relieve relieves relieved ease eases eased settle settles settled calm calms soothe soothes better improves improved works worked aaram आराम rahat राहत fayda फायदा kam कम effective helpful away gone largely off looser freer";
+    rule("relTreatments", THEAT, ["heat hot_water_bottle water_bottle hot_pack heat_pack hot warm garam गरम गर्म sekai सेकाई compress heating", HELP], 14, { unless: "cold ice thanda ठंडा baraf बर्फ", blockAfter: "nothing none" });
     rule("relTreatments", TICE, ["ice cold baraf बर्फ thanda ठंडा", HELP], 8, { unless: "heat hot warm garam गरम" , blockAfter: "nothing none" });
-    rule("relTreatments", TMANIP, ["manipulation chiropractor chiropractic adjust* crack* cracking clicking bithane बिठाने", HELP], 8, { blockAfter: "nothing none" });
+    rule("relTreatments", TMANIP, ["manipulation मैनिपुलेशन मैनीपुलेशन chiropractor chiropractic adjust* crack* cracking clicking bithane बिठाने", HELP], 8, { blockAfter: "nothing none" });
     rule("relTreatments", TMOB, ["mobilis* mobiliz* mobilisation manual_therapy hands_on", HELP], 8, { blockAfter: "nothing none" });
-    rule("relTreatments", TSTRETCH, ["stretch* khichav खिंचाव tanne तानने", HELP], 8, { blockAfter: "nothing none" });
+    rule("relTreatments", TSTRETCH, ["stretch* स्ट्रेच* khichav खिंचाव tanne तानने", HELP], 12, { blockAfter: "nothing none" });
     rule("relTreatments", TBREATH, ["pranayam* प्राणायाम anulom अनुलोम breathing_exercise breathing_exercises diaphragmatic", HELP], 8, { blockAfter: "nothing none" });
     rule("relTreatments", TPOST, ["posture पोस्चर sitting_up_straight sit_up_straight sitting_straight sit_straight standing_straight standing_tall stand_tall seedha_baithne सीधा_बैठने seedha_khade सीधा_खड़े upright", HELP], 8, { blockAfter: "nothing none" });
     rule("relTreatments", TTAPE, ["tape taping kinesio kinesiotape strapping", HELP], 8, { blockAfter: "nothing none" });
@@ -760,17 +778,19 @@ const matcher = createPhraseMatcher({
     rule("pattern", PNIGHT, ["night raat रात", PAIN_W], 4, { reliefKills: true, noComma: true, block: "only_when only_if only_while when while if jab जब" });
     rule("pattern", PMORN, ["morning subah सुबह uthte उठते wake* waking", "stiff* akdan akad* अकड़* jakad* jakdan जकड़* jam"], 6, { reliefKills: true, unless: "ease* eases improve* better loosen* hilne हिलने movement move moving kam कम" });
     rule("pattern", PINFL, ["morning subah सुबह wake waking woke uthte उठते", "stiff* akdan akad* अकड़* jakad* jakdan जकड़*", "ease* eases improve* improves better loosen* loosens hilne हिलने hilne_dulne movement move moving exercise kam कम theek ठीक"], 14, { reliefKills: false });
-    rule("pattern", PACT, ["activity active exercise kaam काम karne करने", "worse more badh बढ़ after baad बाद brought_on brought_it_on triggers triggered comes_on"], 6, { ctx: "pain" });
+    rule("pattern", PACT, ["activity active exercise kaam काम karne करने", "worse more badh बढ़ after baad बाद brought_on brought_it_on triggers triggered comes_on"], 6, { ctx: "pain", unless: "cough* khansi खांसी sneez* chheenk छींक laugh* hans हंस breath* saans सांस" });
     // limited activities
     const N = (i) => O("fnAdl", i);
     const [NLIM, NBREATH, NCOUGH, NSIT, NDRIVE, NCOMP, NSPORT, NLIFT, NSLEEP, NWORK] = Array.from({ length: 10 }, (_, i) => N(i));
-    const CANT = "cant cannot unable not_possible impossible afraid scared fear dar डर difficulty difficult trouble hard mushkil मुश्किल dikkat दिक्कत nahi नहीं stop* stopped quit given_up give_up gave_up giving_up avoid* band बंद struggle struggling";
+    const CANT = "cant cannot unable not_possible impossible afraid scared fear dar डर difficulty difficult trouble hard mushkil मुश्किल dikkat दिक्कत nahi नहीं stop* stopped quit given_up give_up gave_up giving_up avoid* band बंद struggle struggling struggles"; 
+    const CANTP = CANT + " " + PAIN_W + " ache aches aching worse aggravates aggravate bothers uncomfortable problem problems";
+    const WORSEW = "shoots shoot worse worst worsens worsened aggravates aggravated aggravating triggers triggered set_off sets_off set_it_off sets_it_off brings_on brings_it_on makes_it_worse make_it_worse catches hurts hurt badh* बढ़*";
     rule("fnAdl", NBREATH, [CANT, "deep gehri गहरी breath breathe breathing saans सांस"], 7, { selfNeg: true , blockAfter: "nahi नहीं", blockBefore: "koi कोई kisi किसी" });
     rule("fnAdl", NCOUGH, [CANT, "cough coughing sneeze sneezing khansi खांसी chheenk छींक khansne खांसने"], 7, { selfNeg: true , blockAfter: "nahi नहीं", blockBefore: "koi कोई kisi किसी" });
     rule("fnAdl", NSIT, [CANT, "sit sitting baith* बैठ* sitting_tolerance"], 7, { selfNeg: true , blockAfter: "nahi नहीं", blockBefore: "koi कोई kisi किसी" });
     rule("fnAdl", NSIT, ["sitting_tolerance sit_tolerance"], 2);
     rule("fnAdl", NDRIVE, [CANT, "drive driving gaadi गाड़ी chalane चलाने chala चला"], 7, { selfNeg: true , blockAfter: "nahi नहीं", blockBefore: "koi कोई kisi किसी" });
-    rule("fnAdl", NCOMP, [CANT, "computer laptop typing keyboard"], 7, { selfNeg: true , blockAfter: "nahi नहीं", blockBefore: "koi कोई kisi किसी" });
+    rule("fnAdl", NCOMP, [CANT, "computer laptop typing keyboard कंप्यूटर लैपटॉप"], 7, { selfNeg: true , blockAfter: "nahi नहीं", blockBefore: "koi कोई kisi किसी" });
     rule("fnAdl", NSPORT, [CANT, "gym sport sports football cricket running jogging workout* exercise exercising khel* खेल* jim जिम yoga swimming tennis badminton"], 6, { selfNeg: true , blockAfter: "nahi नहीं", blockBefore: "koi कोई kisi किसी" });
     rule("fnAdl", NLIFT, [CANT, "lift* lifted lifting carry carrying uthana उठाना utha उठा"], 6, { selfNeg: true, unless: "arm arms shoulder shoulders" , blockAfter: "nahi नहीं", blockBefore: "koi कोई kisi किसी" });
     rule("fnAdl", NSLEEP, [CANT, "sleep sleeping so सो neend नींद comfortable wake waking"], 8, { selfNeg: true , blockAfter: "nahi नहीं", blockBefore: "koi कोई kisi किसी" });
@@ -778,29 +798,146 @@ const matcher = createPhraseMatcher({
     // red flags
     const F = (i) => O("redFlags", i);
     const [FNONE, FCONST, FNIGHT, FWORSE, FCARD, FCARDH, FRESP, FABD, FCA, FWT, FFEVER, FTRAUMA, FOSTEO, FLEGN, FLEGW, FAGE, FUNWELL] = Array.from({ length: 17 }, (_, i) => F(i));
-    rule("redFlags", FCONST, ["constant continuous unrelenting same", "position movement posture hilne हिलने sthiti स्थिति sit sitting lie lying stand standing"], 8, { selfNeg: true, unless: "after when while worse better relieved" });
+    rule("redFlags", FCONST, ["constant continuous unrelenting same", "position movement posture hilne हिलने sthiti स्थिति sit sitting lie lying stand standing"], 8, { selfNeg: true, block: "not_constant isnt_constant aint_constant", unless: "after when while worse better relieved" });
     rule("redFlags", FCONST, ["doesnt_change does_not_change dont_change not_change unchanged no_change nothing_changes never_changes badalta_nahi", "rest movement position posture move moving hilne हिलने"], 8, { selfNeg: true });
     rule("redFlags", FNIGHT, ["night raat रात", "wakes woke jaga जगा jagata जगाता khul खुल neend नींद sleep disturbs disturb* disturbed", "progress* worsening getting_worse gets_worse badh बढ़ increasing steadily every_night roz रोज"], 14);
     rule("redFlags", FWORSE, ["despite inspite in_spite even_after bhi_badh phir_bhi फिर_भी", "treatment physio physiotherapy medication ilaaj इलाज dawai दवाई", "worse worsening badh बढ़ increasing"], 10);
-    rule("redFlags", FCARD, ["chest seena सीना chhati छाती", "tight* tightness pressure heavy heaviness jakdan जकड़न dabav दबाव bharipan भारीपन crushing", "sweat* pasina पसीना left bayen बायां jaw jabda जबड़े"], 8);
-    rule("redFlags", FCARD, ["chest seena सीना chhati छाती", "tightness tight pressure crushing heaviness jakdan जकड़न dabav दबाव bharipan भारीपन"], 4);
+    rule("redFlags", FCARD, ["chest seena सीना chhati छाती", "tight* tightness pressure weight heavy heaviness jakdan जकड़न dabav दबाव bharipan भारीपन crushing", "sweat* pasina पसीना left bayen बायां jaw jabda जबड़े"], 12, { unless: "legs leg pair पैर" });
+    rule("redFlags", FCARD, ["chest seena सीना chhati छाती", "tightness tight pressure crushing heaviness jakdan जकड़न dabav दबाव bharipan भारीपन"], 4, { unless: "legs leg pair पैर" });
     rule("redFlags", FCARDH, ["heart cardiac angina stent bypass dil दिल", "history disease attack condition patient hua हुआ tha था bimari बीमारी pehle पहले had before operation surgery"], 8);
     rule("redFlags", FRESP, ["breathless* shortness short_of_breath dyspn* haemoptysis hemoptysis", PAIN_W + " pain"], 20, { ctx: "painOrArm" });
     rule("redFlags", FRESP, ["blood khoon खून", "cough* sputum khansi खांसी khansne खांसने"], 5);
     rule("redFlags", FABD, ["eating eat meals meal food khana खाना khane खाने", "pain dard दर्द vomit* ulti उल्टी worse badh बढ़"], 6, { ctx: "painOrArm", unless: "ice heat tablet tablets goli गोली dawai दवाई dolo paracetamol brufen diclofenac gel medicine medicines" });
     rule("redFlags", FABD, ["food meals meal eating eat khana खाना", "sick nausea nauseous nauseated vomit* off appetite"], 6, { unless: "tablet tablets goli गोली dawai दवाई dolo paracetamol brufen diclofenac gel medicine medicines" });
-    rule("redFlags", FCA, ["cancer tumor tumour malignan* carcinoma lymphoma leukemia myeloma kainsar कैंसर metastas* secondaries", "history had diagnosed treated treatment survivor chemo chemotherapy radiotherapy past previous earlier before tha था hua हुआ ilaaj इलाज"], 6);
+    rule("redFlags", FCA, ["cancer tumor tumour malignan* carcinoma lymphoma leukemia myeloma kainsar कैंसर metastas* secondaries", "history had diagnosed treated treatment survivor chemo chemotherapy radiotherapy past previous earlier before pehle पहले chuka चुका tha था hua हुआ ilaaj इलाज"], 6);
     rule("redFlags", FWT, ["weight wazan वजन", "loss lost losing ghat घट* kam कम dropping dropped gir गिर*", "unexplained without_trying bina बिना no_reason"], 8, { selfNeg: true });
-    rule("redFlags", FWT, ["weight wazan वजन", "lost losing loss ghat घट* dropped dropping"], 6, { unless: "want wants wanted wish trying plan gym program programme gain gained" });
-    rule("redFlags", FFEVER, ["fever temperature bukhar बुखार chills night_sweats", "back thoracic spine peeth पीठ reedh रीढ pain dard दर्द"], 8);
+    rule("redFlags", FWT, ["weight wazan वजन", "lost losing loss ghat घट* kam कम dropped dropping"], 6, { unless: "want wants wanted wish trying plan gym program programme gain gained no nil denies" });
+    rule("redFlags", FFEVER, ["fever temperature bukhar बुखार chills night_sweats", "back thoracic spine peeth पीठ reedh रीढ pain dard दर्द"], 12);
     rule("redFlags", FFEVER, ["fever temperature bukhar बुखार", "sweat* sweats night_sweats chills shivering rigors kaampkampi कंपकंपी"], 8);
     rule("redFlags", FTRAUMA, ["fall fell accident injury trauma hit gir* गिर* chot चोट", "recent recently yesterday last_week days_ago haal हाल pichle पिछले kal कल parso परसों"], 12);
-    rule("redFlags", FOSTEO, ["osteoporosis osteoporotic weak_bones brittle_bones thin_bones", "known diagnosed told have has hai है"], 8);
+    rule("redFlags", FOSTEO, ["osteoporosis ऑस्टियोपोरोसिस osteoporotic weak_bones brittle_bones thin_bones", "known diagnosed told have has hai है"], 8);
     rule("redFlags", FLEGN, ["numb* tingl* sunn* सुन्न* jhunjhuni झनझनाहट pins_and_needles", "leg legs foot feet pair पैर tango टांगों pairon पैरों"], 6);
     rule("redFlags", FLEGW, ["weak* weakness heavy heaviness kamzor कमजोर bhaari भारी jawab जवाब giving_way buckle* buckling jelly gives_way gave_way collapsing", "leg legs pair पैर tango टांगों pairon पैरों"], 6);
     rule("redFlags", FAGE, ["first first_time first_ever pehli पहली never_before", AGE_50_PLUS], 14, { selfNeg: true });
     rule("redFlags", FUNWELL, ["run_down off_colour washed_out wiped_out drained worn_out"], 2);
     rule("redFlags", FUNWELL, ["unwell malaise ill sick bimar बीमार tabiyat तबीयत kharab खराब", "generally all_over whole body sharir शरीर thakan थकान tired fatigue"], 8);
+
+    // ───── added for the way a CLINICIAN types about a patient (thoracicSheetSet.js) ─────
+    const WORST = WORSEW + " " + PAINX;
+    // radiation
+    rule("radiation", RNONE, ["stays stay stayed", "put local there"], 3);
+    rule("radiation", RWALL, ["wrap* wraps wrapping round around charo चारों", "chest ribs rib* pasli पसली chhati छाती seena सीना", "from starts start begins begin goes go going spreads spread* se से"], 8, { unless: "arm arms jaw jabda जबड़े haath हाथ" });
+    rule("radiation", RWALL, ["dermatomal"], 1, { unless: "arm arms jaw jabda जबड़े haath हाथ" });
+    // location
+    rule("location", COSTO, ["costovertebral costotransverse"], 1);
+    // how it started
+    rule("mechanismType", MROT, ["twist twisted twisting turned", "sudden suddenly achanak अचानक quickly sharp"], 6);
+    rule("mechanismType", MDESK, ["desk computer laptop", "posture hunched slouched hunching slouching"], 4, { unless: "cant cannot unable" });
+    rule("mechanismType", MDESK, ["desk computer laptop कंप्यूटर", "work working posture hunched worker"], 3, { story: PAIN_W + " back peeth पीठ", unless: "cant cannot unable stopped difficulty hard" });
+    rule("mechanismType", MINS, ["gradual gradually insidious crept built_up"], 3, { blockAfter: "improvement improving improved improve better recovery recovering relief healing" });
+    rule("mechanismType", MINS, ["dheere धीरे"], 2, { blockAfter: "theek ठीक improv* kam कम" });
+    rule("mechanismType", MNONE, ["no nobody none unknown", "cause reason wajah vajah वजह"], 5, { selfNeg: true });
+    rule("mechanismType", MNONE, ["idiopathic"], 1);
+    rule("mechanismType", MNONE, ["no without nahi नहीं", "injury trauma chot चोट"], 4, { selfNeg: true, unless: "gradual gradually slowly dheere धीरे insidious" });
+    rule("mechanismType", MVIRAL, ["cold flu viral infection covid", "after post following baad बाद"], 6, { unless: "cant cannot" });
+    // aggravating movements (fragments such as "Worse: rotation.")
+    rule("aggMovements", AROT, ["twist* twisting rotation rotating turning turn ghum* घूम*", WORSEW], 8, { unless: "bend* flex* jhuk* झुक* lift* uthana उठाना" });
+    rule("aggMovements", AFLEX, ["flexion flexing", WORSEW], 4);
+    rule("aggMovements", AEXT, ["extension extending", WORSEW], 4);
+    rule("aggMovements", ACOUGH, ["cough* khansi खांसी khansne खांसने", "sneez* chheenk छींक laugh* hans हंस deep_breath", WORST], 12, { blockBefore: "with have has had nasty bad" });
+    rule("aggMovements", ACOUGH, ["cough* khansi खांसी khansne खांसने", WORSEW], 5, { blockBefore: "with have has had nasty bad" });
+    rule("aggMovements", ASNEEZE, ["sneez* chheenk छींक", WORSEW], 5);
+    rule("aggMovements", AIN, ["inspiration inspiratory deep_breath deep_breaths big_breath gehri_saans", WORST], 12, { unless: "out exhal* bahar बाहर cant cannot unable difficulty trouble" });
+    rule("aggMovements", AIN, ["deep big gehri गहरी full", "breath breathe saans सांस", WORSEW], 9, { unless: "out exhal* bahar बाहर" });
+    rule("aggMovements", AREACH, ["overhead above_head over_head shelf shelves top_shelf", "reach reaching reaches hanging hang raise raising", WORST], 10);
+    rule("aggMovements", ASUST, ["stand standing sit sitting baith* बैठ* khade खड़े stay position posture feet", "long longer prolonged sustained lamba der देर hours school_day one_position same_position ek_hi एक_ही", WORST], 12);
+    // what helps
+    rule("relTreatments", TPOST, ["postural posture_correction sit_tall sitting_tall stand_tall standing_tall", HELP], 14, { blockAfter: "nothing none" });
+    rule("relTreatments", TTAPE, ["tape taping टेप", HELP], 14, { blockAfter: "nothing none" });
+    rule("relTreatments", TPOST, ["posture पोस्चर", "theek ठीक correct* correction sudhar सुधार", HELP], 10, { blockAfter: "nothing none" });
+    rule("relTreatments", TNSAID, ["anti_inflammatory anti_inflammatories antiinflammatory antiinflammatories painkiller painkillers", HELP], 10, { blockAfter: "nothing none" });
+    rule("relTreatments", TRELAX, ["relaxant relaxants thiocolchicoside myospaz tizanidine", HELP + " tightness"], 8, { blockAfter: "nothing none" });
+    rule("relTreatments", TRELAX, ["dheela dheeli ढीला ढीली", "dawai दवा दवाई goli गोली", HELP], 8, { blockAfter: "nothing none" });
+    // 24-hour pattern
+    rule("pattern", PBREATH, ["breath breathe breathing breathes respiration saans सांस", WORSEW + " brings_it_on"], 8);
+    rule("pattern", PMECH, ["mechanical"], 1);
+    rule("pattern", PMECH, ["movement movements moving move position positions posture", "depends depend related brings_on change changing settle settles"], 8, { unless: "same unchanged nothing never stiff stiffness morning subah सुबह akdan अकड़न" });
+    rule("pattern", PMECH, ["eases ease relieves relieved settles better improves kam कम", "moving move movement walking walks get_up chalne चलने phirne फिरने"], 8, { unless: "same unchanged nothing never stiff stiffness morning subah सुबह akdan अकड़न" });
+    rule("pattern", PACT, ["only sirf सिर्फ", "computer laptop desk work working sport sports game games exercise activity kaam काम khel* खेल*"], 6);
+    rule("pattern", PACT, ["activity_related activity_dependent"], 2);
+    rule("pattern", PACT, ["laptop computer desk work", "holiday holidays weekend weekends days_off chhutti छुट्टी", "fine gone better normal theek ठीक"], 14);
+    rule("pattern", PNIGHT, ["wakes wake woke waking khul खुल", "early_hours early_hour doosre दूसरे"], 6);
+    rule("pattern", PNIGHT, ["raat रात", "doosre दूसरे hisse हिस्से second half early"], 6);
+    rule("pattern", PNIGHT, ["three_or_four three_or_4 3_or_4 three four 3 4", "morning night am", "wake wakes woke waking"], 8);
+    rule("pattern", PINFL, ["morning mornings subah सुबह", "stiff stiffness locked akdan अकड़*"], 8, { story: "frees loosens eases improves exercise walk movement hilne हिलने" });
+    // limited activities
+    rule("fnAdl", NSIT, [CANTP, "sit sitting baith* बैठ* sat"], 12, { selfNeg: true, blockAfter: "nahi नहीं", blockBefore: "koi कोई kisi किसी", unless: "started began start onset desk computer laptop office कंप्यूटर one_position same_position single_position ek_hi एक_ही same unchanged no_matter regardless" });
+    rule("fnAdl", NSPORT, [CANTP, "gym sport sports football cricket game games match practice badminton running jogging workout* khel* खेल* jim जिम yoga swimming tennis"], 12, { selfNeg: true, blockAfter: "nahi नहीं", blockBefore: "koi कोई kisi किसी", unless: "started began start onset" });
+        rule("fnAdl", NSLEEP, ["sleep sleeping neend नींद", "disturb* disturbance wakes waking woken kharab खराब interrupted broken"], 6);
+    rule("fnAdl", NSLEEP, ["keeps_waking keeps_waking_them wakes_them waking_them"], 3);
+    rule("fnAdl", NSLEEP, ["wake wakes woke waking khul खुल", "early_hours"], 4);
+    // red flags
+    rule("redFlags", FNONE, ["no none nil nothing koi कोई", "red_flag red_flags redflag redflags रेड_फ्लैग"], 5, { selfNeg: true });
+    rule("redFlags", FNONE, ["rf red_flag red_flags", "negative clear normal nil none"], 4);
+    rule("redFlags", FNONE, ["nothing none", "worrying concerning sinister"], 3, { selfNeg: true });
+    rule("redFlags", FCONST, ["constant unrelenting continuous", PAIN_W], 3, { story: "night weight fever wakes unwell cancer nights raat रात" });
+    rule("redFlags", FCONST, ["nothing", "changes change alters helps", PAIN_W], 8, { selfNeg: true });
+    rule("redFlags", FCONST, ["lagatar लगातार constant", "farak फर्क fark", "position sthiti स्थिति"], 10, { selfNeg: true });
+    rule("redFlags", FNIGHT, ["night raat रात", "wakes wake woke waking jaga जगा jagata जगाता khul खुल"], 6, { story: "weight wazan वजन fever bukhar unwell cancer constant lagatar loose lost progressive worsening" });
+    rule("redFlags", FNIGHT, ["night raat रात nights", "there through all_night whole_night"], 5, { story: "weight wazan वजन fever bukhar unwell cancer constant lagatar loose lost progressive worsening" });
+    rule("redFlags", FWT, ["clothes", "loose looser"], 6);
+    rule("redFlags", FUNWELL, ["unwell malaise washed_out bahut_kamzori बहुत_कमजोरी"], 2, { story: PAIN_W + " back peeth पीठ" });
+    rule("redFlags", FTRAUMA, ["fell fall fallen came_off thrown gir* गिर*", "ladder seedhi सीढ़ी height roof tree horse bike scooter stairs"], 8);
+    rule("redFlags", FAGE, ["age aged umar उम्र", "first_episode first_ever first pehli पहली"], 6);
+    rule("redFlags", FAGE, [AGE_50_PLUS, "first_episode first_ever first pehli पहली"], 12);
+    rule("redFlags", FABD, ["meals meal eating eat food khana खाना", "worse badh बढ़* pain dard"], 6, { story: PAIN_W });
+    rule("redFlags", FLEGN, ["numb* tingl* sunn* सुन्न* jhunjhuni झुनझुनी झनझनाहट pins paraesthesia paresthesia", "leg legs foot feet pair पैर tango टांगों pairon पैरों"], 6);
+    rule("redFlags", FLEGW, [BOTH_W, "legs pair पैर tango टांगों", "numb* tingl* weak* pins paraesthesia sunn* सुन्न* jhunjhuni झुनझुनी heavy"], 8);
+    rule("radiation", RWALL, ["wrap* wraps wrapping", "round around front", "from starts start begins begin goes go going spreads spread* se से"], 8, { unless: "arm arms jaw jabda जबड़े haath हाथ" });
+    rule("location", COSTO, ["beside next_to alongside paas पास", "spine reedh रीढ", "rib* ribs pasli पसली"], 8, { ctx: "pain", unless: "lumbar last_rib twelfth_rib" });
+    rule("aggMovements", ALIFT, ["lift* lifting lifted weights uthane उठाने uthate उठाते uthana उठाना", WORST], 8, { unless: "started began cant cannot unable overhead above_head over_head after_lifting after_lift following_lifting since_lifting shuru शुरू" });
+    rule("aggMovements", ASNEEZE, ["sneez* chheenk छींक", "cough* khansi खांसी laugh* hans हंस deep_breath breath", WORST], 12, { blockBefore: "with have has had nasty bad" });
+    rule("aggMovements", ACOUGH, ["cough* khansi खांसी khansne खांसने", "sneez* chheenk छींक"], 4, { story: WORST, blockBefore: "with have has had nasty bad" });
+    rule("pattern", PBREATH, ["respiration respirations", PAIN_W], 4);
+    rule("pattern", PMECH, ["harkat हरकत", "posture पोस्चर", "jura जुड़ा juda"], 8);
+    rule("pattern", PACT, ["laptop computer desk work working", "aches ache pain sore hurts"], 8, { story: "holiday holidays weekend weekends days_off chhutti छुट्टी" });
+    rule("redFlags", FNIGHT, ["night nights", PAIN_W], 3, { story: "weight wazan वजन fever bukhar unwell cancer constant lagatar loose lost" });
+
+    // ───── added after the FIRST run of the fresh exam (thoracicSheetSetFresh.js) ─────
+    // location
+    rule("location", LOWER, ["kamar कमर", "upar ऊपर", "peeth पीठ"], 4);
+    rule("location", LOWER, ["low lower bottom", "thoracic"], 3, { unless: "upper mid middle lumbar" });
+    rule("location", TLJ, ["last_rib twelfth_rib floating_rib"], 1, { ctx: "pain" });
+    rule("location", TLJ, ["lumbar", "meets meet junction joins join transition"], 6, { ctx: "pain" });
+    rule("location", COSTO, ["pasli पसली", "paas पास", "peeth पीठ"], 5, { ctx: "pain", unless: "neeche niche नीचे nichli निचली" });
+    rule("location", MID, ["beech बीच madhya मध्य", "dard दर्द"], 4, { story: "peeth पीठ", unless: "seena सीना chhati छाती pet पेट sir सिर pasli पसली kandha कंधा gardan गर्दन kamar कमर" });
+    rule("location", ANTW, ["sternum sternal breastbone", "next_to beside alongside adjacent near", "rib* ribs"], 8, { ctx: "pain" });
+    rule("location", PARA, ["both dono दोनों either bilateral", "side sides taraf तरफ", "muscle* muscles mansapeshi* मांसपेशी* knots knot spasm paraspinals"], 8, { ctx: "painOrArm" });
+    // radiation
+    rule("radiation", RWALL, ["jolt jolts shoots shooting zap* stabs sends", "around round", "rib* ribs chest"], 8);
+    rule("radiation", RANT, [SPREAD + " through", "front anterior", "chest chhati छाती seena सीना"], 13, { unless: "left bayen बायां arm haath हाथ jaw jabda जबड़े" });
+    // how it started
+    rule("mechanismType", MROT, ["twist twisted twisting rotated rotating turned turning", "pop popped felt_pop snap snapped tore tear"], 8);
+    // aggravating movements
+    rule("aggMovements", AREACH, ["tingl* tingly numb* numbness sunn* सुन्न* jhunjhuni झुनझुनी heaviness", "overhead above_head over_head"], 11);
+    rule("aggMovements", AREACH, ["haath हाथ arm arms", "upar ऊपर overhead", "karne करने uthane उठाने rakhne रखने"], 4, { ctx: "painOrArm" });
+    // 24-hour pattern
+    rule("pattern", PACT, ["worse worst more badh* बढ़* zyada ज्यादा", "end"], 6, { ctx: "pain", unless: "range" });
+    rule("pattern", PNIGHT, ["second_half later_half small_hours early_hours", "night nights"], 4);
+    rule("pattern", PINFL, ["stiff* akdan akad* अकड़* locked", "get_up got_up walk walking walk_about chalna चलना chalne चलने uthkar उठकर move moving"], 8, { story: "night nights raat रात morning subah सुबह" });
+    rule("pattern", PINFL, ["rest resting aaram आराम", "no_relief not_relieved no_better doesnt_help does_not_help not_improve worse_with_rest worse_after_rest"], 6, { selfNeg: true, story: "better improves eases loosens exercise moving movement walking activity" });
+    rule("pattern", PINFL, ["worse worst more badh* बढ़*", "rest resting inactivity"], 4, { story: "better improves eases loosens exercise moving movement walking activity" });
+    // limited activities
+    rule("fnAdl", NBREATH, ["shallow", "breath breaths breathe breathing saans सांस"], 3);
+    rule("fnAdl", NSLEEP, ["lying lie lies", WORSEW, "side"], 8, { story: "night bed raat रात sleep" });
+    rule("fnAdl", NSLEEP, ["sote सोते sone सोने", "samay समय waqt वक्त", "dard दर्द pain"], 8);
+    rule("fnAdl", NSLEEP, ["karwat करवट", "lene लेने badalne बदलने", "dard दर्द pain"], 8);
+    rule("fnAdl", NDRIVE, ["gaadi गाड़ी", "chalane chalate chalata chalaate चलाने चलाते", "dard दर्द pain"], 6);
+    // red flags
+    rule("redFlags", FWT, ["loss lost losing dropped", "kg kgs kilo kilos"], 4, { unless: "want wants wanted wish trying plan gym program programme gain gained no nil denies" });
+    rule("redFlags", FNIGHT, ["rest", "night nights raat रात"], 5, { story: "kg kgs weight wazan वजन fever bukhar unwell cancer constant lagatar loose lost progressive worsening nothing" });
+    rule("redFlags", FCONST, ["rest", "nothing none", "eases ease relieves relieve settles helps"], 8, { selfNeg: true, unless: "except apart only besides" });
+    rule("redFlags", FWORSE, ["badh* बढ़*", "dawai dawa दवा दवाई ilaaj इलाज physio", "bhi भी nahi नहीं"], 12, { selfNeg: true });
   },
 });
 

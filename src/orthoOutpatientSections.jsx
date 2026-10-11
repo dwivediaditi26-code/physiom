@@ -224,7 +224,7 @@ export function RedFlagScreenSection({ data, setData }) {
 // Regions whose everyday-phrase matcher has been checked on how a CLINICIAN writes about a patient ("the patient", "they", short notes)
 // -- English, Hinglish and Hindi (kneeSheetSet.test.js). Only these show the "We understood" chips under Chief complaint / Onset / Duration.
 // Add a region here once its sheet has been done and tested.
-const CHIEF_COMPLAINT_CHIP_REGIONS = new Set(["knee", "hip", "ankleFoot", "shoulder", "lumbarSI", "cervical"]);
+const CHIEF_COMPLAINT_CHIP_REGIONS = new Set(["knee", "hip", "ankleFoot", "shoulder", "lumbarSI", "cervical", "thoracic"]);
 
 // "We understood -- tap to add" under the general story boxes. What the clinician typed in Chief complaint, Onset and Duration is read
 // by the picked region's matcher; tapping a chip ticks that answer in the region's own checklist (the same answers the AI Objective

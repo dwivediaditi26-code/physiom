@@ -97,6 +97,13 @@ describe("Knee: chips under Chief complaint / Onset / Duration", () => {
     expect(chipTexts().join("|")).toMatch(/To hand \/ fingers \(R\)/);
   });
 
+  it("Thoracic works the same way", async () => {
+    render(<Harness regions={[{ id: "thoracic", label: "Thoracic" }]} />);
+    type(chiefBox(), "The patient has mid back pain after lifting boxes, worse on twisting and coughing.");
+    await waitFor(() => expect(chipTexts().join("|")).toMatch(/Mid thoracic/), { timeout: 15000 });
+    expect(chipTexts().join("|")).toMatch(/Coughing/);
+  });
+
   it("with several regions picked, only the regions that understood something get a heading", async () => {
     render(<Harness regions={[{ id: "hip", label: "Hip" }, { id: "knee", label: "Knee" }, { id: "ankle", label: "Ankle" }]} />);
     type(chiefBox(), "Deep anterior hip pain on sitting for long periods. They also rolled the ankle inwards, outer ankle swollen.");
@@ -109,7 +116,7 @@ describe("Knee: chips under Chief complaint / Onset / Duration", () => {
   });
 
   it("other regions do not show these chips yet", async () => {
-    render(<Harness regions={[{ id: "thoracic", label: "Thoracic" }]} />);
+    render(<Harness regions={[{ id: "head", label: "Head" }]} />);
     type(chiefBox(), "They twisted on a planted foot and the knee gave way.");
     await new Promise((r) => setTimeout(r, 700));
     expect(screen.queryByTestId("chief-complaint-chips")).toBeNull();
