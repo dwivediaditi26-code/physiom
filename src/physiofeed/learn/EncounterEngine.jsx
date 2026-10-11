@@ -45,7 +45,7 @@ function SafeImg({ src, className, alt = "", fallback = false, style }) {
   const [bad, setBad] = useState(false);
   if (bad && fallback) return null;
   if (bad) return <span aria-hidden="true" className={`${className} flex items-center justify-center text-4xl bg-slate-100`} style={style}>🧑</span>;
-  return <img src={src} alt={alt} className={className} style={style} onError={() => setBad(true)}/>;
+  return <img src={src} alt={alt} className={className} style={style} loading="lazy" decoding="async" onError={() => setBad(true)}/>;
 }
 
 function Panel({ title, children, tone = "white", testid }) {
@@ -323,7 +323,7 @@ export default function EncounterEngine({ data, onExit, exitLabel = "Return to L
     <div className="mb-2.5">
       <div className="flex items-center gap-2 mb-1.5">
         <button type="button" aria-label="Back to cases" onClick={onExit} className="p-1.5 -ml-1.5 rounded-lg hover:bg-slate-50"><ChevronLeft size={22} className="text-slate-600"/></button>
-        <SafeImg src={`${import.meta.env.BASE_URL || "/"}logo-icon.svg`} className="w-5 h-5 object-contain" fallback/>
+        <SafeImg src={`${import.meta.env.BASE_URL || "/"}favicon.png`} className="w-5 h-5 object-contain" fallback/>
         <span className="font-extrabold text-[14px] text-indigo-950">PhysioMind</span>
         <span className="flex-1"/>
         <button type="button" onClick={() => setShowRefs((v) => !v)} aria-expanded={showRefs} aria-label="References" className="h-8 px-2 rounded-lg border border-slate-200 text-[11px] font-bold text-slate-700 flex items-center gap-1"><BookOpen size={13}/> Refs</button>

@@ -192,7 +192,7 @@ function Summary({ c, answers, score, mins, onReplay, onNext }) {
     <div data-testid="sim-finished">
       {/* celebration scene: the patient, the PM bot and the therapist (cut from Aditi's mockup) */}
       <div data-testid="sim-celebration" className="rounded-3xl overflow-hidden border border-sky-100 mb-3">
-        <img src={img("knee-complete-scene")} alt="Case completed: the patient, the PM bot and the therapist celebrating" className="w-full h-auto block"/>
+        <img loading="lazy" decoding="async" src={img("knee-complete-scene")} alt="Case completed: the patient, the PM bot and the therapist celebrating" className="w-full h-auto block"/>
       </div>
 
       <div className="flex gap-2 mb-3">
@@ -352,7 +352,7 @@ function Play({ onExit }) {
           {st.kind === "findings" && (
             <>
               <div data-testid="sim-hero" className="rounded-3xl overflow-hidden border border-sky-100 mb-3 bg-sky-50">
-                <img src={img("knee-exam-scene")} alt="The therapist examining the patient's knee" className="w-full block object-cover" style={{ maxHeight: 330, objectPosition: "50% 62%" }}/>
+                <img loading="lazy" decoding="async" src={img("knee-exam-scene")} alt="The therapist examining the patient's knee" className="w-full block object-cover" style={{ maxHeight: 330, objectPosition: "50% 62%" }}/>
                 <p className="text-[12.5px] font-semibold text-slate-700 px-3 py-2">Choose what to examine, then read the findings.</p>
               </div>
               <ExamPanel stage={st} exam={exam} setExam={setExam}/>
