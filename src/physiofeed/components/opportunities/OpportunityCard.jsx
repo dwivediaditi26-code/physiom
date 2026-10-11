@@ -63,6 +63,12 @@ export default function OpportunityCard({ opp, onOpen }) {
         <p className="pf-font-body text-sm text-slate-500 leading-snug mb-3 line-clamp-2">{opp.description}</p>
       </button>
 
+      {opp.isDemo && (
+        <span className="pf-font-body inline-block text-[11px] font-bold px-2.5 py-1 rounded-full mb-3 bg-amber-50 text-amber-700">
+          Demo listing, not a real vacancy
+        </span>
+      )}
+
       {badge && (
         <span className={`pf-font-body inline-block text-[11px] font-bold px-2.5 py-1 rounded-full mb-3 ${badge.cls}`}>
           {badge.label}
@@ -92,7 +98,9 @@ export default function OpportunityCard({ opp, onOpen }) {
             Register/Apply button that invites a tap for nothing -- closed/
             cancelled keep the button visible (so the card still reads as
             "this existed"), just disabled. */}
-        {opp.postedByMe ? (
+        {opp.isDemo ? (
+          <span className="pf-font-body text-[11px] font-bold px-3 py-1.5 rounded-full bg-amber-50 text-amber-700">Demo</span>
+        ) : opp.postedByMe ? (
           // Your own listing: Apply/Register would only open a detail page
           // with no apply bar (OpportunityDetail's "This is your listing"),
           // so say so here instead of showing a button that does nothing.

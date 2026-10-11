@@ -222,3 +222,25 @@ export const INITIAL_OPPORTUNITIES = [
     mentor: { name: "Dr. Kavya Rao, PT", role: "Senior Physiotherapist", initials: "KR", gradient: "rose", bio: "" },
   },
 ];
+
+// 2026-10-10, Aditi: "why no demo cards showing". The test and sample listings were hidden from the
+// live board, which left it empty. While no real listing exists, ExplorePage shows these instead --
+// every card marked Demo and read-only (no Apply / Register, no detail page, nothing is saved).
+// Only the active listings are used, and the two real institutions the mock named ("Bansal Hospital",
+// "AIIMS Delhi") carry the invented names supabase/seed_opportunities.sql already used for them:
+// real organisations did not post these roles.
+const DEMO_ORG_RENAMES = {
+  "Bansal Hospital": { org: "Sanjeevani Multispecialty Hospital", orgInitials: "SM" },
+  "AIIMS Delhi": { org: "Meridian Institute of Rehabilitation Research", orgInitials: "MI" },
+};
+export const DEMO_OPPORTUNITIES = INITIAL_OPPORTUNITIES
+  .filter((o) => o.status === "active")
+  .map((o) => ({
+    ...o,
+    ...(DEMO_ORG_RENAMES[o.org] || {}),
+    id: `demo-${o.id}`,
+    isDemo: true,
+    postedByMe: false,
+    postedAgo: "Demo",
+    stats: { views: 0, applications: 0, chats: 0 },
+  }));

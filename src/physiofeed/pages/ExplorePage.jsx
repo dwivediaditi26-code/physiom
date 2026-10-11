@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Search, Plus, Briefcase, ChevronRight, FileText, SlidersHorizontal } from "lucide-react";
-import { OPPORTUNITY_CATEGORIES } from "../data/opportunitiesMock.js";
+import { OPPORTUNITY_CATEGORIES, DEMO_OPPORTUNITIES } from "../data/opportunitiesMock.js";
 import * as db from "../data/db.js";
 import OpportunityCard from "../components/opportunities/OpportunityCard.jsx";
 import OpportunityDetail from "../components/opportunities/OpportunityDetail.jsx";
@@ -188,9 +188,16 @@ export default function ExplorePage() {
   const hasActiveFilters = priceFilter !== "all" || modeFilter !== "all" || dateFilter !== "all";
   const clearFilters = () => { setPriceFilter("all"); setModeFilter("all"); setDateFilter("all"); };
 
+  // While no real listing exists the board shows the Demo cards instead of an empty page
+  // (2026-10-10, Aditi: "why no demo cards showing"). They are read-only; see DEMO_OPPORTUNITIES.
+  const showingDemo = !loading && opportunities.length === 0;
+  const boardOpps = showingDemo ? DEMO_OPPORTUNITIES : opportunities;
+  const [demoTapped, setDemoTapped] = useState(false);
+  const openFromBoard = (opp) => { if (opp.isDemo) { setDemoTapped(true); return; } openOpportunity(opp); };
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return opportunities.filter((o) => {
+    return boardOpps.filter((o) => {
       // Phase F (2026-09-25): reads lifecycleStatus, not the coarse .status
       // (which lumped closed+cancelled together and had no idea "expired"
       // existed) -- closed/cancelled stay off the board same as before,
@@ -226,7 +233,7 @@ export default function ExplorePage() {
       if (!q) return true;
       return o.title.toLowerCase().includes(q) || o.org.toLowerCase().includes(q) || (o.location || "").toLowerCase().includes(q) || o.tags?.some((t) => t.toLowerCase().includes(q));
     });
-  }, [opportunities, category, query, priceFilter, modeFilter, dateFilter]);
+  }, [boardOpps, category, query, priceFilter, modeFilter, dateFilter]);
 
   const myPostings = useMemo(() => opportunities.filter((o) => o.postedByMe), [opportunities]);
   const appliedIds = useMemo(() => new Set(myApplications.map((a) => String(a.opportunityId))), [myApplications]);
@@ -517,6 +524,7 @@ export default function ExplorePage() {
       >
         <span className="mr-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide">Demo</span>
         Opportunities is still being tested. These jobs, workshops and other listings may be samples, not real vacancies yet.
+        {demoTapped && <span className="mt-1 block font-bold">That is a demo listing. Real jobs and workshops will open here once organisers post them.</span>}
       </div>
 
       {/* Side by side (2026-09-28, Aditi's reference screenshot: "my posting
@@ -601,7 +609,7 @@ export default function ExplorePage() {
 
       <div className="flex gap-2 overflow-x-auto no-scrollbar mb-5 pb-0.5">
         {OPPORTUNITY_CATEGORIES.map((c) => {
-          const live = opportunities.filter((o) => o.lifecycleStatus !== "closed" && o.lifecycleStatus !== "cancelled");
+          const live = boardOpps.filter((o) => o.lifecycleStatus !== "closed" && o.lifecycleStatus !== "cancelled");
           const count = c.key === "all" ? live.length : live.filter((o) => o.type === c.key).length;
           const on = category === c.key;
           return (
@@ -623,7 +631,7 @@ export default function ExplorePage() {
         <div className="pf-font-body text-center pt-10 pb-6 text-[#A79CC4] text-sm">{query ? `No opportunities match "${query}".` : "No opportunities posted yet."}</div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-6">
-          {filtered.map((o) => <OpportunityCard key={o.id} opp={o} onOpen={openOpportunity} />)}
+          {filtered.map((o) => <OpportunityCard key={o.id} opp={o} onOpen={openFromBoard} />)}
         </div>
       )}
 
