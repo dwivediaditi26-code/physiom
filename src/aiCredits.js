@@ -16,7 +16,7 @@ import { supabase } from "./supabase.js";
      "error"         could not reach Supabase: spending is refused until it can be checked
    ============================================================ */
 
-let snapshot = { state: "loading", balance: 0, unlimited: false, cases: {} };
+let snapshot = { state: "loading", balance: 0, unlimited: false, isAdmin: false, adminPays: true, cases: {} };
 const listeners = new Set();
 function setSnapshot(next) {
   snapshot = { ...snapshot, ...next };
@@ -25,7 +25,7 @@ function setSnapshot(next) {
 export function getCreditsSnapshot() { return snapshot; }
 export function subscribeCredits(fn) { listeners.add(fn); return () => listeners.delete(fn); }
 // Test helper: put the store back to its first-load shape.
-export function resetCreditsForTests(next = {}) { snapshot = { state: "loading", balance: 0, unlimited: false, cases: {}, ...next }; listeners.forEach((fn) => fn()); }
+export function resetCreditsForTests(next = {}) { snapshot = { state: "loading", balance: 0, unlimited: false, isAdmin: false, adminPays: true, cases: {}, ...next }; listeners.forEach((fn) => fn()); }
 
 export function functionMissing(error) {
   if (!error) return false;
@@ -49,13 +49,13 @@ const canCallRpc = () => typeof supabase?.rpc === "function";
 // Ask Supabase for the balance (and, with a case key, that case's free re-analyses left).
 export async function refreshCredits(caseKey) {
   if (!canCallRpc()) { setSnapshot({ state: "unconfigured" }); return getCreditsSnapshot(); }
-  if (!(await signedIn())) { setSnapshot({ state: "guest", balance: 0, unlimited: false, cases: {} }); return getCreditsSnapshot(); }
+  if (!(await signedIn())) { setSnapshot({ state: "guest", balance: 0, unlimited: false, isAdmin: false, cases: {} }); return getCreditsSnapshot(); }
   try {
     const { data, error } = await supabase.rpc("ai_credits_status", { p_case_key: caseKey || null });
     if (functionMissing(error)) { setSnapshot({ state: "unconfigured" }); return getCreditsSnapshot(); }
     if (error || !data) { setSnapshot({ state: "error" }); return getCreditsSnapshot(); }
     const cases = caseKey ? { ...snapshot.cases, [caseKey]: { analyzed: !!data.analyzed, freeLeft: data.free_reanalyses_remaining ?? 3 } } : snapshot.cases;
-    setSnapshot({ state: "ready", balance: data.balance ?? 0, unlimited: !!data.unlimited, cases });
+    setSnapshot({ state: "ready", balance: data.balance ?? 0, unlimited: !!data.unlimited, isAdmin: !!data.is_admin, adminPays: data.admin_pays !== false, cases });
   } catch {
     setSnapshot({ state: "error" });
   }
@@ -105,6 +105,8 @@ export function useAiCredits(caseKey) {
     state: snap.state,
     balance: snap.balance,
     unlimited: snap.unlimited,
+    isAdmin: !!snap.isAdmin,
+    adminPays: snap.adminPays !== false,
     caseAnalyzed: info ? info.analyzed : null,
     freeLeft: info ? info.freeLeft : null,
     refresh,
@@ -116,3 +118,20 @@ export function useAiCredits(caseKey) {
 export function creditsEnforced(state, canAskToSignIn) {
   return state === "ready" || state === "error" || (state === "guest" && !!canAskToSignIn);
 }
+
+/* ---- Admin test tools (Aditi, 2026-10-11: "so I don't have to run SQL every time") ----
+   Only an admin's OWN account; the database refuses anyone else (admin_only). Each returns { ok } and refreshes the numbers. */
+async function adminCall(fn, args, caseKey) {
+  if (!canCallRpc()) return { ok: false, reason: "unavailable" };
+  try {
+    const { data, error } = await supabase.rpc(fn, args);
+    if (error || !data?.ok) return { ok: false, reason: error?.message?.includes("admin_only") ? "admin_only" : "error" };
+    await refreshCredits(caseKey);
+    return { ok: true, ...data };
+  } catch {
+    return { ok: false, reason: "error" };
+  }
+}
+export const adminSetBalance = (n, caseKey) => adminCall("admin_set_my_ai_credits", { p_balance: n }, caseKey);
+export const adminSetPays = (pays, caseKey) => adminCall("admin_set_my_ai_admin_pays", { p_pays: !!pays }, caseKey);
+export const adminResetCase = (caseKey) => adminCall("admin_reset_my_ai_case", { p_case_key: caseKey }, caseKey);

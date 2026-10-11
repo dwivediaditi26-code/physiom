@@ -22,11 +22,11 @@ export default function CreditsBadge({ requireAuth }) {
         <span className={"topbar-credit-chip" + (empty ? " topbar-credit-chip-empty" : "")} data-testid="credit-balance">
           <span aria-hidden="true">🪙</span> {label}
         </span>
-        {!credits.unlimited && (
-          <button type="button" className="topbar-credit-link" onClick={onGetCredits}>Get credits</button>
+        {(!credits.unlimited || credits.isAdmin) && (
+          <button type="button" className="topbar-credit-link" onClick={onGetCredits}>{credits.unlimited ? "Admin tools" : "Get credits"}</button>
         )}
       </span>
-      <CreditsSheet open={open} onClose={() => setOpen(false)} balance={credits.balance} unlimited={credits.unlimited} signedIn />
+      <CreditsSheet open={open} onClose={() => setOpen(false)} balance={credits.balance} unlimited={credits.unlimited} signedIn isAdmin={credits.isAdmin} />
     </>
   );
 }

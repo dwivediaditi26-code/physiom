@@ -161,12 +161,12 @@ export function orthoStyles() {
         .ai-card { border: 1px solid #E4DDFB; background: #FAF8FF; border-radius: 12px; padding: 9px 10px; margin-bottom: 12px; }
         .ai-card-head { display: flex; align-items: center; gap: 6px; }
         .ai-card-spark { font-size: 13px; line-height: 1; }
-        .ai-card-title { margin: 0; font-size: 13px; font-weight: 800; color: ${BRAND.ink}; line-height: 1.25; flex: 1; min-width: 0; }
-        .ai-card-optional { font-size: 10px; font-weight: 700; color: ${BRAND.purpleDark}; background: #fff; border: 1px solid #E4DDFB; border-radius: 999px; padding: 1px 7px; flex-shrink: 0; white-space: nowrap; }
-        .ai-card-desc { margin: 2px 0 0; font-size: 11px; line-height: 1.35; color: ${BRAND.gray}; }
+        .ai-card-title { margin: 0; font-size: 14.5px; font-weight: 800; color: ${BRAND.ink}; line-height: 1.25; flex: 1; min-width: 0; }
+        .ai-card-optional { font-size: 11px; font-weight: 700; color: ${BRAND.purpleDark}; background: #fff; border: 1px solid #E4DDFB; border-radius: 999px; padding: 1px 7px; flex-shrink: 0; white-space: nowrap; }
+        .ai-card-desc { margin: 2px 0 0; font-size: 12.5px; line-height: 1.35; color: ${BRAND.gray}; }
         .ai-card .ai-intake-textarea { background: #fff; min-height: 0 !important; padding: 6px 9px !important; margin: 6px 0; border-width: 1px; border-radius: 9px; line-height: 1.3; } /* font stays 16px: smaller makes iPhones zoom in on tap */
         .ai-card .ai-intake-actions { margin-top: 0; gap: 6px; }
-        .ai-card .ai-intake-actions .primary-btn, .ai-card .ai-intake-actions .ghost-btn { min-height: 30px; height: 30px; padding: 0 10px; font-size: 12px; font-weight: 700; line-height: 1; border-radius: 8px; }
+        .ai-card .ai-intake-actions .primary-btn, .ai-card .ai-intake-actions .ghost-btn { min-height: 34px; height: 34px; padding: 0 12px; font-size: 13px; font-weight: 700; line-height: 1; border-radius: 8px; }
         .ai-card .ai-intake-actions .ghost-btn { flex: 0 0 auto; padding-left: 10px; padding-right: 10px; }
         .ai-card .ai-intake-actions .ai-card-generate { flex: 1 1 auto; white-space: nowrap; background: #fff; color: ${BRAND.purpleDark}; border: 1.5px solid ${BRAND.purple}; }
         .ai-card .ai-intake-actions .ai-card-generate:disabled { color: ${BRAND.grayLight}; border-color: #D9D2F3; background: #fff; }
@@ -174,16 +174,16 @@ export function orthoStyles() {
         /* AI path Subjective step: the LOOK of Aditi's reference design (2026-10-10) -- small white boxes with a thin
            light border, small bold labels, small text. Only looks: the questions and their order are unchanged. */
         .subj-ref .field-block { margin-bottom: 9px; }
-        .subj-ref .field-label { font-size: 12.5px; font-weight: 700; color: ${BRAND.ink}; }
+        .subj-ref .field-label { font-size: 14px; font-weight: 700; color: ${BRAND.ink}; }
         .subj-ref .field-label-row { margin-bottom: 3px; }
         .subj-ref .text-input-wrap, .subj-ref .select-wrap { background: #fff; border: 1px solid #E3E1EC; border-radius: 9px; min-height: 0; padding: 0 4px 0 10px; box-shadow: none; }
-        .subj-ref .text-input, .subj-ref .select-input { min-height: 34px !important; font-size: 13.5px !important; padding: 4px 2px !important; }
-        .subj-ref .textarea, .subj-ref .growing-textarea { border: 1px solid #E3E1EC; border-radius: 9px; min-height: 34px !important; font-size: 13.5px !important; padding: 6px 10px !important; background: #fff; }
+        .subj-ref .text-input, .subj-ref .select-input { min-height: 38px !important; font-size: 15px !important; padding: 5px 2px !important; }
+        .subj-ref .textarea, .subj-ref .growing-textarea { border: 1px solid #E3E1EC; border-radius: 9px; min-height: 38px !important; font-size: 15px !important; padding: 7px 10px !important; background: #fff; }
         .subj-ref .select-btn { font-size: 0; padding: 4px 8px; background: transparent; min-height: 0; }
         .subj-ref .select-btn::after { content: "⌄"; font-size: 15px; color: ${BRAND.gray}; }
-        .subj-ref .region-group-title { font-weight: 800; font-size: 13.5px; color: ${BRAND.purpleDark}; margin: 12px 0 6px; padding-bottom: 4px; border-bottom: 1px solid #E3E1EC; }
-        .subj-ref .hint { font-size: 11px; padding: 6px 9px; margin-bottom: 8px; }
-        .subj-ref .subheading { font-size: 13px; margin: 8px 0 4px; }
+        .subj-ref .region-group-title { font-weight: 800; font-size: 15px; color: ${BRAND.purpleDark}; margin: 14px 0 6px; padding-bottom: 4px; border-bottom: 1px solid #E3E1EC; }
+        .subj-ref .hint { font-size: 12.5px; padding: 7px 10px; margin-bottom: 8px; }
+        .subj-ref .subheading { font-size: 14.5px; margin: 8px 0 4px; }
         .ai-intake-review { margin-top: 4px; }
         .ai-intake-row { font-size: 12.5px; color: ${BRAND.ink}; padding: 5px 0; border-top: 1px solid #EDE4FB; line-height: 1.5; }
         .ai-intake-row:first-of-type { border-top: none; }
@@ -903,17 +903,14 @@ export function orthoStyles() {
         .topbar-credit-chip { font-size: 11px; font-weight: 800; color: ${BRAND.purpleDark}; background: #FFF4DB; border-radius: 9px; padding: 3px 6px; white-space: nowrap; }
         .topbar-credit-chip-empty { color: #DC2626; }
         .topbar-credit-link { font-size: 11px; font-weight: 700; font-family: inherit; line-height: 1; color: ${BRAND.purpleDark}; background: #fff; border: 1.5px solid ${BRAND.purple}; border-radius: 9px; padding: 0 6px; height: 26px; min-height: 0; box-sizing: border-box; cursor: pointer; white-space: nowrap; text-decoration: underline; }
-        /* "Explore sample conditions" (before the first analysis, credits on) */
-        .obj-sample-head { display: flex; align-items: flex-start; gap: 9px; padding: 8px 10px; margin: 2px 0 6px; border-radius: 12px; background: #F6F3FF; }
-        .obj-sample-icon { font-size: 20px; line-height: 1.1; flex-shrink: 0; }
-        .obj-sample-title { font-size: 13px; font-weight: 800; color: ${BRAND.ink}; line-height: 1.25; }
-        .obj-sample-desc { font-size: 11px; color: ${BRAND.gray}; line-height: 1.35; margin-top: 1px; }
+        /* "View preview" / "Locked" labels on the condition cards (before the first analysis, credits on) */
         .obj-match-preview { display: block; margin-top: 5px; font-size: 10.5px; font-weight: 700; color: ${BRAND.purpleDark}; }
         .obj-match-card-locked .obj-match-preview { color: ${BRAND.gray}; }
         .obj-match-card-locked { opacity: 0.55; cursor: pointer; position: relative; }
         .obj-hypo-lock-note { font-size: 11px; color: ${BRAND.gray}; margin: -2px 2px 6px; }
         .obj-analyze-btn { width: 100%; min-height: 40px; border: none; border-radius: 11px; background: ${BRAND.purple}; color: #fff; font-size: 13.5px; font-weight: 700; font-family: inherit; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 14px; }
         .obj-analyze-btn-icon { font-size: 15px; width: 18px; text-align: center; }
+        .obj-analyze-admin-link { align-self: center; border: none; background: transparent; color: ${BRAND.gray}; font-size: 11px; font-weight: 600; font-family: inherit; text-decoration: underline; height: 20px; min-height: 0; padding: 0; cursor: pointer; margin-top: -2px; }
         .obj-analyze-btn:active { transform: scale(0.99); }
         .obj-analyze-btn:disabled { background: #D9D2F3; color: #fff; cursor: not-allowed; }
         .obj-analyze-btn:focus-visible { outline: 3px solid #C4B5FD; outline-offset: 2px; }

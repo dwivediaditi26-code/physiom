@@ -201,6 +201,7 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen, 
         unlimited={credits.unlimited}
         signedIn={credits.state !== "guest"}
         reason="You need 1 credit to generate with AI. Typing the history yourself is always free."
+        isAdmin={credits.isAdmin}
       />
       {card ? (
         <>

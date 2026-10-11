@@ -1,12 +1,50 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { BRAND } from "./orthoFieldKit.jsx";
+import { useAiCredits, adminSetBalance, adminSetPays, adminResetCase } from "./aiCredits.js";
 
 // "Get credits" box (Aditi, 2026-10-10). There is no payment provider connected yet, so for now it explains
 // what credits do and how to ask for more; when a provider is added, the button below is what changes.
 export const CREDITS_EMAIL = "physiomind3@gmail.com";
 
-export default function CreditsSheet({ open, onClose, balance = 0, unlimited = false, signedIn = true, reason }) {
+// Only for admins (you and Anupam), on your OWN account: switch between "charge me like a normal user" and unlimited, set your
+// own balance, and reset a case so Analyze Case counts as the first analysis again -- to try the credits without any SQL.
+function AdminCreditTools({ caseKey }) {
+  const credits = useAiCredits(caseKey);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState("");
+  async function run(label, fn) {
+    setBusy(true);
+    setNote("");
+    const r = await fn();
+    setBusy(false);
+    setNote(r.ok ? `✓ ${label}` : "Couldn't do that. Check your connection and try again.");
+  }
+  const btn = { border: "1px solid #D9D2F3", background: "#fff", color: BRAND.purpleDark, fontWeight: 700, fontFamily: "inherit", fontSize: 12.5, borderRadius: 9, padding: "0 12px", height: 32, cursor: "pointer" };
+  return (
+    <div data-testid="admin-credit-tools" style={{ marginTop: 14, padding: "10px 12px", borderRadius: 12, background: "#F6F3FF", border: "1px dashed #CFC4F5" }}>
+      <div style={{ fontSize: 13, fontWeight: 800, color: BRAND.ink }}>Admin test tools <span style={{ fontWeight: 600, color: BRAND.gray }}>(only you can see this)</span></div>
+      <label style={{ display: "flex", alignItems: "center", gap: 8, margin: "8px 0", fontSize: 13, color: BRAND.ink }}>
+        <input type="checkbox" checked={credits.adminPays} disabled={busy} onChange={(e) => run(e.target.checked ? "You are now charged like a normal user." : "You are now unlimited.", () => adminSetPays(e.target.checked, caseKey))} />
+        Charge me like a normal user
+      </label>
+      <div style={{ fontSize: 12, color: BRAND.gray, marginBottom: 4 }}>Set my credits to</div>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {[0, 1, 5, 50, 500].map((n) => (
+          <button key={n} type="button" style={btn} disabled={busy} onClick={() => run(`You now have ${n} credit${n === 1 ? "" : "s"}.`, () => adminSetBalance(n, caseKey))}>{n}</button>
+        ))}
+      </div>
+      {caseKey && (
+        <button type="button" style={{ ...btn, marginTop: 8 }} disabled={busy} onClick={() => run("This case is reset: the next Analyze Case is a first analysis again.", () => adminResetCase(caseKey))}>
+          Reset this case
+        </button>
+      )}
+      {note && <div role="status" style={{ marginTop: 8, fontSize: 12.5, color: note.startsWith("✓") ? "#166534" : "#92400E" }}>{note}</div>}
+    </div>
+  );
+}
+
+export default function CreditsSheet({ open, onClose, balance = 0, unlimited = false, signedIn = true, reason, isAdmin = false, caseKey }) {
   const closeRef = useRef(null);
   useEffect(() => {
     if (!open) return undefined;
@@ -57,6 +95,7 @@ export default function CreditsSheet({ open, onClose, balance = 0, unlimited = f
         <div style={{ marginTop: 12, fontSize: 12.5, color: BRAND.gray, lineHeight: 1.45 }}>
           Buying credits inside the app is not open yet. To top up, email us from the address you registered with and say how many you need.
         </div>
+        {isAdmin && signedIn && <AdminCreditTools caseKey={caseKey} />}
         <a href={mail} style={{ display: "block", marginTop: 12, textAlign: "center", textDecoration: "none", background: BRAND.purple, color: "#fff", fontWeight: 700, fontSize: 14, padding: "13px 12px", borderRadius: 12 }}>
           Email {CREDITS_EMAIL}
         </a>

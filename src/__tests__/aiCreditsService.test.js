@@ -86,6 +86,33 @@ describe("spendAnalysis", () => {
   });
 });
 
+describe("admin test tools", () => {
+  it("reads whether the person is an admin and whether they are charged", async () => {
+    sb.rpc.mockResolvedValue({ data: { balance: 50, unlimited: false, is_admin: true, admin_pays: true, analyzed: false, free_reanalyses_remaining: 3 }, error: null });
+    const snap = await credits.refreshCredits("c:cervical");
+    expect(snap).toMatchObject({ isAdmin: true, adminPays: true, unlimited: false });
+  });
+
+  it("set balance / switch charging / reset case call the right functions and refresh the numbers", async () => {
+    sb.rpc.mockImplementation(async (fn) => {
+      if (fn === "ai_credits_status") return { data: { balance: 5, unlimited: false, is_admin: true, admin_pays: true, analyzed: false, free_reanalyses_remaining: 3 }, error: null };
+      return { data: { ok: true, balance: 5 }, error: null };
+    });
+    expect(await credits.adminSetBalance(5, "c:cervical")).toMatchObject({ ok: true });
+    expect(sb.rpc).toHaveBeenCalledWith("admin_set_my_ai_credits", { p_balance: 5 });
+    expect(credits.getCreditsSnapshot().balance).toBe(5);
+    await credits.adminSetPays(false, "c:cervical");
+    expect(sb.rpc).toHaveBeenCalledWith("admin_set_my_ai_admin_pays", { p_pays: false });
+    await credits.adminResetCase("c:cervical");
+    expect(sb.rpc).toHaveBeenCalledWith("admin_reset_my_ai_case", { p_case_key: "c:cervical" });
+  });
+
+  it("a person who is not an admin is refused", async () => {
+    sb.rpc.mockResolvedValue({ data: null, error: { code: "42501", message: "admin_only" } });
+    expect(await credits.adminSetBalance(999)).toEqual({ ok: false, reason: "admin_only" });
+  });
+});
+
 describe("small helpers", () => {
   it("applyServerBalance takes a number or 'unlimited' and ignores nonsense", () => {
     credits.applyServerBalance("5");

@@ -69,7 +69,8 @@ describe("credits on the Analyze card", () => {
     expect(cards()[1].classList.contains("obj-match-card-locked")).toBe(false);
     expect(cards()[2].classList.contains("obj-match-card-locked")).toBe(true);
     expect(screen.getByTestId("locked-conditions-note").textContent).toMatch(/unlock when you analyze/);
-    expect(screen.getByText("Explore sample conditions · Free")).toBeInTheDocument();
+    expect(screen.queryByText(/Explore sample conditions/)).toBeNull(); // no heading above the cards (Aditi, 2026-10-11)
+    expect(document.querySelector(".obj-analyze-card").textContent).toMatch(/conditions below are educational previews, not results for this patient/);
     expect([...document.querySelectorAll(".obj-match-preview")].map((n) => n.textContent)).toEqual(["View preview ›", "View preview ›", ...Array(total - 2).fill("🔒 Locked")]);
   });
 

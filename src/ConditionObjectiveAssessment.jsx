@@ -886,35 +886,13 @@ const TIER_TEXT = { high: "High", med: "Med", low: "Low" };
 // permanant"). Now just the one always-visible list, no top grid, no
 // Customize toggle.
 function HypothesisGrid({ conditions, order, matchById, objSupportById, activeId, onSelect, hasMatchEvidence, analyzed = true, headRef, lockedIds, onLockedClick, lockNote }) {
-  // Scores exist only for an analysis that is up to date AND found something; an analysis that matched nothing yet
-  // keeps the plain "Explore conditions" list instead of a "scores" heading over cards with no scores.
-  const scoresShown = analyzed && hasMatchEvidence;
-  // Before the first analysis (credits on): two sample conditions per region are open and free, the rest are locked.
+  // No heading or paragraph above the conditions (Aditi, 2026-10-11: "remove this" / "explore samples not removed"): what they
+  // said -- educational previews, not results for this patient; scores are a teaching aid, not a diagnosis -- now lives in the
+  // Analyze card above. Before the first analysis (credits on) two conditions per region are open ("View preview ›") and the
+  // rest are locked.
   const samples = !analyzed && lockedIds?.size > 0;
   return (
-    <div>
-      {samples ? (
-        <div className="obj-sample-head" ref={headRef}>
-          <span className="obj-sample-icon" aria-hidden="true">📖</span>
-          <div style={{ minWidth: 0 }}>
-            <div className="obj-sample-title">Explore sample conditions · Free</div>
-            <div className="obj-sample-desc">Learn key objective assessment findings for common conditions in this region. These are educational previews only, not results for this patient.</div>
-          </div>
-        </div>
-      ) : (
-        <>
-          <div className="obj-hypo-head" ref={headRef}>
-            <span className="obj-hypo-label">{scoresShown ? "Condition-matching scores" : "Explore conditions"}</span>
-          </div>
-          <div className="obj-hypo-sub">
-            {scoresShown
-              ? "How well the Subjective answers fit each condition, best first. A teaching aid, not a diagnosis."
-              : analyzed
-              ? "No condition matched your Subjective answers yet. You can still tap any condition to preview its objective findings."
-              : "Analyze your case to see condition-matching scores and personalized recommendations. Previews below are educational only, not results for this patient."}
-          </div>
-        </>
-      )}
+    <div ref={headRef}>
       <ConditionTabs conditions={conditions} order={order} matchById={matchById} objSupportById={objSupportById} activeId={activeId} onSelect={onSelect} hasMatchEvidence={hasMatchEvidence} storyOk={analyzed} lockedIds={lockedIds} onLockedClick={onLockedClick} previewLabels={samples} />
       {lockedIds?.size > 0 && (
         <div className="obj-hypo-lock-note" role="status" data-testid="locked-conditions-note" style={lockNote ? { color: BRAND.purpleDark, fontWeight: 700 } : undefined}>
@@ -2080,7 +2058,10 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           <span className="obj-analyze-icon" aria-hidden="true">🧠</span>
           <div style={{ minWidth: 0 }}>
             <div className="obj-analyze-title">Analyze your case</div>
-            <div className="obj-analyze-desc">Get condition-matching scores and personalized objective assessment suggestions.</div>
+            <div className="obj-analyze-desc">
+              Get condition-matching scores and personalized objective assessment suggestions.
+              {!analysisCurrent ? " Until you analyze, the conditions below are educational previews, not results for this patient." : ""}
+            </div>
           </div>
         </div>
         {analysisStatus === "blocked" && (
@@ -2097,8 +2078,8 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           <div className="obj-analyze-note obj-analyze-note-ok" role="status" data-testid="analysis-current-note">
             ✓ Analysis is up to date
             {hasMatchEvidence && rankedIds[0]
-              ? ` — best match: ${config.conditions[rankedIds[0]]?.name}${conditionMatchPct(matchById[rankedIds[0]]) != null ? ` (${conditionMatchPct(matchById[rankedIds[0]])}%)` : ""}.`
-              : ` — nothing matches yet. Tick more answers in Subjective (the ⭐ ones matter most), then update the analysis.`}
+              ? ` — best match: ${config.conditions[rankedIds[0]]?.name}${conditionMatchPct(matchById[rankedIds[0]]) != null ? ` (${conditionMatchPct(matchById[rankedIds[0]])}%)` : ""}. Scores show how well your Subjective answers fit each condition: a teaching aid, not a diagnosis.`
+              : ` — nothing matches yet. Tick more answers in Subjective (the ⭐ ones matter most), then update the analysis. You can still tap any condition to preview its findings.`}
           </div>
         )}
         {creditNotice && <div className="obj-analyze-note obj-analyze-note-warn" role="alert">{creditNotice}</div>}
@@ -2134,7 +2115,12 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           unlimited={credits.unlimited}
           signedIn={credits.state !== "guest"}
           reason={willCharge ? "You need 1 credit to analyze this case." : undefined}
+          isAdmin={credits.isAdmin}
+          caseKey={caseKey}
         />
+        {credits.isAdmin && (
+          <button type="button" className="obj-analyze-admin-link" onClick={() => setCreditsSheetOpen(true)}>Admin test tools</button>
+        )}
       </div>
 
       <>

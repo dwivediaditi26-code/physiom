@@ -11,7 +11,9 @@
 --   * Viewing a saved analysis ............................. always free
 -- A "case" is one assessment + one body region, so each region has its own 3 free re-analyses.
 --
--- Admins (profiles.is_admin) are never charged. Every other signed-in user gets a one-time
+-- Admins (profiles.is_admin) are charged like everyone else by default so they can test (2026-10-11, Aditi); an admin can
+-- switch themselves to unlimited, set their own balance and reset a case from the app: Get credits -> Admin test tools.
+-- Every signed-in user gets a one-time
 -- starter balance of 50 the first time the app asks for their credits (change v_starter below).
 --
 -- Nothing in the browser can write to these tables: the only way to change a balance is through
@@ -24,6 +26,10 @@ create table if not exists public.ai_credit_accounts (
   starter_granted boolean not null default false,
   updated_at timestamptz not null default now()
 );
+
+-- Admins only: true = this admin is charged like everyone else (the default, so you can test), false = unlimited.
+-- Switched from inside the app (Get credits -> Admin test tools), no SQL needed.
+alter table public.ai_credit_accounts add column if not exists admin_pays boolean not null default true;
 
 create table if not exists public.ai_credit_ledger (
   id bigint generated always as identity primary key,
@@ -76,10 +82,21 @@ create policy ai_case_analyses_select_own on public.ai_case_analyses for select 
 -- Internal helpers (not callable from the app)
 -- ---------------------------------------------------------------------------------------------
 
-create or replace function public._ai_credit_is_unlimited(p_user uuid)
+create or replace function public._ai_credit_is_admin(p_user uuid)
 returns boolean
 language sql stable security definer set search_path = public as $$
   select coalesce((select is_admin from public.profiles where id = p_user), false);
+$$;
+
+-- Who is never charged: an admin whose own "Charge me like a normal user" switch (admin_pays) is off.
+create or replace function public._ai_credit_is_unlimited(p_user uuid)
+returns boolean
+language sql stable security definer set search_path = public as $$
+  select coalesce(
+    (select p.is_admin and not a.admin_pays
+       from public.profiles p join public.ai_credit_accounts a on a.user_id = p.id
+      where p.id = p_user),
+    false);
 $$;
 
 -- Makes sure the account exists, gives the one-time starter balance, and LOCKS the row for the
@@ -128,6 +145,8 @@ begin
   return jsonb_build_object(
     'balance', acct.balance,
     'unlimited', public._ai_credit_is_unlimited(uid),
+    'is_admin', public._ai_credit_is_admin(uid),
+    'admin_pays', acct.admin_pays,
     'analyzed', v_found,
     'free_reanalyses_remaining', greatest(3 - coalesce(cs.free_reanalyses_used, 0), 0)
   );
@@ -299,7 +318,7 @@ declare
   v_balance integer;
 begin
   -- auth.uid() is null in the SQL editor (that is you); in the app it must be an admin.
-  if auth.uid() is not null and not public._ai_credit_is_unlimited(auth.uid()) then
+  if auth.uid() is not null and not public._ai_credit_is_admin(auth.uid()) then
     raise exception 'admin_only' using errcode = '42501';
   end if;
   if p_amount is null or p_amount = 0 then raise exception 'bad_amount'; end if;
@@ -313,8 +332,56 @@ end;
 $$;
 
 -- ---------------------------------------------------------------------------------------------
+-- Admin test tools (used by the app's Get credits -> Admin test tools; only for admins, only on their OWN account)
+-- ---------------------------------------------------------------------------------------------
+
+create or replace function public.admin_set_my_ai_credits(p_balance integer)
+returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  uid uuid := auth.uid();
+  acct public.ai_credit_accounts;
+begin
+  if uid is null or not public._ai_credit_is_admin(uid) then raise exception 'admin_only' using errcode = '42501'; end if;
+  if p_balance is null or p_balance < 0 or p_balance > 100000 then raise exception 'bad_amount'; end if;
+  acct := public._ai_credit_account(uid);
+  update public.ai_credit_accounts set balance = p_balance, updated_at = now() where user_id = uid;
+  insert into public.ai_credit_ledger (user_id, delta, balance_after, reason, case_key)
+    values (uid, p_balance - acct.balance, p_balance, 'grant', 'admin-test-set');
+  return jsonb_build_object('ok', true, 'balance', p_balance);
+end;
+$$;
+
+create or replace function public.admin_set_my_ai_admin_pays(p_pays boolean)
+returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  uid uuid := auth.uid();
+begin
+  if uid is null or not public._ai_credit_is_admin(uid) then raise exception 'admin_only' using errcode = '42501'; end if;
+  perform public._ai_credit_account(uid);
+  update public.ai_credit_accounts set admin_pays = coalesce(p_pays, true), updated_at = now() where user_id = uid;
+  return jsonb_build_object('ok', true, 'admin_pays', coalesce(p_pays, true));
+end;
+$$;
+
+-- Forget one case's analysis history so the next Analyze Case counts as the first one again (and the 3 free re-analyses reset).
+create or replace function public.admin_reset_my_ai_case(p_case_key text)
+returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  uid uuid := auth.uid();
+begin
+  if uid is null or not public._ai_credit_is_admin(uid) then raise exception 'admin_only' using errcode = '42501'; end if;
+  delete from public.ai_case_analyses where user_id = uid and case_key = p_case_key;
+  return jsonb_build_object('ok', true);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------------------------
 -- Who may call what
 -- ---------------------------------------------------------------------------------------------
+revoke all on function public._ai_credit_is_admin(uuid) from public, anon, authenticated;
 revoke all on function public._ai_credit_is_unlimited(uuid) from public, anon, authenticated;
 revoke all on function public._ai_credit_account(uuid) from public, anon, authenticated;
 revoke all on function public.ai_credits_status(text) from public, anon;
@@ -323,10 +390,16 @@ revoke all on function public.ai_reserve_generation(uuid, text) from public, ano
 revoke all on function public.ai_complete_generation(uuid, text) from public, anon, authenticated;
 revoke all on function public.ai_refund_generation(uuid, text) from public, anon, authenticated;
 revoke all on function public.admin_grant_ai_credits(uuid, integer, text) from public, anon;
+revoke all on function public.admin_set_my_ai_credits(integer) from public, anon;
+revoke all on function public.admin_set_my_ai_admin_pays(boolean) from public, anon;
+revoke all on function public.admin_reset_my_ai_case(text) from public, anon;
 
 grant execute on function public.ai_credits_status(text) to authenticated;
 grant execute on function public.ai_spend_analysis(text, text, text) to authenticated;
 grant execute on function public.admin_grant_ai_credits(uuid, integer, text) to authenticated;
+grant execute on function public.admin_set_my_ai_credits(integer) to authenticated;
+grant execute on function public.admin_set_my_ai_admin_pays(boolean) to authenticated;
+grant execute on function public.admin_reset_my_ai_case(text) to authenticated;
 grant execute on function public.ai_reserve_generation(uuid, text) to service_role;
 grant execute on function public.ai_complete_generation(uuid, text) to service_role;
 grant execute on function public.ai_refund_generation(uuid, text) to service_role;

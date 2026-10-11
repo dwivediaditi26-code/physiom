@@ -28,11 +28,16 @@ describe("CreditsBadge", () => {
     expect(screen.getByTestId("credit-balance").textContent).toMatch(/1 credit$/);
   });
 
-  it("shows Unlimited for an admin and no Get credits button", () => {
-    set({ unlimited: true });
-    render(<CreditsBadge requireAuth={() => true} />);
+  it("shows an unlimited admin 'Unlimited' and an Admin tools button (so they can switch back), but a normal unlimited person gets no button", () => {
+    set({ unlimited: true, isAdmin: true });
+    const { unmount } = render(<CreditsBadge requireAuth={() => true} />);
     expect(screen.getByTestId("credit-balance").textContent).toMatch(/Unlimited/);
+    expect(screen.getByRole("button", { name: "Admin tools" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Get credits" })).toBeNull();
+    unmount();
+    set({ unlimited: true, isAdmin: false });
+    render(<CreditsBadge requireAuth={() => true} />);
+    expect(screen.queryByRole("button")).toBeNull();
   });
 
   it("says credits are unavailable when they cannot be read, and still offers Get credits", () => {

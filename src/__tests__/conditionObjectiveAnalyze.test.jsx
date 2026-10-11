@@ -61,15 +61,15 @@ describe("Analyze your case: before the first analysis", () => {
     expect(pcts()).toEqual([]);
     expect(screen.queryByText("Live Match")).toBeNull();
     expect(screen.queryByText("—")).toBeNull();
-    expect(screen.getByText(/Analyze your case to see condition-matching scores and personalized recommendations/)).toBeInTheDocument();
     expect(screen.queryByTestId("analysis-current-note")).toBeNull();
   });
 
-  it("the conditions are still listed and open, labelled as educational previews", () => {
+  it("the conditions are still listed and open; the card says they are educational previews (no heading of their own)", () => {
     render(<Harness initialData={RADICULOPATHY} />);
     expect(cards().length).toBeGreaterThan(3);
-    expect(screen.getByText("Explore conditions")).toBeInTheDocument();
-    expect(screen.getByText(/educational only, not results for this patient/)).toBeInTheDocument();
+    expect(screen.queryByText("Explore conditions")).toBeNull();
+    expect(document.querySelector(".obj-hypo-head")).toBeNull();
+    expect(document.querySelector(".obj-analyze-card").textContent).toMatch(/conditions below are educational previews, not results for this patient/);
   });
 
   it("with too little story the button is off and the card lists what to add, calmly", () => {
@@ -91,9 +91,10 @@ describe("Analyze your case: running and revisiting the analysis", () => {
     const shown = pcts().filter((t) => /^\d+%$/.test(t)).map((t) => parseInt(t, 10));
     expect(shown.length).toBeGreaterThan(2);
     expect(shown[0]).toBe(Math.max(...shown));
-    expect(screen.getByText("Condition-matching scores")).toBeInTheDocument();
+    expect(screen.queryByText("Condition-matching scores")).toBeNull(); // no heading above the cards any more
     const note = screen.getByTestId("analysis-current-note");
     expect(note.textContent).toMatch(/Analysis is up to date/);
+    expect(note.textContent).toMatch(/teaching aid, not a diagnosis/);
     expect(note.textContent).toContain(nameOf(cards()[0]));
     expect(nameOf(activeCard())).toBe(nameOf(cards()[0]));
   });
@@ -150,7 +151,7 @@ describe("Analyze your case: running and revisiting the analysis", () => {
 });
 
 describe("an analysis that matched nothing", () => {
-  it("says so plainly and keeps the conditions open, with no 'scores' heading over empty cards", () => {
+  it("says so plainly in the card and keeps the conditions open", () => {
     // enough story to analyze (Chief complaint, Onset, two starred answers) that no condition's checklist supports
     const thin = { subjective: { chiefComplaint: "Neck pain with tingling into the right arm", duration: "3 weeks", regions: { cervical: {
       location: "Neck, Right upper trapezius", radiation: "Radiates into right arm/hand", mechanismType: "No clear mechanism — insidious onset",
@@ -159,8 +160,8 @@ describe("an analysis that matched nothing", () => {
     analyze();
     expect(label()).toBe("View Analysis");
     expect(screen.getByTestId("analysis-current-note").textContent).toMatch(/nothing matches yet/);
-    expect(screen.queryByText("Condition-matching scores")).toBeNull();
-    expect(screen.getByText(/No condition matched your Subjective answers yet/)).toBeInTheDocument();
+    expect(screen.getByTestId("analysis-current-note").textContent).toMatch(/still tap any condition/);
+    expect(pcts()).toEqual([]);
     expect(cards().length).toBeGreaterThan(3);
   });
 });
