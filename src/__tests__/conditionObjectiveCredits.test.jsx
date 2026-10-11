@@ -214,3 +214,28 @@ describe("who is charged", () => {
     expect(pcts().some((t) => /^\d+%$/.test(t))).toBe(true);
   });
 });
+
+// 2026-10-11, Aditi (screenshot: 50 credits, Analyze Case greyed, a condition 🔒 Locked): "even if the credits is present, it's
+// locked". The rule is unchanged -- Analyze needs the story first -- but the screen now says what to do and that credits are
+// not spent until then.
+describe("locked cards with credits but a thin story", () => {
+  it("says Analyze Case opens once the missing answers are in, and that credits are not used until then", () => {
+    render(<Harness initialData={{ subjective: { chiefComplaint: "Neck pain", onset: "Gradual", regions: {} } }} />);
+    expect(mainButton().disabled).toBe(true);
+    expect(screen.getByTestId("story-gate-note").textContent).toMatch(/Add these in Subjective first.*Analyze Case opens once these are filled in; your credits are not used until then/);
+    expect(screen.getByTestId("locked-conditions-note").textContent).toMatch(/Analyze Case opens once the missing Subjective answers above are filled in, and your credits are not used until you tap it/);
+  });
+
+  it("does not talk about credits when they are not charged", () => {
+    setCredits({ unlimited: true });
+    render(<Harness initialData={{ subjective: { chiefComplaint: "Neck pain", onset: "Gradual", regions: {} } }} />);
+    expect(screen.getByTestId("story-gate-note").textContent).not.toMatch(/credit/i);
+  });
+
+  it("keeps the short note once the story is enough", () => {
+    render(<Harness initialData={RADICULOPATHY} />);
+    expect(mainButton().disabled).toBe(false);
+    expect(screen.getByTestId("locked-conditions-note").textContent).not.toMatch(/missing Subjective answers/);
+  });
+});
+

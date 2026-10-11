@@ -899,7 +899,7 @@ const TIER_TEXT = { high: "High", med: "Med", low: "Low" };
 // "remove this upper [grid] only three comming... make the 2nd below it
 // permanant"). Now just the one always-visible list, no top grid, no
 // Customize toggle.
-function HypothesisGrid({ conditions, order, matchById, objSupportById, activeId, onSelect, hasMatchEvidence, analyzed = true, headRef, lockedIds, onLockedClick, lockNote }) {
+function HypothesisGrid({ conditions, order, matchById, objSupportById, activeId, onSelect, hasMatchEvidence, analyzed = true, headRef, lockedIds, onLockedClick, lockNote, analyzeBlocked = false, creditsOn = false }) {
   // No heading or paragraph above the conditions (Aditi, 2026-10-11: "remove this" / "explore samples not removed"): what they
   // said -- educational previews, not results for this patient; scores are a teaching aid, not a diagnosis -- now lives in the
   // Analyze card above. Before the first analysis (credits on) two conditions per region are open ("View preview ›") and the
@@ -911,6 +911,7 @@ function HypothesisGrid({ conditions, order, matchById, objSupportById, activeId
       {lockedIds?.size > 0 && (
         <div className="obj-hypo-lock-note" role="status" data-testid="locked-conditions-note" style={lockNote ? { color: BRAND.purpleDark, fontWeight: 700 } : undefined}>
           🔒 {lockedIds.size} more unlock when you analyze your case.
+          {analyzeBlocked && ` Analyze Case opens once the missing Subjective answers above are filled in${creditsOn ? ", and your credits are not used until you tap it" : ""}.`}
         </div>
       )}
     </div>
@@ -2081,6 +2082,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
         {analysisStatus === "blocked" && (
           <div className="obj-analyze-note" data-testid="story-gate-note">
             Add these in Subjective first: {gate.missing.join(" · ")}.
+            {" "}Analyze Case opens once these are filled in{enforced && !credits.unlimited ? "; your credits are not used until then" : ""}.
           </div>
         )}
         {analysisStatus === "stale" && (
@@ -2159,6 +2161,8 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
               analyzed={analysisCurrent}
               headRef={resultsRef}
               lockedIds={lockedIds}
+              analyzeBlocked={analysisStatus === "blocked"}
+              creditsOn={enforced && !credits.unlimited}
               onLockedClick={() => setLockNote(true)}
               lockNote={lockNote}
             />
