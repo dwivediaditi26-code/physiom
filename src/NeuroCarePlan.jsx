@@ -463,7 +463,7 @@ function SourceTab({ icon, label, sub, active, onClick }) {
 // button-per-goal to open it from) -- goal-linking is just an optional
 // checklist on the dose-confirm screen, same as the "general" treatment
 // flow already supported.
-function AddTreatmentPanel({ allGoals, existing, onAdd, onAddMany, requireAuth, search, setSearch, searchOpen, setSearchOpen, floatingCTA, onDoseEditingChange }) {
+function AddTreatmentPanel({ allGoals, existing, treatments = [], onAdd, onUpdate, onAddMany, requireAuth, search, setSearch, searchOpen, setSearchOpen, floatingCTA, onDoseEditingChange }) {
   const kb = useKB();
   const { ASSIST_LADDER, exerciseCategories, manualTechniques, evidenceProtocols, evidenceProtocolRegions, clinicProtocols, fullExerciseLibrary, defaultRegionKey } = kb;
   // Full region switcher (2026-09-11, Aditi: "exercise prescription have
@@ -528,10 +528,22 @@ function AddTreatmentPanel({ allGoals, existing, onAdd, onAddMany, requireAuth, 
     ? all.filter((e) => e.name.toLowerCase().includes(search.toLowerCase()) || e.target.toLowerCase().includes(search.toLowerCase()))
     : cat === ALL_TYPES ? all : cat ? all.filter((e) => e._cat === cat) : [];
 
-  const startDose = (ex) => {
+  // editingId: the plan entry whose dose is being changed (the row's Edit button), as opposed to a new exercise being added.
+  const [editingId, setEditingId] = useState(null);
+  const startDose = (ex, have) => {
     setPicked(ex);
-    setDose({ sets: ex.sets, reps: ex.reps, hold: ex.hold, duration: "", assistance: "", equipment: "", freq: ex.freq });
+    if (have) {
+      setEditingId(have.id);
+      setDose({ sets: have.sets, reps: have.reps, hold: have.hold, duration: have.duration || "", assistance: have.assistance || "", equipment: have.equipment || "", freq: have.freq });
+      setLinked(have.goalIds || []);
+    } else {
+      setEditingId(null);
+      setDose({ sets: ex.sets, reps: ex.reps, hold: ex.hold, duration: "", assistance: "", equipment: "", freq: ex.freq });
+    }
   };
+  const closeDose = () => { setPicked(null); setDose(null); setLinked([]); setEditingId(null); };
+  // "＋ Add" on a row: straight onto the plan with the library's own dose; "Edit" opens the dose page first.
+  const addDirect = (e) => onAdd({ id: uid(), exerciseId: e.id, name: e.name, category: e._cat, sets: e.sets, reps: e.reps, hold: e.hold, duration: "", assistance: "", equipment: "", freq: e.freq, goalIds: [] });
 
   return (
     <div style={(picked || techType) ? FLOATING_PAD : undefined}>
@@ -736,18 +748,26 @@ function AddTreatmentPanel({ allGoals, existing, onAdd, onAddMany, requireAuth, 
                     thumbnail as its own tap target and the name/target
                     area as a separate button that starts dosing. */}
                 {results.map((e) => {
-                  const already = existing.has(e.id);
+                  const have = treatments.find((x) => x.exerciseId === e.id);
+                  const already = !!have || existing.has(e.id);
+                  const doseText = have ? doseLine(have) : "";
                   return (
                     <div key={e.id} className="ct-item" style={{ paddingLeft: 4 }}>
                       <InfoButton imageTrigger small fallbackIcon="ti-barbell" title={e.name} richItem={exerciseRichItem(e)} />
-                      <button type="button" onClick={() => (already ? null : startDose(e))} disabled={already}
-                        style={{ flex: 1, display: "flex", alignItems: "center", background: "none", border: "none", padding: 0, cursor: already ? "default" : "pointer", fontFamily: "inherit" }}>
+                      <button type="button" onClick={() => startDose(e, have)}
+                        style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit" }}>
                         <span style={{ flex: 1, textAlign: "left" }}>
                           <span style={{ fontWeight: 600 }}>{e.name}</span>
                           <span style={{ display: "block", fontSize: 11, color: BRAND.gray }}>{e.target}</span>
+                          {doseText && <span data-testid="dose-under-exercise" style={{ display: "block", fontSize: 11.5, color: BRAND.purpleDark, fontWeight: 700, marginTop: 2 }}>{doseText}</span>}
                         </span>
-                        <span style={{ color: already ? BRAND.gray : BRAND.purple, fontWeight: 700, fontSize: 12 }}>{already ? "Added" : "＋ Add"}</span>
                       </button>
+                      <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", alignSelf: "center", gap: 6, flexShrink: 0 }}>
+                        {already
+                          ? <span style={{ color: "#16A34A", fontWeight: 800, fontSize: 12 }}>✓ Added</span>
+                          : <button type="button" aria-label={`Add ${e.name} to plan`} onClick={() => addDirect(e)} style={{ border: "none", background: "none", padding: 0, cursor: "pointer", fontFamily: "inherit", color: BRAND.purple, fontWeight: 700, fontSize: 12 }}>＋ Add</button>}
+                        <button type="button" aria-label={`Edit dose of ${e.name}`} onClick={() => startDose(e, have)} style={{ border: "none", background: "none", padding: 0, cursor: "pointer", fontFamily: "inherit", color: BRAND.gray, fontWeight: 700, fontSize: 12 }}>✎ Edit</button>
+                      </span>
                     </div>
                   );
                 })}
@@ -819,10 +839,14 @@ function AddTreatmentPanel({ allGoals, existing, onAdd, onAddMany, requireAuth, 
             )}
           </div>
           <div style={ctaStyle(floatingCTA, { display: "flex", gap: 8, marginTop: 14 })}>
-            <button type="button" className="ghost-btn" style={{ flex: 1 }} onClick={() => { setPicked(null); setDose(null); }}>Back</button>
+            <button type="button" className="ghost-btn" style={{ flex: 1 }} onClick={closeDose}>Back</button>
             <button type="button" className="primary-btn" style={{ flex: 2 }}
-              onClick={() => { onAdd({ id: uid(), exerciseId: picked.id, name: picked.name, category: picked._cat, ...dose, goalIds: linked }); setPicked(null); setDose(null); setLinked([]); }}>
-              Add to plan
+              onClick={() => {
+                if (editingId) onUpdate?.(editingId, { ...dose, goalIds: linked });
+                else onAdd({ id: uid(), exerciseId: picked.id, name: picked.name, category: picked._cat, ...dose, goalIds: linked });
+                closeDose();
+              }}>
+              {editingId ? "Save dose" : "Add to plan"}
             </button>
           </div>
         </>
@@ -1046,6 +1070,8 @@ function TreatmentPhase({ problems, goals, treatments, setTreatments, onNext, fl
       <AddTreatmentPanel
         allGoals={goals}
         existing={new Set(treatments.map((t) => t.exerciseId))}
+        treatments={treatments}
+        onUpdate={(id, patch) => setTreatments(treatments.map((x) => (x.id === id ? { ...x, ...patch } : x)))}
         requireAuth={requireAuth}
         floatingCTA={floatingCTA}
         onDoseEditingChange={setDoseEditing}
@@ -2006,35 +2032,44 @@ export function NeuroCarePlanSection({ data, setData, initialPhase, floatingCTA,
    motion: ... (4w, LTG) — Tx: Prone Lying"). AssessmentSummary
    (orthoSummary.jsx) renders each group as its own labeled block within
    the step's card. */
+// Problem List, Goals and Treatment each print when they have anything in them. This used to return nothing at all
+// unless the Problem List was filled in, so a plan with exercises (or goals) added straight from the library -- which
+// the Treatment page allows without any problem or goal -- vanished from Final Review, Copy and the PDF
+// (2026-10-11, Aditi: Problem List, goals and exercise prescription "not showing in the final review of the AI
+// assessment"). Each exercise row now carries its dose too.
 export function formatCarePlanSection(section) {
   const problems = Array.isArray(section.problems) ? section.problems : [];
   const goals = Array.isArray(section.goals) ? section.goals : [];
   const treatments = Array.isArray(section.treatments) ? section.treatments : [];
-  if (!problems.length) return { groups: [] };
+  if (!problems.length && !goals.length && !treatments.length) return { groups: [] };
 
-  const problemName = (id) => problems.find((p) => p.id === id)?.name || "—";
+  const problemName = (id) => problems.find((p) => p.id === id)?.name || "";
 
-  const groups = [
-    {
+  // Only the blocks that have something in them: a heading with no rows under it (Summary hides rows with no value)
+  // just reads as a broken section.
+  const groups = [];
+  if (problems.length) {
+    groups.push({
       heading: "Problem List",
       rows: problems.map((p, i) => ({ label: `${i + 1}. ${p.name}`, value: Array.isArray(p.findings) && p.findings.length ? p.findings.map((f) => `${f.label}: ${f.value}`).join(" · ") : "—" })),
-    },
-    {
+    });
+  }
+  if (goals.length) {
+    groups.push({
       heading: "Goals",
-      rows: goals.length
-        ? goals.map((g) => ({ label: `${g.measure} (${g.term === "short" ? "STG" : "LTG"}, ${g.weeks}w)`, value: `${g.baseline} → ${g.target} — ${problemName(g.problemId)}` }))
-        : [{ label: "No goals set yet", value: "" }],
-    },
-    {
+      rows: goals.map((g) => ({ label: `${g.measure} (${g.term === "short" ? "STG" : "LTG"}, ${g.weeks}w)`, value: [`${g.baseline} → ${g.target}`, problemName(g.problemId)].filter(Boolean).join(" — ") })),
+    });
+  }
+  if (treatments.length) {
+    groups.push({
       heading: "Treatment",
-      rows: treatments.length
-        ? treatments.map((t) => {
-            const myGoals = goals.filter((g) => (t.goalIds || []).includes(g.id));
-            return { label: t.name, value: myGoals.length ? myGoals.map((g) => g.measure).join(", ") : "—" };
-          })
-        : [{ label: "No treatments set yet", value: "" }],
-    },
-  ];
+      rows: treatments.map((t) => {
+        const myGoals = goals.filter((g) => (t.goalIds || []).includes(g.id));
+        const value = [doseLine(t), myGoals.length ? `Goal: ${myGoals.map((g) => g.measure).join(", ")}` : ""].filter(Boolean).join(" — ");
+        return { label: t.name, value: value || "—" };
+      }),
+    });
+  }
   return { groups };
 }
 export const formatNeuroCarePlanSection = formatCarePlanSection;

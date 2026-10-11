@@ -600,7 +600,7 @@ const REGION_CONFIGS = [
 // formatter for it since the grouping work happens here.
 const OBJECTIVE_MODULE_LABELS = {
   observation: "Observation", posture: "Posture", palpation: "Palpation",
-  cpaNkt: "CPA — NKT", cpa: "CPA — NKT", rom: "ROM", resisted: "STTT — Resisted Test",
+  cpaNkt: "CPA — NKT", cpa: "CPA — NKT", rom: "ROM", mmt: "MMT", resisted: "STTT — Resisted Test",
   sttt: "STTT", kineticChain: "Kinetic Chain", functionalScreen: "Functional Screen",
   special: "Special Test", outcome: "Outcome Measure",
 };
@@ -652,10 +652,24 @@ function objectiveFieldLabel(module, sub, condition, cfg) {
     if (sub === "grade") return `${base} — Grade`;
     const obsIdx = /^obs_(.+)$/.exec(sub || "");
     if (obsIdx) {
-      const fma = fmaTestFor(condition?.functionalScreen?.testName);
+      // The card resolves the FMA test from testName, or from name when testName is not set (see fmaMatch below).
+      const fma = fmaTestFor(condition?.functionalScreen?.testName, cfg?.key) || fmaTestFor(condition?.functionalScreen?.name, cfg?.key);
       const q = fma?.observations?.find((o) => o.id === obsIdx[1])?.q;
       if (q) return `${base} — ${q}`;
     }
+  }
+  // ROM and MMT key their state by movement / muscle id, with "_left" / "_right" on the end for a two-sided joint
+  // ("ext", "latl", "mmt_scm_left"). Resolve them back to the name the clinician saw on screen instead of printing
+  // the raw id (2026-10-11, Aditi's Review So Far screenshot: "ROM — ext", "mmt — mmt_scm_left").
+  if ((module === "rom" || module === "mmt") && sub && sub !== "mode") {
+    const sideMatch = /_(left|right)$/.exec(sub);
+    const id = sideMatch ? sub.slice(0, -sideMatch[0].length) : sub;
+    const side = sideMatch ? ` (${sideMatch[1] === "left" ? "Left" : "Right"})` : "";
+    const item = module === "rom"
+      ? cfg?.romMovements?.find((m) => m.id === id)
+      : (cfg ? mmtMusclesFor(cfg.key).find((m) => m.id === id) : null);
+    const name = module === "rom" ? item?.label : item?.muscle;
+    if (name) return `${base} — ${name}${side}`;
   }
   if (!sub || ["chips", "state", "mode", "test", "r", "p", "m"].includes(sub)) return base;
   return `${base} — ${sub}`;
