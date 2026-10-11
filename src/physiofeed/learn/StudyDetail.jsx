@@ -30,7 +30,7 @@ export default function StudyDetail({ item, onBack, children }) {
         <ChevronLeft size={18}/> Back
       </button>
       <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-        <div className="bg-slate-50 flex items-center justify-center" style={fallback ? { minHeight: 160 } : undefined}>
+        <div className="bg-slate-50 flex items-center justify-center empty:hidden" style={fallback ? { minHeight: 160 } : undefined}>
           {names.length ? (
             <ImageGallery names={names} fallback={fallback}/>
           ) : fallback ? (

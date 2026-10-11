@@ -90,5 +90,5 @@ export function NextButton({ label, onClick, theme = "violet" }) {
 }
 
 export function MediaFrame({ children }) {
-  return <div className="mt-3 rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm flex items-center justify-center">{children}</div>;
+  return <div className="mt-3 rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm flex items-center justify-center empty:hidden">{children}</div>;
 }

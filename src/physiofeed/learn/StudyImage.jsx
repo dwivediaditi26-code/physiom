@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ImageOff } from "lucide-react";
 
 // Same real Cloudinary asset pattern + URL scheme already used throughout
@@ -17,10 +17,16 @@ const CLOUDINARY_BASE = "https://res.cloudinary.com/dr15y1pwj/image/upload";
 // each item's own lucide icon here so a not-yet-uploaded photo still shows
 // a meaningful medical icon instead of a bare ImageOff glyph; callers with
 // no more specific icon (ROM/MMT/Special Tests) just omit it.
-export default function StudyImage({ name, square = false, full = false, size = 72, fallback }) {
+export default function StudyImage({ name, square = false, full = false, size = 72, fallback, onMissing }) {
   const [failed, setFailed] = useState(false);
+  // Lets a card hide its whole image box when there is no photo to put in it.
+  useEffect(() => { if ((!name || failed) && onMissing) onMissing(); }, [name, failed]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!name || failed) {
+    // The detail-page photo with no icon to stand in for it leaves nothing at
+    // all, not a grey "no image" box (2026-10-10, Aditi: no blank space for a
+    // missing photo). A caller that passes its own icon keeps it.
+    if (full && !fallback) return null;
     const boxStyle = square ? { aspectRatio: "1", width: "100%" } : full ? { minHeight: 160, width: "100%" } : { height: size, width: "100%" };
     return (
       <div style={boxStyle} className="flex items-center justify-center bg-slate-50 text-slate-300">

@@ -46,6 +46,7 @@ import PhotoSlots from "./PhotoSlots.jsx";
 import { storyGate } from "./storyGate.js";
 import { kcImageIds, fmaImageIds } from "./kcImages.js";
 import { uploadImage, uploadErrorMessage } from "./services/cloudinary.js";
+import { useIsAdmin } from "./useIsAdmin.js";
 import { FmaIcon, poseForJoint } from "./fmaIcons.jsx";
 import { runCervicalDifferential, hasCervicalChecklistData } from "./orthoCervicalReasoning.js";
 import { runThoracicDifferential, hasThoracicChecklistData } from "./orthoThoracicReasoning.js";
@@ -1184,12 +1185,17 @@ function splitSentences(text) {
 // separate database/mapping step (2026-09-12, Aditi: "I click it and it
 // uploaded... presented in the main web app... for all the people").
 // Uploads go through services/cloudinary.js (an admin's replace is signed by the server).
-function FindingCard({ index, icon, label, active, instruction, interpretation, onToggle, photoId }) {
+export function FindingCard({ index, icon, label, active, instruction, interpretation, onToggle, photoId }) {
   const [imgFailed, setImgFailed] = useState(false);
   const [imgVersion, setImgVersion] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [zoomOpen, setZoomOpen] = useState(false);
   const [showObserve, setShowObserve] = useState(false);
+  // Only an admin (Aditi, Anupam) sees the empty "add photo" tile and the
+  // Replace button; everyone else sees a photo tile only once the photo has
+  // really loaded, and no blank tile while there is none (2026-10-10, Aditi).
+  const isAdmin = useIsAdmin();
+  const [imgLoaded, setImgLoaded] = useState(false);
   const fileInputRef = useRef(null);
   const imgSrc = photoId ? `${CLOUDINARY_BASE}/f_auto,q_auto,w_300,h_300,c_fill/${photoId}${imgVersion ? `?v=${imgVersion}` : ""}` : null;
   const zoomSrc = photoId ? `${CLOUDINARY_BASE}/f_auto,q_auto,w_1200,c_limit/${photoId}${imgVersion ? `?v=${imgVersion}` : ""}` : null;
@@ -1227,10 +1233,12 @@ function FindingCard({ index, icon, label, active, instruction, interpretation, 
             </div>
           )}
           <div style={{ position: "absolute", top: 16, right: 16, display: "flex", gap: 10 }}>
-            <button type="button" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-              style={{ padding: "8px 16px", borderRadius: 20, border: "none", background: "rgba(255,255,255,0.15)", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit" }}>
-              <i className="ti ti-camera-plus" aria-hidden="true"></i> Replace photo
-            </button>
+            {isAdmin && (
+              <button type="button" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                style={{ padding: "8px 16px", borderRadius: 20, border: "none", background: "rgba(255,255,255,0.15)", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit" }}>
+                <i className="ti ti-camera-plus" aria-hidden="true"></i> Replace photo
+              </button>
+            )}
             <button type="button" onClick={(e) => { e.stopPropagation(); setZoomOpen(false); }}
               style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.15)", color: "#fff", fontSize: 18, cursor: "pointer" }}>✕</button>
           </div>
@@ -1238,16 +1246,17 @@ function FindingCard({ index, icon, label, active, instruction, interpretation, 
         document.body
       )}
       <div style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: 14 }}>
+        {(!photoId || isAdmin || hasPhoto) && (
         <div
-          onClick={photoId ? (e) => { e.stopPropagation(); hasPhoto ? setZoomOpen(true) : fileInputRef.current?.click(); } : undefined}
-          style={{ position: "relative", flex: "0 0 auto", width: 84, height: 84, borderRadius: 14, background: active ? BRAND.purpleFaint : "#F6F5FA", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", cursor: photoId ? (hasPhoto ? "zoom-in" : "pointer") : "default" }}
+          onClick={photoId ? (e) => { e.stopPropagation(); if (hasPhoto) setZoomOpen(true); else if (isAdmin) fileInputRef.current?.click(); } : undefined}
+          style={{ position: "relative", flex: "0 0 auto", width: 84, height: 84, borderRadius: 14, background: active ? BRAND.purpleFaint : "#F6F5FA", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", cursor: photoId ? (hasPhoto ? "zoom-in" : "pointer") : "default", ...(photoId && !isAdmin && !imgLoaded ? { display: "none" } : {}) }}
         >
           {hasPhoto ? (
-            <img src={imgSrc} alt="" onError={() => setImgFailed(true)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <img src={imgSrc} alt="" onLoad={() => setImgLoaded(true)} onError={() => setImgFailed(true)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           ) : (
             <i className={"ti " + (photoId ? "ti-camera-plus" : icon)} style={{ fontSize: 28, color: active ? BRAND.purpleDark : BRAND.grayLight }} aria-hidden="true"></i>
           )}
-          {photoId && (
+          {photoId && isAdmin && (
             <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />
           )}
           {uploading && (
@@ -1256,6 +1265,7 @@ function FindingCard({ index, icon, label, active, instruction, interpretation, 
             </div>
           )}
         </div>
+        )}
         <div style={{ flex: 1, minWidth: 0, paddingTop: 2 }}>
           <div style={{ fontSize: "0.9rem", fontWeight: 700, color: BRAND.ink, marginBottom: 8 }}>{label}</div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -1330,11 +1340,14 @@ function findingPhotoId(regionKey, category, label) {
 // photo the way Observation/Posture/Palpation findings already could
 // (2026-09-17, Aditi: "same thing... in ROM special test... like you have
 // done in AI observation section").
-function PatientPhotoTile({ photoId, size = 40 }) {
+export function PatientPhotoTile({ photoId, size = 40 }) {
   const [imgFailed, setImgFailed] = useState(false);
   const [imgVersion, setImgVersion] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [zoomOpen, setZoomOpen] = useState(false);
+  // Same rule as FindingCard: only an admin sees the empty add-photo tile.
+  const isAdmin = useIsAdmin();
+  const [imgLoaded, setImgLoaded] = useState(false);
   const fileInputRef = useRef(null);
   const imgSrc = photoId ? `${CLOUDINARY_BASE}/f_auto,q_auto,w_300,h_300,c_fill/${photoId}${imgVersion ? `?v=${imgVersion}` : ""}` : null;
   const zoomSrc = photoId ? `${CLOUDINARY_BASE}/f_auto,q_auto,w_1200,c_limit/${photoId}${imgVersion ? `?v=${imgVersion}` : ""}` : null;
@@ -1358,16 +1371,19 @@ function PatientPhotoTile({ photoId, size = 40 }) {
 
   if (!photoId) return null;
 
+  if (!isAdmin && !hasPhoto) return null;
   return (
     <>
       {zoomOpen && hasPhoto && createPortal(
         <div onClick={() => setZoomOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 99999, background: "rgba(0,0,0,0.92)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "zoom-out" }}>
           <img src={zoomSrc} alt="" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "92vw", maxHeight: "80vh", width: "auto", height: "auto", objectFit: "contain", borderRadius: 8 }} />
           <div style={{ position: "absolute", top: 16, right: 16, display: "flex", gap: 10 }}>
-            <button type="button" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-              style={{ padding: "8px 16px", borderRadius: 20, border: "none", background: "rgba(255,255,255,0.15)", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit" }}>
-              <i className="ti ti-camera-plus" aria-hidden="true"></i> Replace photo
-            </button>
+            {isAdmin && (
+              <button type="button" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                style={{ padding: "8px 16px", borderRadius: 20, border: "none", background: "rgba(255,255,255,0.15)", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit" }}>
+                <i className="ti ti-camera-plus" aria-hidden="true"></i> Replace photo
+              </button>
+            )}
             <button type="button" onClick={(e) => { e.stopPropagation(); setZoomOpen(false); }}
               style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.15)", color: "#fff", fontSize: 18, cursor: "pointer" }}>✕</button>
           </div>
@@ -1375,16 +1391,16 @@ function PatientPhotoTile({ photoId, size = 40 }) {
         document.body
       )}
       <div
-        onClick={(e) => { e.stopPropagation(); hasPhoto ? setZoomOpen(true) : fileInputRef.current?.click(); }}
+        onClick={(e) => { e.stopPropagation(); if (hasPhoto) setZoomOpen(true); else if (isAdmin) fileInputRef.current?.click(); }}
         title={hasPhoto ? "View patient photo" : "Add patient photo"}
-        style={{ position: "relative", flexShrink: 0, width: size, height: size, borderRadius: 10, background: "#F6F5FA", border: `1px solid ${HAIRLINE}`, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", cursor: hasPhoto ? "zoom-in" : "pointer" }}
+        style={{ position: "relative", flexShrink: 0, width: size, height: size, borderRadius: 10, background: "#F6F5FA", border: `1px solid ${HAIRLINE}`, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", cursor: hasPhoto ? "zoom-in" : "pointer", ...(!isAdmin && !imgLoaded ? { display: "none" } : {}) }}
       >
         {hasPhoto ? (
-          <img src={imgSrc} alt="" onError={() => setImgFailed(true)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img src={imgSrc} alt="" onLoad={() => setImgLoaded(true)} onError={() => setImgFailed(true)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
           <i className="ti ti-camera-plus" style={{ fontSize: Math.round(size * 0.45), color: BRAND.grayLight }} aria-hidden="true"></i>
         )}
-        <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />
+        {isAdmin && <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />}
         {uploading && (
           <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.75)", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <i className="ti ti-loader-2" style={{ fontSize: Math.round(size * 0.4), color: BRAND.purple }} aria-hidden="true"></i>

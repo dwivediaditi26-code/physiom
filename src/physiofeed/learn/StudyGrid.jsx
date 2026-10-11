@@ -1,3 +1,4 @@
+import { useState } from "react";
 import StudyImage from "./StudyImage.jsx";
 import { DisplayFont } from "./learnTheme.jsx";
 
@@ -10,6 +11,19 @@ const CARD_COLORS = [
   { border: "border-cyan-200", bar: "bg-cyan-500", img: "bg-cyan-50", tag: "bg-cyan-100 text-cyan-700" },
   { border: "border-pink-200", bar: "bg-pink-500", img: "bg-pink-50", tag: "bg-pink-100 text-pink-700" },
 ];
+
+// The image box at the top of a card. A card with no photo and no icon of its
+// own gets no box at all, instead of an empty coloured square (2026-10-10,
+// Aditi: a missing photo must not leave blank space).
+function GridThumb({ item, fallback, bg }) {
+  const [missing, setMissing] = useState(false);
+  if (!fallback && (!item.image || missing)) return null;
+  return (
+    <div className={`h-32 w-full shrink-0 rounded-xl overflow-hidden ${bg} mb-2.5 flex items-center justify-center`}>
+      {item.image ? <StudyImage name={item.image} size={128} fallback={fallback} onMissing={() => setMissing(true)}/> : fallback}
+    </div>
+  );
+}
 
 // Overview grid -- 2-column colorful tile cards, matching the same card
 // style Learn's own Assessment Library already uses (white bg, border,
@@ -48,7 +62,7 @@ export default function StudyGrid({ items, onSelect }) {
   const reserveTitle = items.some((i) => String(i.title || "").length > 12);
   const reserveSubtitle = items.some((i) => i.subtitle);
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-2 gap-3 items-start">
       <DisplayFont/>
       {items.map((item, idx) => {
         const c = CARD_COLORS[idx % CARD_COLORS.length];
@@ -65,15 +79,7 @@ export default function StudyGrid({ items, onSelect }) {
           className={`flex flex-col items-stretch justify-start text-left bg-white border ${c.border} rounded-2xl p-3 pt-0 overflow-hidden shadow-sm hover:shadow-md active:scale-[0.99] transition`}
         >
           <div className={`h-1.5 -mx-3 mb-3 shrink-0 ${c.bar}`}/>
-          <div className={`h-32 w-full shrink-0 rounded-xl overflow-hidden ${c.img} mb-2.5 flex items-center justify-center`}>
-            {item.image ? (
-              <StudyImage name={item.image} size={128} fallback={fallback}/>
-            ) : fallback ? (
-              fallback
-            ) : (
-              <StudyImage name={item.image} size={128}/>
-            )}
-          </div>
+          <GridThumb item={item} fallback={fallback} bg={c.img}/>
           <div className={`cl-display text-sm font-extrabold text-slate-900 leading-tight line-clamp-2 break-words ${reserveTitle ? "min-h-[2.5em]" : ""}`}>{item.title}</div>
           {(item.subtitle || reserveSubtitle) && <div className="text-xs text-slate-500 mt-1 truncate min-h-[1rem]">{item.subtitle}</div>}
           {item.tags && item.tags.length > 0 && (

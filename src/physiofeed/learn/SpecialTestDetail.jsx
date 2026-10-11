@@ -8,6 +8,9 @@ import { specialQuestions } from "./quizBuilders.js";
 import { SPECIAL_TESTS_DATA } from "../../sharedClinicalData.js";
 import { DetailHeader, DetailTabs, MediaFrame, VideoTab, NextButton } from "./learnTheme.jsx";
 
+// "—" in the data means no published figure: show nothing rather than a dash.
+const known = (v) => (v && String(v).trim() !== "—" ? v : null);
+
 // Special Test detail screen: hero image, then Learn / Technique / Video / Quiz
 // tabs (2026-09-18, Aditi's layout brief). Everything shown comes from the
 // test data the app already has (structure, sensitivity/specificity, the
@@ -41,8 +44,8 @@ export default function SpecialTestDetail({ test, regionLabel, regionTests, onBa
         {tab === "Learn" && (
           <>
             {test.structure && <InfoBox icon="🎯" label="What it tests" tint="violet">{test.structure}</InfoBox>}
-            {(test.sensitivity || test.specificity) && (
-              <InfoBox icon="📊" label="How reliable is it" tint="blue">Sensitivity: {test.sensitivity || "—"} · Specificity: {test.specificity || "—"}</InfoBox>
+            {(known(test.sensitivity) || known(test.specificity)) && (
+              <InfoBox icon="📊" label="How reliable is it" tint="blue">Sensitivity: {known(test.sensitivity) || "—"} · Specificity: {known(test.specificity) || "—"}</InfoBox>
             )}
             {test.positive && <InfoBox icon="⚠" label="Positive means" tint="red">{test.positive}</InfoBox>}
             {test.negative && <InfoBox icon="✓" label="Negative means" tint="green">{test.negative}</InfoBox>}

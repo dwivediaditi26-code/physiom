@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { FieldLabel, SectionTitle } from "./assessmentTypography.jsx";
 import { uploadImage, uploadErrorMessage } from "./services/cloudinary.js";
 import PhotoSlots from "./PhotoSlots.jsx";
+import { useIsAdmin } from "./useIsAdmin.js";
 
 /* ============================================================
    BRAND / TOKENS — shared by every Ortho assessment module
@@ -81,13 +82,19 @@ export const CLOUDINARY_BASE = "https://res.cloudinary.com/dr15y1pwj/image/uploa
 // "we can upload image from here and replace... i think we should do in
 // ortho also in rom mmt and neuro and special test").
 function SheetHero({ name }) {
+  // Only an admin (Aditi, Anupam) sees the "add a photo" box and the Replace
+  // buttons. Everyone else sees the photo when it exists and nothing at all
+  // when it does not (2026-10-10, Aditi: no blank space for a missing photo).
+  const isAdmin = useIsAdmin();
+  const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
   const [zoomed, setZoomed] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [version, setVersion] = useState(0);
   const fileInputRef = useRef(null);
-  if (!name) return <div className="sheet-hero"><span className="sheet-hero-fallback">No reference photo</span></div>;
+  if (!name) return null;
   const src = `${CLOUDINARY_BASE}/f_auto,q_auto/${name}${version ? `?v=${version}` : ""}`;
+  if (failed && !isAdmin) return null;
 
   async function handleFile(e) {
     const file = e.target.files?.[0];
@@ -107,26 +114,30 @@ function SheetHero({ name }) {
 
   return (
     <>
-      <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />
+      {isAdmin && <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />}
       {failed ? (
         <div className="sheet-hero sheet-hero-empty" onClick={() => fileInputRef.current?.click()} role="button" aria-label="Add a reference photo">
           <span className="sheet-hero-fallback">{uploading ? "Uploading…" : "📷 Tap to add a reference photo"}</span>
         </div>
       ) : (
-        <div className="sheet-hero" onClick={() => setZoomed(true)} role="button" aria-label="Enlarge photo">
-          <img src={src} alt="" onError={() => setFailed(true)} />
+        <div className="sheet-hero" style={!isAdmin && !loaded ? { display: "none" } : undefined} onClick={() => setZoomed(true)} role="button" aria-label="Enlarge photo">
+          <img src={src} alt="" onLoad={() => setLoaded(true)} onError={() => setFailed(true)} />
           <span className="sheet-hero-zoom">⤢</span>
-          <button type="button" className="sheet-hero-replace" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }} title="Replace photo" aria-label="Replace photo" disabled={uploading}>
-            {uploading ? "…" : "📷"}
-          </button>
+          {isAdmin && (
+            <button type="button" className="sheet-hero-replace" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }} title="Replace photo" aria-label="Replace photo" disabled={uploading}>
+              {uploading ? "…" : "📷"}
+            </button>
+          )}
         </div>
       )}
       {zoomed && (
         <div className="lightbox-backdrop" onClick={() => setZoomed(false)}>
           <img src={src} alt="" className="lightbox-img" />
-          <button type="button" className="lightbox-replace" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }} disabled={uploading}>
-            📷 {uploading ? "Uploading…" : "Replace photo"}
-          </button>
+          {isAdmin && (
+            <button type="button" className="lightbox-replace" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }} disabled={uploading}>
+              📷 {uploading ? "Uploading…" : "Replace photo"}
+            </button>
+          )}
           <button type="button" className="lightbox-close" onClick={() => setZoomed(false)} aria-label="Close">✕</button>
         </div>
       )}

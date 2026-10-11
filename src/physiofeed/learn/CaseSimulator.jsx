@@ -155,7 +155,7 @@ function ExamPanel({ stage, exam, setExam }) {
           <div className="flex gap-3 items-start">
             {ex.images && (
               <div className="w-[44%] shrink-0 space-y-1.5">
-                {ex.images.map((id) => <div key={id} className="rounded-lg overflow-hidden bg-white border border-slate-200"><StudyImage name={id} full/></div>)}
+                {ex.images.map((id) => <div key={id} className="rounded-lg overflow-hidden bg-white border border-slate-200 empty:hidden"><StudyImage name={id} full/></div>)}
               </div>
             )}
             <div className="flex-1 min-w-0">

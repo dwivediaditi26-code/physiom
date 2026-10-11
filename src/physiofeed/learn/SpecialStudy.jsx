@@ -12,18 +12,24 @@ const REGION_KEYS = Object.keys(SPECIAL_TESTS_DATA);
 // own expanded card exactly (How to perform, then Negative/Positive
 // meaning side by side) -- just without the result-recording select,
 // since this view is read-only.
+// The data stores "—" for a test with no published sensitivity/specificity.
+// That is "unknown", so it shows nothing rather than a "Sens —" pill.
+const known = (v) => (v && String(v).trim() !== "—" ? v : null);
+
 function toCard(t) {
+  const sens = known(t.sensitivity);
+  const spec = known(t.specificity);
   return {
     id: t.id,
     raw: t,
     image: t.id,
     title: t.label,
     subtitle: t.structure,
-    tags: [t.sensitivity && `Sens ${t.sensitivity}`, t.specificity && `Spec ${t.specificity}`].filter(Boolean),
+    tags: [sens && `Sens ${sens}`, spec && `Spec ${spec}`].filter(Boolean),
     sections: (
       <Fragment>
-        {(t.sensitivity || t.specificity) && (
-          <div className="text-xs text-slate-500">Sens: {t.sensitivity || "—"} · Spec: {t.specificity || "—"}</div>
+        {(sens || spec) && (
+          <div className="text-xs text-slate-500">Sens: {sens || "—"} · Spec: {spec || "—"}</div>
         )}
         {t.how && (
           <InfoBox icon="👐" label="How to perform" tint="amber">{t.how}</InfoBox>

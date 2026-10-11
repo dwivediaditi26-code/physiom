@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { uploadImage, uploadErrorMessage } from "./services/cloudinary.js";
+import { useIsAdmin } from "./useIsAdmin.js";
 
 /**
  * InfoCard — one reusable ⓘ learning-card shell.
@@ -102,6 +103,12 @@ function publicIdFromSrc(src) {
 
 function PerformPane({ perform }) {
   const baseSlots = normalizeImages(perform);
+  // Only an admin (Aditi, Anupam) sees the empty upload slot and the Replace
+  // buttons. Everyone else sees a photo only once it has really loaded, and
+  // no blank box at all while there is none (2026-10-10, Aditi: an info card
+  // with no photo must not leave blank space).
+  const isAdmin = useIsAdmin();
+  const [loadedSrcs, setLoadedSrcs] = useState(() => new Set());
   const [idx, setIdx] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
   // Cardio/neuro image slots are now wired to a Cloudinary asset id per
@@ -131,13 +138,15 @@ function PerformPane({ perform }) {
   const retryCountRef = useRef({});
   useEffect(() => { setIdx(0); setFullscreen(false); setVersions({}); setUploadingIdx(null); retryCountRef.current = {}; }, [perform]);
 
-  const slots = baseSlots.map((sl, i) => ({
+  const allSlots = baseSlots.map((sl, i) => ({
     ...sl,
     publicId: publicIdFromSrc(sl.src),
     src: sl.src && versions[i] ? `${sl.src}?v=${versions[i]}` : sl.src,
   }));
-  const activeIdx = Math.min(idx, slots.length - 1);
-  const active = slots[activeIdx];
+  // A non-admin only pages through slots that have a photo (one that failed to load drops out).
+  const slots = isAdmin ? allSlots : allSlots.filter((sl) => sl.src && !erroredSrcs.has(sl.src));
+  const activeIdx = Math.max(0, Math.min(idx, slots.length - 1));
+  const active = slots[activeIdx] || { src: null };
   const activeSrc = active.src && !erroredSrcs.has(active.src) ? active.src : null;
 
   // Retries a freshly-uploaded slot's image load a few times (cache-busted
@@ -215,7 +224,7 @@ function PerformPane({ perform }) {
 
   return (
     <>
-      <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFileChange} />
+      {isAdmin && <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFileChange} />}
       {/* Image slot(s) — pass perform.image (single) or perform.images (up
           to 3, each a URL or {src,label}) once real photos exist; until
           then this shows a placeholder per slot so the layout never has
@@ -226,7 +235,7 @@ function PerformPane({ perform }) {
           itself the upload trigger; an already-uploaded slot gets a small
           "Replace" badge instead, since the main tap there opens fullscreen. */}
       {activeSrc ? (
-        <div style={{ ...s.illusImg, position: "relative" }}>
+        <div style={{ ...s.illusImg, position: "relative", ...(!isAdmin && !loadedSrcs.has(activeSrc) ? { display: "none" } : {}) }}>
           <div
             style={{ cursor: "pointer", touchAction: "pan-y" }}
             onClick={handleImageClick}
@@ -239,17 +248,18 @@ function PerformPane({ perform }) {
               src={activeSrc}
               alt={active.label || perform.caption || ""}
               style={s.illusImgTag}
+              onLoad={() => setLoadedSrcs((p) => (p.has(activeSrc) ? p : new Set(p).add(activeSrc)))}
               onError={() => handleImgError(activeIdx, activeSrc)}
             />
             {(active.label || perform.caption) && <div style={s.illusImgCap}>{active.label || perform.caption}</div>}
           </div>
-          {active.publicId && (
+          {isAdmin && active.publicId && (
             <button type="button" style={s.replaceBadge} onClick={() => triggerUpload(idx)} aria-label="Replace this photo">
               {uploadingIdx === idx ? "…" : "📷"}
             </button>
           )}
         </div>
-      ) : (
+      ) : isAdmin ? (
         // Swipe still needs to work from here too -- a slot with no photo
         // yet (partial upload progress) shouldn't block swiping across to
         // a sibling slot that does have one.
@@ -266,7 +276,7 @@ function PerformPane({ perform }) {
             <div style={s.illusCap}>{uploadingIdx === idx ? "Uploading…" : active.label || perform.caption || (active.publicId ? "Tap to upload a photo" : "Add position/technique image")}</div>
           </div>
         </div>
-      )}
+      ) : null}
       {slots.length > 1 && (
         <div style={s.imgDots}>
           {slots.map((_, i) => (
@@ -287,8 +297,8 @@ function PerformPane({ perform }) {
         </div>
       ))}
       {fullscreen && active.src && (
-        <ImageLightbox slots={slots} idx={idx} setIdx={setIdx} caption={perform.caption} onClose={() => setFullscreen(false)}
-          onReplace={() => triggerUpload(idx)} uploading={uploadingIdx === idx} />
+        <ImageLightbox slots={slots} idx={activeIdx} setIdx={setIdx} caption={perform.caption} onClose={() => setFullscreen(false)}
+          onReplace={isAdmin ? () => triggerUpload(idx) : undefined} uploading={uploadingIdx === idx} />
       )}
     </>
   );
