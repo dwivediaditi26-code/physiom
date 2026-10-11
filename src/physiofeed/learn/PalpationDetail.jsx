@@ -5,7 +5,7 @@ import InfoBox from "./InfoBox.jsx";
 import QuizTab from "./QuizTab.jsx";
 import { palpationQuestions } from "./quizBuilders.js";
 import { PALPATION_DATA } from "../../palpationData.js";
-import { DetailHeader, DetailTabs, MediaFrame, VideoTab, NextButton } from "./learnTheme.jsx";
+import { DetailHeader, DetailTabs, MediaFrame, NextButton } from "./learnTheme.jsx";
 
 // Full detail page for one palpation structure. Same chrome as
 // StudyDetail.jsx (back button, white rounded-2xl card) but with a
@@ -113,7 +113,6 @@ export default function PalpationDetail({ item, region, list, onBack, onNext }) 
           </>
         )}
 
-        {tab === "Video" && <VideoTab name={`palpating ${item.name}`}/>}
 
         {tab === "Quiz" && <QuizTab key={item.id} quiz={quiz} onReview={() => setTab("Learn")}/>}
       </div>

@@ -1,9 +1,9 @@
 import { useState } from "react";
 import QuizTab from "./QuizTab.jsx";
 import { hash } from "./quizKit.js";
-import { DetailHeader, DetailTabs, MediaFrame, VideoTab, NextButton } from "./learnTheme.jsx";
+import { DetailHeader, DetailTabs, MediaFrame, NextButton } from "./learnTheme.jsx";
 
-// Generic Learn / Technique / Video / Quiz detail screen for study datasets
+// Generic Learn / Technique / Quiz detail screen for study datasets
 // whose items are described by small render callbacks (used by Neurological
 // study mode, whose reflexes, dermatomes, myotomes, cranial nerves and
 // conditions all have different fields). Same look as the Special Test, ROM,
@@ -25,7 +25,7 @@ export function makeChoiceQuiz({ id, question, answer, pool, explanation }) {
   return { question, options: ordered, correctOptionId: ordered.find((o) => o.text === answer).id, explanation };
 }
 
-export default function TabbedDetail({ badge, title, subtitle, media, learn, technique, quiz, videoName, id, next, onBack, theme = "cyan" }) {
+export default function TabbedDetail({ badge, title, subtitle, media, learn, technique, quiz, id, next, onBack, theme = "cyan" }) {
   const [tab, setTab] = useState("Learn");
   return (
     <div>
@@ -36,7 +36,6 @@ export default function TabbedDetail({ badge, title, subtitle, media, learn, tec
       <div className="mt-4 space-y-3">
         {tab === "Learn" && (learn || <div className="text-sm text-slate-500 py-4 text-center">Nothing added yet.</div>)}
         {tab === "Technique" && (technique || <div className="text-sm text-slate-500 py-4 text-center">Technique not added yet.</div>)}
-        {tab === "Video" && <VideoTab name={videoName || title}/>}
         {tab === "Quiz" && <QuizTab key={id || title} quiz={quiz} onReview={() => setTab("Learn")}/>}
       </div>
 

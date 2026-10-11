@@ -1,10 +1,11 @@
 import { useEffect } from "react";
-import { ChevronLeft, ChevronRight, Video as VideoIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 // Shared colour + type kit for every Learn screen: a rounded display font for
 // headings, a palette of themes (literal class names so Tailwind keeps them),
-// and the header / tab bar / video placeholder / next button the four-tab
-// detail screens share.
+// and the header / tab bar / next button the three-tab (Learn / Technique /
+// Quiz) detail screens share. The placeholder video tab was removed
+// 2026-10-10 (Aditi: remove the video section from ROM, MMT and the rest).
 
 export const THEMES = {
   violet: { grad: "from-violet-600 via-violet-500 to-fuchsia-500", soft: "bg-violet-50", softer: "bg-violet-100", text: "text-violet-700", solid: "bg-violet-600", border: "border-violet-200", ring: "ring-violet-200", dot: "bg-violet-500", badge: "from-violet-500 to-fuchsia-500" },
@@ -55,27 +56,16 @@ export function DetailHeader({ onBack, badge, title, subtitle, theme = "violet" 
 const TAB_STYLE = {
   Learn:     { on: "bg-violet-600 text-white shadow-sm",  off: "bg-violet-50 text-violet-700" },
   Technique: { on: "bg-orange-500 text-white shadow-sm",  off: "bg-orange-50 text-orange-700" },
-  Video:     { on: "bg-sky-500 text-white shadow-sm",     off: "bg-sky-50 text-sky-700" },
   Quiz:      { on: "bg-fuchsia-500 text-white shadow-sm", off: "bg-fuchsia-50 text-fuchsia-700" },
 };
 export function DetailTabs({ tab, setTab }) {
   return (
-    <div className="grid grid-cols-4 gap-1.5 mt-4">
-      {["Learn", "Technique", "Video", "Quiz"].map((t) => (
+    <div className="grid grid-cols-3 gap-1.5 mt-4">
+      {["Learn", "Technique", "Quiz"].map((t) => (
         <button key={t} type="button" onClick={() => setTab(t)} className={`flex items-center justify-center text-center rounded-xl py-2.5 text-[13px] font-bold transition-colors ${tab === t ? TAB_STYLE[t].on : TAB_STYLE[t].off}`}>
           {t}
         </button>
       ))}
-    </div>
-  );
-}
-
-export function VideoTab({ name }) {
-  return (
-    <div className="rounded-2xl border-2 border-dashed border-sky-200 bg-sky-50 py-10 px-4 text-center">
-      <span className="w-14 h-14 rounded-2xl bg-sky-500 text-white flex items-center justify-center mx-auto mb-2 shadow-sm"><VideoIcon size={26}/></span>
-      <div className="cl-display text-sm font-extrabold text-sky-800">Video coming soon</div>
-      <div className="text-xs text-sky-600 mt-1">A demonstration of {name} will appear here.</div>
     </div>
   );
 }

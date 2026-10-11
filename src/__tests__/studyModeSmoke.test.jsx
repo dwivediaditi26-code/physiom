@@ -47,8 +47,11 @@ describe("Learn tab — Study mode", () => {
       expect(screen.getByText("Back")).toBeTruthy();
       expect(screen.getByText(/• Range of motion/)).toBeTruthy();
     });
-    // The detail page is split into Learn / Technique / Video / Quiz tabs
-    // (2026-09 redesign); goniometer placement lives on Technique.
+    // The detail page is split into Learn / Technique / Quiz tabs
+    // (2026-09 redesign; Video tab removed 2026-10-10); goniometer placement lives on Technique.
+    // No Video tab / "Video coming soon" placeholder (removed 2026-10-10).
+    expect(screen.queryByRole("button", { name: "Video" })).toBeNull();
+    expect(screen.queryByText(/Video coming soon/i)).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Technique" }));
     expect(screen.getByText(/goniometer placement/i)).toBeTruthy();
 

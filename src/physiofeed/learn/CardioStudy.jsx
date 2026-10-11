@@ -82,7 +82,7 @@ function realImages(d) {
 
 // 2026-09-19, Aditi: "do neurological and cardio same as rom mmt is shown" --
 // Cardio's detail was still the old single scrolling page; it now gets the
-// same header, photo, Learn / Technique / Video / Quiz tabs and Next button as
+// same header, photo, Learn / Technique / Quiz tabs and Next button as
 // ROM and MMT. The photo (or, until it's uploaded, the item's icon) is tried
 // first exactly as before; the tabs just split the same real content up.
 function toCard(id, d) {

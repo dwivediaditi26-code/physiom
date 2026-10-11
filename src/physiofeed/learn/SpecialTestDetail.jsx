@@ -6,12 +6,12 @@ import { QuickCheck } from "./QuickCheck.jsx";
 import { hash, splitHow } from "./quizKit.js";
 import { specialQuestions } from "./quizBuilders.js";
 import { SPECIAL_TESTS_DATA } from "../../sharedClinicalData.js";
-import { DetailHeader, DetailTabs, MediaFrame, VideoTab, NextButton } from "./learnTheme.jsx";
+import { DetailHeader, DetailTabs, MediaFrame, NextButton } from "./learnTheme.jsx";
 
 // "—" in the data means no published figure: show nothing rather than a dash.
 const known = (v) => (v && String(v).trim() !== "—" ? v : null);
 
-// Special Test detail screen: hero image, then Learn / Technique / Video / Quiz
+// Special Test detail screen: hero image, then Learn / Technique / Quiz
 // tabs (2026-09-18, Aditi's layout brief). Everything shown comes from the
 // test data the app already has (structure, sensitivity/specificity, the
 // how-to paragraph, positive/negative meaning); nothing is invented. The Quiz
@@ -73,7 +73,6 @@ export default function SpecialTestDetail({ test, regionLabel, regionTests, onBa
           </>
         )}
 
-        {tab === "Video" && <VideoTab name={test.label}/>}
 
         {tab === "Quiz" && <QuizTab key={test.id} quiz={quiz} onReview={() => setTab("Learn")}/>}
       </div>

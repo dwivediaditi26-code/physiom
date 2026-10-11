@@ -3,9 +3,9 @@ import StudyImage from "./StudyImage.jsx";
 import InfoBox from "./InfoBox.jsx";
 import QuizTab from "./QuizTab.jsx";
 import { mmtQuestions } from "./quizBuilders.js";
-import { DetailHeader, DetailTabs, MediaFrame, VideoTab, NextButton } from "./learnTheme.jsx";
+import { DetailHeader, DetailTabs, MediaFrame, NextButton } from "./learnTheme.jsx";
 
-// MMT muscle detail: hero photo, then Learn / Technique / Video / Quiz tabs
+// MMT muscle detail: hero photo, then Learn / Technique / Quiz tabs
 // (same layout as Special Tests and ROM). Content is the MMT data the app
 // already has. The Quiz tab asks several questions built from that same data
 // (nerve, root, action, origin, insertion, testing position, resistance,
@@ -78,7 +78,6 @@ export default function MmtMuscleDetail({ muscle: m, region, list, allMuscles, o
           </>
         )}
 
-        {tab === "Video" && <VideoTab name={`testing ${m.muscle}`}/>}
 
         {tab === "Quiz" && <QuizTab key={m.id} quiz={quiz} onReview={() => setTab("Learn")}/>}
       </div>

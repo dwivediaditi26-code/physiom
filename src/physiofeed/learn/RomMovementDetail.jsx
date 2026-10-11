@@ -4,9 +4,9 @@ import InfoBox from "./InfoBox.jsx";
 import QuizTab from "./QuizTab.jsx";
 import { romQuestions } from "./quizBuilders.js";
 import { ROM_DATA } from "../../sharedClinicalData.js";
-import { DetailHeader, DetailTabs, MediaFrame, VideoTab, NextButton } from "./learnTheme.jsx";
+import { DetailHeader, DetailTabs, MediaFrame, NextButton } from "./learnTheme.jsx";
 
-// ROM movement detail: hero photo, then Learn / Technique / Video / Quiz tabs
+// ROM movement detail: hero photo, then Learn / Technique / Quiz tabs
 // (same layout as the Special Test screen). All content is the ROM data the
 // app already has; the Quiz tab asks several questions built from that same
 // data (normal range, plane, axis, end feel, muscles, starting position,
@@ -66,7 +66,6 @@ export default function RomMovementDetail({ movement: m, region, list, onBack, o
           </>
         )}
 
-        {tab === "Video" && <VideoTab name={m.mv}/>}
 
         {tab === "Quiz" && <QuizTab key={m.id} quiz={quiz} onReview={() => setTab("Learn")}/>}
       </div>
