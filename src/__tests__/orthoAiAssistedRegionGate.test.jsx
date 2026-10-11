@@ -12,6 +12,9 @@
 // Objective/Summary then have nothing to show and there's no visible
 // explanation why. It should instead send the clinician back to Region
 // with a clear message, not silently go nowhere.
+// Since 2026-10-10 the paragraph card lives on the wizard's own Subjective step
+// (no pre-wizard chooser screen), so the same safety net now sits there: what the
+// AI filled stays, and the clinician lands on Region with the message.
 import React from "react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
@@ -20,19 +23,11 @@ vi.mock("../supabase.js", () => import("../__mocks__/supabase.js"));
 
 const { default: OrthoAssessment } = await import("../OrthoAssessment.jsx");
 
-function jumpToSubjective() {
-  // AI entry now opens on the speaking screen already (2026-10-02), so this
-  // only matters after something else moved away from it. Both the dot and its
-  // text label are separate buttons sharing the same accessible name
-  // ("Subjective") -- either jumps, so just click the first.
-  fireEvent.click(screen.getAllByRole("button", { name: "Subjective" })[0]);
-}
-
-function openAiPanelAndParse(narrative) {
-  // OrthoAIIntakePanel is mounted with defaultOpen and AI entry lands on it
-  // directly, so there is nothing to click before typing.
-  fireEvent.change(screen.getByPlaceholderText(/45 year old office worker/), { target: { value: narrative } });
-  fireEvent.click(screen.getByRole("button", { name: /Parse with AI/ }));
+async function openAiPanelAndParse(narrative) {
+  // The optional paragraph card is on the Subjective step AI entry opens on, so there is
+  // nothing to click before typing (it loads a moment after the page).
+  fireEvent.change(await screen.findByPlaceholderText(/45-year-old with gradual onset/), { target: { value: narrative } });
+  fireEvent.click(screen.getByRole("button", { name: "Generate with AI" }));
 }
 
 describe("OrthoAssessment — AI-assisted entry's region gate", () => {
@@ -52,15 +47,15 @@ describe("OrthoAssessment — AI-assisted entry's region gate", () => {
     }));
 
     render(<OrthoAssessment entryMode="ai" onSave={() => {}} />);
-    openAiPanelAndParse("I have some generalized body aches for a while now.");
+    await openAiPanelAndParse("I have some generalized body aches for a while now.");
 
     await screen.findByRole("button", { name: /Apply to Subjective/ });
     fireEvent.click(screen.getByRole("button", { name: /Apply to Subjective/ }));
 
     expect(alertSpy).toHaveBeenCalledWith(expect.stringMatching(/didn't clearly name a body region/i));
-    expect(await screen.findByText("Body Region")).toBeTruthy();
-    // Never silently reached the real per-section wizard with no region.
-    expect(screen.queryByText(/Patient Information/)).toBeNull();
+    expect((await screen.findAllByText("Body Region")).length).toBeGreaterThan(0);
+    // Went to Region, not to Objective/Summary with nothing to show.
+    expect(screen.queryByText("Analyze your case")).toBeNull();
   });
 
   it("proceeds straight through when the narrative does name a region, same as before", async () => {
@@ -70,7 +65,7 @@ describe("OrthoAssessment — AI-assisted entry's region gate", () => {
     }));
 
     render(<OrthoAssessment entryMode="ai" onSave={() => {}} />);
-    openAiPanelAndParse("My right shoulder has been hurting for two weeks.");
+    await openAiPanelAndParse("My right shoulder has been hurting for two weeks.");
 
     await screen.findByRole("button", { name: /Apply to Subjective/ });
     fireEvent.click(screen.getByRole("button", { name: /Apply to Subjective/ }));

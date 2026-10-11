@@ -1,9 +1,9 @@
-// conditionObjectiveStoryGate.test.jsx -- the AI Objective Assessment must not show "Live Match" or percentages without a story.
+// conditionObjectiveStoryGate.test.jsx -- the AI Objective Assessment must not show percentages without a story.
 // Aditi (2026-10-10): "without the chief complaint, onset, mechanism and duration, how can it know the differential diagnosis".
 // Rule (storyGate.js): Chief complaint + (Onset or Duration) + at least two ⭐ questions answered.
 import React from "react";
 import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 
 const { default: ConditionObjectiveAssessment } = await import("../ConditionObjectiveAssessment.jsx");
 const CERVICAL = [{ id: "cervical", label: "Cervical" }];
@@ -20,13 +20,13 @@ const pctTexts = () => [...document.querySelectorAll(".obj-match-card .obj-match
 const cards = () => document.querySelectorAll(".obj-match-card").length;
 
 describe("AI Objective Assessment: no story, no ranking", () => {
-  it("ticks only: no Live Match, a dash on every card, and it says what is missing", () => {
+  it("ticks only: no scores on any card, and it says what is missing", () => {
     render(<Harness data={{ subjective: { regions: { cervical: TWO_TICKS } } }} />);
     expect(screen.queryByText("Live Match")).toBeNull();
     expect(cards()).toBeGreaterThan(0);
-    expect(pctTexts().every((t) => t === "—")).toBe(true);
+    expect(pctTexts()).toEqual([]);
     const note = screen.getByTestId("story-gate-note").textContent;
-    expect(note).toMatch(/Not enough information yet to rank conditions/);
+    expect(note).toMatch(/Add these in Subjective first/);
     expect(note).toMatch(/Chief complaint/);
     expect(note).toMatch(/Onset or Duration/);
   });
@@ -34,7 +34,7 @@ describe("AI Objective Assessment: no story, no ranking", () => {
   it("a Chief complaint and Onset with a single tick: still gated, and says one more tick is needed", () => {
     render(<Harness data={{ subjective: { chiefComplaint: "Neck pain", onset: "Gradual", regions: { cervical: { location: "Neck" } } } }} />);
     expect(screen.queryByText("Live Match")).toBeNull();
-    expect(pctTexts().every((t) => t === "—")).toBe(true);
+    expect(pctTexts()).toEqual([]);
     expect(screen.getByTestId("story-gate-note").textContent).toMatch(/1 more ⭐ answer/);
   });
 
@@ -44,10 +44,11 @@ describe("AI Objective Assessment: no story, no ranking", () => {
     expect(names[0]).toMatch(/Mechanical \/ Non-Specific Neck Pain/);
   });
 
-  it("Chief complaint + Duration + two ticks: the ranking appears with percentages", () => {
+  it("Chief complaint + Duration + two ticks: nothing is blocked, and the ranking appears with percentages after Analyze Case", () => {
     render(<Harness data={{ subjective: { chiefComplaint: "Neck pain into the right arm", duration: "3 weeks", regions: { cervical: RADICULOPATHY } } }} />);
     expect(screen.queryByTestId("story-gate-note")).toBeNull();
-    expect(screen.getByText("Live Match")).toBeInTheDocument();
+    expect(pctTexts()).toEqual([]);
+    fireEvent.click(screen.getByRole("button", { name: "Analyze Case" }));
     expect(pctTexts().some((t) => /^\d+%$/.test(t))).toBe(true);
   });
 

@@ -100,6 +100,8 @@ describe("ConditionObjectiveAssessment — Cervical", () => {
       },
     };
     render(<Harness initialData={data} selectedRegions={[{ id: "cervical", label: "Cervical" }]} />);
+    // the scores appear once the student taps Analyze Case
+    fireEvent.click(screen.getByRole("button", { name: "Analyze Case" }));
     const pcts = [...document.querySelectorAll(".obj-match-row .obj-match-card")]
       .map((card) => card.querySelector(".obj-match-pct")?.textContent || "")
       .filter((t) => t.endsWith("%"))

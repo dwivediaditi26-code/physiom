@@ -3,11 +3,11 @@
 //     not wrist or hand ones (Trigger finger used to appear in an Elbow assessment).
 //  2. When nothing useful has been ticked in Subjective the page says so plainly,
 //     instead of showing "Live Match" with every condition at 0%.
-//  3. The Re-analyze button is gone: the list updates by itself, the button only
-//     replayed an "Analyzing..." animation and changed nothing.
+//  3. There is no Re-analyze button: Analyze Case / View Analysis / Update Analysis is one button on the
+//     page's card (see conditionObjectiveAnalyze.test.jsx).
 import React from "react";
 import { describe, it, expect } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, within, fireEvent } from "@testing-library/react";
 import { runElbowWristHandDifferential } from "../orthoElbowWristHandReasoning.js";
 
 const { default: ConditionObjectiveAssessment } = await import("../ConditionObjectiveAssessment.jsx");
@@ -96,17 +96,18 @@ describe("Elbow / Wrist / Hand matching only uses the regions that were picked",
 describe("AI Objective Assessment page for Elbow", () => {
   it("shows only elbow conditions, ranked, with tennis elbow first", () => {
     render(<Harness initialData={tennisElbow} selectedRegions={ELBOW} />);
+    fireEvent.click(screen.getByRole("button", { name: "Analyze Case" }));
     const names = cardNames();
     expect(names.length).toBeGreaterThan(0);
     expect(names.some((n) => WRIST_OR_HAND.test(n))).toBe(false);
     expect(names[0]).toMatch(/Lateral Epicondylalgia/i);
-    expect(screen.getByText("Live Match")).toBeInTheDocument();
+    expect(screen.getByTestId("analysis-current-note").textContent).toMatch(/Lateral Epicondylalgia/i);
   });
 
   it("with nothing ticked it says so plainly: no 'Live Match', no 0% cards", () => {
     render(<Harness initialData={{ demographics: { age: "35" }, subjective: { chiefComplaint: "Outer elbow pain for 3 weeks, worse when gripping" } }} selectedRegions={ELBOW} />);
     // a Chief complaint alone is not a story yet (storyGate.js): no ranking, and it says what is missing
-    expect(screen.getByTestId("story-gate-note").textContent).toMatch(/Not enough information yet.*Onset or Duration/);
+    expect(screen.getByTestId("story-gate-note").textContent).toMatch(/Add these in Subjective first.*Onset or Duration/);
     expect(screen.queryByText("Live Match")).not.toBeInTheDocument();
     expect(screen.queryByText("0%")).not.toBeInTheDocument();
     // The conditions are still there to open and examine.

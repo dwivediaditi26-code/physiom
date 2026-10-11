@@ -3,7 +3,7 @@
 // REAL AI, one body region at a time (2026-10-07, Aditi: "let's do it brick by
 // brick ... one region at a time"). For each case of the chosen region it
 //   1. opens Home -> AI Assessment,
-//   2. types the case's narrative and presses "Parse with AI" (the real
+//   2. types the case's narrative and presses "Generate with AI" (the real
 //      /api/parse -> real Groq),
 //   3. presses "Apply to Subjective & Pain",
 //   4. opens every group in the region tab and reads the manual form,
@@ -54,7 +54,7 @@ async function openAiAssessment(page: Page) {
     await box.check();
     await page.getByTestId("patient-permission-modal").getByRole("button", { name: "Continue" }).click();
   }
-  await expect(page.getByPlaceholder(/45 year old office worker/)).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByPlaceholder(/45-year-old with gradual onset/)).toBeVisible({ timeout: 20_000 });
 }
 
 async function readRegionForm(page: Page): Promise<string> {
@@ -71,9 +71,9 @@ for (const c of cases) {
     await login(page);
     await openAiAssessment(page);
 
-    await page.getByPlaceholder(/45 year old office worker/).fill(c.narrative);
+    await page.getByPlaceholder(/45-year-old with gradual onset/).fill(c.narrative);
     const started = Date.now();
-    await page.getByRole("button", { name: /Parse with AI/ }).click();
+    await page.getByRole("button", { name: "Generate with AI" }).click();
     await expect(page.getByText("Extracted Patient Information")).toBeVisible({ timeout: 90_000 });
     await page.getByRole("button", { name: /Apply to Subjective/ }).click();
 

@@ -668,7 +668,8 @@ export function formatConditionObjectiveSection(data) {
     if (!state || !Object.keys(state).length) return;
     const byCondition = {};
     Object.entries(state).forEach(([key, val]) => {
-      if (!val) return;
+      // "__analysis" is the Analyze Case bookmark, not a finding -- never printed in Review or the PDF.
+      if (!val || key.startsWith("__")) return;
       const [conditionId, module, sub] = key.split("::");
       (byCondition[conditionId] ||= []).push({ module, sub, val });
     });
@@ -837,8 +838,8 @@ function ConditionTabs({ conditions, order, matchById, objSupportById, activeId,
         if (!c) return null;
         const m = matchById[id];
         const pct = combinedMatchPct(m, objSupportById?.[id]);
-        // Nothing matched yet and nothing confirmed on the Objective tabs: a dash,
-        // not a row of "0%" that reads like a result.
+        // Not analyzed yet, or nothing matched and nothing confirmed on the Objective tabs:
+        // no number at all, not a dash or a row of "0%" that reads like a result.
         const noEvidenceYet = !storyOk || (!hasMatchEvidence && !objSupportById?.[id]?.matched);
         const isActive = id === activeId;
         return (
@@ -848,9 +849,7 @@ function ConditionTabs({ conditions, order, matchById, objSupportById, activeId,
             className={"obj-match-card obj-match-c" + (i % 6) + (isActive ? " obj-match-card-active" : "")}
             onClick={() => onSelect(id)}
           >
-            {noEvidenceYet ? (
-              <span className="obj-match-pct" style={{ color: BRAND.grayLight }}>—</span>
-            ) : pct != null ? (
+            {noEvidenceYet ? null : pct != null ? (
               <span className="obj-match-pct">{pct}%</span>
             ) : m ? (
               <span className="obj-match-pct" style={{ color: MATCH_TIER_TONE[m.matchTier] }}>{m.matchTier}</span>
@@ -883,13 +882,23 @@ const TIER_TEXT = { high: "High", med: "Med", low: "Low" };
 // "remove this upper [grid] only three comming... make the 2nd below it
 // permanant"). Now just the one always-visible list, no top grid, no
 // Customize toggle.
-function HypothesisGrid({ conditions, order, matchById, objSupportById, activeId, onSelect, hasMatchEvidence, storyOk = true }) {
+function HypothesisGrid({ conditions, order, matchById, objSupportById, activeId, onSelect, hasMatchEvidence, analyzed = true, headRef }) {
+  // Scores exist only for an analysis that is up to date AND found something; an analysis that matched nothing yet
+  // keeps the plain "Explore conditions" list instead of a "scores" heading over cards with no scores.
+  const scoresShown = analyzed && hasMatchEvidence;
   return (
     <div>
-      <div className="obj-hypo-head">
-        <span className="obj-hypo-label">Target Hypotheses</span>
+      <div className="obj-hypo-head" ref={headRef}>
+        <span className="obj-hypo-label">{scoresShown ? "Condition-matching scores" : "Explore conditions"}</span>
       </div>
-      <ConditionTabs conditions={conditions} order={order} matchById={matchById} objSupportById={objSupportById} activeId={activeId} onSelect={onSelect} hasMatchEvidence={hasMatchEvidence} storyOk={storyOk} />
+      <div className="obj-hypo-sub">
+        {scoresShown
+          ? "How well the Subjective answers fit each condition, best match first. A teaching aid, not a diagnosis."
+          : analyzed
+          ? "No condition matched your Subjective answers yet. You can still tap any condition to preview its objective findings."
+          : "Analyze your case to see condition-matching scores and personalized recommendations. Until then, tap a condition to preview its objective findings: educational only, not results for this patient."}
+      </div>
+      <ConditionTabs conditions={conditions} order={order} matchById={matchById} objSupportById={objSupportById} activeId={activeId} onSelect={onSelect} hasMatchEvidence={hasMatchEvidence} storyOk={analyzed} />
     </div>
   );
 }
@@ -1794,7 +1803,7 @@ function AddSpecialTestPicker({ options, onAdd }) {
   );
 }
 
-export default function ConditionObjectiveAssessment({ data, setData, selectedRegions, setSelectedRegions, onStartOutcomeMeasure, reanalyzeSignal = 0 }) {
+export default function ConditionObjectiveAssessment({ data, setData, selectedRegions, setSelectedRegions, onStartOutcomeMeasure }) {
   const regions = selectedRegions || [];
   // Picking 2+ regions in Subjective used to only ever show the FIRST
   // matching region's condition-wise assessment here -- the rest were
@@ -1822,32 +1831,18 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
   // Switching regions should land on that region's own front screen, not
   // whatever condition state the previous region was showing.
   useEffect(() => { setActiveId(null); setActiveSubtopic("observation"); }, [config.key]);
-  // The ranking is computed live from the Subjective answers (engineResult /
-  // rankedIds below), so there is nothing to "run". A Re-analyze button used to
-  // sit here that only replayed an "Analyzing…" animation and changed nothing --
-  // students pressed it expecting a new result (removed 2026-10, Aditi).
-  // The top-bar "Re-analyze" button (OrthoOutpatientAssessment.jsx, 2026-10-10, Aditi: "if I change the
-  // Subjective I want to re-analyze") does the one real thing left to do: a
-  // condition tapped earlier stays selected even after the ranking changes, so
-  // the button sends the page back to the NEW best match and says what it is.
-  // Each tap bumps reanalyzeSignal; the first value (0) is not a tap.
-  const [reanalyzedAt, setReanalyzedAt] = useState(null);
-  const lastSignal = useRef(reanalyzeSignal);
-  const bannerRef = useRef(null);
-  useEffect(() => {
-    if (reanalyzeSignal === lastSignal.current) return;
-    lastSignal.current = reanalyzeSignal;
-    setActiveId(null);
-    setActiveSubtopic("observation");
-    setReanalyzedAt(Date.now());
-    const raf = typeof requestAnimationFrame === "function" ? requestAnimationFrame(() => bannerRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" })) : null;
-    return () => { if (raf != null && typeof cancelAnimationFrame === "function") cancelAnimationFrame(raf); };
-  }, [reanalyzeSignal]);
-  useEffect(() => {
-    if (!reanalyzedAt) return undefined;
-    const t = setTimeout(() => setReanalyzedAt(null), 8000);
-    return () => clearTimeout(t);
-  }, [reanalyzedAt]);
+  // "Analyze your case" (Aditi, 2026-10-10): the condition-matching scores appear only after the
+  // student taps Analyze Case, and the same button then reads View Analysis (nothing changed since)
+  // or Update Analysis (the Subjective answers changed what the scores would be). The ranking
+  // itself is still computed from the Subjective answers by each region's own engine (engineResult /
+  // liveRankedIds below); Analyze Case just records WHICH ranking the student has looked at
+  // (state.__analysis.sig), so a later edit that changes the scores is noticed and a spelling or
+  // formatting edit that changes nothing is not.
+  const resultsRef = useRef(null);
+  const scrollToResults = () => {
+    if (typeof requestAnimationFrame !== "function") return;
+    requestAnimationFrame(() => resultsRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" }));
+  };
 
   const regionPicked = regions.some(config.matchesRegion);
 
@@ -1876,7 +1871,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
   // No story, no ranking (Aditi, 2026-10-10): see storyGate.js. Red flags below are never gated.
   const gate = useMemo(() => storyGate(data?.subjective, regions.filter(config.matchesRegion)), [data?.subjective, regions, config]);
 
-  const rankedIds = useMemo(() => {
+  const liveRankedIds = useMemo(() => {
     if (!engineResult || !gate.ok) return [];
     const ids = !config.matchByName
       ? engineResult.conditions.filter((c) => c.matchTier !== "Unlikely").map((c) => c.id)
@@ -1889,6 +1884,26 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
     // (matchTier-only, e.g. "Insufficient data") sort last, not first.
     return ids.slice().sort((a, b) => (conditionMatchPct(matchById[b]) ?? -1) - (conditionMatchPct(matchById[a]) ?? -1));
   }, [engineResult, config, matchById, gate.ok]);
+
+
+  // Which scores the student has analyzed, versus which ones the Subjective answers give right now.
+  const liveSig = useMemo(
+    () => (gate.ok ? JSON.stringify(liveRankedIds.map((id) => [id, conditionMatchPct(matchById[id]), matchById[id]?.matchTier])) : ""),
+    [gate.ok, liveRankedIds, matchById]
+  );
+  const savedSig = state.__analysis?.sig ?? null;
+  const analysisStatus = !gate.ok ? "blocked" : savedSig == null ? "new" : savedSig === liveSig ? "current" : "stale";
+  const analysisCurrent = analysisStatus === "current";
+  // Scores and ranking exist only for an up-to-date analysis; until then the conditions are listed
+  // in their usual order with no percentages (same unranked look the story gate always gave).
+  const rankedIds = analysisCurrent ? liveRankedIds : [];
+  function runAnalysis() {
+    if (!gate.ok) return;
+    setField("__analysis", { sig: liveSig, at: Date.now() });
+    setActiveId(null);
+    setActiveSubtopic("observation");
+    scrollToResults();
+  }
 
   const baseOrder = useMemo(() => (config.orderFor ? config.orderFor(regions) : config.order), [config, regions]);
   const order = useMemo(
@@ -1984,7 +1999,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
   // How many conditions have at least one Subjective answer supporting them. Zero
   // means nothing useful was ticked (typed text and age alone do not match anything).
   const matchedCount = engineResult ? engineResult.conditions.filter((c) => (c.supportingMatched || []).length > 0).length : 0;
-  const hasMatchEvidence = gate.ok && matchedCount > 0;
+  const hasMatchEvidence = analysisCurrent && matchedCount > 0;
   const cyriaxResistedTests = cyriaxTestsFor(config.key, "resistedTests");
   const cyriaxPassiveTests = cyriaxTestsFor(config.key, "passiveROM");
   const hasCyriaxCatalogue = cyriaxResistedTests.length > 0 || cyriaxPassiveTests.length > 0;
@@ -1995,49 +2010,47 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
     <div>
       {regionTabs}
 
-      {/* Differential Inference banner -- gradient-card treatment from the
-          Stitch reference (2026-09-24, Aditi: "make the AI page of ortho like
-          this same to same"), replacing the old "🧠 Suggest probable objective
-          assessment" button. The ranked cards below are always live off the
-          current Subjective data (2026-09-13, Aditi: "show it normally even we
-          dont click button"), so there is no button. When no Subjective answer
-          matches any condition yet it says so, instead of "Live Match" over a
-          row of 0% cards.
-          Not sticky: when this renders inside the AI Objective Assessment
-          wizard step, it sat under the same scrolling ancestor as that
-          step's own sticky .topbar (journey dots + back button) and, being
-          `top: 0` itself, rode straight to the very top of the screen on
-          scroll -- landing on top of / interleaved with the topbar instead
-          of under it (2026-09-16, Aditi: "the header it's all mixing up
-          it's clicking so bad ... everything is vibrating"). Matches the
-          single-sticky-header-per-screen pattern already established for
-          .topbar/Cardio's header rather than stacking a second one. */}
-      <div className="obj-diag-banner" ref={bannerRef}>
-        <div className="obj-diag-banner-main">
-          <span className="obj-diag-banner-icon">🧠</span>
+      {/* "Analyze your case" card (Aditi, 2026-10-10). One button whose words follow the case:
+          Analyze Case -> View Analysis (nothing changed) -> Update Analysis (the answers changed what
+          the scores would be). Nothing here is an error: when the story is too thin it just lists what
+          to add in Subjective. Not sticky -- a second sticky bar under the wizard's own .topbar made
+          the header "vibrate" on scroll (2026-09-16, Aditi). */}
+      <div className="obj-analyze-card">
+        <div className="obj-analyze-head">
+          <span className="obj-analyze-icon" aria-hidden="true">🧠</span>
           <div style={{ minWidth: 0 }}>
-            <div className="obj-diag-banner-title-row">
-              <span className="obj-diag-banner-title">Differential Inference</span>
-              {hasMatchEvidence && <span className="obj-diag-banner-badge">Live Match</span>}
-            </div>
-            {reanalyzedAt && (
-              <div className="obj-diag-banner-done" role="status" data-testid="reanalyzed-note">
-                {!gate.ok
-                  ? `✓ Re-analyzed just now — still not enough information to rank. Still needed: ${gate.missing.join(" · ")}.`
-                  : hasMatchEvidence && rankedIds[0]
-                  ? `✓ Re-analyzed just now from your Subjective answers — best match: ${config.conditions[rankedIds[0]]?.name}${conditionMatchPct(matchById[rankedIds[0]]) != null ? ` (${conditionMatchPct(matchById[rankedIds[0]])}%)` : ""}.`
-                  : "✓ Re-analyzed just now — nothing matches yet. Tick answers in Subjective (the ⭐ ones matter most), then press Re-analyze again."}
-              </div>
-            )}
-            <div className="obj-diag-banner-sub" data-testid={gate.ok ? undefined : "story-gate-note"}>
-              {!gate.ok
-                ? `Not enough information yet to rank conditions, so no percentages are shown. Still needed: ${gate.missing.join(" · ")}.`
-                : hasMatchEvidence
-                ? `Matches your Subjective answers — ${config.label}: ${matchedCount} condition${matchedCount === 1 ? "" : "s"} matched.`
-                : `Nothing to match yet — tick the answers in the Subjective step (the ⭐ ones matter most) to see which ${config.label} conditions fit best.`}
+            <div className="obj-analyze-title">Analyze your case</div>
+            <div className="obj-analyze-desc">
+              Explore condition-matching scores and personalised objective assessment recommendations based on the patient's subjective findings.
             </div>
           </div>
         </div>
+        {analysisStatus === "blocked" && (
+          <div className="obj-analyze-note" data-testid="story-gate-note">
+            Add these in Subjective first: {gate.missing.join(" · ")}.
+          </div>
+        )}
+        {analysisStatus === "stale" && (
+          <div className="obj-analyze-note obj-analyze-note-warn" role="status" data-testid="analysis-stale-note">
+            Your Subjective answers changed since the last analysis. Update it to refresh the scores.
+          </div>
+        )}
+        {analysisStatus === "current" && (
+          <div className="obj-analyze-note obj-analyze-note-ok" role="status" data-testid="analysis-current-note">
+            ✓ Analysis is up to date
+            {hasMatchEvidence && rankedIds[0]
+              ? ` — best match: ${config.conditions[rankedIds[0]]?.name}${conditionMatchPct(matchById[rankedIds[0]]) != null ? ` (${conditionMatchPct(matchById[rankedIds[0]])}%)` : ""}.`
+              : ` — nothing matches yet. Tick more answers in Subjective (the ⭐ ones matter most), then update the analysis.`}
+          </div>
+        )}
+        <button
+          type="button"
+          className="obj-analyze-btn"
+          disabled={analysisStatus === "blocked"}
+          onClick={analysisCurrent ? scrollToResults : runAnalysis}
+        >
+          {analysisStatus === "current" ? "View Analysis" : analysisStatus === "stale" ? "Update Analysis" : "Analyze Case"}
+        </button>
       </div>
 
       <>
@@ -2059,11 +2072,12 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
               activeId={selectedId}
               onSelect={setActiveId}
               hasMatchEvidence={hasMatchEvidence}
-              storyOk={gate.ok}
+              analyzed={analysisCurrent}
+              headRef={resultsRef}
             />
           </div>
 
-          {gate.ok && matchedCondition && (
+          {analysisCurrent && matchedCondition && (
             <div style={{ fontSize: "0.74rem", color: BRAND.gray, marginBottom: 6 }}>
               {matchedCondition.matchTier} · {matchedCondition.supportingMatched.length}/{matchedCondition.supportingTotal} supporting signs from Subjective
             </div>

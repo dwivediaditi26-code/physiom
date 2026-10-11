@@ -60,13 +60,6 @@ export function orthoStyles() {
           width: 32px; height: 32px; border-radius: 10px; font-size: 16px; cursor: pointer;
           display: flex; align-items: center; justify-content: center; flex-shrink: 0;
         }
-        .reanalyze-btn {
-          border: none; background: ${BRAND.purpleFaint}; color: ${BRAND.purple};
-          height: 32px; padding: 0 10px; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer;
-          display: flex; align-items: center; justify-content: center; gap: 5px; flex-shrink: 0; white-space: nowrap;
-        }
-        .reanalyze-btn:active { transform: scale(0.97); }
-        @media (max-width: 340px) { .reanalyze-btn-text { display: none; } .reanalyze-btn { padding: 0; width: 32px; } }
         .topbar-title { font-weight: 700; font-size: 15px; line-height: 1.25; flex: 1; }
         .topbar-breadcrumb { font-size: 11.5px; color: ${BRAND.gray}; margin-top: 1px; }
         .topbar-step-count { color: ${BRAND.purple}; font-weight: 700; }
@@ -164,6 +157,19 @@ export function orthoStyles() {
         .ai-intake-actions { display: flex; gap: 8px; margin-top: 8px; }
         .ai-intake-actions .primary-btn, .ai-intake-actions .ghost-btn { flex: 1; }
         .ai-intake-error { margin-top: 8px; padding: 8px 10px; background: #FDECEC; border: 1px solid #F7D3D3; border-radius: 8px; color: #B91C1C; font-size: 12px; }
+        /* Compact optional "Fill in a paragraph" card (AI path Subjective step) */
+        .ai-card { border: 1px solid #E4DDFB; background: #FAF8FF; border-radius: 14px; padding: 12px; margin-bottom: 16px; }
+        .ai-card-head { display: flex; align-items: center; gap: 8px; }
+        .ai-card-spark { font-size: 15px; line-height: 1; }
+        .ai-card-title { margin: 0; font-size: 15px; font-weight: 800; color: ${BRAND.ink}; line-height: 1.25; flex: 1; min-width: 0; }
+        .ai-card-optional { font-size: 11px; font-weight: 700; color: ${BRAND.purpleDark}; background: #fff; border: 1px solid #E4DDFB; border-radius: 999px; padding: 2px 9px; flex-shrink: 0; }
+        .ai-card-desc { margin: 4px 0 2px; font-size: 12px; line-height: 1.4; color: ${BRAND.gray}; }
+        .ai-card .ai-intake-textarea { background: #fff; font-size: 14px; min-height: 76px; }
+        .ai-card .ai-intake-actions { margin-top: 2px; }
+        .ai-card .ai-intake-actions .primary-btn, .ai-card .ai-intake-actions .ghost-btn { min-height: 44px; }
+        .ai-card .ai-intake-actions .ai-card-generate { background: #fff; color: ${BRAND.purpleDark}; border: 1.5px solid ${BRAND.purple}; }
+        .ai-card .ai-intake-actions .ai-card-generate:disabled { color: ${BRAND.grayLight}; border-color: #D9D2F3; background: #fff; }
+        .ai-card-success { margin-top: 8px; padding: 8px 10px; background: #ECFDF3; border-radius: 10px; color: #166534; font-size: 12px; line-height: 1.4; }
         .ai-intake-review { margin-top: 4px; }
         .ai-intake-row { font-size: 12.5px; color: ${BRAND.ink}; padding: 5px 0; border-top: 1px solid #EDE4FB; line-height: 1.5; }
         .ai-intake-row:first-of-type { border-top: none; }
@@ -867,20 +873,20 @@ export function orthoStyles() {
         @keyframes objAiPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.22); } }
         .obj-ai-thinking-icon { display: inline-block; animation: objAiPulse .6s ease-in-out infinite; }
 
-        /* Differential Inference banner — same Stitch reference (2026-09-24,
-           "same to same"): a gradient explainer card, replacing the old
-           whole-card-is-one-tap-target "Suggest probable objective
-           assessment" button above. (Its Re-analyze button was removed
-           2026-10: the list updates live, the button changed nothing.) */
-        .obj-diag-banner { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 10px; border-radius: 12px; background: linear-gradient(90deg, ${BRAND.purpleFaint} 0%, #F3EEFE 60%, #EEF2FF 100%); border: 1px solid #DDD6FE; margin-top: 0; }
-        .obj-diag-banner-main { display: flex; align-items: flex-start; gap: 9px; min-width: 0; }
-        .obj-diag-banner-icon { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(135deg, ${BRAND.purple}, ${BRAND.purpleDark}); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
-        .obj-diag-banner-title-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-        .obj-diag-banner-title { font-size: 12px; font-weight: 800; color: ${BRAND.purpleDark}; }
-        .obj-diag-banner-badge { font-size: 8px; font-weight: 700; padding: 2px 6px; border-radius: 999px; background: #fff; color: ${BRAND.purple}; }
-        .obj-diag-banner { scroll-margin-top: 150px; }
-        .obj-diag-banner-done { font-size: 10.5px; font-weight: 700; color: #166534; background: #DCFCE7; border-radius: 8px; padding: 4px 8px; margin-top: 4px; line-height: 1.3; }
-        .obj-diag-banner-sub { font-size: 10px; color: ${BRAND.gray}; line-height: 1.3; margin-top: 2px; }
+        /* "Analyze your case" card on the AI Objective page (Aditi, 2026-10-10): one compact white card,
+           lavender border, a single purple button. Replaces the old gradient Differential Inference banner. */
+        .obj-analyze-card { display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 14px; background: #fff; border: 1px solid #E4DDFB; box-shadow: 0 1px 6px rgba(124,58,237,0.07); }
+        .obj-analyze-head { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
+        .obj-analyze-icon { width: 34px; height: 34px; border-radius: 10px; background: ${BRAND.purpleFaint}; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+        .obj-analyze-title { font-size: 15px; font-weight: 800; color: ${BRAND.ink}; line-height: 1.25; }
+        .obj-analyze-desc { font-size: 12px; color: ${BRAND.gray}; line-height: 1.4; margin-top: 2px; }
+        .obj-analyze-note { font-size: 12px; line-height: 1.4; color: ${BRAND.purpleDark}; background: ${BRAND.purpleFaint}; border-radius: 10px; padding: 8px 10px; }
+        .obj-analyze-note-ok { color: #166534; background: #ECFDF3; }
+        .obj-analyze-note-warn { color: #92400E; background: #FFF7E6; }
+        .obj-analyze-btn { width: 100%; min-height: 46px; border: none; border-radius: 12px; background: ${BRAND.purple}; color: #fff; font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer; }
+        .obj-analyze-btn:active { transform: scale(0.99); }
+        .obj-analyze-btn:disabled { background: #D9D2F3; color: #fff; cursor: not-allowed; }
+        .obj-analyze-btn:focus-visible { outline: 3px solid #C4B5FD; outline-offset: 2px; }
 
         /* Target Hypotheses — compact 3-card grid, same reference mockup.
            Top-ranked condition gets the accent treatment (purple border +
@@ -890,6 +896,8 @@ export function orthoStyles() {
            (same data/selection the old scrollable pill row used). */
         .obj-hypo-head { display: flex; align-items: center; justify-content: space-between; margin: 2px 2px 6px; }
         .obj-hypo-label { font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: ${BRAND.grayLight}; }
+        .obj-hypo-sub { font-size: 12px; line-height: 1.4; color: ${BRAND.gray}; margin: 0 2px 8px; }
+        .obj-hypo-head { scroll-margin-top: 150px; }
         .obj-hypo-customize { font-size: 12px; font-weight: 700; color: ${BRAND.purple}; background: none; border: none; cursor: pointer; padding: 4px 6px; border-radius: 6px; font-family: inherit; }
         .obj-hypo-customize:active { background: ${BRAND.purpleFaint}; }
         .obj-hypo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 4px; }
@@ -1075,19 +1083,6 @@ export function orthoStyles() {
         .ai-journey-label-btn:active { text-decoration-color: currentColor; }
         .ai-journey-line { flex: 1; height: 1.5px; background: #E4DCC9; margin: 11px 0 0; border-radius: 1px; }
         .ai-journey-line.done { background: linear-gradient(90deg, #C9A15B, #8C6D3F); }
-
-        /* AI-assisted entry's Subjective landing -- two equal-weight cards
-           (AI Parse / Manual) instead of an always-open panel + a throwaway
-           "skip" link, so both paths read as real, intentional choices. */
-        .ai-choice-grid { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
-        .ai-choice-card { display: flex; align-items: center; gap: 12px; border: 1.5px solid ${BRAND.border}; border-radius: 16px; padding: 16px; background: #fff; cursor: pointer; text-align: left; width: 100%; transition: all .15s; }
-        .ai-choice-card:active { transform: scale(0.98); }
-        .ai-choice-card.ai-choice-primary { border-color: ${BRAND.purple}; background: linear-gradient(135deg, ${BRAND.purpleFaint}, #fff 70%); }
-        .ai-choice-icon { font-size: 26px; width: 42px; text-align: center; flex-shrink: 0; }
-        .ai-choice-body { flex: 1; min-width: 0; }
-        .ai-choice-title { font-weight: 700; font-size: 15px; color: ${BRAND.ink}; }
-        .ai-choice-desc { font-size: 12.5px; color: ${BRAND.gray}; margin-top: 2px; line-height: 1.4; }
-        .ai-choice-cta { font-weight: 700; font-size: 13px; color: ${BRAND.purple}; flex-shrink: 0; white-space: nowrap; }
 
         /* AI-assisted entry's "Summary" stage (Problem List/Goals/Treatment/
            Sessions/Progress/Techniques/Exercise Rx/Home Protocol/Final

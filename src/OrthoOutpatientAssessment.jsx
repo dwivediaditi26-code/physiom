@@ -457,8 +457,6 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
   const [visited, setVisited] = useState(new Set());
   const [addOpen, setAddOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
-  // Bumped by the top-bar "Re-analyze" button on the AI Objective Assessment step (see ConditionObjectiveAssessment).
-  const [reanalyzeTick, setReanalyzeTick] = useState(0);
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
   const [missingDemFields, setMissingDemFields] = useState(null);
@@ -476,6 +474,13 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
     return withPlan;
   }, [steps, data.demographics]);
   const current = steps[step] || steps[0];
+  // Green ticks on the AI journey dots: Demographics and Region only once something is in them (AI entry
+  // can open straight on Subjective, 2026-10-10), the later stages once the student has moved past them.
+  const aiDoneStages = useMemo(() => {
+    const active = aiStageIndexFor(current?.id);
+    const hasDemographics = Object.values(data.demographics || {}).some((v) => String(v ?? "").trim());
+    return new Set([0, 1, 2, 3, 4].filter((i) => (i === 0 ? hasDemographics : i === 1 ? selectedRegions.length > 0 : i < active)));
+  }, [current?.id, data.demographics, selectedRegions]);
   // OrthoCarePlanStep persists straight to the patient record
   // (patientData.ortho_care_plan via onSave), bypassing this wizard's own
   // local data/setData -- so the "carePlan" step's data never lands in
@@ -542,6 +547,11 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
       setStepOrder((prev) => ["region", ...prev]);
     }
     setStep(0);
+  }
+  // AI path: the paragraph named no body region and none was picked by hand (see SubjectiveSection.applyAiUpdates).
+  function needRegionFromNarrative() {
+    alert("Your narrative didn't clearly name a body region — please pick it manually so the assessment can continue.");
+    jumpToRegion();
   }
   function openGait() {
     setStepOrder((prev) => {
@@ -723,18 +733,6 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
                 )}
               </div>
             </div>
-            {current.id === "objectiveAI" && (
-              <button
-                type="button"
-                className="reanalyze-btn"
-                onClick={() => setReanalyzeTick((t) => t + 1)}
-                aria-label="Re-analyze from my Subjective answers"
-                title="Re-analyze from your latest Subjective answers"
-              >
-                <span aria-hidden="true">🔄</span>
-                <span className="reanalyze-btn-text">Re-analyze</span>
-              </button>
-            )}
             {current.id !== "review" && (
               <button className="back-btn" onClick={() => setReviewOpen(true)} aria-label="Review filled so far" title="Review filled so far">
                 ✅
@@ -754,6 +752,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
               <AiJourneyDots
                 activeIndex={aiStageIndexFor(current.id)}
                 jumpableIndices={AI_WIZARD_JUMPABLE}
+                doneIndices={aiDoneStages}
                 onJump={(i) => {
                   if (i === 0) jumpToDemographics();
                   else if (i === 1) jumpToRegion();
@@ -802,6 +801,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
               requireAuth={requireAuth}
               autoOpenAI={autoOpenAI}
               aiEntry={entryMode === "ai"}
+              onNeedRegion={entryMode === "ai" ? needRegionFromNarrative : undefined}
               onConditionDetected={handleConditionDetected}
               detectedConditionLabel={detectedConditionLabel}
               patientData={patientData}
@@ -856,7 +856,6 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
                 selectedRegions={selectedRegions}
                 setSelectedRegions={setSelectedRegions}
                 onStartOutcomeMeasure={openOutcomeMeasure}
-                reanalyzeSignal={reanalyzeTick}
               />
             </>
           )}

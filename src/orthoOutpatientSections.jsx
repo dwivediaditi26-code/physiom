@@ -251,7 +251,7 @@ function ChiefComplaintChips({ text, selectedRegions, regions, setRegions, regio
   );
 }
 
-export function SubjectiveSection({ data, setData, selectedRegions = [], setSelectedRegions, regionLabelOf, requireAuth, autoOpenAI, onConditionDetected, detectedConditionLabel, patientData, aiEntry = false }) {
+export function SubjectiveSection({ data, setData, selectedRegions = [], setSelectedRegions, regionLabelOf, requireAuth, autoOpenAI, onConditionDetected, detectedConditionLabel, patientData, aiEntry = false, onNeedRegion }) {
   const [d, set] = useSectionData(data, setData, "subjective");
 
   // Two entry options for this step: say it, or write it.
@@ -349,22 +349,40 @@ export function SubjectiveSection({ data, setData, selectedRegions = [], setSele
     if (onConditionDetected && updates.conditionCategory && updates.conditionCategory !== "other") {
       onConditionDetected(updates.conditionCategory);
     }
+    // AI path (2026-09-26, Aditi: "while speaking... it's not taking the region"): a paragraph that names
+    // no body region, with none picked by hand, would leave Objective and Summary with nothing to show.
+    // What the AI did fill stays; the clinician is sent to Region with a message instead.
+    if (onNeedRegion && selectedRegions.length === 0 && suggested.length === 0) onNeedRegion();
   }
 
   return (
     <>
-      <SectionIntro icon="📝" title="Subjective Assessment" />
+      {aiEntry ? (
+        <>
+          {/* AI path (Aditi, 2026-10-10): typing the history is the main way in, so the form is what
+              the page is about. The paragraph box is a small optional card above it that never opens,
+              runs or charges anything by itself -- no chooser screen, no "Write it manually" button. */}
+          <Suspense fallback={<Hint>Loading…</Hint>}>
+            <LazyOrthoAIIntakePanel variant="card" onApply={applyAiUpdates} requireAuth={requireAuth} />
+          </Suspense>
+          <SectionIntro icon="📝" title="Subjective Assessment" sub="Enter the patient's history from your interview." />
+        </>
+      ) : (
+        <>
+          <SectionIntro icon="📝" title="Subjective Assessment" />
 
-      {/* Three equal entry options -- say it, write it, or pull it in from
-          this patient's own history -- instead of the AI panel being the
-          only prominent choice with manual entry an implicit fallback
-          further down the page. */}
-      <Suspense fallback={<Hint>Loading AI intake…</Hint>}>
-        <LazyOrthoAIIntakePanel onApply={applyAiUpdates} requireAuth={requireAuth} defaultOpen={autoOpenAI} />
-      </Suspense>
-      <button type="button" className="ai-intake-toggle" onClick={scrollToManualFields}>
-        ✍️ Write it manually
-      </button>
+          {/* Three equal entry options -- say it, write it, or pull it in from
+              this patient's own history -- instead of the AI panel being the
+              only prominent choice with manual entry an implicit fallback
+              further down the page. */}
+          <Suspense fallback={<Hint>Loading AI intake…</Hint>}>
+            <LazyOrthoAIIntakePanel onApply={applyAiUpdates} requireAuth={requireAuth} defaultOpen={autoOpenAI} />
+          </Suspense>
+          <button type="button" className="ai-intake-toggle" onClick={scrollToManualFields}>
+            ✍️ Write it manually
+          </button>
+        </>
+      )}
       <AiExtractedPanel rows={d.__aiExtracted || []} />
 
       {detectedConditionLabel && (

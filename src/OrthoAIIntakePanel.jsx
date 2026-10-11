@@ -35,8 +35,14 @@ export function estimateRupees(note) {
    (SubjectiveSection merges into both data.subjective and data.pain
    via the wizard's top-level setData).
    ============================================================ */
-export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen }) {
-  const [open, setOpen] = useState(false);
+export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen, variant }) {
+  // variant="card" is the AI path's Subjective step (Aditi, 2026-10-10): a small, always-visible,
+  // OPTIONAL "Fill in a paragraph" card above the manual form. It never opens itself or runs by
+  // itself, and the sign-in check waits for the moment someone taps Voice or Generate, so a guest
+  // can still see the card and go straight to typing. The default variant is the old toggle + panel.
+  const card = variant === "card";
+  const [open, setOpen] = useState(card);
+  const [applied, setApplied] = useState(false);
   const [text, setText] = useState("");
   const [status, setStatus] = useState("idle"); // idle | recording | processing | done | error
   const [result, setResult] = useState(null);
@@ -62,6 +68,7 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen }
   }, [defaultOpen]);
 
   function startRecording() {
+    if (card && requireAuth && !requireAuth("AI Assessment Intake")) return;
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
       alert("Voice input requires the Chrome browser.");
@@ -105,9 +112,12 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen }
   }
 
   async function runParse() {
-    if (!text.trim()) return;
+    // A second tap while the first is still running must not send the paragraph again.
+    if (!text.trim() || status === "processing") return;
+    if (card && requireAuth && !requireAuth("AI Assessment Intake")) return;
     setStatus("processing");
     setErrorMsg("");
+    setApplied(false);
     try {
       const headers = await authHeader();
       const res = await fetch(apiUrl("/api/parse"), {
@@ -135,7 +145,15 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen }
 
   function apply() {
     onApply(mapParseResultToOrthoUpdates(result));
-    close();
+    if (card) {
+      // The card stays on the page; it only says what happened. Everything AI filled is already
+      // in the form below, where it can be edited like anything typed by hand.
+      setStatus("idle");
+      setResult(null);
+      setErrorMsg("");
+      setText("");
+      setApplied(true);
+    } else close();
   }
 
   function close() {
@@ -155,23 +173,39 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen }
   }
 
   return (
-    <div className="ai-intake-panel">
-      <div className="ai-intake-head">
-        <span>✨ AI Assessment Intake</span>
-        <button type="button" className="sheet-close" onClick={close} aria-label="Close">
-          ✕
-        </button>
-      </div>
-      <Hint>Describe the patient's history in your own words — AI structures it into Subjective and Pain below for you to review and edit before anything is saved.</Hint>
+    <div className={"ai-intake-panel" + (card ? " ai-card" : "")}>
+      {card ? (
+        <>
+          <div className="ai-card-head">
+            <span className="ai-card-spark" aria-hidden="true">✨</span>
+            <h3 className="ai-card-title">Fill in a paragraph</h3>
+            <span className="ai-card-optional">Optional</span>
+          </div>
+          <p className="ai-card-desc">Describe the patient's history in your own words. AI will organize it into a structured subjective assessment for you to review and edit.</p>
+        </>
+      ) : (
+        <>
+          <div className="ai-intake-head">
+            <span>✨ AI Assessment Intake</span>
+            <button type="button" className="sheet-close" onClick={close} aria-label="Close">
+              ✕
+            </button>
+          </div>
+          <Hint>Describe the patient's history in your own words — AI structures it into Subjective and Pain below for you to review and edit before anything is saved.</Hint>
+        </>
+      )}
 
       {status !== "done" && (
         <>
           <textarea
             className="ai-intake-textarea"
             value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="e.g. 45 year old office worker, gradual onset right shoulder pain over 6 weeks, worse overhead and at night, no trauma..."
-            rows={5}
+            onChange={(e) => { setText(e.target.value); if (applied) setApplied(false); }}
+            placeholder={card
+              ? "45-year-old with gradual onset of right shoulder pain for 6 weeks, worse with overhead activity…"
+              : "e.g. 45 year old office worker, gradual onset right shoulder pain over 6 weeks, worse overhead and at night, no trauma..."}
+            aria-label={card ? "Patient history in your own words" : undefined}
+            rows={card ? 3 : 5}
             disabled={status === "processing" || status === "recording"}
           />
           <div className="ai-intake-actions">
@@ -184,11 +218,12 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen }
                 🎤 Voice
               </button>
             )}
-            <button type="button" className="primary-btn" onClick={runParse} disabled={!text.trim() || status === "processing" || status === "recording"}>
-              {status === "processing" ? "Parsing…" : "✦ Parse with AI"}
+            <button type="button" className={"primary-btn" + (card ? " ai-card-generate" : "")} onClick={runParse} disabled={!text.trim() || status === "processing" || status === "recording"}>
+              {status === "processing" ? (card ? "Generating…" : "Parsing…") : (card ? "Generate with AI" : "✦ Parse with AI")}
             </button>
           </div>
-          {status === "error" && <div className="ai-intake-error">{errorMsg}</div>}
+          {status === "error" && <div className="ai-intake-error" role="alert">{errorMsg}</div>}
+          {applied && <div className="ai-card-success" role="status">✓ Added to the form below. Review and edit anything before you continue.</div>}
         </>
       )}
 

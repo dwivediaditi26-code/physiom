@@ -20,8 +20,8 @@ afterEach(() => vi.restoreAllMocks());
 async function parseAndApply(c) {
   vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, json: async () => c.parse })));
   render(<OrthoAssessment entryMode="ai" onSave={() => {}} />);
-  fireEvent.change(screen.getByPlaceholderText(/45 year old office worker/), { target: { value: c.narrative } });
-  fireEvent.click(screen.getByRole("button", { name: /Parse with AI/ }));
+  fireEvent.change(await screen.findByPlaceholderText(/45-year-old with gradual onset/), { target: { value: c.narrative } });
+  fireEvent.click(screen.getByRole("button", { name: "Generate with AI" }));
   await screen.findByText("Extracted Patient Information");
   fireEvent.click(screen.getByRole("button", { name: /Apply to Subjective/ }));
   await screen.findByText("Region-specific subjective");
@@ -68,11 +68,41 @@ describe("what the AI filled shows in Final Review and the PDF", () => {
   });
 });
 
-describe("AI Parse screen offers manual entry", () => {
-  it("has an 'Add manually instead' button that opens the manual Subjective form", () => {
+describe("the AI path's Subjective step is manual-first", () => {
+  it("shows the manual Subjective form on the same page as the optional paragraph card", async () => {
     render(<OrthoAssessment entryMode="ai" onSave={() => {}} />);
-    fireEvent.click(screen.getByRole("button", { name: /Add manually instead/ }));
-    expect(screen.queryByPlaceholderText(/45 year old office worker/)).toBeNull();
+    expect(await screen.findByPlaceholderText(/45-year-old with gradual onset/)).toBeTruthy();
+    expect(screen.getAllByText(/Chief complaint/).length).toBeGreaterThan(0);
+  });
+
+  it("says what happened after Apply and keeps the card for another go", async () => {
+    await parseAndApply(AI_REGION_CASES.find((x) => x.id === "shoulder-impingement"));
+    expect(screen.getByText(/Added to the form below/)).toBeTruthy();
+    expect(screen.getByText("Fill in a paragraph")).toBeTruthy();
+  });
+
+  it("a second tap on Generate while it is running does not send the paragraph twice", async () => {
+    let calls = 0;
+    let release;
+    const gate = new Promise((r) => { release = r; });
+    vi.stubGlobal("fetch", vi.fn(async () => { calls += 1; await gate; return { ok: true, json: async () => AI_REGION_CASES[0].parse }; }));
+    render(<OrthoAssessment entryMode="ai" onSave={() => {}} />);
+    fireEvent.change(await screen.findByPlaceholderText(/45-year-old with gradual onset/), { target: { value: AI_REGION_CASES[0].narrative } });
+    const button = screen.getByRole("button", { name: "Generate with AI" });
+    fireEvent.click(button);
+    fireEvent.click(button);
+    await waitFor(() => expect(calls).toBe(1));
+    release();
+    await screen.findByText("Extracted Patient Information");
+    expect(calls).toBe(1);
+  });
+
+  it("a failed generation shows an error and leaves the form as it was", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, json: async () => ({ error: "The AI is busy, try again." }) })));
+    render(<OrthoAssessment entryMode="ai" onSave={() => {}} />);
+    fireEvent.change(await screen.findByPlaceholderText(/45-year-old with gradual onset/), { target: { value: "Neck pain for 3 weeks" } });
+    fireEvent.click(screen.getByRole("button", { name: "Generate with AI" }));
+    expect((await screen.findByRole("alert")).textContent).toMatch(/AI is busy/);
     expect(screen.getAllByText(/Chief complaint/).length).toBeGreaterThan(0);
   });
 });
