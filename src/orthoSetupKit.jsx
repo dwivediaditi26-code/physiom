@@ -84,7 +84,8 @@ export function AiHubNav({ items, activeId, visited, onJump }) {
    still have emoji... make it like svg"), anything else (an emoji string,
    the many condition-picker lists across the app) renders exactly as
    before so those aren't touched by this. */
-// Anatomy picture for each body-region card (public/anatomy/<group>/<file>.png). Pelvis uses the sacrum
+// Anatomy picture for each body-region card (public/anatomy/<group>/<file>.webp, 144 px, about 5 KB each;
+// they are only requested when this screen is on screen, never when the app opens). Pelvis uses the sacrum
 // picture (it shows the whole pelvis); Multiple regions and Whole body keep the plain bone icon.
 const REGION_ART = {
   cervical: "spine/cervical", thoracic: "spine/thoracic", lumbar: "spine/lumbar", sacrum: "spine/sacrum-coccyx", pelvis: "spine/sacrum-coccyx",
@@ -95,11 +96,15 @@ const REGION_ART = {
 };
 
 function RegionArt({ id }) {
+  // On a weak connection the picture can fail to arrive; the card then shows
+  // the plain bone icon instead of the browser's broken-image box (2026-10-10,
+  // Aditi sent a screenshot of broken pictures on every region card).
+  const [failed, setFailed] = useState(false);
   const file = REGION_ART[id];
-  if (!file) return <PickerIcon icon="ti-bone" />;
+  if (!file || failed) return <PickerIcon icon="ti-bone" />;
   return (
-    <img className="region-card-art" src={`${import.meta.env.BASE_URL}anatomy/${file}.png`} alt="" aria-hidden="true"
-      loading="lazy" decoding="async" data-testid={`region-art-${id}`} />
+    <img className="region-card-art" src={`${import.meta.env.BASE_URL}anatomy/${file}.webp`} alt="" aria-hidden="true"
+      loading="lazy" decoding="async" data-testid={`region-art-${id}`} onError={() => setFailed(true)} />
   );
 }
 

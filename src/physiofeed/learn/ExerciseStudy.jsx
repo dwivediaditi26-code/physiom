@@ -8,7 +8,7 @@ import {
   EXERCISE_GROUPS, REGION_ART, TIERS, allExercises, regionList, searchExercises, filterExercises,
 } from "./exerciseLearnData.js";
 
-const artUrl = (file) => `${import.meta.env.BASE_URL}anatomy/${file}.png`;
+const artUrl = (file) => `${import.meta.env.BASE_URL}anatomy/${file}.webp`;
 
 function RegionArt({ regionKey, icon, size = 44 }) {
   const file = REGION_ART[regionKey];
