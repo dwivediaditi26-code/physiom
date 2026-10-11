@@ -157,19 +157,33 @@ export function orthoStyles() {
         .ai-intake-actions { display: flex; gap: 8px; margin-top: 8px; }
         .ai-intake-actions .primary-btn, .ai-intake-actions .ghost-btn { flex: 1; }
         .ai-intake-error { margin-top: 8px; padding: 8px 10px; background: #FDECEC; border: 1px solid #F7D3D3; border-radius: 8px; color: #B91C1C; font-size: 12px; }
-        /* Compact optional "Fill in a paragraph" card (AI path Subjective step) */
-        .ai-card { border: 1px solid #E4DDFB; background: #FAF8FF; border-radius: 14px; padding: 12px; margin-bottom: 16px; }
-        .ai-card-head { display: flex; align-items: center; gap: 8px; }
-        .ai-card-spark { font-size: 15px; line-height: 1; }
-        .ai-card-title { margin: 0; font-size: 15px; font-weight: 800; color: ${BRAND.ink}; line-height: 1.25; flex: 1; min-width: 0; }
-        .ai-card-optional { font-size: 11px; font-weight: 700; color: ${BRAND.purpleDark}; background: #fff; border: 1px solid #E4DDFB; border-radius: 999px; padding: 2px 9px; flex-shrink: 0; }
-        .ai-card-desc { margin: 4px 0 2px; font-size: 12px; line-height: 1.4; color: ${BRAND.gray}; }
-        .ai-card .ai-intake-textarea { background: #fff; font-size: 14px; min-height: 76px; }
-        .ai-card .ai-intake-actions { margin-top: 2px; }
-        .ai-card .ai-intake-actions .primary-btn, .ai-card .ai-intake-actions .ghost-btn { min-height: 44px; }
-        .ai-card .ai-intake-actions .ai-card-generate { background: #fff; color: ${BRAND.purpleDark}; border: 1.5px solid ${BRAND.purple}; }
+        /* Compact optional "Fill in a paragraph" card (AI path Subjective step) -- kept small on purpose (Aditi, 2026-10-10: "make this small") */
+        .ai-card { border: 1px solid #E4DDFB; background: #FAF8FF; border-radius: 12px; padding: 9px 10px; margin-bottom: 12px; }
+        .ai-card-head { display: flex; align-items: center; gap: 6px; }
+        .ai-card-spark { font-size: 13px; line-height: 1; }
+        .ai-card-title { margin: 0; font-size: 13px; font-weight: 800; color: ${BRAND.ink}; line-height: 1.25; flex: 1; min-width: 0; }
+        .ai-card-optional { font-size: 10px; font-weight: 700; color: ${BRAND.purpleDark}; background: #fff; border: 1px solid #E4DDFB; border-radius: 999px; padding: 1px 7px; flex-shrink: 0; white-space: nowrap; }
+        .ai-card-desc { margin: 2px 0 0; font-size: 11px; line-height: 1.35; color: ${BRAND.gray}; }
+        .ai-card .ai-intake-textarea { background: #fff; min-height: 0 !important; padding: 6px 9px !important; margin: 6px 0; border-width: 1px; border-radius: 9px; line-height: 1.3; } /* font stays 16px: smaller makes iPhones zoom in on tap */
+        .ai-card .ai-intake-actions { margin-top: 0; gap: 6px; }
+        .ai-card .ai-intake-actions .primary-btn, .ai-card .ai-intake-actions .ghost-btn { min-height: 30px; height: 30px; padding: 0 10px; font-size: 12px; font-weight: 700; line-height: 1; border-radius: 8px; }
+        .ai-card .ai-intake-actions .ghost-btn { flex: 0 0 auto; padding-left: 10px; padding-right: 10px; }
+        .ai-card .ai-intake-actions .ai-card-generate { flex: 1 1 auto; white-space: nowrap; background: #fff; color: ${BRAND.purpleDark}; border: 1.5px solid ${BRAND.purple}; }
         .ai-card .ai-intake-actions .ai-card-generate:disabled { color: ${BRAND.grayLight}; border-color: #D9D2F3; background: #fff; }
-        .ai-card-success { margin-top: 8px; padding: 8px 10px; background: #ECFDF3; border-radius: 10px; color: #166534; font-size: 12px; line-height: 1.4; }
+        .ai-card-success { margin-top: 6px; padding: 6px 9px; background: #ECFDF3; border-radius: 9px; color: #166534; font-size: 11.5px; line-height: 1.35; }
+        /* AI path Subjective step: the LOOK of Aditi's reference design (2026-10-10) -- small white boxes with a thin
+           light border, small bold labels, small text. Only looks: the questions and their order are unchanged. */
+        .subj-ref .field-block { margin-bottom: 9px; }
+        .subj-ref .field-label { font-size: 12.5px; font-weight: 700; color: ${BRAND.ink}; }
+        .subj-ref .field-label-row { margin-bottom: 3px; }
+        .subj-ref .text-input-wrap, .subj-ref .select-wrap { background: #fff; border: 1px solid #E3E1EC; border-radius: 9px; min-height: 0; padding: 0 4px 0 10px; box-shadow: none; }
+        .subj-ref .text-input, .subj-ref .select-input { min-height: 34px !important; font-size: 13.5px !important; padding: 4px 2px !important; }
+        .subj-ref .textarea, .subj-ref .growing-textarea { border: 1px solid #E3E1EC; border-radius: 9px; min-height: 34px !important; font-size: 13.5px !important; padding: 6px 10px !important; background: #fff; }
+        .subj-ref .select-btn { font-size: 0; padding: 4px 8px; background: transparent; min-height: 0; }
+        .subj-ref .select-btn::after { content: "⌄"; font-size: 15px; color: ${BRAND.gray}; }
+        .subj-ref .region-group-title { font-weight: 800; font-size: 13.5px; color: ${BRAND.purpleDark}; margin: 12px 0 6px; padding-bottom: 4px; border-bottom: 1px solid #E3E1EC; }
+        .subj-ref .hint { font-size: 11px; padding: 6px 9px; margin-bottom: 8px; }
+        .subj-ref .subheading { font-size: 13px; margin: 8px 0 4px; }
         .ai-intake-review { margin-top: 4px; }
         .ai-intake-row { font-size: 12.5px; color: ${BRAND.ink}; padding: 5px 0; border-top: 1px solid #EDE4FB; line-height: 1.5; }
         .ai-intake-row:first-of-type { border-top: none; }
@@ -873,17 +887,33 @@ export function orthoStyles() {
         @keyframes objAiPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.22); } }
         .obj-ai-thinking-icon { display: inline-block; animation: objAiPulse .6s ease-in-out infinite; }
 
-        /* "Analyze your case" card on the AI Objective page (Aditi, 2026-10-10): one compact white card,
-           lavender border, a single purple button. Replaces the old gradient Differential Inference banner. */
-        .obj-analyze-card { display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 14px; background: #fff; border: 1px solid #E4DDFB; box-shadow: 0 1px 6px rgba(124,58,237,0.07); }
-        .obj-analyze-head { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
-        .obj-analyze-icon { width: 34px; height: 34px; border-radius: 10px; background: ${BRAND.purpleFaint}; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
-        .obj-analyze-title { font-size: 15px; font-weight: 800; color: ${BRAND.ink}; line-height: 1.25; }
-        .obj-analyze-desc { font-size: 12px; color: ${BRAND.gray}; line-height: 1.4; margin-top: 2px; }
-        .obj-analyze-note { font-size: 12px; line-height: 1.4; color: ${BRAND.purpleDark}; background: ${BRAND.purpleFaint}; border-radius: 10px; padding: 8px 10px; }
+        /* "Analyze your case" card on the AI Objective page (Aditi, 2026-10-10): kept small -- one title line with the
+           credits on the right, a one-line description, one button. */
+        .obj-analyze-card { display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 14px; background: ${BRAND.purpleFaint}; border: 1px solid #E4DDFB; }
+        .obj-analyze-head { display: flex; align-items: center; gap: 10px; min-width: 0; }
+        .obj-analyze-icon { width: 40px; height: 40px; border-radius: 12px; background: #E9E2FD; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+        .obj-analyze-title { font-size: 14.5px; font-weight: 800; color: ${BRAND.ink}; line-height: 1.2; }
+        .obj-analyze-desc { font-size: 11.5px; color: ${BRAND.gray}; line-height: 1.35; margin-top: 2px; }
+        .obj-analyze-note { font-size: 11.5px; line-height: 1.35; color: ${BRAND.purpleDark}; background: #fff; border-radius: 8px; padding: 5px 8px; }
         .obj-analyze-note-ok { color: #166534; background: #ECFDF3; }
         .obj-analyze-note-warn { color: #92400E; background: #FFF7E6; }
-        .obj-analyze-btn { width: 100%; min-height: 46px; border: none; border-radius: 12px; background: ${BRAND.purple}; color: #fff; font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer; }
+        .obj-analyze-allowance { font-size: 11px; color: ${BRAND.gray}; text-align: center; margin-top: -2px; }
+        /* credits in the header bar (AI Objective step) */
+        .topbar-credits { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; }
+        .topbar-credit-chip { font-size: 11px; font-weight: 800; color: ${BRAND.purpleDark}; background: #FFF4DB; border-radius: 9px; padding: 3px 6px; white-space: nowrap; }
+        .topbar-credit-chip-empty { color: #DC2626; }
+        .topbar-credit-link { font-size: 11px; font-weight: 700; font-family: inherit; line-height: 1; color: ${BRAND.purpleDark}; background: #fff; border: 1.5px solid ${BRAND.purple}; border-radius: 9px; padding: 0 6px; height: 26px; min-height: 0; box-sizing: border-box; cursor: pointer; white-space: nowrap; text-decoration: underline; }
+        /* "Explore sample conditions" (before the first analysis, credits on) */
+        .obj-sample-head { display: flex; align-items: flex-start; gap: 9px; padding: 8px 10px; margin: 2px 0 6px; border-radius: 12px; background: #F6F3FF; }
+        .obj-sample-icon { font-size: 20px; line-height: 1.1; flex-shrink: 0; }
+        .obj-sample-title { font-size: 13px; font-weight: 800; color: ${BRAND.ink}; line-height: 1.25; }
+        .obj-sample-desc { font-size: 11px; color: ${BRAND.gray}; line-height: 1.35; margin-top: 1px; }
+        .obj-match-preview { display: block; margin-top: 5px; font-size: 10.5px; font-weight: 700; color: ${BRAND.purpleDark}; }
+        .obj-match-card-locked .obj-match-preview { color: ${BRAND.gray}; }
+        .obj-match-card-locked { opacity: 0.55; cursor: pointer; position: relative; }
+        .obj-hypo-lock-note { font-size: 11px; color: ${BRAND.gray}; margin: -2px 2px 6px; }
+        .obj-analyze-btn { width: 100%; min-height: 40px; border: none; border-radius: 11px; background: ${BRAND.purple}; color: #fff; font-size: 13.5px; font-weight: 700; font-family: inherit; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 14px; }
+        .obj-analyze-btn-icon { font-size: 15px; width: 18px; text-align: center; }
         .obj-analyze-btn:active { transform: scale(0.99); }
         .obj-analyze-btn:disabled { background: #D9D2F3; color: #fff; cursor: not-allowed; }
         .obj-analyze-btn:focus-visible { outline: 3px solid #C4B5FD; outline-offset: 2px; }
@@ -896,7 +926,7 @@ export function orthoStyles() {
            (same data/selection the old scrollable pill row used). */
         .obj-hypo-head { display: flex; align-items: center; justify-content: space-between; margin: 2px 2px 6px; }
         .obj-hypo-label { font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: ${BRAND.grayLight}; }
-        .obj-hypo-sub { font-size: 12px; line-height: 1.4; color: ${BRAND.gray}; margin: 0 2px 8px; }
+        .obj-hypo-sub { font-size: 11px; line-height: 1.35; color: ${BRAND.gray}; margin: 0 2px 6px; }
         .obj-hypo-head { scroll-margin-top: 150px; }
         .obj-hypo-customize { font-size: 12px; font-weight: 700; color: ${BRAND.purple}; background: none; border: none; cursor: pointer; padding: 4px 6px; border-radius: 6px; font-family: inherit; }
         .obj-hypo-customize:active { background: ${BRAND.purpleFaint}; }

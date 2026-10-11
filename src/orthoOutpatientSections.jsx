@@ -46,7 +46,11 @@ function RegionField({ field, value, onChange, starred, contentKey }) {
 // orthoExercisePrescription.jsx's "Quick-apply protocol" already uses.
 // Collapsed by default -- a section only stays open because the clinician
 // opened it, not because of how many fields happen to be in it.
-function RegionSubjectiveGroup({ title, fields, open, onToggle, region, regionData, setField, showStars }) {
+// AI path: every region section is always open EXCEPT these two, which stay tap-to-open bars (Aditi, 2026-10-10:
+// "headache and red flag collapse") -- they are long and only needed when something points to them.
+const STAYS_COLLAPSIBLE = /headache|red flag/i;
+
+function RegionSubjectiveGroup({ title, fields, open, onToggle, region, regionData, setField, showStars, alwaysOpen = false }) {
   const answeredCount = fields.filter((f) => {
     const v = regionData[f.id];
     return Array.isArray(v) ? v.length > 0 : !!v;
@@ -60,6 +64,18 @@ function RegionSubjectiveGroup({ title, fields, open, onToggle, region, regionDa
     })
     .filter(Boolean)
     .join(" · ");
+  // AI path (Aditi, 2026-10-10: "don't make it collapsible, open it always"): every section stays open, with a plain title
+  // instead of a tap-to-open bar.
+  if (alwaysOpen) {
+    return (
+      <div className="region-group">
+        <div className="region-group-title">{answeredCount > 0 ? "✓ " : ""}{title}{answeredCount > 0 ? ` (${answeredCount}/${fields.length})` : ""}</div>
+        {fields.map((f) => (
+          <RegionField key={f.id} field={f} value={regionData[f.id]} onChange={(v) => setField(f.id, v)} starred={!!showStars && isMatchingRelevant(region, f.id)} contentKey={contentKeyForRegion(region)} />
+        ))}
+      </div>
+    );
+  }
   return (
     <div>
       <button type="button" className="collapsible-head" onClick={onToggle}>
@@ -154,6 +170,7 @@ function RegionSubjectiveTabs({ selectedRegions, regionLabelOf, regions, setRegi
           regionData={regionData}
           setField={setField}
           showStars={aiEntry}
+          alwaysOpen={aiEntry && !STAYS_COLLAPSIBLE.test(s.title)}
         />
       ))}
     </>
@@ -356,7 +373,7 @@ export function SubjectiveSection({ data, setData, selectedRegions = [], setSele
   }
 
   return (
-    <>
+    <div className={aiEntry ? "subj-ref" : undefined}>
       {aiEntry ? (
         <>
           {/* AI path (Aditi, 2026-10-10): typing the history is the main way in, so the form is what
@@ -423,7 +440,7 @@ export function SubjectiveSection({ data, setData, selectedRegions = [], setSele
       <TextArea label="Socio-economic history" value={d.socioEconomicHistory} onChange={(v) => set("socioEconomicHistory", v)} placeholder="Living situation, occupation demands, financial/support factors relevant to care..." />
       <TextArea label="Functional limitations" value={d.functionalLimitations} onChange={(v) => set("functionalLimitations", v)} placeholder="What the patient can no longer do..." />
       <TextArea label="Patient goals" value={d.patientGoals} onChange={(v) => set("patientGoals", v)} placeholder="What matters most to the patient right now" />
-    </>
+    </div>
   );
 }
 

@@ -1,10 +1,12 @@
 import { authenticateAndRateLimit } from './_lib/rateLimit.js';
 import { chatJson, providerOrder, skipNote, usageNote } from './_lib/llm.js';
+import { cleanRequestId, reserveGeneration, completeGeneration, refundGeneration } from './_lib/credits.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Request-Id');
+  res.setHeader('Access-Control-Expose-Headers', 'X-AI-Credits, X-AI-Provider, X-AI-Order, X-AI-Fallback, X-AI-Usage');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
@@ -105,9 +107,36 @@ If input is Hindi/mixed, extract clinical meaning in English.`;
 
 Do not invent new information that isn't in the first-pass JSON or the narrative. Do not change a field's value unless you found a real, evidence-based problem with it -- when in doubt whether something is genuinely correct, leave it exactly as the first pass had it. Return ONLY the corrected JSON object, in EXACTLY the same shape as the first-pass JSON you were given (the same keys, the same value types, nothing added or removed). If a field's value changes, keep _confidence/_sourceQuotes in sync (remove entries for anything you nulled out).`;
 
+  // Credits (api/_lib/credits.js): take 1 credit now, give it back if the AI does not answer. Admins are
+  // never charged. Before supabase/add_ai_credits.sql has been run this is switched off and does nothing.
+  const requestId = cleanRequestId(req.headers?.['x-request-id']);
+  const credit = await reserveGeneration(userId, requestId);
+  if (!credit.ok) {
+    if (credit.reason === 'insufficient') return res.status(402).json({ error: 'no_credits', message: "You're out of credits.", balance: credit.balance ?? 0 });
+    return res.status(503).json({ error: "Couldn't check your credits right now -- please try again in a moment." });
+  }
+  let creditOpen = credit.enabled; // true until the credit is either kept (AI answered) or returned
+  let creditsLeft = credit.unlimited ? 'unlimited' : credit.balance;
+  const keepCredit = async () => {
+    if (!creditOpen) return;
+    creditOpen = false;
+    await completeGeneration(userId, requestId);
+    if (creditsLeft !== undefined) res.setHeader('X-AI-Credits', String(creditsLeft));
+  };
+  const returnCredit = async () => {
+    if (!creditOpen) return;
+    creditOpen = false;
+    const balance = await refundGeneration(userId, requestId);
+    if (credit.unlimited) res.setHeader('X-AI-Credits', 'unlimited');
+    else if (balance !== undefined) res.setHeader('X-AI-Credits', String(balance));
+  };
+
   try {
     const extracted = await chatJson({ system, user: text.trim(), maxTokens: 3000 });
-    if (!extracted.ok) return res.status(extracted.status || 502).json({ error: extracted.error, ...(extracted.detail ? { detail: extracted.detail } : {}) });
+    if (!extracted.ok) {
+      await returnCredit();
+      return res.status(extracted.status || 502).json({ error: extracted.error, ...(extracted.detail ? { detail: extracted.detail } : {}) });
+    }
     const firstPass = extracted.json;
     res.setHeader('X-AI-Provider', extracted.provider);
     res.setHeader('X-AI-Order', providerOrder().join(',')); // which providers this deployment has keys for, in order
@@ -124,13 +153,16 @@ Do not invent new information that isn't in the first-pass JSON or the narrative
         maxTokens: 3000,
       });
       res.setHeader('X-AI-Usage', usageNote([extracted, verified]));
+      await keepCredit();
       if (!verified.ok) return res.status(200).json(firstPass);
       return res.status(200).json(verified.json);
     } catch (verifyErr) {
       res.setHeader('X-AI-Usage', usageNote([extracted]));
+      await keepCredit();
       return res.status(200).json(firstPass);
     }
   } catch (e) {
+    await returnCredit();
     return res.status(500).json({ error: e.message });
   }
 }

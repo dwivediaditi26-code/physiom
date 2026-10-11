@@ -44,6 +44,8 @@ import { kcRichItem, cpaRichItem, fmaRichItem, GradeSelect as ObserveSelect, FMA
 import { KC_REGIONS, NKT_REGIONS, FMA_DATA, CYRIAX_REGIONS_DATA } from "./orthoAdvancedLibrary.js";
 import PhotoSlots from "./PhotoSlots.jsx";
 import { storyGate } from "./storyGate.js";
+import { useAiCredits, creditsEnforced, spendAnalysis } from "./aiCredits.js";
+import CreditsSheet from "./CreditsSheet.jsx";
 import { kcImageIds, fmaImageIds } from "./kcImages.js";
 import { uploadImage, uploadErrorMessage } from "./services/cloudinary.js";
 import { useIsAdmin } from "./useIsAdmin.js";
@@ -830,7 +832,7 @@ function combinedMatchPct(m, obj) {
   return Math.round(base + headroom * (obj.matched / obj.total));
 }
 
-function ConditionTabs({ conditions, order, matchById, objSupportById, activeId, onSelect, hasMatchEvidence = true, storyOk = true }) {
+function ConditionTabs({ conditions, order, matchById, objSupportById, activeId, onSelect, hasMatchEvidence = true, storyOk = true, lockedIds, onLockedClick, previewLabels = false }) {
   return (
     <div className="obj-match-row">
       {order.map((id, i) => {
@@ -842,14 +844,17 @@ function ConditionTabs({ conditions, order, matchById, objSupportById, activeId,
         // no number at all, not a dash or a row of "0%" that reads like a result.
         const noEvidenceYet = !storyOk || (!hasMatchEvidence && !objSupportById?.[id]?.matched);
         const isActive = id === activeId;
+        const locked = !!lockedIds?.has(id);
         return (
           <button
             key={id}
             type="button"
-            className={"obj-match-card obj-match-c" + (i % 6) + (isActive ? " obj-match-card-active" : "")}
-            onClick={() => onSelect(id)}
+            className={"obj-match-card obj-match-c" + (i % 6) + (isActive && !locked ? " obj-match-card-active" : "") + (locked ? " obj-match-card-locked" : "")}
+            onClick={() => (locked ? onLockedClick?.() : onSelect(id))}
+            aria-disabled={locked || undefined}
+            aria-label={locked ? `${c.name} (locked until you analyze your case)` : undefined}
           >
-            {noEvidenceYet ? null : pct != null ? (
+            {locked || noEvidenceYet ? null : pct != null ? (
               <span className="obj-match-pct">{pct}%</span>
             ) : m ? (
               <span className="obj-match-pct" style={{ color: MATCH_TIER_TONE[m.matchTier] }}>{m.matchTier}</span>
@@ -857,6 +862,7 @@ function ConditionTabs({ conditions, order, matchById, objSupportById, activeId,
               <span className="obj-match-pct" style={{ fontSize: 13 }}>{id}</span>
             )}{" "}
             <span className="obj-match-name">{c.name}</span>
+            {previewLabels && <span className="obj-match-preview">{locked ? "🔒 Locked" : "View preview ›"}</span>}
           </button>
         );
       })}
@@ -882,23 +888,42 @@ const TIER_TEXT = { high: "High", med: "Med", low: "Low" };
 // "remove this upper [grid] only three comming... make the 2nd below it
 // permanant"). Now just the one always-visible list, no top grid, no
 // Customize toggle.
-function HypothesisGrid({ conditions, order, matchById, objSupportById, activeId, onSelect, hasMatchEvidence, analyzed = true, headRef }) {
+function HypothesisGrid({ conditions, order, matchById, objSupportById, activeId, onSelect, hasMatchEvidence, analyzed = true, headRef, lockedIds, onLockedClick, lockNote }) {
   // Scores exist only for an analysis that is up to date AND found something; an analysis that matched nothing yet
   // keeps the plain "Explore conditions" list instead of a "scores" heading over cards with no scores.
   const scoresShown = analyzed && hasMatchEvidence;
+  // Before the first analysis (credits on): two sample conditions per region are open and free, the rest are locked.
+  const samples = !analyzed && lockedIds?.size > 0;
   return (
     <div>
-      <div className="obj-hypo-head" ref={headRef}>
-        <span className="obj-hypo-label">{scoresShown ? "Condition-matching scores" : "Explore conditions"}</span>
-      </div>
-      <div className="obj-hypo-sub">
-        {scoresShown
-          ? "How well the Subjective answers fit each condition, best match first. A teaching aid, not a diagnosis."
-          : analyzed
-          ? "No condition matched your Subjective answers yet. You can still tap any condition to preview its objective findings."
-          : "Analyze your case to see condition-matching scores and personalized recommendations. Until then, tap a condition to preview its objective findings: educational only, not results for this patient."}
-      </div>
-      <ConditionTabs conditions={conditions} order={order} matchById={matchById} objSupportById={objSupportById} activeId={activeId} onSelect={onSelect} hasMatchEvidence={hasMatchEvidence} storyOk={analyzed} />
+      {samples ? (
+        <div className="obj-sample-head" ref={headRef}>
+          <span className="obj-sample-icon" aria-hidden="true">📖</span>
+          <div style={{ minWidth: 0 }}>
+            <div className="obj-sample-title">Explore sample conditions · Free</div>
+            <div className="obj-sample-desc">Learn key objective assessment findings for common conditions in this region. These are educational previews only, not results for this patient.</div>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="obj-hypo-head" ref={headRef}>
+            <span className="obj-hypo-label">{scoresShown ? "Condition-matching scores" : "Explore conditions"}</span>
+          </div>
+          <div className="obj-hypo-sub">
+            {scoresShown
+              ? "How well the Subjective answers fit each condition, best first. A teaching aid, not a diagnosis."
+              : analyzed
+              ? "No condition matched your Subjective answers yet. You can still tap any condition to preview its objective findings."
+              : "Analyze your case to see condition-matching scores and personalized recommendations. Previews below are educational only, not results for this patient."}
+          </div>
+        </>
+      )}
+      <ConditionTabs conditions={conditions} order={order} matchById={matchById} objSupportById={objSupportById} activeId={activeId} onSelect={onSelect} hasMatchEvidence={hasMatchEvidence} storyOk={analyzed} lockedIds={lockedIds} onLockedClick={onLockedClick} previewLabels={samples} />
+      {lockedIds?.size > 0 && (
+        <div className="obj-hypo-lock-note" role="status" data-testid="locked-conditions-note" style={lockNote ? { color: BRAND.purpleDark, fontWeight: 700 } : undefined}>
+          🔒 {lockedIds.size} more unlock when you analyze your case.
+        </div>
+      )}
     </div>
   );
 }
@@ -1803,7 +1828,7 @@ function AddSpecialTestPicker({ options, onAdd }) {
   );
 }
 
-export default function ConditionObjectiveAssessment({ data, setData, selectedRegions, setSelectedRegions, onStartOutcomeMeasure }) {
+export default function ConditionObjectiveAssessment({ data, setData, selectedRegions, setSelectedRegions, onStartOutcomeMeasure, requireAuth }) {
   const regions = selectedRegions || [];
   // Picking 2+ regions in Subjective used to only ever show the FIRST
   // matching region's condition-wise assessment here -- the rest were
@@ -1818,6 +1843,16 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
   const config = matchedConfigs.find((c) => c.key === activeConfigKey) || matchedConfigs[0] || REGION_CONFIGS[0];
 
   const [state, setField] = useSectionData(data, setData, `conditionAssessment_${config.key}`);
+  // Credits (Aditi, 2026-10-10): the first Analyze Case of a case costs 1 credit, the first 3 meaningful
+  // re-analyses are free, then 1 credit each. A "case" is this assessment + this region. Where credits are
+  // not switched on (SQL not run, or no way to ask a guest to sign in) everything stays free.
+  const caseKey = `${data?.__caseId || "case"}:${config.key}`;
+  const credits = useAiCredits(caseKey);
+  const enforced = creditsEnforced(credits.state, !!requireAuth);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [creditNotice, setCreditNotice] = useState("");
+  const [creditsSheetOpen, setCreditsSheetOpen] = useState(false);
+  const [lockNote, setLockNote] = useState(false);
   // Same global data.pain the wizard's own Pain step (PainSection,
   // orthoCommonSections.jsx) reads/writes -- pain isn't condition-specific,
   // so this shares that one record rather than forking a second copy per
@@ -1902,13 +1937,41 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
     setField("__analysis", { sig: liveSig, at: Date.now() });
     setActiveId(null);
     setActiveSubtopic("observation");
+    setLockNote(false);
     scrollToResults();
+  }
+  // Would tapping the button now take a credit? (the server is the one that really decides)
+  const freeLeft = credits.freeLeft;
+  const willCharge = analysisStatus === "new" || (analysisStatus === "stale" && freeLeft === 0);
+  async function onAnalyzeClick() {
+    if (!gate.ok || analyzing) return;
+    setCreditNotice("");
+    if (requireAuth && !requireAuth("Analyze Case", "Sign in to analyze your case and keep your credits.")) return;
+    if (enforced && !credits.unlimited && (credits.state === "ready" || credits.state === "error")) {
+      if (credits.state === "ready" && willCharge && credits.balance < 1) { setCreditsSheetOpen(true); return; }
+      setAnalyzing(true);
+      const spent = await spendAnalysis(caseKey, liveSig);
+      setAnalyzing(false);
+      if (!spent.ok) {
+        if (spent.reason === "insufficient") setCreditsSheetOpen(true);
+        else setCreditNotice("Couldn't check your credits. Check your connection and try again.");
+        return;
+      }
+    }
+    runAnalysis();
   }
 
   const baseOrder = useMemo(() => (config.orderFor ? config.orderFor(regions) : config.order), [config, regions]);
   const order = useMemo(
     () => [...rankedIds, ...baseOrder.filter((id) => !rankedIds.includes(id))],
     [rankedIds, baseOrder]
+  );
+  // Every region shows 2 conditions to everyone (the first two of its list); the rest are locked until the case
+  // has been analyzed. Once analyzed they stay open, even at 0 credits. Admins see everything.
+  const analysisSaved = !!state.__analysis;
+  const lockedIds = useMemo(
+    () => (enforced && !credits.unlimited && !analysisSaved ? new Set(baseOrder.slice(2)) : new Set()),
+    [enforced, credits.unlimited, analysisSaved, baseOrder]
   );
   // Recomputed on every Objective tab tap (state changes) so Target
   // Hypotheses' % visibly climbs as findings are confirmed, live -- not
@@ -2020,9 +2083,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           <span className="obj-analyze-icon" aria-hidden="true">🧠</span>
           <div style={{ minWidth: 0 }}>
             <div className="obj-analyze-title">Analyze your case</div>
-            <div className="obj-analyze-desc">
-              Explore condition-matching scores and personalised objective assessment recommendations based on the patient's subjective findings.
-            </div>
+            <div className="obj-analyze-desc">Get condition-matching scores and personalized objective assessment suggestions.</div>
           </div>
         </div>
         {analysisStatus === "blocked" && (
@@ -2043,14 +2104,40 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
               : ` — nothing matches yet. Tick more answers in Subjective (the ⭐ ones matter most), then update the analysis.`}
           </div>
         )}
+        {creditNotice && <div className="obj-analyze-note obj-analyze-note-warn" role="alert">{creditNotice}</div>}
         <button
           type="button"
           className="obj-analyze-btn"
-          disabled={analysisStatus === "blocked"}
-          onClick={analysisCurrent ? scrollToResults : runAnalysis}
+          disabled={analysisStatus === "blocked" || analyzing}
+          onClick={analysisCurrent ? scrollToResults : onAnalyzeClick}
         >
-          {analysisStatus === "current" ? "View Analysis" : analysisStatus === "stale" ? "Update Analysis" : "Analyze Case"}
+          <span className="obj-analyze-btn-icon" aria-hidden="true">✦</span>
+          <span>
+            {analyzing
+              ? "Checking credits…"
+              : analysisStatus === "current"
+              ? "View Analysis"
+              : analysisStatus === "stale"
+              ? `Update Analysis${enforced && !credits.unlimited && freeLeft === 0 ? " · 1 Credit" : ""}`
+              : `Analyze Case${enforced && !credits.unlimited ? " · 1 Credit" : ""}`}
+          </span>
+          <span className="obj-analyze-btn-icon" aria-hidden="true">→</span>
         </button>
+        {enforced && !credits.unlimited && credits.state === "ready" && freeLeft != null && (analysisStatus === "current" || analysisStatus === "stale") && (
+          <div className="obj-analyze-allowance" data-testid="free-reanalyses">
+            {freeLeft > 0
+              ? `${freeLeft} free re-analys${freeLeft === 1 ? "is" : "es"} remaining for this case`
+              : "No free re-analyses left for this case: each update costs 1 credit"}
+          </div>
+        )}
+        <CreditsSheet
+          open={creditsSheetOpen}
+          onClose={() => setCreditsSheetOpen(false)}
+          balance={credits.balance}
+          unlimited={credits.unlimited}
+          signedIn={credits.state !== "guest"}
+          reason={willCharge ? "You need 1 credit to analyze this case." : undefined}
+        />
       </div>
 
       <>
@@ -2074,6 +2161,9 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
               hasMatchEvidence={hasMatchEvidence}
               analyzed={analysisCurrent}
               headRef={resultsRef}
+              lockedIds={lockedIds}
+              onLockedClick={() => setLockNote(true)}
+              lockNote={lockNote}
             />
           </div>
 

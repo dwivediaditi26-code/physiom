@@ -4,6 +4,8 @@ import { authHeader } from "./supabase.js";
 import { apiUrl } from "./apiUrl.js";
 import { mapParseResultToOrthoUpdates } from "./orthoAiIntake.js";
 import { useIsAdmin } from "./useIsAdmin.js";
+import { useAiCredits, creditsEnforced, applyServerBalance, newRequestId } from "./aiCredits.js";
+import CreditsSheet from "./CreditsSheet.jsx";
 
 const PROVIDER_NAMES = { groq: "Groq", gemini: "Gemini" };
 
@@ -43,6 +45,13 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen, 
   const card = variant === "card";
   const [open, setOpen] = useState(card);
   const [applied, setApplied] = useState(false);
+  // Credits: a paragraph costs 1 credit, taken by the server (api/parse.js) only when the AI answers. Here we only
+  // show the cost, stop a tap when the balance is 0 (opening Get credits instead), and show the new balance.
+  const credits = useAiCredits();
+  const enforced = creditsEnforced(credits.state, !!requireAuth);
+  const costsCredit = enforced && !credits.unlimited;
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const pendingRequest = useRef(null); // same id for a retry after a lost reply, so it is never charged twice
   const [text, setText] = useState("");
   const [status, setStatus] = useState("idle"); // idle | recording | processing | done | error
   const [result, setResult] = useState(null);
@@ -115,6 +124,9 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen, 
     // A second tap while the first is still running must not send the paragraph again.
     if (!text.trim() || status === "processing") return;
     if (card && requireAuth && !requireAuth("AI Assessment Intake")) return;
+    // No credits: open Get credits instead of calling the AI at all.
+    if (credits.state === "ready" && !credits.unlimited && credits.balance < 1) { setSheetOpen(true); return; }
+    if (!pendingRequest.current || pendingRequest.current.text !== text) pendingRequest.current = { text, id: newRequestId() };
     setStatus("processing");
     setErrorMsg("");
     setApplied(false);
@@ -122,10 +134,18 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen, 
       const headers = await authHeader();
       const res = await fetch(apiUrl("/api/parse"), {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...headers },
+        headers: { "Content-Type": "application/json", "X-Request-Id": pendingRequest.current.id, ...headers },
         body: JSON.stringify({ text }),
       });
       const json = await res.json();
+      pendingRequest.current = null; // the server really answered, so the next tap is a new request
+      applyServerBalance(res.headers?.get?.("X-AI-Credits"));
+      if (res.status === 402) {
+        applyServerBalance(String(json.balance ?? 0));
+        setStatus("idle");
+        setSheetOpen(true);
+        return;
+      }
       if (!res.ok) throw new Error(json.error || "Parse failed — try again.");
       // Which AI answered (api/_lib/llm.js sets this header). Printed to the
       // browser console so a test build can show Groq vs Gemini; no patient text.
@@ -174,14 +194,22 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen, 
 
   return (
     <div className={"ai-intake-panel" + (card ? " ai-card" : "")}>
+      <CreditsSheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        balance={credits.balance}
+        unlimited={credits.unlimited}
+        signedIn={credits.state !== "guest"}
+        reason="You need 1 credit to generate with AI. Typing the history yourself is always free."
+      />
       {card ? (
         <>
           <div className="ai-card-head">
             <span className="ai-card-spark" aria-hidden="true">✨</span>
             <h3 className="ai-card-title">Fill in a paragraph</h3>
-            <span className="ai-card-optional">Optional</span>
+            <span className="ai-card-optional">{costsCredit ? "Optional · 1 credit" : "Optional"}</span>
           </div>
-          <p className="ai-card-desc">Describe the patient's history in your own words. AI will organize it into a structured subjective assessment for you to review and edit.</p>
+          <p className="ai-card-desc">Describe the history in your own words. AI organizes it into the form below for you to review and edit.</p>
         </>
       ) : (
         <>
@@ -202,24 +230,24 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen, 
             value={text}
             onChange={(e) => { setText(e.target.value); if (applied) setApplied(false); }}
             placeholder={card
-              ? "45-year-old with gradual onset of right shoulder pain for 6 weeks, worse with overhead activity…"
+              ? "45-year-old with gradual onset of right shoulder pain for 6 weeks…"
               : "e.g. 45 year old office worker, gradual onset right shoulder pain over 6 weeks, worse overhead and at night, no trauma..."}
             aria-label={card ? "Patient history in your own words" : undefined}
-            rows={card ? 3 : 5}
+            rows={card ? 2 : 5}
             disabled={status === "processing" || status === "recording"}
           />
           <div className="ai-intake-actions">
             {status === "recording" ? (
-              <button type="button" className="primary-btn" onClick={stopRecording}>
+              <button type="button" className={"primary-btn" + (card ? " ai-card-btn" : "")} onClick={stopRecording}>
                 ⏹ Stop recording
               </button>
             ) : (
-              <button type="button" className="ghost-btn" onClick={startRecording} disabled={status === "processing"}>
+              <button type="button" className={"ghost-btn" + (card ? " ai-card-btn" : "")} onClick={startRecording} disabled={status === "processing"}>
                 🎤 Voice
               </button>
             )}
-            <button type="button" className={"primary-btn" + (card ? " ai-card-generate" : "")} onClick={runParse} disabled={!text.trim() || status === "processing" || status === "recording"}>
-              {status === "processing" ? (card ? "Generating…" : "Parsing…") : (card ? "Generate with AI" : "✦ Parse with AI")}
+            <button type="button" className={"primary-btn" + (card ? " ai-card-btn ai-card-generate" : "")} onClick={runParse} disabled={!text.trim() || status === "processing" || status === "recording"}>
+              {status === "processing" ? (card ? "Generating…" : "Parsing…") : (card ? (costsCredit ? "Generate with AI · 1 credit" : "Generate with AI") : "✦ Parse with AI")}
             </button>
           </div>
           {status === "error" && <div className="ai-intake-error" role="alert">{errorMsg}</div>}
@@ -317,7 +345,7 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen, 
           <div className="ai-intake-actions">
             <button
               type="button"
-              className="ghost-btn"
+              className={"ghost-btn" + (card ? " ai-card-btn" : "")}
               onClick={() => {
                 setStatus("idle");
                 setResult(null);
@@ -325,7 +353,7 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen, 
             >
               Re-try
             </button>
-            <button type="button" className="primary-btn" onClick={apply}>
+            <button type="button" className={"primary-btn" + (card ? " ai-card-btn" : "")} onClick={apply}>
               ✓ Apply to Subjective &amp; Pain
             </button>
           </div>

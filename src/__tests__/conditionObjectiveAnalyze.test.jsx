@@ -49,13 +49,14 @@ const activeCard = () => document.querySelector(".obj-match-card-active");
 const nameOf = (card) => card?.querySelector(".obj-match-name")?.textContent;
 const pcts = () => [...document.querySelectorAll(".obj-match-card .obj-match-pct")].map((n) => n.textContent.trim());
 const mainButton = () => document.querySelector(".obj-analyze-btn");
+const label = () => mainButton().textContent.replace(/[✦→]/g, "").trim(); // the button also holds two small icons
 const analyze = () => fireEvent.click(screen.getByRole("button", { name: "Analyze Case" }));
 
 describe("Analyze your case: before the first analysis", () => {
   it("offers Analyze Case and shows no scores, no dashes and no 'Live Match'", () => {
     render(<Harness initialData={RADICULOPATHY} />);
     expect(screen.getByText("Analyze your case")).toBeInTheDocument();
-    expect(mainButton().textContent).toBe("Analyze Case");
+    expect(label()).toBe("Analyze Case");
     expect(mainButton().disabled).toBe(false);
     expect(pcts()).toEqual([]);
     expect(screen.queryByText("Live Match")).toBeNull();
@@ -86,7 +87,7 @@ describe("Analyze your case: running and revisiting the analysis", () => {
   it("Analyze Case shows the real scores, best match first, and the button becomes View Analysis", () => {
     render(<Harness initialData={RADICULOPATHY} />);
     analyze();
-    expect(mainButton().textContent).toBe("View Analysis");
+    expect(label()).toBe("View Analysis");
     const shown = pcts().filter((t) => /^\d+%$/.test(t)).map((t) => parseInt(t, 10));
     expect(shown.length).toBeGreaterThan(2);
     expect(shown[0]).toBe(Math.max(...shown));
@@ -103,14 +104,14 @@ describe("Analyze your case: running and revisiting the analysis", () => {
     const before = JSON.stringify(latestData);
     fireEvent.click(screen.getByRole("button", { name: "View Analysis" }));
     expect(JSON.stringify(latestData)).toBe(before);
-    expect(mainButton().textContent).toBe("View Analysis");
+    expect(label()).toBe("View Analysis");
   });
 
   it("a spelling or punctuation edit that changes no score does not ask for a new analysis", () => {
     render(<Harness initialData={RADICULOPATHY} />);
     analyze();
     fireEvent.click(screen.getByRole("button", { name: "test-fix-spelling" }));
-    expect(mainButton().textContent).toBe("View Analysis");
+    expect(label()).toBe("View Analysis");
     expect(screen.queryByTestId("analysis-stale-note")).toBeNull();
   });
 
@@ -118,11 +119,11 @@ describe("Analyze your case: running and revisiting the analysis", () => {
     render(<Harness initialData={RADICULOPATHY} />);
     analyze();
     fireEvent.click(screen.getByRole("button", { name: "test-change-answers" }));
-    expect(mainButton().textContent).toBe("Update Analysis");
+    expect(label()).toBe("Update Analysis");
     expect(screen.getByTestId("analysis-stale-note").textContent).toMatch(/Subjective answers changed/);
     expect(pcts()).toEqual([]);
     fireEvent.click(screen.getByRole("button", { name: "Update Analysis" }));
-    expect(mainButton().textContent).toBe("View Analysis");
+    expect(label()).toBe("View Analysis");
     expect(pcts().some((t) => /^\d+%$/.test(t))).toBe(true);
   });
 
@@ -143,7 +144,7 @@ describe("Analyze your case: running and revisiting the analysis", () => {
     const saved = JSON.parse(JSON.stringify(latestData));
     first.unmount();
     render(<Harness initialData={saved} />);
-    expect(mainButton().textContent).toBe("View Analysis");
+    expect(label()).toBe("View Analysis");
     expect(pcts().some((t) => /^\d+%$/.test(t))).toBe(true);
   });
 });
@@ -156,7 +157,7 @@ describe("an analysis that matched nothing", () => {
     } } } };
     render(<Harness initialData={thin} />);
     analyze();
-    expect(mainButton().textContent).toBe("View Analysis");
+    expect(label()).toBe("View Analysis");
     expect(screen.getByTestId("analysis-current-note").textContent).toMatch(/nothing matches yet/);
     expect(screen.queryByText("Condition-matching scores")).toBeNull();
     expect(screen.getByText(/No condition matched your Subjective answers yet/)).toBeInTheDocument();
@@ -190,6 +191,6 @@ describe("the Ortho wizard", () => {
     const { container } = renderWizard({ initialStep: "objectiveAI" });
     expect(within(container.querySelector(".topbar")).queryByRole("button", { name: /Re-analyze/ })).toBeNull();
     expect(screen.queryByText(/Re-analyze/)).toBeNull();
-    expect(mainButton().textContent).toBe("Analyze Case");
+    expect(label()).toBe("Analyze Case");
   });
 });

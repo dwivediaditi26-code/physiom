@@ -233,7 +233,7 @@ const MOBILE_CSS = `
        top, the two rendered at visibly different heights (2026-09-16,
        Aditi: AI-journey header screenshot showing the step labels bunched
        up instead of sitting under their own dots). */
-    button:not(.pm-bnav-tab):not(.pm-bnav-item):not(.pm-bnav-dx):not(.pm-rom-qual-btn):not(.pm-region-chip):not(.info-btn-sm):not(.popover-item):not(.popover-close):not(.stepper-arrow):not(.ai-journey-label-btn):not(.ai-journey-dot-btn) {
+    button:not(.pm-bnav-tab):not(.pm-bnav-item):not(.pm-bnav-dx):not(.pm-rom-qual-btn):not(.pm-region-chip):not(.info-btn-sm):not(.popover-item):not(.popover-close):not(.stepper-arrow):not(.ai-journey-label-btn):not(.ai-journey-dot-btn):not(.ai-card-btn):not(.topbar-credit-link) {
       min-height: 40px;
     }
     input, select, textarea {
@@ -549,7 +549,7 @@ const MOBILE_CSS = `
      40px tall (min-height wins over the explicit height), making them
      visibly oval instead of round. */
   @media (max-width: 1023px) {
-    button:not(.pm-rom-qual-btn):not(.info-btn-sm):not(.popover-item):not(.popover-close):not(.stepper-arrow):not(.ai-journey-label-btn):not(.ai-journey-dot-btn) { min-height: 40px !important; }
+    button:not(.pm-rom-qual-btn):not(.info-btn-sm):not(.popover-item):not(.popover-close):not(.stepper-arrow):not(.ai-journey-label-btn):not(.ai-journey-dot-btn):not(.ai-card-btn):not(.topbar-credit-link) { min-height: 40px !important; }
   }
 
   /* ── Show/hide helpers ── */

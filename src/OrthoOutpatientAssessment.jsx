@@ -21,6 +21,8 @@ import { palpationStructureRows } from "./orthoPalpationData.js";
 import { KineticChainSection, CpaSection, SttSection, FmaSection, FasciaSection, formatKineticChainSection, formatCpaSection, formatSttSection, formatFmaSection, formatFasciaSection } from "./orthoAdvancedTools.jsx";
 import OrthoSuggestObjectiveStep from "./OrthoSuggestObjectiveStep.jsx";
 import ConditionObjectiveAssessment, { formatConditionObjectiveSection } from "./ConditionObjectiveAssessment.jsx";
+import { newRequestId } from "./aiCredits.js";
+import CreditsBadge from "./CreditsBadge.jsx";
 import { OrthoCarePlanStep } from "./OrthoCarePlan.jsx";
 import { formatCarePlanSection } from "./NeuroCarePlan.jsx";
 import OrthoOutcomeMeasureFlow, { formatOutcomeMeasureSection } from "./OrthoOutcomeMeasureFlow.jsx";
@@ -461,6 +463,13 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
   const [savedFlash, setSavedFlash] = useState(false);
   const [missingDemFields, setMissingDemFields] = useState(null);
 
+  // One id per assessment (saved with it): with the body region it is the "case" that AI credits are counted
+  // against -- 1 credit for the first Analyze Case, the first 3 meaningful re-analyses free (supabase/add_ai_credits.sql).
+  useEffect(() => {
+    setData((prev) => (prev.__caseId ? prev : { ...prev, __caseId: newRequestId() }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const steps = useMemo(() => stepOrder.map((id) => ({ id, ...STEP_META[id] })), [stepOrder]);
   // AI entry collects Demographics before the wizard (AI_ENTRY_SKIP_IDS), so
   // it is not a step here -- but Final Review, Copy and the PDF are built from
@@ -733,6 +742,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
                 )}
               </div>
             </div>
+            {current.id === "objectiveAI" && <CreditsBadge requireAuth={requireAuth} />}
             {current.id !== "review" && (
               <button className="back-btn" onClick={() => setReviewOpen(true)} aria-label="Review filled so far" title="Review filled so far">
                 ✅
@@ -856,6 +866,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
                 selectedRegions={selectedRegions}
                 setSelectedRegions={setSelectedRegions}
                 onStartOutcomeMeasure={openOutcomeMeasure}
+                requireAuth={requireAuth}
               />
             </>
           )}

@@ -48,7 +48,7 @@ describe("AI Parse fills the region-specific Subjective form", () => {
 
   it("shows how many fields in each group the AI answered", async () => {
     await parseAndApply(c);
-    const heads = screen.getAllByRole("button").filter((b) => b.className.includes("collapsible-head")).map((b) => b.textContent);
+    const heads = [...document.querySelectorAll(".region-group-title")].map((n) => n.textContent);
     expect(heads.some((t) => /\(\d+\/\d+\)/.test(t))).toBe(true);
   });
 });

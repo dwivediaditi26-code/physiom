@@ -8,11 +8,12 @@ import { render, screen, fireEvent } from "@testing-library/react";
 vi.mock("../supabase.js", () => import("../__mocks__/supabase.js"));
 const { SubjectiveSection } = await import("../orthoOutpatientSections.jsx");
 
-function show(regions) {
+// aiEntry: the AI path keeps only Headache and Red Flag sections collapsible, so the collapsed-summary checks use the normal form.
+function show(regions, { aiEntry = false, region = { id: "hip", label: "Hip" } } = {}) {
   document.body.innerHTML = "";
   const data = { subjective: { regions } };
   return render(
-    <SubjectiveSection data={data} setData={() => {}} selectedRegions={[{ id: "hip", label: "Hip" }]} setSelectedRegions={() => {}} regionLabelOf={(r) => r.label} requireAuth={() => true} aiEntry />
+    <SubjectiveSection data={data} setData={() => {}} selectedRegions={[region]} setSelectedRegions={() => {}} regionLabelOf={(r) => r.label} requireAuth={() => true} aiEntry={aiEntry} />
   );
 }
 const heads = () => [...document.querySelectorAll(".collapsible-head")];
@@ -45,9 +46,35 @@ describe("collapsed groups show what is filled in", () => {
   });
 });
 
+describe("the AI path keeps the region sections open", () => {
+  const cervical = { id: "cervical", label: "Cervical" };
+  it("only Headache and Red Flag Screens are tap-to-open bars; every other section is simply open", () => {
+    show({}, { aiEntry: true, region: cervical });
+    expect(heads().map((h) => h.textContent.replace(/⌄/, "").trim())).toEqual(["Headache", "Red Flag Screens"]);
+    const open = [...document.querySelectorAll(".region-group-title")].map((n) => n.textContent);
+    expect(open).toEqual(["Location & Mechanism", "Arm / Neuro Signs", "Aggravating & Relieving", "Pattern", "Function"]);
+    // the questions of an open section are there without any tap
+    expect(screen.getByText(/Primary pain location/)).toBeInTheDocument();
+    expect(screen.queryByText(/Lhermitte/)).toBeInTheDocument();
+  });
+
+  it("opening Headache still works", () => {
+    show({}, { aiEntry: true, region: cervical });
+    const head = headOf("Headache");
+    fireEvent.click(head);
+    expect(headOf("Headache").querySelector(".collapsible-chevron").className).toMatch(/open/);
+  });
+
+  it("the normal form keeps every section collapsible", () => {
+    show({}, { aiEntry: false, region: cervical });
+    expect(heads().length).toBeGreaterThan(2);
+    expect(document.querySelectorAll(".region-group-title").length).toBe(0);
+  });
+});
+
 describe("the explanation under Region-specific subjective is short", () => {
   it("the visible part is the star line and the ranking rule; the rest sits in a closed 'More'", () => {
-    show({});
+    show({}, { aiEntry: true });
     const more = document.querySelector("details.star-more");
     expect(more).not.toBeNull();
     expect(more.hasAttribute("open")).toBe(false);
