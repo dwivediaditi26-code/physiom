@@ -2614,13 +2614,16 @@ export async function duplicateOpportunity(oppId) {
 // means the listing vanishes from Explore/search for everyone -- including
 // the creator's own My Postings -- while the applications rows referencing
 // it stay exactly as they were.
+// 2026-10-10, Aditi: "when I click on delete it is coming back". A plain
+// UPDATE of deleted_at was refused by the database: the SELECT policy hides
+// rows with deleted_at set, and Postgres checks the updated row against it,
+// so the update failed and the listing was put back on screen. The soft
+// delete now runs through delete_opportunity() (add_delete_opportunity_rpc.sql),
+// which checks ownership in SQL and sets deleted_at as the database owner.
 export async function deleteOpportunity(oppId) {
   const uid = await currentUserId();
   if (!uid) throw new Error("Sign in to manage your listings.");
-  const { error } = await supabase
-    .from("opportunities")
-    .update({ deleted_at: SERVER_NOW })
-    .eq("id", oppId);
+  const { error } = await supabase.rpc("delete_opportunity", { p_id: oppId });
   if (error) throw error;
 }
 
