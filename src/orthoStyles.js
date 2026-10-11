@@ -116,7 +116,7 @@ export function orthoStyles() {
         .ct-checkbox { font-size: 16px; color: ${BRAND.purple}; flex-shrink: 0; }
         .ct-modal-footer { padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid ${BRAND.border}; }
 
-        .content { flex: 1; padding: 6px 16px 150px; }
+        .content { flex: 1; padding: 6px 16px max(150px, calc(var(--pm-bnav-h, 60px) + 100px)); }
 
         .section-intro { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 18px; }
         .section-intro-icon { font-size: 26px; line-height: 1; }
@@ -1113,6 +1113,13 @@ export function orthoStyles() {
            summary card (Problem List/Goals/Treatment). */
         .summary-group-heading { font-size: ${TYPO.subsectionHeading.size}px; font-weight: ${TYPO.subsectionHeading.weight}; line-height: ${TYPO.subsectionHeading.lineHeight}; color: ${BRAND.purple}; margin-bottom: 4px; }
 
+        /* 16px under the buttons, not 8 (2026-10-10, Aditi's phone screenshot on
+           the AI Objective step: "it is hiding the Back and Next bar ... it is
+           cutting it"). The round PhysioFeed button in the bottom tabs rises
+           12px above the tab bar (18px negative margin, 46px circle, 6px white
+           ring) and landed on the lower edge of the Next button, which looked
+           cut off. 16px lifts the buttons clear of it while the bar still sits
+           flush on the tab bar. */
         /* fixed (not sticky) for the same reason as Cardio's identical rule:
            .content/.app-inner don't scroll themselves anymore (see .app-inner
            fix above), so sticky has nothing of its own to stick within --
@@ -1123,7 +1130,7 @@ export function orthoStyles() {
            "60px" guess here left a visible gap of the page's grey background
            between the two bars on devices where the guess ran short (looked
            like this bar was "floating" above the tab bar on real iPhones). */
-        .bottombar { position: fixed; left: calc(50% + var(--pm-side-w, 0px) / 2); transform: translateX(-50%); bottom: var(--pm-bnav-h, calc(60px + env(safe-area-inset-bottom))); width: 100%; max-width: var(--pm-col-w, 480px); z-index: 25; background: #fff; border-top: 1px solid ${BRAND.border}; padding: 8px 16px 8px; display: flex; gap: 10px; }
+        .bottombar { position: fixed; left: calc(50% + var(--pm-side-w, 0px) / 2); transform: translateX(-50%); bottom: var(--pm-bnav-h, calc(60px + env(safe-area-inset-bottom))); width: 100%; max-width: var(--pm-col-w, 480px); z-index: 25; background: #fff; border-top: 1px solid ${BRAND.border}; padding: 8px 16px 16px; display: flex; gap: 10px; }
         .bottombar::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 160px; background: #fff; pointer-events: none; }
         .ghost-btn { flex: 0 0 auto; border: 1.5px solid ${BRAND.border}; background: #fff; color: ${BRAND.ink}; padding: 13px 18px; border-radius: 14px; font-weight: 600; font-size: 14px; cursor: pointer; min-height: 46px; }
         .primary-btn {
