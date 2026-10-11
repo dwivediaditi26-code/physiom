@@ -508,6 +508,17 @@ export default function ExplorePage() {
         </button>
       </div>
 
+      {/* 2026-10-10, Aditi: "I want the Opportunity page also to say it is demo". The Feed already
+          carries a "Demo content" banner (AppShell.jsx, guests only); this board is still being
+          tested, so every visitor is told the listings may be samples, not real vacancies. */}
+      <div
+        data-testid="opportunity-demo-notice"
+        className="pf-font-body mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-medium leading-snug text-amber-800"
+      >
+        <span className="mr-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide">Demo</span>
+        Opportunities is still being tested. These jobs, workshops and other listings may be samples, not real vacancies yet.
+      </div>
+
       {/* Side by side (2026-09-28, Aditi's reference screenshot: "my posting
           and my opportunity section side by side") -- these were two
           full-width stacked rows before; same cards, just a 2-column grid
