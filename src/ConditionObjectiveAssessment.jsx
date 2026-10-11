@@ -42,11 +42,9 @@ import { RESTRICTION_GRADE, spineRegionData, ROM_DATA, MMT_DATA, SPECIAL_TESTS_D
 import { romRichItem, specialRichItem, mmtRichItem, GradeSelect } from "./orthoRegionAssessments.jsx";
 import { kcRichItem, cpaRichItem, fmaRichItem, GradeSelect as ObserveSelect, FMA_HELPS, FMA_GRADE_COLOR } from "./orthoAdvancedTools.jsx";
 import { KC_REGIONS, NKT_REGIONS, FMA_DATA, CYRIAX_REGIONS_DATA } from "./orthoAdvancedLibrary.js";
-import PhotoSlots from "./PhotoSlots.jsx";
 import { storyGate } from "./storyGate.js";
 import { useAiCredits, creditsEnforced, spendAnalysis } from "./aiCredits.js";
 import CreditsSheet from "./CreditsSheet.jsx";
-import { kcImageIds, fmaImageIds } from "./kcImages.js";
 import { uploadImage, uploadErrorMessage } from "./services/cloudinary.js";
 import { useIsAdmin } from "./useIsAdmin.js";
 import { FmaIcon, poseForJoint } from "./fmaIcons.jsx";
@@ -2665,7 +2663,6 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                 <InfoButton title={condition.kineticChain.testName} richItem={kcMatch ? kcRichItem(kcMatch) : kcRichItemFor(condition.kineticChain.testName)} />
               </div>
               {kcMatch?.joint && <div className="muscle-subtitle">{kcMatch.joint}</div>}
-              {kcMatch && !condition.kineticChain.notApplicable && <PhotoSlots ids={kcImageIds(kcMatch.id)} />}
               {condition.kineticChain.notApplicable ? (
                 <div style={{ fontSize: "0.8rem", color: BRAND.grayLight, lineHeight: 1.5, fontStyle: "italic", marginTop: 8 }}>{condition.kineticChain.chainEffect}</div>
               ) : (
@@ -2707,7 +2704,6 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                       {kcMatch?.joint && <div className="muscle-subtitle">{kcMatch.joint}</div>}
                     </div>
                   </div>
-                  {kcMatch && <PhotoSlots ids={kcImageIds(kcMatch.id)} />}
                   <div style={{ marginTop: 8 }}>
                     <InfoCard icon="🔎" label="Helps find" tint="violet">{hasReal ? kcHelpsFindLocal(kcMatch) : condition.kineticChain.chainEffect}</InfoCard>
                   </div>
@@ -2777,7 +2773,6 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                 <InfoButton title={condition.functionalScreen.testName} richItem={functionalRichItem(condition.functionalScreen.testName, condition.functionalScreen.note, config.key)} />
               </div>
               {fmaMatch?.subtitle && <div className="muscle-subtitle">{fmaMatch.subtitle}</div>}
-              {fmaMatch && <PhotoSlots ids={fmaImageIds(fmaMatch.id, config.key)} />}
               {(condition.functionalScreen.note || hasReal) && (
                 <div style={{ marginTop: 8, marginBottom: hasReal ? 0 : 10 }}>
                   <InfoCard icon="🔎" label="Helps find" tint="violet">{hasReal ? (FMA_HELPS[fmaMatch.id] || condition.functionalScreen.note) : condition.functionalScreen.note}</InfoCard>
@@ -2845,7 +2840,6 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                       {fmaMatch?.subtitle && <div className="muscle-subtitle">{fmaMatch.subtitle}</div>}
                     </div>
                   </div>
-                  {fmaMatch && <PhotoSlots ids={fmaImageIds(fmaMatch.id, config.key)} />}
                   {(condition.functionalScreen.note || hasReal) && (
                     <div style={{ marginTop: 8, marginBottom: hasReal ? 0 : 12 }}>
                       <InfoCard icon="🔎" label="Helps find" tint="violet">{hasReal ? (FMA_HELPS[fmaMatch.id] || condition.functionalScreen.note) : condition.functionalScreen.note}</InfoCard>
